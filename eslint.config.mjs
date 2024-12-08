@@ -1,14 +1,13 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-import pluginReact from "eslint-plugin-react";
+import globals from 'globals';
+import pluginJs from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import pluginReact from 'eslint-plugin-react';
 import stylistic from '@stylistic/eslint-plugin';
-
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
-  {files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]},
-/*  {languageOptions: { globals: globals.browser }},
+  { files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'] },
+  /*  {languageOptions: { globals: globals.browser }},
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   pluginReact.configs.flat.recommended,
@@ -16,7 +15,7 @@ export default [
     rules: {
 
     }
-  }*/
+  } */
   { languageOptions: { globals: globals.browser } },
   pluginReact.configs.flat.recommended,
   stylistic.configs.customize({
@@ -24,15 +23,22 @@ export default [
     quotes: 'single',
     semi: true,
     commaDangle: 'never',
-    blockSpacing: true,
+    blockSpacing: true
   }),
   ...tseslint.configs.recommendedTypeChecked,
   {
     languageOptions: {
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
+        tsconfigRootDir: import.meta.dirname
+      }
+    }
   },
+  {
+    rules: {
+      '@typescript-eslint/ no-unsafe-assignment': 0,
+      '@typescript-eslint/no-unsafe-assignment': 0,
+      'react/react-in-jsx-scope': 0
+    }
+  }
 ];

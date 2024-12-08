@@ -1,6 +1,6 @@
-import React from "react";
-import { Icon } from "native-base";
-import { G, Path } from "react-native-svg";
+import React from 'react';
+import { Icon } from 'native-base';
+import { G, Path } from 'react-native-svg';
 const NativeBaseIcon = () => {
   return (
     <Icon size="220px" viewBox="0 0 602.339 681.729">
