@@ -1,4 +1,3 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -6,13 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import LoginScreen from './screens/LoginScreen';
 import { auth } from '@/FirebaseConfig';
 import { SafeAreaView } from 'react-native';
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
-import { Button, ButtonText } from '@/components/ui/button';
-import { Box } from '@/components/ui/box';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 void SplashScreen.preventAutoHideAsync();

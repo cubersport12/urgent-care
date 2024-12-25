@@ -28,8 +28,6 @@ import {
   isNoSavedCredentialFoundResponse
 } from '@react-native-google-signin/google-signin';
 
-
-
 type LoginFormData = {
   email: string;
   password: string;
@@ -191,7 +189,7 @@ const GoogleLoginButton = () => {
     GoogleSignin.configure({
       webClientId: '968549272760-1efe2ldo7kbm2a7qr3nuasiegcc33rau.apps.googleusercontent.com'
     });
-  }, [])
+  }, []);
   const signIn = async () => {
     try {
       await GoogleSignin.hasPlayServices();
@@ -210,7 +208,7 @@ const GoogleLoginButton = () => {
       }
     }
     catch (error) {
-      console.error(error);
+      console.error('-------------->', error);
       if (isErrorWithCode(error)) {
         switch (error.code) {
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
