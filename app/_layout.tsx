@@ -3,39 +3,39 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
-import { signInWithEmailAndPassword } from 'firebase/auth'
-
+import '../global.css';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import {auth} from "@/FirebaseConfig";
+import LoginScreen from './screens/LoginScreen';
+import { auth } from '@/FirebaseConfig';
+import { SafeAreaView } from 'react-native';
+import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Box } from '@/components/ui/box';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-
-  const [user, setUser] = useState<unknown>();
-  const colorScheme = useColorScheme();
+  const [isAuth, setIsAuth] = useState<boolean>(false);
+  const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf')
   });
 
+  const onAuthStateChanged = (user: unknown) => {
+    setIsAuth(user != null);
+  };
+
   useEffect(() => {
-    const signIn = async () => {
-      try {
-        const user = await signInWithEmailAndPassword(auth, 'ivanovaa@mir-omsk.ru', '123456');
-        console.log(user);
-        setUser(user);
-      }catch (e) {
-        console.error(e);
-      }
-    }
-    void signIn();
+    return auth.onAuthStateChanged(onAuthStateChanged);
   }, []);
+
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      void SplashScreen.hideAsync();
     }
   }, [loaded]);
 
@@ -44,12 +44,32 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <SafeAreaView className="w-full h-full">
+      <GluestackUIProvider mode={colorMode}>
+        <Box className="bg-white dark:bg-black flex-1">
+          <Button
+            onPress={() => {
+              setColorMode(colorMode === 'light' ? 'dark' : 'light');
+            }}
+          >
+            <ButtonText>Toggle color mode</ButtonText>
+          </Button>
+        </Box>
+        {/* {
+          isAuth
+            ? (
+                <>
+                  <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="+not-found" />
+                  </Stack>
+                  <StatusBar style="auto" />
+                </>
+              )
+            : <LoginScreen />
+        } */}
+      </GluestackUIProvider>
+    </SafeAreaView>
+
   );
 }
