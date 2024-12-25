@@ -19,7 +19,6 @@ void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [isAuth, setIsAuth] = useState<boolean>(false);
-  const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
   const [loaded] = useFonts({
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf')
@@ -45,17 +44,8 @@ export default function RootLayout() {
 
   return (
     <SafeAreaView className="w-full h-full">
-      <GluestackUIProvider mode={colorMode}>
-        <Box className="bg-white dark:bg-black flex-1">
-          <Button
-            onPress={() => {
-              setColorMode(colorMode === 'light' ? 'dark' : 'light');
-            }}
-          >
-            <ButtonText>Toggle color mode</ButtonText>
-          </Button>
-        </Box>
-        {/* {
+      <GluestackUIProvider mode="dark">
+        {
           isAuth
             ? (
                 <>
@@ -67,7 +57,7 @@ export default function RootLayout() {
                 </>
               )
             : <LoginScreen />
-        } */}
+        }
       </GluestackUIProvider>
     </SafeAreaView>
 

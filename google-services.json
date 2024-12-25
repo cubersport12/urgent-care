@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "968549272760",
+    "project_id": "urgent-care-9444e",
+    "storage_bucket": "urgent-care-9444e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:968549272760:android:007ce9c47f92916a03b84d",
+        "android_client_info": {
+          "package_name": "com.anonymous.urgentcare"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "968549272760-1efe2ldo7kbm2a7qr3nuasiegcc33rau.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeqvi-T_OONelqkNEClO0SVV3gjzjEbR8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "968549272760-1efe2ldo7kbm2a7qr3nuasiegcc33rau.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -14,7 +14,7 @@ export default [
       "**/*.js"
     ],
   },
-  { files: ['./src/**/*.tsx'] },
+  { files: ['**/*.tsx'] },
   { languageOptions: { globals: globals.browser } },
   stylistic.configs.customize({
     indent: 2,
