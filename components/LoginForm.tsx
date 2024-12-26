@@ -1,4 +1,4 @@
-import { VStack } from '@/components/ui/vstack';
+import { VStack } from './ui/vstack';
 import { Formik } from 'formik';
 import {
   FormControl,
@@ -9,11 +9,11 @@ import {
   FormControlHelperText,
   FormControlLabel,
   FormControlLabelText
-} from '@/components/ui/form-control';
-import { Input, InputField } from '@/components/ui/input';
-import { AlertCircleIcon } from '@/components/ui/icon';
-import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
+} from './ui/form-control';
+import { Input, InputField } from './ui/input';
+import { AlertCircleIcon } from './ui/icon';
+import { Button, ButtonIcon, ButtonText } from './ui/button';
+import { Text } from './ui/text';
 import { View } from 'react-native';
 import { LogIn, AtSign, Chrome } from 'lucide-react-native';
 import { HStack } from './ui/hstack';
@@ -27,6 +27,8 @@ import {
   isSuccessResponse,
   isNoSavedCredentialFoundResponse
 } from '@react-native-google-signin/google-signin';
+import { Center } from './ui/center';
+import RegisterForm from './RegisterForm';
 
 type LoginFormData = {
   email: string;
@@ -35,6 +37,7 @@ type LoginFormData = {
 
 const LoginEmailForm = () => {
   const [error, setError] = useState<string | null>(null);
+  const [isOpenRegister, setIsOpenRegister] = useState(false);
   const handleSignIn = async (data: LoginFormData) => {
     try {
       await signInWithEmailAndPassword(
@@ -50,104 +53,100 @@ const LoginEmailForm = () => {
     }
   };
   return (
-    <Formik
-      initialValues={{ email: '', password: '' } satisfies LoginFormData}
-      validate={(values: LoginFormData) => {
-        const errors: Partial<LoginFormData> = {};
-        if (!values.email) {
-          errors.email = 'Required';
-        }
-        else if (
-          !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)
-        ) {
-          errors.email = 'Email введен некорректно';
-        }
-        return errors;
-      }}
-      onSubmit={async (values, { setSubmitting }) => {
-        setSubmitting(true);
-        await handleSignIn(values);
-        setSubmitting(false);
-      }}
-    >
-      {({
-        values,
-        errors,
-        setFieldValue,
-        handleSubmit,
-        isSubmitting
-      }) => (
-        <View className="gap-1">
-          <FormControl
-            isRequired={true}
-            isInvalid={errors.email != null}
-          >
-            <FormControlLabel>
-              <FormControlLabelText>Почта</FormControlLabelText>
-            </FormControlLabel>
-            <Input className="my-1">
-              <InputField
-                type="text"
-                placeholder="Почта"
-                value={values.email}
-                onChangeText={text => void setFieldValue('email', text, true)}
-              />
-            </Input>
-            <FormControlHelper>
-              <FormControlHelperText>
-                Введите email
-              </FormControlHelperText>
-            </FormControlHelper>
-            <FormControlError>
-              <FormControlErrorIcon as={AlertCircleIcon} />
-              <FormControlErrorText>
-                Введен некорреткный email
-              </FormControlErrorText>
-            </FormControlError>
-          </FormControl>
-          <FormControl
-            isRequired={true}
-            isInvalid={errors.password != null}
-          >
-            <FormControlLabel>
-              <FormControlLabelText>Пароль</FormControlLabelText>
-            </FormControlLabel>
-            <Input className="my-1">
-              <InputField
-                type="password"
-                placeholder="Пароль"
-                value={values.password}
-                onChangeText={text => void setFieldValue('password', text, true)}
-              />
-            </Input>
-            <FormControlHelper>
-              <FormControlHelperText>
-                Введите не менее 6 символов
-              </FormControlHelperText>
-            </FormControlHelper>
-            <FormControlError>
-              <FormControlErrorIcon as={AlertCircleIcon} />
-              <FormControlErrorText>
-                Пароль не может быть меньше 6 символов
-              </FormControlErrorText>
-            </FormControlError>
-          </FormControl>
-          {
-            error && (
-              <Text className="text-error-200">Неверный логин или пароль</Text>
-            )
+    <Center>
+      <RegisterForm isOpen={isOpenRegister} onClose={() => setIsOpenRegister(false)} />
+      <Formik
+        initialValues={{ email: '', password: '' } satisfies LoginFormData}
+        validate={(values: LoginFormData) => {
+          const errors: Partial<LoginFormData> = {};
+          if (!values.email) {
+            errors.email = 'Введите почту';
           }
-          <Button variant="solid" action="primary" className="w-full" onPress={() => handleSubmit()} disabled={isSubmitting}>
-            <ButtonIcon as={LogIn} />
-            <ButtonText>Войти</ButtonText>
-          </Button>
-          <Button variant="link" action="secondary" className="w-full" disabled={isSubmitting}>
-            <ButtonIcon as={AtSign} />
-            <ButtonText>Зарегистрироваться</ButtonText>
-          </Button>
-        </View>
-      )}
-    </Formik>
+          else if (
+            !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)
+          ) {
+            errors.email = 'Почта введена некорректно';
+          }
+          if (!values.password?.length) {
+            errors.password = 'Введите пароль';
+          }
+          return errors;
+        }}
+        onSubmit={async (values, { setSubmitting }) => {
+          setSubmitting(true);
+          await handleSignIn(values);
+          setSubmitting(false);
+        }}
+      >
+        {({
+          values,
+          errors,
+          setFieldValue,
+          handleSubmit,
+          isSubmitting
+        }) => (
+          <View className="gap-1 w-full">
+            <FormControl
+              isRequired={true}
+              isInvalid={errors.email != null}
+            >
+              <FormControlLabel>
+                <FormControlLabelText>Почта</FormControlLabelText>
+              </FormControlLabel>
+              <Input className="my-1">
+                <InputField
+                  type="text"
+                  placeholder="Почта"
+                  value={values.email}
+                  onChangeText={text => void setFieldValue('email', text, true)}
+                />
+              </Input>
+              <FormControlError>
+                <FormControlErrorIcon as={AlertCircleIcon} />
+                <FormControlErrorText>
+                  {errors.email}
+                </FormControlErrorText>
+              </FormControlError>
+            </FormControl>
+            <FormControl
+              isRequired={true}
+              isInvalid={errors.password != null}
+            >
+              <FormControlLabel>
+                <FormControlLabelText>Пароль</FormControlLabelText>
+              </FormControlLabel>
+              <Input className="my-1">
+                <InputField
+                  type="password"
+                  placeholder="Пароль"
+                  value={values.password}
+                  onChangeText={text => void setFieldValue('password', text, true)}
+                />
+              </Input>
+              <FormControlError>
+                <FormControlErrorIcon as={AlertCircleIcon} />
+                <FormControlErrorText>
+                  {errors.password}
+                </FormControlErrorText>
+              </FormControlError>
+            </FormControl>
+            {
+              error && (
+                <Text className="text-error-200">Неверный логин или пароль</Text>
+              )
+            }
+            <Button variant="solid" action="primary" className="w-full" onPress={() => handleSubmit()} disabled={isSubmitting}>
+              <ButtonIcon as={LogIn} />
+              <ButtonText>Войти</ButtonText>
+            </Button>
+            <Button onPress={() => setIsOpenRegister(true)} variant="link" action="secondary" className="w-full" disabled={isSubmitting}>
+              <ButtonIcon as={AtSign} />
+              <ButtonText>Зарегистрироваться</ButtonText>
+            </Button>
+          </View>
+        )}
+      </Formik>
+    </Center>
   );
 };
 

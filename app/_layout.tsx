@@ -17,7 +17,7 @@ void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [isAuth, setIsAuth] = useState<boolean>(false);
-  const colorScheme = useColorScheme() ?? 'dark';
+  const colorScheme = 'dark';
   const [loaded] = useFonts({
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf')
