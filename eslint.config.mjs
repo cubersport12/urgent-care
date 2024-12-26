@@ -35,6 +35,7 @@ export default [
   {
     rules: {
       "max-len": ["error", { "code": 240 }],
+      "@typescript-eslint/no-require-imports": 0,
       "@typescript-eslint/unbound-method": 0,
       "@typescript-eslint/no-unsafe-assignment": 0,
       "@typescript-eslint/no-unsafe-argument": 0,

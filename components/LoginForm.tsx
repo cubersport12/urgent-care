@@ -17,7 +17,7 @@ import { Text } from '@/components/ui/text';
 import { View } from 'react-native';
 import { LogIn, AtSign, Chrome } from 'lucide-react-native';
 import { HStack } from './ui/hstack';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/FirebaseConfig';
 import { useEffect, useState } from 'react';
 import {
@@ -37,13 +37,11 @@ const LoginEmailForm = () => {
   const [error, setError] = useState<string | null>(null);
   const handleSignIn = async (data: LoginFormData) => {
     try {
-      console.log('logining...', data);
-      const userCredential = await signInWithEmailAndPassword(
+      await signInWithEmailAndPassword(
         auth,
         data.email,
         data.password
       );
-      console.info(userCredential);
     }
     catch (error) {
       const errorString = String(error);
@@ -196,8 +194,8 @@ const GoogleLoginButton = () => {
       const response = await GoogleSignin.signIn();
 
       if (isSuccessResponse(response)) {
-        // read user's info
-        console.log('isSuccessResponse', response.data);
+        const credential = GoogleAuthProvider.credential(response.data.idToken);
+        await signInWithCredential(auth, credential);
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       else if (isNoSavedCredentialFoundResponse(response as any)) {
