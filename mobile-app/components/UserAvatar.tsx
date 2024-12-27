@@ -7,7 +7,7 @@ import { Button, ButtonText } from './ui/button';
 
 const UserAvatar = ({ size }: { size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' }) => {
   const user = auth.currentUser!;
-  const [assets] = useAssets([require('../assets/images/empty-avatar.png')]);
+  const [assets] = useAssets([require('../assets/images/empty_avatar.png')]);
   return (
     <VStack className="justify-center items-center gap-2">
       <Avatar size={size}>
