@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient } from '@angular/common/http';
 import { AngularFireModule } from '@angular/fire/compat';
+import { provideAppStore } from '@/core/store';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,7 +16,9 @@ export const appConfig: ApplicationConfig = {
       appId: '1:968549272760:web:88d791e2e2c1291a03b84d',
       measurementId: 'G-66VELK0HS7'
     })),
+    provideAppStore(),
     provideHttpClient(),
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes)]
+    provideRouter(routes)
+  ]
 };

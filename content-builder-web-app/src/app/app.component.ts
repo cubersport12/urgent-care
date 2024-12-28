@@ -1,19 +1,17 @@
-import { Component, inject } from '@angular/core';
-import { AppIconsRegistry } from '@/core/utils';
+import { Component, computed, inject } from '@angular/core';
+import { AppIconsRegistry, NullableValue } from '@/core/utils';
 import { ToggleLightDarkButtonComponent } from '@/core/components';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { MatButton } from '@angular/material/button';
-import { uniqueId } from 'lodash';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { JsonPipe } from '@angular/common';
-import { map } from 'rxjs';
+import { Store } from '@ngxs/store';
+import { FoldersActions, FoldersState } from '@/core/store';
+import { AppNavbarComponent } from '@/core/components';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   imports: [
     ToggleLightDarkButtonComponent,
-    MatButton,
-    JsonPipe
+    AppNavbarComponent,
+    RouterOutlet
   ],
   host: {
     class: 'block w-full h-full relative'
@@ -22,26 +20,21 @@ import { map } from 'rxjs';
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  private readonly _firestore = inject(AngularFirestore);
-  private readonly _folders = this._firestore.collection('folders');
+  private readonly _store = inject(Store);
   private readonly _iconsRegistry = inject(AppIconsRegistry);
 
-  protected readonly _foldersList = toSignal(this._folders.snapshotChanges()
-    .pipe(map(actions => actions.map(action => ({
-      id: action.payload.doc.get('id'),
-      name: action.payload.doc.get('name')
-    })))));
+  protected readonly _folders = (parentId: NullableValue<string>) => computed(() => {
+    const result = this._store.selectSignal(FoldersState.getFolders)();
+    return result(parentId);
+  });
 
   constructor() {
     this._iconsRegistry.addAllSvgIcons();
-    this._folders.get()
-      .subscribe(async (actions) => {
-        const data = await actions.query.get();
-        console.info(data.docs.map(doc => doc.data()));
-      });
+    this._store.dispatch(new FoldersActions.FetchFolders(null));
   }
 
-  _handleAdd() {
-    void this._folders.add({ id: uniqueId('folders'), name: 'Folder 1' });
+  protected _handleAdd(): void {
+    const folders = this._store.selectSignal(FoldersState.getFolders)()(null);
+    this._store.dispatch(new FoldersActions.CreateFolder(null, { name: `New folder #${(folders?.length ?? 1) + 1}` }));
   }
 }

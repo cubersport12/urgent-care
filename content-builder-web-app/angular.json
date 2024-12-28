@@ -3,18 +3,18 @@
   "version": 1,
   "newProjectRoot": "projects",
   "schematics": {
-    "@schematics/angular:application": {
+    "@schematics/angular:component": {
+      "skipTests": true,
+      "inlineStyle": true,
+      "style": "scss"
+    },
+    "@schematics/angular:service": {
       "skipTests": true
     }
   },
   "projects": {
     "content-builder-web-app": {
       "projectType": "application",
-      "schematics": {
-        "@schematics/angular:component": {
-          "style": "scss"
-        }
-      },
       "root": "",
       "sourceRoot": "src",
       "prefix": "app",

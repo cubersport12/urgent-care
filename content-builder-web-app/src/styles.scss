@@ -20,10 +20,19 @@ html, body {
 
 body.dark-mode {
   background-color: #111112;
+  color: #8b8b8b;
 }
 
-mat-icon {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
+.mat-mdc-button-base {
+  mat-icon {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
 }
+
+.svg-inline--fa {
+  width: inherit;
+  height: inherit;
+}
+

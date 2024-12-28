@@ -1,0 +1,8 @@
+@for (item of _folders(); track $index) {
+    <button (click)="_openFolder(item)" class="flex p-1 flex-col items-center justify-center gap-1" mat-ripple>
+        <mat-icon class="!w-12 !h-12" svgIcon="folder"></mat-icon>
+        <span class="text-sm break-words w-full">
+            {{item.name}}
+        </span>
+    </button>
+}

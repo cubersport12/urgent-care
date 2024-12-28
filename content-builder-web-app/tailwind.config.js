@@ -4,7 +4,11 @@ module.exports = {
     "./src/**/*.{html,ts}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      backgroundColor: {
+        'primary': 'var(--mat-sys-primary-container) !important'
+      }
+    },
   },
   plugins: [],
 }
