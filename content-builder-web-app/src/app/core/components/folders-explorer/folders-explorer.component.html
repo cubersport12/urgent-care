@@ -1,8 +1,26 @@
-@for (item of _folders(); track $index) {
-    <button (click)="_openFolder(item)" class="flex p-1 flex-col items-center justify-center gap-1" mat-ripple>
-        <mat-icon class="!w-12 !h-12" svgIcon="folder"></mat-icon>
-        <span class="text-sm break-words w-full">
-            {{item.name}}
-        </span>
-    </button>
-}
+<div class="flex gap-1 p-1 flex-wrap">
+  @for (item of _folders(); track $index) {
+    <div class="flex flex-col w-24 gap-1 items-center relative">
+      @if (_isRenamePendingFolder(item.id)()) {
+        <app-skeleton shape="circle" size="48px" />
+        <app-skeleton height="20px" borderRadius="5px" width="96px" />
+      } @else {
+        <button class="!absolute top-0 right-1 w-4 h-4" mat-ripple [matMenuTriggerFor]="menu">
+          <mat-icon class="!w-full !h-full" svgIcon="sliders" />
+        </button>
+        <mat-menu #menu>
+          <button mat-menu-item (click)="_deleteFolder(item.id)">
+            <mat-icon class="!w-4 !h-4" svgIcon="trash" />
+            Удалить
+          </button>
+        </mat-menu>
+
+        <button (click)="_openFolder(item)" class="flex p-1 flex-col hover:bg-gray-300 items-center justify-center" mat-ripple>
+          <mat-icon class="!w-12 !h-12" svgIcon="folder"></mat-icon>
+        </button>
+        <app-text-editable-value [editing]="_renamingFolder() === item.id" (beginRenaming)="_beginRename(item.id)" [value]="item.name" (valueChange)="_confirmRename(item.id, $event)" />
+      }
+
+    </div>
+  }
+</div>

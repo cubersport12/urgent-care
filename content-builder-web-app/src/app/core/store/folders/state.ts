@@ -31,8 +31,8 @@ export class FoldersState {
   @Action(FoldersActions.CreateFolder, { cancelUncompleted: true })
   private _createFolder(ctx: StateContext<FoldersStateModel>, action: FoldersActions.CreateFolder) {
     const { parentId, payload } = action;
-    const newId = uniqid();
-    const newFolder: AppFolderVm = { ...payload, id: newId, parentId: parentId ?? null };
+    const newId = action.payload.id ?? uniqid();
+    const newFolder = { ...payload, id: newId, parentId: parentId ?? null } as AppFolderVm;
     return this._foldersStorage.createFolder(newFolder)
       .pipe(tap(() => {
         const { folders } = ctx.getState();
@@ -41,6 +41,54 @@ export class FoldersState {
           folders: {
             ...folders,
             [pId]: [...(folders[pId] ?? []), newFolder]
+          }
+        }));
+      }));
+  }
+
+  @Action(FoldersActions.DeleteFolder, { cancelUncompleted: true })
+  private _deleteFolder(ctx: StateContext<FoldersStateModel>, action: FoldersActions.DeleteFolder) {
+    const { folderId } = action;
+    return this._foldersStorage.deleteFolder(folderId)
+      .pipe(tap(() => {
+        const state = ctx.getState();
+        const { folders } = state;
+        const allFolders = this._getAllFolder(state);
+        const pId = getNullableId(allFolders.find(x => x.id === folderId)?.parentId);
+        ctx.setState(patch({
+          folders: {
+            ...folders,
+            [pId]: folders[pId].filter(f => f.id !== folderId)
+          }
+        }));
+      }));
+  }
+
+  private _getAllFolder(model: FoldersStateModel) {
+    return Object.values(model.folders).flat();
+  }
+
+  @Action(FoldersActions.UpdateFolder, { cancelUncompleted: true })
+  private _updateFolder(ctx: StateContext<FoldersStateModel>, action: FoldersActions.UpdateFolder) {
+    const state = ctx.getState();
+    const { folderId, payload } = action;
+    const allFolders = this._getAllFolder(state);
+    const found = allFolders.find(f => f.id === folderId);
+    if (found == null) {
+      throw new Error('Folder not found');
+    }
+    const newFolder = {
+      ...found,
+      ...payload
+    } as AppFolderVm;
+    return this._foldersStorage.updateFolder(newFolder)
+      .pipe(tap(() => {
+        const { folders } = ctx.getState();
+        const pId = getNullableId(newFolder.parentId);
+        ctx.setState(patch({
+          folders: {
+            ...folders,
+            [pId]: folders[pId].map(f => f.id === folderId ? newFolder : f)
           }
         }));
       }));

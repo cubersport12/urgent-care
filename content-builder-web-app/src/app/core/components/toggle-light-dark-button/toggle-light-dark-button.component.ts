@@ -16,7 +16,7 @@ const LS_KEY = 'theme';
   styleUrl: './toggle-light-dark-button.component.scss'
 })
 export class ToggleLightDarkButtonComponent {
-  protected readonly _currentMode = signal<'light-mode' | 'dark-mode'>((localStorage.getItem(LS_KEY) as 'light-mode' | 'dark-mode') ?? LIGHT_MODE);
+  protected readonly _currentMode = signal<'light-mode' | 'dark-mode'>((localStorage.getItem(LS_KEY) as 'light-mode' | 'dark-mode') ?? DARK_MODE);
 
   constructor() {
     effect(() => {

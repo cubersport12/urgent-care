@@ -1,6 +1,22 @@
 <nav class="px-1 py-1 w-full flex flex-wrap gap-1 bg-primary">
-    <button size="sm" mat-flat-button color="primary">
-        <mat-icon svgIcon="plus"></mat-icon>
+    <button [disabled]="_isCreating()" size="sm" (click)="_createNewFolder()" mat-flat-button color="primary">
+        <mat-icon [svgIcon]="_isCreating() ? 'spinner' : 'folder'"></mat-icon>
         Создать папку
+    </button>
+    <button [disabled]="_isCreating()" size="sm" (click)="_createNewFolder()" mat-flat-button color="primary">
+      <mat-icon svgIcon="file-contract"></mat-icon>
+        Добавить текстовый документ
+    </button>
+    <button [disabled]="_isCreating()" size="sm" (click)="_createNewFolder()" mat-flat-button color="primary">
+      <mat-icon svgIcon="file-circle-check"></mat-icon>
+      Создать тест
+    </button>
+    <button [disabled]="_isCreating()" size="sm" (click)="_createNewFolder()" mat-flat-button color="primary">
+      <mat-icon svgIcon="file-circle-check"></mat-icon>
+      Создать вариативный тест
+    </button>
+    <button [disabled]="_isCreating()" size="sm" (click)="_createNewFolder()" mat-flat-button color="primary">
+      <mat-icon svgIcon="video"></mat-icon>
+      Добавить видео
     </button>
 </nav>
