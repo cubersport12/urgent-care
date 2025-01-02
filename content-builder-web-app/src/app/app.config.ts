@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient } from '@angular/common/http';
 import { AngularFireModule } from '@angular/fire/compat';
+import { AngularFireStorageModule } from '@angular/fire/compat/storage';
 import { provideAppStore } from '@/core/store';
 
 export const appConfig: ApplicationConfig = {
@@ -15,7 +16,7 @@ export const appConfig: ApplicationConfig = {
       messagingSenderId: '968549272760',
       appId: '1:968549272760:web:88d791e2e2c1291a03b84d',
       measurementId: 'G-66VELK0HS7'
-    })),
+    }), AngularFireStorageModule),
     provideAppStore(),
     provideHttpClient(),
     provideZoneChangeDetection({ eventCoalescing: true }),

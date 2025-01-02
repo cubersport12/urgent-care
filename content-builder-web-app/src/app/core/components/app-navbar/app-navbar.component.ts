@@ -4,6 +4,7 @@ import { Component, computed, inject } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { Store } from '@ngxs/store';
+import { AngularFireStorage } from '@angular/fire/compat/storage';
 import uniqid from 'uniqid';
 
 @Component({
@@ -18,6 +19,7 @@ export class AppNavbarComponent extends BaseRoutedClass {
   private readonly _store = inject(Store);
   private readonly _explorer = inject(FoldersExplorerService);
   private readonly _dispatched = inject(AppLoading);
+  private readonly _storage = inject(AngularFireStorage);
 
   protected readonly _isCreating = computed(() => this._dispatched.isDispatched(FoldersActions.CreateFolder)());
 
@@ -28,5 +30,15 @@ export class AppNavbarComponent extends BaseRoutedClass {
       .subscribe(() => {
         this._explorer.beginRename.set(id);
       });
+  }
+
+  protected _createArticle() {
+    try {
+      const ref = this._storage.ref(uniqid());
+      ref.putString('tests fsdfsdsd');
+    }
+    catch (e) {
+      console.error(e);
+    }
   }
 }
