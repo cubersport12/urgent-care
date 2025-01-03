@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { AppIconsRegistry, NullableValue } from '@/core/utils';
+import { AppIconsRegistry, AppSupabase, NullableValue } from '@/core/utils';
 import { ToggleLightDarkButtonComponent } from '@/core/components';
 import { Store } from '@ngxs/store';
 import { FoldersActions, FoldersState } from '@/core/store';
@@ -22,6 +22,7 @@ import { RouterOutlet } from '@angular/router';
 export class AppComponent {
   private readonly _store = inject(Store);
   private readonly _iconsRegistry = inject(AppIconsRegistry);
+  protected readonly _supabase = inject(AppSupabase);
 
   protected readonly _folders = (parentId: NullableValue<string>) => computed(() => {
     const result = this._store.selectSignal(FoldersState.getFolders)();
@@ -30,7 +31,15 @@ export class AppComponent {
 
   constructor() {
     this._iconsRegistry.addAllSvgIcons();
-    this._store.dispatch(new FoldersActions.FetchFolders(null));
+
+    void this._initialize();
+  }
+
+  private async _initialize() {
+    await this._supabase.client.auth.signInWithPassword({
+      email: 'ivanovaa@mir-omsk.ru',
+      password: '123456'
+    });
   }
 
   protected _handleAdd(): void {

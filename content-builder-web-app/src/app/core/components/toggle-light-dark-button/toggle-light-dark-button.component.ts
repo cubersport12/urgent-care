@@ -2,8 +2,8 @@ import { Component, effect, signal } from '@angular/core';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 
-const LIGHT_MODE = 'light-mode';
-const DARK_MODE = 'dark-mode';
+const LIGHT_MODE = 'light';
+const DARK_MODE = 'dark';
 const LS_KEY = 'theme';
 
 @Component({
@@ -16,14 +16,12 @@ const LS_KEY = 'theme';
   styleUrl: './toggle-light-dark-button.component.scss'
 })
 export class ToggleLightDarkButtonComponent {
-  protected readonly _currentMode = signal<'light-mode' | 'dark-mode'>((localStorage.getItem(LS_KEY) as 'light-mode' | 'dark-mode') ?? DARK_MODE);
+  protected readonly _currentMode = signal<'light' | 'dark'>((localStorage.getItem(LS_KEY) as 'light' | 'dark') ?? DARK_MODE);
 
   constructor() {
     effect(() => {
       const mode = this._currentMode();
-      const body = document.body;
-      body.classList.remove(LIGHT_MODE, DARK_MODE);
-      body.classList.add(mode);
+      document.documentElement.style.colorScheme = mode;
       localStorage.setItem(LS_KEY, mode);
     });
   }

@@ -1,13 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { Store } from '@ngxs/store';
-import { AppLoading, FoldersActions, FoldersState } from '@/core/store';
+import { AppLoading, ArticlesActions, ArticlesState, FoldersActions, FoldersState } from '@/core/store';
 import { MatIcon } from '@angular/material/icon';
-import { MatOption, MatRipple } from '@angular/material/core';
+import { MatRipple } from '@angular/material/core';
 import { MatMenuModule } from '@angular/material/menu';
-import { AppFolderVm, BaseRoutedClass, FoldersExplorerService, NullableValue } from '@/core/utils';
+import { AppArticleVm, AppFolderVm, BaseRoutedClass, FoldersExplorerService, NullableValue } from '@/core/utils';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TextEditableValueComponent } from '../text-editable-value';
-import { SkeletonComponent } from '../skeleton/skeleton.component';
+import { SkeletonComponent } from '../skeleton';
+import { ArticleEditorService } from '../article-editor';
+
+type OptionType = (AppFolderVm | AppArticleVm) & { type: 'folder' | 'article' };
 
 @Component({
   selector: 'app-folders-explorer',
@@ -16,7 +19,6 @@ import { SkeletonComponent } from '../skeleton/skeleton.component';
     MatIcon,
     FormsModule,
     ReactiveFormsModule,
-    MatOption,
     TextEditableValueComponent,
     SkeletonComponent,
     MatMenuModule
@@ -29,12 +31,21 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
   private readonly _explorer = inject(FoldersExplorerService);
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
-  protected readonly _renamingFolder = signal<NullableValue<string>>(null);
+  private readonly _articlesEditor = inject(ArticleEditorService);
+  protected readonly _renamingOptionId = signal<NullableValue<string>>(null);
 
-  protected readonly _isRenamePendingFolder = (folderId: string) => computed(() => {
-    const renaming = this._renamingFolder();
-    const dispatched = this._dispatched.isDispatched(FoldersActions.UpdateFolder)();
+  protected readonly _isRenamePending = (folderId: string) => computed(() => {
+    const renaming = this._renamingOptionId();
+    const dispatchedFolder = this._dispatched.isDispatched(FoldersActions.UpdateFolder)();
+    const dispatchedArticle = this._dispatched.isDispatched(ArticlesActions.UpdateArticle)();
+    const dispatched = dispatchedFolder || dispatchedArticle;
     return renaming === folderId && dispatched;
+  });
+
+  protected readonly _options = computed<OptionType[]>(() => {
+    const folders = this._folders() ?? [];
+    const articles = this._articles() ?? [];
+    return [...folders.map(x => ({ ...x, type: 'folder' } satisfies OptionType)), ...articles.map(x => ({ ...x, type: 'article' } satisfies OptionType))];
   });
 
   protected readonly _folders = computed(() => {
@@ -43,11 +54,17 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     return f;
   });
 
+  protected readonly _articles = computed(() => {
+    const parentId = this._folderId();
+    const f = this._store.selectSignal(ArticlesState.getArticles)()(parentId);
+    return f;
+  });
+
   constructor() {
     super();
     effect(() => {
       const parentId = this._folderId();
-      this._store.dispatch(new FoldersActions.FetchFolders(parentId));
+      this._store.dispatch([new FoldersActions.FetchFolders(parentId), new ArticlesActions.FetchArticles(parentId)]);
     });
 
     effect(() => {
@@ -58,27 +75,68 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     });
   }
 
-  protected _openFolder(f: AppFolderVm): void {
-    void this._router.navigate([], {
-      relativeTo: this._activatedRoute,
-      queryParams: {
-        folderId: f.id
-      }
-    });
+  protected _open(f: OptionType): void {
+    switch (f.type) {
+      case 'folder':
+        void this._router.navigate([], {
+          relativeTo: this._activatedRoute,
+          queryParams: {
+            folderId: f.id
+          }
+        });
+        break;
+      case 'article':
+        this._articlesEditor.openArticle(f);
+        break;
+      default:
+        throw new Error('Unknown option type');
+    }
   }
 
-  protected _confirmRename(folderId: string, name: NullableValue<string>): void {
-    this._store.dispatch(new FoldersActions.UpdateFolder(folderId, { name: name ?? '' }))
-      .subscribe(() => {
-        this._renamingFolder.set(null);
-      });
+  protected _confirmRename(option: OptionType, name: NullableValue<string>): void {
+    switch (option.type) {
+      case 'folder':
+        this._store.dispatch(new FoldersActions.UpdateFolder(option.id, { name: name ?? '' }))
+          .subscribe(() => {
+            this._renamingOptionId.set(null);
+          });
+        break;
+      case 'article':
+        this._store.dispatch(new ArticlesActions.UpdateArticle(option.id, { name: name ?? '' }))
+          .subscribe(() => {
+            this._renamingOptionId.set(null);
+          });
+        break;
+      default:
+        throw new Error('Unknown option type');
+    }
   }
 
-  protected _deleteFolder(folderId: string): void {
-    this._store.dispatch(new FoldersActions.DeleteFolder(folderId));
+  protected _getSvgIcon(option: OptionType): string {
+    if (option.type === 'folder') {
+      return 'folder';
+    }
+
+    if (option.type === 'article') {
+      return 'file-contract';
+    }
+    throw new Error('Unknown option type');
+  }
+
+  protected _delete(option: OptionType): void {
+    switch (option.type) {
+      case 'folder':
+        this._store.dispatch(new FoldersActions.DeleteFolder(option.id));
+        break;
+      case 'article':
+        this._store.dispatch(new ArticlesActions.DeleteArticle(option.id));
+        break;
+      default:
+        throw new Error('Unknown option type');
+    }
   }
 
   protected _beginRename(folderId: string): void {
-    this._renamingFolder.set(folderId);
+    this._renamingOptionId.set(folderId);
   }
 }

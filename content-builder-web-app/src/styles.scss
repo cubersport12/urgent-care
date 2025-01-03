@@ -18,9 +18,16 @@ html, body {
   overflow: hidden;
 }
 
-body.dark-mode {
-  background-color: #111112;
-  color: #8b8b8b;
+angular-editor {
+  h1, h2, h3, h4, h5, h6 {
+    font-size: revert;
+    font-weight: revert;
+  }
+}
+
+:root {
+  --ae-toolbar-bg-color: transparent;
+  --ae-toolbar-border-radius: none;
 }
 
 .mat-mdc-button-base {

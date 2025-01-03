@@ -5,6 +5,7 @@ import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { Store } from '@ngxs/store';
 import uniqid from 'uniqid';
+import { ArticleEditorService } from '../article-editor';
 
 @Component({
   selector: 'app-navbar',
@@ -16,6 +17,7 @@ import uniqid from 'uniqid';
 })
 export class AppNavbarComponent extends BaseRoutedClass {
   private readonly _store = inject(Store);
+  private readonly _articlesEditor = inject(ArticleEditorService);
   private readonly _explorer = inject(FoldersExplorerService);
   private readonly _dispatched = inject(AppLoading);
 
@@ -31,5 +33,6 @@ export class AppNavbarComponent extends BaseRoutedClass {
   }
 
   protected _createArticle() {
+    this._articlesEditor.openArticle({ parentId: this._folderId() });
   }
 }

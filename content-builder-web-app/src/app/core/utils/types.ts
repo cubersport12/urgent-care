@@ -10,6 +10,5 @@ export type AppFolderVm = {
 } & AppBaseVm;
 
 export type AppArticleVm = {
-  fileContentId: string;
   parentId?: NullableValue<string>;
 } & AppBaseVm;

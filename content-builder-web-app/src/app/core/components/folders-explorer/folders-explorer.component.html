@@ -1,7 +1,7 @@
 <div class="flex gap-1 p-1 flex-wrap">
-  @for (item of _folders(); track $index) {
+  @for (item of _options(); track $index) {
     <div class="flex flex-col w-24 gap-1 items-center relative">
-      @if (_isRenamePendingFolder(item.id)()) {
+      @if (_isRenamePending(item.id)()) {
         <app-skeleton shape="circle" size="48px" />
         <app-skeleton height="20px" borderRadius="5px" width="96px" />
       } @else {
@@ -9,16 +9,16 @@
           <mat-icon class="!w-full !h-full" svgIcon="sliders" />
         </button>
         <mat-menu #menu>
-          <button mat-menu-item (click)="_deleteFolder(item.id)">
+          <button mat-menu-item (click)="_delete(item)">
             <mat-icon class="!w-4 !h-4" svgIcon="trash" />
             Удалить
           </button>
         </mat-menu>
 
-        <button (click)="_openFolder(item)" class="flex p-1 flex-col hover:bg-gray-300 items-center justify-center" mat-ripple>
-          <mat-icon class="!w-12 !h-12" svgIcon="folder"></mat-icon>
+        <button (click)="_open(item)" class="flex p-1 flex-col hover:bg-gray-300 items-center justify-center" mat-ripple>
+          <mat-icon class="!w-12 !h-12" [svgIcon]="_getSvgIcon(item)"></mat-icon>
         </button>
-        <app-text-editable-value [editing]="_renamingFolder() === item.id" (beginRenaming)="_beginRename(item.id)" [value]="item.name" (valueChange)="_confirmRename(item.id, $event)" />
+        <app-text-editable-value [editing]="_renamingOptionId() === item.id" (beginRenaming)="_beginRename(item.id)" [value]="item.name" (valueChange)="_confirmRename(item, $event)" />
       }
 
     </div>

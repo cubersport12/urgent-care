@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
-import { faSun, faMoon, faPlus, faTrash, faFolder, faSpinner, faFileContract, faSlidersH, faFileCircleCheck, faVideo } from '@fortawesome/free-solid-svg-icons';
+import { faSun, faMoon, faPlus, faTrash, faFolder, faSpinner, faCheck, faTimes, faFileContract, faSlidersH, faFileCircleCheck, faVideo } from '@fortawesome/free-solid-svg-icons';
 import { icon, library } from '@fortawesome/fontawesome-svg-core';
 
 @Injectable({ providedIn: 'root' })
@@ -20,7 +20,9 @@ export class AppIconsRegistry {
       faFileContract,
       faSlidersH,
       faFileCircleCheck,
-      faVideo
+      faVideo,
+      faCheck,
+      faTimes
     ];
 
     icons.forEach((iconDefinition) => {
