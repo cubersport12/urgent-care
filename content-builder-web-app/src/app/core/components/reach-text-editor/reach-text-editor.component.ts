@@ -37,7 +37,7 @@ export class ReachTextEditorComponent extends BaseControlValueAccessor<string> {
     },
     {
       import: 'attributors/style/align',
-      whitelist: ['center', 'right', 'justify', 'left']
+      whitelist: ['center', 'right', 'justify', false]
     }
   ];
 
@@ -58,7 +58,7 @@ export class ReachTextEditorComponent extends BaseControlValueAccessor<string> {
 
       [{ color: [] }, { background: [] }], // dropdown with defaults from theme
       [{ font: [] }],
-      [{ align: ['center', 'right', 'justify', 'left'] }],
+      [{ align: ['center', 'right', 'justify', false] }],
 
       ['clean'] // remove formatting button
     ]
