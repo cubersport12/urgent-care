@@ -1,0 +1,27 @@
+name: Angular CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Проверка кода
+        uses: actions/checkout@v2
+
+      - name: Установка Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20' # Укажите нужную версию Node.js
+
+      - name: Установка зависимостей
+        run: npm install
+        working-directory: ./content-builder-web-app
+
+      - name: Сборка приложения
+        run: npm run build --prod
+        working-directory: ./content-builder-web-app
