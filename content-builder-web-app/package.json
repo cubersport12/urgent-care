@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --no-live-reload",
-    "build": "ng build --base-href=content-builder --configuration production",
+    "build": "ng build --base-href='/' --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
