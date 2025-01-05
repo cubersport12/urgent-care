@@ -1,11 +1,10 @@
-import { AppFolderVm, NullableValue } from '@/core/utils';
+import { AppFolderVm, generateGUID, NullableValue } from '@/core/utils';
 import { inject, Injectable } from '@angular/core';
 import { Action, Selector, State, StateContext } from '@ngxs/store';
 import { FoldersActions } from './actions';
 import { AppFoldersStorageService } from '@/core/api';
 import { tap } from 'rxjs';
 import { patch } from '@ngxs/store/operators';
-import uniqid from 'uniqid';
 
 const getNullableId = (id: NullableValue<string>) => id ?? '';
 
@@ -31,7 +30,7 @@ export class FoldersState {
   @Action(FoldersActions.CreateFolder, { cancelUncompleted: true })
   private _createFolder(ctx: StateContext<FoldersStateModel>, action: FoldersActions.CreateFolder) {
     const { parentId, payload } = action;
-    const newId = action.payload.id ?? uniqid();
+    const newId = action.payload.id ?? generateGUID();
     const newFolder = { ...payload, id: newId, parentId: parentId ?? null } as AppFolderVm;
     return this._foldersStorage.createFolder(newFolder)
       .pipe(tap(() => {

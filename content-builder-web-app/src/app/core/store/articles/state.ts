@@ -1,11 +1,10 @@
-import { AppArticleVm, NullableValue } from '@/core/utils';
+import { AppArticleVm, generateGUID, NullableValue } from '@/core/utils';
 import { inject, Injectable } from '@angular/core';
 import { Action, Selector, State, StateContext } from '@ngxs/store';
 import { ArticlesActions } from './actions';
 import { AppArticlesStorageService } from '@/core/api';
 import { append, patch, removeItem, updateItem } from '@ngxs/store/operators';
 import { tap } from 'rxjs';
-import uniqid from 'uniqid';
 
 type ArticlesStateModel = {
   articles?: AppArticleVm[];
@@ -40,7 +39,7 @@ export class ArticlesState {
 
   @Action(ArticlesActions.CreateArticle, { cancelUncompleted: true })
   private _createArticle(ctx: StateContext<ArticlesStateModel>, { payload }: ArticlesActions.CreateArticle) {
-    const id = payload.id ?? uniqid();
+    const id = payload.id ?? generateGUID();
     const newArticle = {
       ...payload,
       id

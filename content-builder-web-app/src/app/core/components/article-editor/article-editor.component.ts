@@ -7,8 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { ReachTextEditorComponent } from '../reach-text-editor';
 import { AppFilesStorageService } from '@/core/api';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { AppArticleVm } from '@/core/utils';
-import uniqid from 'uniqid';
+import { AppArticleVm, generateGUID } from '@/core/utils';
 import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions } from '@/core/store';
 import { mergeMap } from 'rxjs';
@@ -75,7 +74,7 @@ export class ArticleEditorComponent {
   protected _submit(): void {
     const { html, name } = this._form.getRawValue();
     const blob = new Blob([html!], { type: 'text/html' });
-    const id = this._dialogData.id ?? uniqid();
+    const id = this._dialogData.id ?? generateGUID();
     const action = this._dialogData.id
       ? this._store.dispatch(new ArticlesActions.UpdateArticle(id, { name: name!, parentId: this._dialogData.parentId }))
       : this._store.dispatch(new ArticlesActions.CreateArticle({
