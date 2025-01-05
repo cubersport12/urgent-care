@@ -38,10 +38,9 @@ jobs:
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
-        working-directory: ./content-builder-web-app
         with:
           # Upload entire repository
-          path: ./dist/browser
+          path: ./content-builder-web-app/dist/browser
 
   deploy:
     runs-on: ubuntu-latest
