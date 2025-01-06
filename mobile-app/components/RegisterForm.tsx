@@ -2,8 +2,6 @@ import { Button, ButtonIcon, ButtonText } from './ui/button';
 import { Heading } from './ui/heading';
 import { AlertCircleIcon, CloseIcon, Icon } from './ui/icon';
 import { Text } from './ui/text';
-import { auth } from '@/FirebaseConfig';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { ModalBackdrop, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Modal } from './ui/modal';
 import { Formik } from 'formik';
 import { View } from 'react-native';
@@ -11,6 +9,7 @@ import { FormControl, FormControlError, FormControlErrorIcon, FormControlErrorTe
 import { AtSign } from 'lucide-react-native';
 import { Input, InputField } from './ui/input';
 import { useState } from 'react';
+import { supabase } from '@/supabase';
 
 type RegisterFormData = {
   email: string;
@@ -22,9 +21,9 @@ const RegisterForm = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
   const [error, setError] = useState<string | null>(null);
   const handleRegister = async (data: RegisterFormData) => {
     try {
-      const credential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      if (credential.user) {
-        await signInWithEmailAndPassword(auth, data.email, data.password);
+      const response = await supabase.auth.signUp({ email: data.email, password: data.password }); // await createUserWithEmailAndPassword(auth, data.email, data.password);
+      if (response?.data?.user) {
+        await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
         onClose();
       }
     }

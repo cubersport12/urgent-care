@@ -6,29 +6,35 @@ import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 import LoginScreen from './screens/LoginScreen';
-import { auth } from '@/FirebaseConfig';
 import { SafeAreaView } from 'react-native';
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { supabase } from '@/supabase';
+import { Session } from '@supabase/supabase-js';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [isAuth, setIsAuth] = useState<boolean>(false);
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
   const colorScheme = 'dark';
   const [loaded] = useFonts({
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf')
   });
 
-  const onAuthStateChanged = (user: unknown) => {
-    setIsAuth(user != null);
+  const onAuthStateChanged = (user: Session | null) => {
+    setSession(user);
   };
 
   useEffect(() => {
-    return auth.onAuthStateChanged(onAuthStateChanged);
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      onAuthStateChanged(session);
+    });
+
+    void supabase.auth.onAuthStateChange((_event, session) => {
+      onAuthStateChanged(session);
+    });
   }, []);
 
   useEffect(() => {
@@ -37,7 +43,7 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  if (!loaded) {
+  if (!loaded || session === undefined) {
     return null;
   }
 
@@ -46,7 +52,7 @@ export default function RootLayout() {
       <GluestackUIProvider mode={colorScheme}>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           {
-            isAuth
+            session != null
               ? (
                   <>
                     <Stack>

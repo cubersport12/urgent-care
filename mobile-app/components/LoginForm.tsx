@@ -5,8 +5,6 @@ import {
   FormControlError,
   FormControlErrorIcon,
   FormControlErrorText,
-  FormControlHelper,
-  FormControlHelperText,
   FormControlLabel,
   FormControlLabelText
 } from './ui/form-control';
@@ -17,8 +15,6 @@ import { Text } from './ui/text';
 import { View } from 'react-native';
 import { LogIn, AtSign, Chrome } from 'lucide-react-native';
 import { HStack } from './ui/hstack';
-import { signInWithEmailAndPassword, signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '@/FirebaseConfig';
 import { useEffect, useState } from 'react';
 import {
   GoogleSignin,
@@ -29,6 +25,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import { Center } from './ui/center';
 import RegisterForm from './RegisterForm';
+import { supabase } from '@/supabase';
 
 type LoginFormData = {
   email: string;
@@ -40,11 +37,10 @@ const LoginEmailForm = () => {
   const [isOpenRegister, setIsOpenRegister] = useState(false);
   const handleSignIn = async (data: LoginFormData) => {
     try {
-      await signInWithEmailAndPassword(
-        auth,
-        data.email,
-        data.password
-      );
+      await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password
+      });
     }
     catch (error) {
       const errorString = String(error);
@@ -193,8 +189,10 @@ const GoogleLoginButton = () => {
       const response = await GoogleSignin.signIn();
 
       if (isSuccessResponse(response)) {
-        const credential = GoogleAuthProvider.credential(response.data.idToken);
-        await signInWithCredential(auth, credential);
+        await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: response.data.idToken ?? ''
+        });
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       else if (isNoSavedCredentialFoundResponse(response as any)) {
