@@ -1,26 +1,43 @@
 <div class="flex gap-1 p-1 flex-wrap">
-  @for (item of _options(); track $index) {
-    <div class="flex flex-col w-24 gap-1 items-center relative">
-      @if (_isRenamePending(item.id)()) {
-        <app-skeleton shape="circle" size="48px" />
-        <app-skeleton height="20px" borderRadius="5px" width="96px" />
-      } @else {
-        <button class="!absolute top-0 right-1 w-4 h-4" mat-ripple [matMenuTriggerFor]="menu">
-          <mat-icon class="!w-full !h-full" svgIcon="sliders" />
-        </button>
-        <mat-menu #menu>
-          <button mat-menu-item (click)="_delete(item)">
-            <mat-icon class="!w-4 !h-4" svgIcon="trash" />
-            Удалить
+  @if (_fetching()) {
+    @for (item of _getRandomArray(); track item) {
+      <ng-container [ngTemplateOutlet]="styledSkeleton"></ng-container>
+    }
+
+    <ng-template #styledSkeleton>
+      <div class="flex flex-col w-24 gap-1 items-center relative">
+        <ng-container [ngTemplateOutlet]="skeletonItem"></ng-container>
+      </div>
+    </ng-template>
+  } @else {
+    @for (item of _options(); track $index) {
+      <div class="flex flex-col w-24 gap-1 items-center relative">
+        @if (_isPending(item.id)()) {
+          <ng-container [ngTemplateOutlet]="skeletonItem"></ng-container>
+        } @else {
+          <button class="!absolute top-0 right-1 w-4 h-4" mat-ripple [matMenuTriggerFor]="menu">
+            <mat-icon class="!w-full !h-full" svgIcon="sliders" />
           </button>
-        </mat-menu>
+          <mat-menu #menu>
+            <button mat-menu-item (click)="_delete(item)">
+              <mat-icon class="!w-4 !h-4" svgIcon="trash" />
+              Удалить
+            </button>
+          </mat-menu>
 
-        <button (click)="_open(item)" class="flex p-1 flex-col hover:bg-gray-300 items-center justify-center" mat-ripple>
-          <mat-icon class="!w-12 !h-12" [svgIcon]="_getSvgIcon(item)"></mat-icon>
-        </button>
-        <app-text-editable-value [editing]="_renamingOptionId() === item.id" (beginRenaming)="_beginRename(item.id)" [value]="item.name" (valueChange)="_confirmRename(item, $event)" />
-      }
+          <button (click)="_open(item)" class="flex p-1 flex-col hover:bg-gray-300 items-center justify-center" mat-ripple>
+            <mat-icon class="!w-12 !h-12" [svgIcon]="_getSvgIcon(item)"></mat-icon>
+          </button>
+          <app-text-editable-value [editing]="_affectOptionId() === item.id" (beginRenaming)="_beginRename(item.id)" [value]="item.name" (valueChange)="_confirmRename(item, $event)" />
+        }
 
-    </div>
+      </div>
+    }
   }
 </div>
+
+<ng-template #skeletonItem>
+  <app-skeleton shape="circle" size="48px" />
+  <app-skeleton height="20px" borderRadius="5px" width="96px" />
+</ng-template>
+

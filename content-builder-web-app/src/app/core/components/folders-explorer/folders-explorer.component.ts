@@ -9,6 +9,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TextEditableValueComponent } from '../text-editable-value';
 import { SkeletonComponent } from '../skeleton';
 import { ArticleEditorService } from '../article-editor';
+import { Observable } from 'rxjs';
+import { NgTemplateOutlet } from '@angular/common';
+import { random, range } from 'lodash';
 
 type OptionType = (AppFolderVm | AppArticleVm) & { type: 'folder' | 'article' };
 
@@ -21,7 +24,8 @@ type OptionType = (AppFolderVm | AppArticleVm) & { type: 'folder' | 'article' };
     ReactiveFormsModule,
     TextEditableValueComponent,
     SkeletonComponent,
-    MatMenuModule
+    MatMenuModule,
+    NgTemplateOutlet
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './folders-explorer.component.html',
@@ -32,15 +36,20 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
   private readonly _articlesEditor = inject(ArticleEditorService);
-  protected readonly _renamingOptionId = signal<NullableValue<string>>(null);
+  protected readonly _getRandomArray = () => range(0, random(3, 10), 1);
+  protected readonly _affectOptionId = signal<NullableValue<string>>(null);
 
-  protected readonly _isRenamePending = (folderId: string) => computed(() => {
-    const renaming = this._renamingOptionId();
+  protected readonly _isPending = (folderId: string) => computed(() => {
+    const renaming = this._affectOptionId();
     const dispatchedFolder = this._dispatched.isDispatched(FoldersActions.UpdateFolder)();
     const dispatchedArticle = this._dispatched.isDispatched(ArticlesActions.UpdateArticle)();
-    const dispatched = dispatchedFolder || dispatchedArticle;
+    const deletingFolder = this._dispatched.isDispatched(FoldersActions.DeleteFolder)();
+    const deletingArticle = this._dispatched.isDispatched(ArticlesActions.DeleteArticle)();
+    const dispatched = dispatchedFolder || dispatchedArticle || deletingFolder || deletingArticle;
     return renaming === folderId && dispatched;
   });
+
+  protected readonly _fetching = computed(() => this._dispatched.isDispatched(FoldersActions.FetchFolders)() || this._dispatched.isDispatched(ArticlesActions.FetchArticles)());
 
   protected readonly _options = computed<OptionType[]>(() => {
     const folders = this._folders() ?? [];
@@ -98,13 +107,13 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
       case 'folder':
         this._store.dispatch(new FoldersActions.UpdateFolder(option.id, { name: name ?? '' }))
           .subscribe(() => {
-            this._renamingOptionId.set(null);
+            this._affectOptionId.set(null);
           });
         break;
       case 'article':
         this._store.dispatch(new ArticlesActions.UpdateArticle(option.id, { name: name ?? '' }))
           .subscribe(() => {
-            this._renamingOptionId.set(null);
+            this._affectOptionId.set(null);
           });
         break;
       default:
@@ -124,19 +133,24 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
   }
 
   protected _delete(option: OptionType): void {
+    this._affectOptionId.set(option.id);
+    let s: NullableValue<Observable<void>>;
     switch (option.type) {
       case 'folder':
-        this._store.dispatch(new FoldersActions.DeleteFolder(option.id));
+        s = this._store.dispatch(new FoldersActions.DeleteFolder(option.id));
         break;
       case 'article':
-        this._store.dispatch(new ArticlesActions.DeleteArticle(option.id));
+        s = this._store.dispatch(new ArticlesActions.DeleteArticle(option.id));
         break;
       default:
         throw new Error('Unknown option type');
     }
+    s?.subscribe(() => {
+      this._affectOptionId.set(null);
+    });
   }
 
   protected _beginRename(folderId: string): void {
-    this._renamingOptionId.set(folderId);
+    this._affectOptionId.set(folderId);
   }
 }

@@ -3,13 +3,19 @@
     <mat-label>Наименование</mat-label>
     <input matInput [formControl]="_form.controls.name">
   </mat-form-field>
-  <app-reach-text-editor class="grow overflow-auto" [formControl]="_form.controls.html" />
+  <button mat-flat-button color="primary" (click)="_preventClick($event);_openFile()">
+    <mat-icon svgIcon="file-contract" />
+    Выбрать файл
+  </button>
+  @if (_trustedHtml();as html) {
+    <iframe class="grow w-full overflow-auto" [srcdoc]="html"></iframe>
+  }
   <div class="w-full flex justify-end gap-1">
     <button [disabled]="_form.invalid || !_form.dirty || _isPending()" type="submit" mat-flat-button color="primary">
       <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />
       Сохранить
     </button>
-    <button mat-button color="warn" (click)="$event.preventDefault();$event.stopPropagation();_cancel()">
+    <button mat-button color="warn" (click)="_preventClick($event);_cancel()">
       <mat-icon svgIcon="xmark" />
       Закрыть
     </button>

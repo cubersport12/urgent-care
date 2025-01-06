@@ -1,16 +1,17 @@
-import { Component, computed, inject, Injectable } from '@angular/core';
+import { Component, computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { ReachTextEditorComponent } from '../reach-text-editor';
 import { AppFilesStorageService } from '@/core/api';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { AppArticleVm, generateGUID } from '@/core/utils';
+import { AppArticleVm, generateGUID, openFileAsHtml } from '@/core/utils';
 import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions } from '@/core/store';
 import { mergeMap } from 'rxjs';
+import { DomSanitizer } from '@angular/platform-browser';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
 @Injectable({
   providedIn: 'root'
@@ -38,8 +39,7 @@ export class ArticleEditorService {
     MatButton,
     MatIcon,
     MatFormFieldModule,
-    MatInputModule,
-    ReachTextEditorComponent
+    MatInputModule
   ],
   templateUrl: './article-editor.component.html',
   styles: ``
@@ -49,6 +49,8 @@ export class ArticleEditorComponent {
   private readonly _store = inject(Store);
   private readonly _dialogData = inject<AppArticleVm>(MAT_DIALOG_DATA);
   private readonly _ref = inject(MatDialogRef);
+  private readonly _sanitizer = inject(DomSanitizer);
+  private readonly _destroyRef = inject(DestroyRef);
   private readonly _dispatched = inject(AppLoading);
   protected readonly _isPending = computed(() => this._dispatched.isDispatched(ArticlesActions.CreateArticle)() || this._dispatched.isDispatched(ArticlesActions.UpdateArticle)());
   protected readonly _form = new FormGroup({
@@ -56,8 +58,18 @@ export class ArticleEditorComponent {
     html: new FormControl<string>('', Validators.required)
   });
 
+  private readonly _htmlValue = toSignal(this._form.controls.html.valueChanges);
+  protected readonly _trustedHtml = computed(() => {
+    const h = this._htmlValue() ?? '';
+    return this._sanitizer.bypassSecurityTrustHtml(h);
+  });
+
   constructor() {
     this._loadArticle();
+    this._form.controls.html.valueChanges.pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe((html) => {
+
+      });
   }
 
   private _loadArticle() {
@@ -69,6 +81,21 @@ export class ArticleEditorComponent {
           });
         });
     }
+  }
+
+  protected async _openFile() {
+    try {
+      const html = await openFileAsHtml();
+      this._form.patchValue({ html });
+    }
+    catch (e) {
+      console.error(e);
+    }
+  }
+
+  protected _preventClick(event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   protected _submit(): void {

@@ -3,6 +3,7 @@
 export * from './app-navbar';
 export * from './article-editor';
 export * from './folders-explorer';
+export * from './open-files';
 export * from './reach-text-editor';
 export * from './skeleton';
 export * from './text-editable-value';
