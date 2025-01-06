@@ -42,7 +42,8 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "baseUrl": "/urgent-care/mobile-app"
     }
   }
 }

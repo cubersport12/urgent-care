@@ -8,8 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "web:build": "npx expo export -p web && node node_modules/mv ./dist ../dist/mobile-app",
-    "web:move-to-dist": "node ./node_modules/mv/index.js ./dist ../dist/mobile-app",
+    "web:build": "npx expo export -p web --output-dir ../dist/mobile-app",
     "test": "jest --watchAll",
     "lint": "expo lint"
   },

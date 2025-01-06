@@ -35,11 +35,31 @@ jobs:
       - name: Сборка приложения
         run: npm run build
         working-directory: ./start-page
+  build_mobile_app:
+    runs-on: ubuntu-latest
+    name: Сборка Mobile App
+    needs: [build_start_page]
+    steps:
+      - name: Проверка кода
+        uses: actions/checkout@v2
+
+      - name: Установка Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20' # Укажите нужную версию Node.js
+
+      - name: Установка зависимостей
+        run: npm install
+        working-directory: ./mobile-app
+
+      - name: Сборка приложения
+        run: npm run web:build
+        working-directory: ./mobile-app
 
   build_content_builder:
     runs-on: ubuntu-latest
     name: Сборка Content Builder
-    needs: build_start_page
+    needs: [build_start_page, build_mobile_app]
     steps:
       - name: Проверка кода
         uses: actions/checkout@v2
