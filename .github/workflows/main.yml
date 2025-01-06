@@ -64,6 +64,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build_content_builder
     steps:
+      - name: Проверка кода
+        uses: actions/checkout@v2
+        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
