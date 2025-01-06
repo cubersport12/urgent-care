@@ -33,7 +33,7 @@ jobs:
         working-directory: ./start-page
 
       - name: Сборка приложения
-        run: npm run build --prod
+        run: npm run build
         working-directory: ./start-page
 
   build_content_builder:
@@ -54,14 +54,9 @@ jobs:
         working-directory: ./content-builder-web-app
 
       - name: Сборка приложения
-        run: npm run build --prod
+        run: npm run build
         working-directory: ./content-builder-web-app
 
-  deploy:
-    runs-on: ubuntu-latest
-    name: Deploy
-    needs: [build_start_page, build_content_builder]
-    steps:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -71,3 +66,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
