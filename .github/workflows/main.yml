@@ -56,13 +56,6 @@ jobs:
       - name: Сборка приложения
         run: npm run build
         working-directory: ./content-builder-web-app
-        
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [build_start_page, build_content_builder]
-    steps:
-      - name: Проверка кода
-        uses: actions/checkout@v2
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
