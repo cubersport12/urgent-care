@@ -16,30 +16,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build_start_page:
-    runs-on: ubuntu-latest
-    name: Сборка Start Page
-    steps:
-      - name: Проверка кода
-        uses: actions/checkout@v2
-
-      - name: Установка Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '20' # Укажите нужную версию Node.js
-
-      - name: Установка зависимостей
-        run: npm install
-        working-directory: ./start-page
-
-      - name: Сборка приложения
-        run: npm run build
-        working-directory: ./start-page
-
   build_content_builder:
     runs-on: ubuntu-latest
     name: Сборка Content Builder
-    needs: [build_start_page]
     steps:
       - name: Проверка кода
         uses: actions/checkout@v2
@@ -48,12 +27,20 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '20' # Укажите нужную версию Node.js
+      
+      - name: Установка зависимостей Start Page
+        run: npm install
+        working-directory: ./start-page
 
-      - name: Установка зависимостей
+      - name: Сборка приложения Start Page
+        run: npm run build
+        working-directory: ./start-page
+
+      - name: Установка зависимостей Content Builder
         run: npm install
         working-directory: ./content-builder-web-app
 
-      - name: Сборка приложения
+      - name: Сборка приложения Content Builder
         run: npm run build
         working-directory: ./content-builder-web-app
 
