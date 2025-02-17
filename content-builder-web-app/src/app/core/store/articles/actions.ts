@@ -18,6 +18,10 @@ export namespace ArticlesActions {
     constructor(public readonly payload: AppArticleVm) {}
   }
 
+  export class FetchAllArticles {
+    public static readonly type = '[Articles] FetchAllArticles';
+  }
+
   export class DeleteArticle {
     public static readonly type = '[Articles] DeleteArticle';
     constructor(public readonly articleId: string) {}

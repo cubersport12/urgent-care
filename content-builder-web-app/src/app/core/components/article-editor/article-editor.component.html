@@ -3,13 +3,54 @@
     <mat-label>Наименование</mat-label>
     <input matInput [formControl]="_form.controls.name">
   </mat-form-field>
-  <button mat-flat-button color="primary" (click)="_preventClick($event);_openFile()">
-    <mat-icon svgIcon="file-contract" />
-    Выбрать файл
-  </button>
-  @if (_trustedHtml();as html) {
-    <iframe class="grow w-full overflow-auto" [srcdoc]="html"></iframe>
-  }
+  <div class="flex gap-1">
+    <button mat-flat-button color="primary" (click)="_preventClick($event);_openFile()">
+      <mat-icon svgIcon="file-contract" />
+      Выбрать файл
+    </button>
+    @if (_form.value.html) {
+      <button mat-flat-button color="primary" (click)="_preventClick($event);_openHtmlContentInWindow()">
+        <mat-icon svgIcon="window-maximize" />
+        Просмотреть документ
+      </button>
+
+      @if (_convertMessages();as message) {
+        <button mat-mini-fab [title]="message" color="primary">
+          <mat-icon class="circle-exclamation" />
+        </button>
+      }
+    }
+  </div>
+  <div class="flex flex-col mt-3">
+    <mat-form-field>
+      <mat-label>Запускать по окончанию</mat-label>
+      <mat-select [formControl]="_form.controls.nextRunArticle">
+        @for(article of _allArticles(); track $index) {
+          <mat-option [value]="article.id">
+            {{article.name}}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-label>
+        Время на прочтение, мин
+      </mat-label>
+      <input [formControl]="_form.controls.timeRead" matInput type="number">
+    </mat-form-field>
+    <mat-checkbox [formControl]="_form.controls.disableWhileNotPrevComplete">
+      Блокировать, пока не прочитан пред.
+    </mat-checkbox>
+    <mat-checkbox [formControl]="_form.controls.hideWhileNotPrevComplete">
+      Скрывать, пока не прочитан пред.
+    </mat-checkbox>
+    <mat-checkbox [formControl]="_form.controls.includeToStatistics">
+      Участвует в статистике
+    </mat-checkbox>
+  </div>
+
+
+
   <div class="w-full flex justify-end gap-1">
     <button [disabled]="_form.invalid || !_form.dirty || _isPending()" type="submit" mat-flat-button color="primary">
       <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />

@@ -1,15 +1,27 @@
-export const openFileAsHtml = (): Promise<string> => {
+export const openFileAsBuffer = (mimeType?: string, readAs?: 'text' | 'buffer'): Promise<ArrayBuffer | string> => {
   const i = document.createElement('input');
   i.type = 'file';
-  i.accept = 'text/html';
-  return new Promise<string>((resolve, reject) => {
+  i.accept = mimeType ?? '*/*';
+  return new Promise<ArrayBuffer | string>((resolve, reject) => {
     const signal = new AbortController();
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    i.addEventListener('change', async () => {
+
+    i.addEventListener('change', () => {
       const file = i.files?.[0];
       if (file) {
-        const text = await file.text();
-        resolve(text);
+        switch (readAs) {
+          default:
+            void file.text()
+              .then((t) => {
+                resolve(t);
+              });
+            break;
+          case 'buffer':
+            void file.arrayBuffer()
+              .then((b) => {
+                resolve(b);
+              });
+            break;
+        }
       }
       else {
         reject(new Error('No file selected'));

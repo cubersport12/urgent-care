@@ -11,4 +11,9 @@ export type AppFolderVm = {
 
 export type AppArticleVm = {
   parentId?: NullableValue<string>;
+  nextRunArticle?: NullableValue<string>;
+  timeRead?: NullableValue<number>;
+  disableWhileNotPrevComplete?: NullableValue<boolean>;
+  hideWhileNotPrevComplete?: NullableValue<boolean>;
+  includeToStatistics?: NullableValue<boolean>;
 } & AppBaseVm;

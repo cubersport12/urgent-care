@@ -1,4 +1,5 @@
-<nav class="px-1 py-1 w-full flex flex-wrap gap-1 bg-primary">
+<nav class="px-1 py-1 w-full flex flex-wrap gap-2 bg-primary items-center">
+    <app-breadcrumbs [path]="_path()" (onItemClick)="_navigate($event)" labelKey="name" valueKey="id" />
     <button [disabled]="_isCreating()" size="sm" (click)="_createNewFolder()" mat-flat-button color="primary">
         <mat-icon [svgIcon]="_isCreating() ? 'spinner' : 'folder'"></mat-icon>
         Создать папку

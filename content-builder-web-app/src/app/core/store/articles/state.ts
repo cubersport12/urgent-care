@@ -5,6 +5,7 @@ import { ArticlesActions } from './actions';
 import { AppArticlesStorageService } from '@/core/api';
 import { append, patch, removeItem, updateItem } from '@ngxs/store/operators';
 import { tap } from 'rxjs';
+import { uniqBy } from 'lodash';
 
 type ArticlesStateModel = {
   articles?: AppArticleVm[];
@@ -17,6 +18,11 @@ type ArticlesStateModel = {
 })
 export class ArticlesState {
   private readonly _articlesStorage = inject(AppArticlesStorageService);
+
+  @Selector()
+  public static getAllArticles(state: ArticlesStateModel) {
+    return state.articles ?? [];
+  }
 
   @Selector()
   public static getArticles(state: ArticlesStateModel) {
@@ -71,4 +77,15 @@ export class ArticlesState {
         }));
       }));
   }
+
+  @Action(ArticlesActions.FetchAllArticles, { cancelUncompleted: true })
+  private _fetchAllArticles(ctx: StateContext<ArticlesStateModel>) {
+    return this._articlesStorage.fetchAllArticles()
+      .pipe(tap((r) => {
+        const { articles } = ctx.getState();
+        ctx.setState(patch({
+          articles: uniqBy<AppArticleVm>([...(articles ?? []), ...r], x => x.id)
+        }));
+      }));
+  };
 }

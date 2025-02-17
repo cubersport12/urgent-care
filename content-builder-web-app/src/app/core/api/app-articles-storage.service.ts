@@ -13,6 +13,10 @@ export class AppArticlesStorageService extends BaseStorage {
     return 'articles';
   }
 
+  public fetchAllArticles(): Observable<AppArticleVm[]> {
+    return this._fetch<AppArticleVm>(articleSchema);
+  }
+
   public fetchArticles(parentId: NullableValue<string>): Observable<AppArticleVm[]> {
     return this._fetch<AppArticleVm>(articleSchema, ref => parentId?.length ? ref.filter('parentId', 'eq', parentId) : ref.filter('parentId', 'is', null));
   }
