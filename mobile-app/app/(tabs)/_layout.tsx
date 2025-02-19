@@ -14,6 +14,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      initialRouteName="index"
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         tabBarButton: HapticTab,
@@ -33,9 +34,11 @@ export default function TabLayout() {
         })
       }}
     >
+      <Tabs.Screen name="index" options={{ tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen
-        name="index"
+        name="(home)"
         options={{
+          tabBarHideOnKeyboard: true,
           headerTitle: 'Главная',
           tabBarLabel: 'Главная',
           tabBarIcon: ({ color }) => <Icon as={House} size="xl" color={color} />
