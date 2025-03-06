@@ -1,34 +1,27 @@
 import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
-import { useArticles, useFolder, useFolders } from '@/hooks/api';
+import { DocumentKind } from '@/constants/DocumentKind';
+import { useFolders, useArticles, AppFolderVm, AppArticleVm } from '@/hooks/api';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Folder, FileCode, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronRight, FileCode, Folder } from 'lucide-react-native';
 
-export default function FolderExplorer() {
+export default function FolderScreen() {
   const { folderId } = useLocalSearchParams<{ folderId: string }>();
-  const { data } = useFolder(folderId);
-  const { data: folders } = useFolders(folderId);
-  const { data: articles } = useArticles(folderId);
-  const handlePressFolder = (folderId: string) => {
-    router.navigate({ pathname: '/[folderId]', params: { folderId: folderId } });
+  const { data: folders } = useFolders(folderId ?? '');
+  const { data: articles } = useArticles(folderId ?? '');
+  const handlePressFolder = (folder: AppFolderVm) => {
+    router.navigate({ pathname: '/[folderId]', params: { folderId: folder.id } });
+  };
+  const handlePressArticle = (article: AppArticleVm) => {
+    router.navigate({ pathname: '/[folderId]/[documentId]', params: { documentId: article.id, folderId: folderId, kind: DocumentKind.Article } });
   };
   const elementClasses = 'w-full flex justify-start border-b border-gray-400';
   return (
     <>
       <div className="flex flex-col justify-start p-2">
         {
-          data?.parentId && (
-            <div className="w-full flex justify-start">
-              <Button variant="link" onPress={() => handlePressFolder(data.parentId!)}>
-                <ButtonIcon as={ChevronLeft} />
-                <ButtonText>Назад</ButtonText>
-              </Button>
-            </div>
-          )
-        }
-        {
           folders?.map(folder => (
             <div className={elementClasses} key={folder.id}>
-              <Button variant="link" className="w-full" onPress={() => handlePressFolder(folder.id)}>
+              <Button variant="link" className="w-full" onPress={() => handlePressFolder(folder)}>
                 <ButtonIcon as={Folder} />
                 <ButtonText className="grow">{folder.name}</ButtonText>
                 <ButtonIcon size="lg" as={ChevronRight} />
@@ -39,7 +32,7 @@ export default function FolderExplorer() {
         {
           articles?.map(article => (
             <div className={elementClasses} key={article.id}>
-              <Button variant="link" className="w-full">
+              <Button variant="link" className="w-full" onPress={() => handlePressArticle(article)}>
                 <ButtonIcon as={FileCode} />
                 <ButtonText className="grow">{article.name}</ButtonText>
               </Button>

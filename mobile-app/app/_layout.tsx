@@ -55,7 +55,7 @@ export default function RootLayout() {
             session != null
               ? (
                   <>
-                    <Stack>
+                    <Stack initialRouteName="(tabs)">
                       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                       <Stack.Screen name="+not-found" />
                     </Stack>

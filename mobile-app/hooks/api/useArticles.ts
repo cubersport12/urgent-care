@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSupabaseFetch } from './useSupabaseFetch';
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
-import { AppArticleVm } from './types';
+import { AppArticleVm, NullableValue } from './types';
+import { supabase } from '@/supabase';
 
 const RELATION_NAME = 'articles';
 
@@ -15,5 +16,19 @@ export const useArticles = (parentId?: string) => {
     };
     void fetchArticles();
   }, [parentId]);
+  return response;
+};
+
+export const useFileContentString = (fileName: string) => {
+  const [response, setResponse] = useState<NullableValue<string>>();
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      const r = await supabase.storage.from('cubersport12').download(`public/${fileName}`);
+      setResponse(await r.data?.text());
+    };
+    void fetchContent();
+  }, [fileName]);
+
   return response;
 };

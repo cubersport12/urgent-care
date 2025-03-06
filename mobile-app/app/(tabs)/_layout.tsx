@@ -13,7 +13,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   return (
     <Tabs
-      initialRouteName="index"
+      initialRouteName="(explorer)"
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         tabBarButton: HapticTab,
@@ -35,9 +35,10 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="index" options={{ tabBarItemStyle: { display: 'none' } }} />
       <Tabs.Screen
-        name="(home)"
+        name="(explorer)"
         options={{
           tabBarHideOnKeyboard: true,
+          href: '/',
           headerTitle: 'Главная',
           tabBarLabel: 'Главная',
           tabBarIcon: ({ color }) => <Icon as={House} size="xl" color={color} />

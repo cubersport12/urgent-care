@@ -1,11 +1,11 @@
 import { Button, ButtonText } from '@/components/ui/button';
-import { AppFolderVm, useFolders } from '@/hooks/api';
+import { useFolders, AppFolderVm } from '@/hooks/api';
 import { router } from 'expo-router';
 
 export default function Index() {
   const { data } = useFolders();
-  const handlePressFolder = (f: AppFolderVm) => {
-    router.navigate({ pathname: '/[folderId]', params: { folderId: f.id } });
+  const handlePressFolder = (folder: AppFolderVm) => {
+    router.navigate({ pathname: `/[folderId]`, params: { folderId: folder.id } });
   };
   return (
     <div className="w-full h-full overflow-hidden relative">
