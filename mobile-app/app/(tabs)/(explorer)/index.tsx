@@ -1,3 +1,4 @@
+import { Box } from '@/components/ui/box';
 import { Button, ButtonText } from '@/components/ui/button';
 import { useFolders, AppFolderVm } from '@/hooks/api';
 import { router } from 'expo-router';
@@ -5,11 +6,11 @@ import { router } from 'expo-router';
 export default function Index() {
   const { data } = useFolders();
   const handlePressFolder = (folder: AppFolderVm) => {
-    router.navigate({ pathname: `/[folderId]`, params: { folderId: folder.id } });
+    router.navigate({ pathname: '/folders/[folderId]', params: { folderId: folder.id } });
   };
   return (
-    <div className="w-full h-full overflow-hidden relative">
-      <div className="flex flex-col gap-1 absolute right-3 bottom-3">
+    <Box className="w-full h-full overflow-hidden relative">
+      <Box className="flex flex-col gap-1 absolute right-3 bottom-3">
         {
           data?.map(folder => (
             <Button key={folder.id} onPress={() => handlePressFolder(folder)}>
@@ -17,7 +18,7 @@ export default function Index() {
             </Button>
           ))
         }
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

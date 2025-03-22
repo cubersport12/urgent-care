@@ -12,5 +12,6 @@ export class AppComponent {
 
   protected _goto(url: string): void {
     window.location.replace(url);
+
   }
 }

@@ -1,16 +1,17 @@
 import { DocumentKind } from '@/constants/DocumentKind';
-import { useFolder, useFolderPath } from '@/hooks/api';
-import { useGlobalSearchParams, useLocalSearchParams } from 'expo-router';
+import { useFolderPath } from '@/hooks/api';
+import { useGlobalSearchParams } from 'expo-router';
+import { ThemedText } from '../ThemedText';
 
 export default function ExplorerHeaderTitle() {
   const { folderId, documentId, kind } = useGlobalSearchParams<{ folderId: string; documentId?: string; kind?: DocumentKind }>();
 
   const { data } = useFolderPath(folderId);
   if (documentId == null) {
-    return <>{data?.map(x => x.name).join('/')}</>;
+    return <ThemedText>{data?.map(x => x?.name).join('/')}</ThemedText>;
   }
   if (kind === DocumentKind.Article) {
 
   }
-  return <>Adasd</>;
+  return <ThemedText>??</ThemedText>;
 }

@@ -3,6 +3,7 @@ import { useSupabaseFetch } from './useSupabaseFetch';
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { AppArticleVm, NullableValue } from './types';
 import { supabase } from '@/supabase';
+import { Platform } from 'react-native';
 
 const RELATION_NAME = 'articles';
 
@@ -25,7 +26,19 @@ export const useFileContentString = (fileName: string) => {
   useEffect(() => {
     const fetchContent = async () => {
       const r = await supabase.storage.from('cubersport12').download(`public/${fileName}`);
-      setResponse(await r.data?.text());
+      if (r.data instanceof Blob) {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          const text = reader.result as string;
+          setResponse(text);
+        };
+
+        reader.readAsText(r.data);
+      }
+      else {
+        throw new Error('File not found');
+      }
     };
     void fetchContent();
   }, [fileName]);
