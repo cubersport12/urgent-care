@@ -3,7 +3,6 @@ import { useSupabaseFetch } from './useSupabaseFetch';
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { AppArticleVm, NullableValue } from './types';
 import { supabase } from '@/supabase';
-import { Platform } from 'react-native';
 
 const RELATION_NAME = 'articles';
 
@@ -17,6 +16,29 @@ export const useArticles = (parentId?: string) => {
     };
     void fetchArticles();
   }, [parentId]);
+  return response;
+};
+
+export const fetchArticle = async (articleId: string) => {
+  const r = await useSupabaseFetch(RELATION_NAME, ref => ref.filter('id', 'eq', articleId));
+  return {
+    ...r,
+    data: r?.data?.[0]
+  } as Partial<PostgrestSingleResponse<AppArticleVm>>;
+};
+
+export const useArticle = (articleId: NullableValue<string>) => {
+  const [response, setResponse] = useState<Partial<PostgrestSingleResponse<AppArticleVm>>>({});
+
+  useEffect(() => {
+    if (articleId != null) {
+      const fetchArticles = async () => {
+        const result = await fetchArticle(articleId);
+        setResponse(result);
+      };
+      void fetchArticles();
+    }
+  }, [articleId]);
   return response;
 };
 
