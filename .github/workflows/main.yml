@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   build_content_builder:
+    environment:
+      name: github-pages
     runs-on: ubuntu-latest
     name: Сборка Content Builder
     steps:
