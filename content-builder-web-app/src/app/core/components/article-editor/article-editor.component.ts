@@ -37,6 +37,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { CirclePulseComponent } from '../circle-pulse';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
 import { NgClass } from '@angular/common';
+import { uniq } from 'lodash';
 
 @Injectable({
   providedIn: 'root'
@@ -130,7 +131,8 @@ export class ArticleEditorComponent {
   }
 
   private _parseLinks(html: string): string[] {
-    return html.match(/\[linkArticle:[^\]]+\]/g) ?? [];
+    // #uc:article:link1
+    return uniq(html.match(/(#uc:article:[^'"]*)/ig) ?? []);
   }
 
   protected _findArticleLinkForm(name: string): NullableValue<FormGroup<ArticleLinkFormType>> {
@@ -167,7 +169,11 @@ export class ArticleEditorComponent {
       timeRead: timeRead ?? 360,
       linksToArticles: linksToArticles ?? []
     });
-    this._form.setControl('linksToArticles', new FormArray<FormGroup<ArticleLinkFormType>>(linksToArticles?.map(x => new FormGroup({
+    this._setArtcilesLinksControls(linksToArticles ?? []);
+  }
+
+  private _setArtcilesLinksControls(articles: AppLinkToArticleVm[]) {
+    this._form.setControl('linksToArticles', new FormArray<FormGroup<ArticleLinkFormType>>(articles.map(x => new FormGroup({
       key: new FormControl<string>(x.key, { nonNullable: true }),
       articleId: new FormControl<string>(x.articleId, { nonNullable: true })
     })) ?? []));
@@ -197,7 +203,9 @@ export class ArticleEditorComponent {
   protected async _openFile() {
     try {
       const html = (await openFileAsBuffer('text/html')) as string;
-      this._form.patchValue({ html });
+      const linksToArticles = this._parseLinks(html).map(x => ({ key: x })) as AppLinkToArticleVm[];
+      this._form.patchValue({ html, linksToArticles });
+      this._setArtcilesLinksControls(linksToArticles);
       this._form.markAsDirty();
       this._form.controls.html.markAsDirty();
     }
