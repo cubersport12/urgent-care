@@ -10,5 +10,6 @@ export const articleSchema = z.object({
   timeRead: z.number().nullable(),
   disableWhileNotPrevComplete: z.boolean().nullable(),
   hideWhileNotPrevComplete: z.boolean().nullable(),
-  includeToStatistics: z.boolean().nullable()
+  includeToStatistics: z.boolean().nullable(),
+  linksToArticles: z.array(z.object({ key: z.string(), articleId: z.string() })).nullable()
 });

@@ -1,12 +1,15 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
   inject,
   Injectable,
+  linkedSignal,
   signal
 } from '@angular/core';
 import {
+  FormArray,
   FormControl,
   FormGroup,
   FormsModule,
@@ -18,19 +21,22 @@ import { MatIcon } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
+import { MatOption, MatSelectModule } from '@angular/material/select';
 import { AppFilesStorageService } from '@/core/api';
 import {
   MAT_DIALOG_DATA,
   MatDialog,
   MatDialogRef
 } from '@angular/material/dialog';
-import { AppArticleVm, generateGUID, NullableValue, openFileAsBuffer } from '@/core/utils';
+import { AppArticleVm, AppLinkToArticleVm, generateGUID, NullableValue, openFileAsBuffer } from '@/core/utils';
 import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions, ArticlesState } from '@/core/store';
 import { finalize, mergeMap, Observable } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { CirclePulseComponent } from '../circle-pulse';
+import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
+import { NgClass } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
@@ -48,6 +54,10 @@ export class ArticleEditorService {
   }
 }
 
+type ArticleLinkFormType = {
+  [key in keyof AppLinkToArticleVm]: FormControl<AppLinkToArticleVm[key]>;
+};
+
 @Component({
   selector: 'app-article-editor',
   imports: [
@@ -59,10 +69,17 @@ export class ArticleEditorService {
     MatCheckboxModule,
     MatSelectModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    MatMenu,
+    MatOption,
+    CirclePulseComponent,
+    MatMenuItem,
+    MatMenuTrigger,
+    NgClass
   ],
   templateUrl: './article-editor.component.html',
-  styles: ``
+  styles: ``,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ArticleEditorComponent {
   private readonly _appStorage = inject(AppFilesStorageService);
@@ -72,6 +89,7 @@ export class ArticleEditorComponent {
   private readonly _sanitizer = inject(DomSanitizer);
   private readonly _dispatched = inject(AppLoading);
   private readonly _isUploadingFile = signal(false);
+  private readonly _destroyRef = inject(DestroyRef);
 
   protected readonly _allArticles = computed(() => {
     const result = this._store.selectSignal(ArticlesState.getAllArticles)();
@@ -93,14 +111,17 @@ export class ArticleEditorComponent {
     disableWhileNotPrevComplete: new FormControl<boolean>(false),
     hideWhileNotPrevComplete: new FormControl<boolean>(true),
     includeToStatistics: new FormControl<boolean>(true),
-    timeRead: new FormControl<number>(360)
+    timeRead: new FormControl<number>(360),
+    linksToArticles: new FormArray<FormGroup<ArticleLinkFormType>>([])
   });
 
-  private readonly _htmlValue = toSignal(this._form.controls.html.valueChanges);
+  private readonly _htmlValue = toSignal(this._form.controls.html.valueChanges.pipe(takeUntilDestroyed(this._destroyRef)));
   protected readonly _trustedHtml = computed(() => {
     const h = this._htmlValue() ?? '';
     return this._sanitizer.bypassSecurityTrustHtml(h);
   });
+
+  protected readonly _linksNames = linkedSignal(() => this._parseLinks(this._htmlValue() ?? ''));
 
   constructor() {
     this._loadArticle();
@@ -108,16 +129,48 @@ export class ArticleEditorComponent {
     this._store.dispatch(new ArticlesActions.FetchAllArticles());
   }
 
+  private _parseLinks(html: string): string[] {
+    return html.match(/\[linkArticle:[^\]]+\]/g) ?? [];
+  }
+
+  protected _findArticleLinkForm(name: string): NullableValue<FormGroup<ArticleLinkFormType>> {
+    const { linksToArticles: { controls } } = this._form.controls;
+    return controls.find(x => x.value.key === name);
+  }
+
+  protected _addOrUpdateLink(key: string, articleId: string): void {
+    let form = this._findArticleLinkForm(key);
+    if (form == null) {
+      form = new FormGroup<ArticleLinkFormType>({
+        key: new FormControl<string>(key, { nonNullable: true }),
+        articleId: new FormControl<string>(articleId, { nonNullable: true })
+      });
+      this._form.controls.linksToArticles.push(form);
+    }
+    else {
+      form.patchValue({
+        key,
+        articleId
+      });
+    }
+    form?.markAsDirty({ emitEvent: true });
+  }
+
   private _reset(): void {
-    const { name, disableWhileNotPrevComplete, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead } = this._dialogData;
+    const { name, disableWhileNotPrevComplete, linksToArticles, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead } = this._dialogData;
     this._form.reset({
       name,
-      disableWhileNotPrevComplete,
-      hideWhileNotPrevComplete,
-      includeToStatistics,
+      disableWhileNotPrevComplete: disableWhileNotPrevComplete ?? false,
+      hideWhileNotPrevComplete: hideWhileNotPrevComplete ?? true,
+      includeToStatistics: includeToStatistics ?? true,
       nextRunArticle,
-      timeRead
+      timeRead: timeRead ?? 360,
+      linksToArticles: linksToArticles ?? []
     });
+    this._form.setControl('linksToArticles', new FormArray<FormGroup<ArticleLinkFormType>>(linksToArticles?.map(x => new FormGroup({
+      key: new FormControl<string>(x.key, { nonNullable: true }),
+      articleId: new FormControl<string>(x.articleId, { nonNullable: true })
+    })) ?? []));
   }
 
   private _loadArticle() {
@@ -127,6 +180,7 @@ export class ArticleEditorComponent {
         .subscribe((blob) => {
           void blob?.text().then((r) => {
             this._form.controls.html.setValue(r, { emitEvent: false });
+            this._linksNames.set(this._parseLinks(r));
           });
         });
     }
@@ -158,7 +212,7 @@ export class ArticleEditorComponent {
   }
 
   protected _submit(): void {
-    const { html, name, disableWhileNotPrevComplete, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead } = this._form.getRawValue();
+    const { html, name, disableWhileNotPrevComplete, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead, linksToArticles } = this._form.getRawValue();
     const blob = new Blob([html!], { type: 'text/html' });
     const id = this._dialogData.id ?? generateGUID();
     const action = this._dialogData.id
@@ -170,7 +224,8 @@ export class ArticleEditorComponent {
             hideWhileNotPrevComplete,
             includeToStatistics,
             nextRunArticle,
-            timeRead
+            timeRead,
+            linksToArticles
           })
         )
       : this._store.dispatch(
@@ -182,7 +237,8 @@ export class ArticleEditorComponent {
             hideWhileNotPrevComplete,
             includeToStatistics,
             nextRunArticle,
-            timeRead
+            timeRead,
+            linksToArticles
           })
         );
 

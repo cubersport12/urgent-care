@@ -9,6 +9,11 @@ export type AppFolderVm = {
   parentId?: NullableValue<string>;
 } & AppBaseVm;
 
+export type AppLinkToArticleVm = {
+  key: string;
+  articleId: string;
+};
+
 export type AppArticleVm = {
   parentId?: NullableValue<string>;
   nextRunArticle?: NullableValue<string>;
@@ -16,4 +21,5 @@ export type AppArticleVm = {
   disableWhileNotPrevComplete?: NullableValue<boolean>;
   hideWhileNotPrevComplete?: NullableValue<boolean>;
   includeToStatistics?: NullableValue<boolean>;
+  linksToArticles: NullableValue<AppLinkToArticleVm[]>;
 } & AppBaseVm;
