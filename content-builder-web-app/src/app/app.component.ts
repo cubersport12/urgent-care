@@ -37,8 +37,8 @@ export class AppComponent {
 
   private async _initialize() {
     await this._supabase.client.auth.signInWithPassword({
-      email: 'ivanovaa@mir-omsk.ru',
-      password: '123456'
+      email: 'test@yandex.ru',
+      password: 'test'
     });
   }
 
