@@ -16,7 +16,9 @@ import { FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/fo
       multi: true
     }
   ],
-  styles: ``
+  host: {
+    class: 'w-full block'
+  }
 })
 export class TextEditableValueComponent extends BaseControlValueAccessor<string> {
   private readonly _target = viewChild<ElementRef<HTMLInputElement>>('input');

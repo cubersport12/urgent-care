@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, signal } from '@angular/core';
 import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions, ArticlesState, FoldersActions, FoldersState } from '@/core/store';
 import { MatIcon } from '@angular/material/icon';
@@ -11,9 +11,13 @@ import { SkeletonComponent } from '../skeleton';
 import { ArticleEditorService } from '../article-editor';
 import { Observable } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
-import { random, range } from 'lodash';
+import { orderBy, random, range } from 'lodash';
+import { CdkDropList, CdkDrag, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
-type OptionType = (AppFolderVm | AppArticleVm) & { type: 'folder' | 'article' };
+// type OptionType = (AppFolderVm | AppArticleVm) & { type: 'folder' | 'article' };
+type FolderOptionType = AppFolderVm & { type?: 'folder' };
+type ArticleOptionType = AppArticleVm & { type?: 'article' };
+type OptionType = FolderOptionType | ArticleOptionType;
 
 @Component({
   selector: 'app-folders-explorer',
@@ -25,7 +29,9 @@ type OptionType = (AppFolderVm | AppArticleVm) & { type: 'folder' | 'article' };
     TextEditableValueComponent,
     SkeletonComponent,
     MatMenuModule,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    CdkDropList,
+    CdkDrag
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './folders-explorer.component.html',
@@ -51,10 +57,14 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
 
   protected readonly _fetching = computed(() => this._dispatched.isDispatched(FoldersActions.FetchFolders)() || this._dispatched.isDispatched(ArticlesActions.FetchArticles)());
 
-  protected readonly _options = computed<OptionType[]>(() => {
+  protected readonly _options = linkedSignal<OptionType[]>(() => {
     const folders = this._folders() ?? [];
     const articles = this._articles() ?? [];
-    return [...folders.map(x => ({ ...x, type: 'folder' } satisfies OptionType)), ...articles.map(x => ({ ...x, type: 'article' } satisfies OptionType))];
+    console.info(folders, articles);
+    return orderBy([
+      ...folders.map(x => ({ ...x, type: 'folder' } satisfies OptionType)),
+      ...articles.map(x => ({ ...x, type: 'article' } satisfies OptionType))
+    ], x => x.order);
   });
 
   protected readonly _folders = computed(() => {
@@ -152,5 +162,23 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
 
   protected _beginRename(folderId: string): void {
     this._affectOptionId.set(folderId);
+  }
+
+  protected _handleDrop(event: CdkDragDrop<OptionType[]>) {
+    const options = this._options();
+    moveItemInArray(options, event.previousIndex, event.currentIndex);
+    const actions: Array<FoldersActions.UpdateFolder | ArticlesActions.UpdateArticle> = [];
+    options.forEach((option, index) => {
+      const toUpdate = { ...option };
+      delete toUpdate.type;
+      toUpdate.order = index;
+      if (option.type === 'folder') {
+        actions.push(new FoldersActions.UpdateFolder(option.id, toUpdate));
+      }
+      else if (option.type === 'article') {
+        actions.push(new ArticlesActions.UpdateArticle(option.id, toUpdate));
+      }
+    });
+    this._store.dispatch(actions);
   }
 }

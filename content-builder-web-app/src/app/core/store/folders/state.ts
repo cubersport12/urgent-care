@@ -67,7 +67,7 @@ export class FoldersState {
     return Object.values(model.folders).flat();
   }
 
-  @Action(FoldersActions.UpdateFolder, { cancelUncompleted: true })
+  @Action(FoldersActions.UpdateFolder)
   private _updateFolder(ctx: StateContext<FoldersStateModel>, action: FoldersActions.UpdateFolder) {
     const state = ctx.getState();
     const { folderId, payload } = action;

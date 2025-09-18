@@ -3,7 +3,7 @@ export type NullableValue<T> = T | null | undefined;
 export type AppIdentity = {
   id: string;
 };
-export type AppBaseVm = { name: string } & AppIdentity;
+export type AppBaseVm = { name: string; order?: number } & AppIdentity;
 
 export type AppFolderVm = {
   parentId?: NullableValue<string>;

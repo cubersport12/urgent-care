@@ -1,4 +1,4 @@
-<div class="flex gap-1 p-1 flex-wrap">
+<div class="flex gap-1 p-1 flex-wrap explorer" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="_handleDrop($event)">
   @if (_fetching()) {
     @for (item of _getRandomArray(); track item) {
       <ng-container [ngTemplateOutlet]="styledSkeleton"></ng-container>
@@ -11,7 +11,7 @@
     </ng-template>
   } @else {
     @for (item of _options(); track $index) {
-      <div class="flex flex-col w-24 gap-1 items-center relative">
+      <div class="flex flex-col w-24 gap-1 items-center relative" cdkDrag [cdkDragData]="item">
         @if (_isPending(item.id)()) {
           <ng-container [ngTemplateOutlet]="skeletonItem"></ng-container>
         } @else {
@@ -25,7 +25,7 @@
             </button>
           </mat-menu>
 
-          <button (click)="_open(item)" class="flex p-1 flex-col hover:bg-gray-300 items-center justify-center" mat-ripple>
+          <button (click)="_open(item)" class="flex explorer-item p-1 flex-col hover:bg-gray-300 items-center justify-center" mat-ripple>
             <mat-icon class="!w-12 !h-12" [svgIcon]="_getSvgIcon(item)"></mat-icon>
           </button>
           <app-text-editable-value [editing]="_affectOptionId() === item.id" (beginRenaming)="_beginRename(item.id)" [value]="item.name" (valueChange)="_confirmRename(item, $event)" />
