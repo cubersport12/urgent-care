@@ -43,7 +43,7 @@ export abstract class BaseStorage {
 
       const r = filterCallback ? filterCallback(select) : select;
       r.then(({ data }) => {
-        obs.next(data?.map(d => zod.parse(d) as T));
+        obs.next(data?.map(d => zod.parse(d) as T) ?? []);
         obs.complete();
       });
     });
