@@ -1,1 +1,28 @@
-<p>test-editor works!</p>
+<div class="flex flex-col w-full h-full overflow-hidden gap-1 p-2">
+  <div class="flex w-full">
+    <button mat-flat-button color="primary">
+      <mat-icon svgIcon="plus" />
+      Вопрос
+    </button>
+  </div>
+  <form class="flex flex-col h-full w-full gap-1 p-4 overflow-hidden" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
+    <mat-form-field appearance="fill">
+      <mat-label>Наименование</mat-label>
+      <input matInput [formControl]="_form.controls.name">
+    </mat-form-field>
+    <app-test-conditions-builder [formControl]="_form.controls.conditions" />
+  </form>
+  <div class="grow overflow-auto">
+
+  </div>
+  <div class="flex w-full justify-end gap-1">
+    <button [disabled]="_form.invalid || !_form.dirty || _isPending()" (click)="_handleSubmit()" type="submit" mat-flat-button color="primary">
+      <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />
+      Сохранить
+    </button>
+    <button mat-button color="warn" (click)="_handleClose()">
+      <mat-icon svgIcon="xmark" />
+      Закрыть
+    </button>
+  </div>
+</div>

@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, signal } from '@angular/core';
 import { Store } from '@ngxs/store';
-import { AppLoading, ArticlesActions, ArticlesState, FoldersActions, FoldersState } from '@/core/store';
+import { AppLoading, ArticlesActions, ArticlesState, FoldersActions, FoldersState, TestsActions, TestsState } from '@/core/store';
 import { MatIcon } from '@angular/material/icon';
 import { MatRipple } from '@angular/material/core';
 import { MatMenuModule } from '@angular/material/menu';
-import { AppArticleVm, AppFolderVm, BaseRoutedClass, FoldersExplorerService, NullableValue } from '@/core/utils';
+import { AppArticleVm, AppFolderVm, AppTestVm, BaseRoutedClass, FoldersExplorerService, NullableValue } from '@/core/utils';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TextEditableValueComponent } from '../text-editable-value';
 import { SkeletonComponent } from '../skeleton';
@@ -13,11 +13,13 @@ import { Observable } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
 import { orderBy, random, range } from 'lodash';
 import { CdkDropList, CdkDrag, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { TestsEditorService } from '../test-editor';
 
 // type OptionType = (AppFolderVm | AppArticleVm) & { type: 'folder' | 'article' };
 type FolderOptionType = AppFolderVm & { type?: 'folder' };
 type ArticleOptionType = AppArticleVm & { type?: 'article' };
-type OptionType = FolderOptionType | ArticleOptionType;
+type TestOptionType = AppTestVm & { type?: 'test' };
+type OptionType = FolderOptionType | ArticleOptionType | TestOptionType;
 
 @Component({
   selector: 'app-folders-explorer',
@@ -42,6 +44,7 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
   private readonly _articlesEditor = inject(ArticleEditorService);
+  private readonly _testsEditor = inject(TestsEditorService);
   protected readonly _getRandomArray = () => range(0, random(3, 10), 1);
   protected readonly _affectOptionId = signal<NullableValue<string>>(null);
 
@@ -55,15 +58,20 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     return renaming === folderId && dispatched;
   });
 
-  protected readonly _fetching = computed(() => this._dispatched.isDispatched(FoldersActions.FetchFolders)() || this._dispatched.isDispatched(ArticlesActions.FetchArticles)());
+  protected readonly _fetching = computed(() =>
+    this._dispatched.isDispatched(FoldersActions.FetchFolders)()
+    || this._dispatched.isDispatched(ArticlesActions.FetchArticles)()
+    || this._dispatched.isDispatched(TestsActions.FetchTests)()
+  );
 
   protected readonly _options = linkedSignal<OptionType[]>(() => {
     const folders = this._folders() ?? [];
     const articles = this._articles() ?? [];
-    console.info(folders, articles);
+    const tests = this._tests() ?? [];
     return orderBy([
       ...folders.map(x => ({ ...x, type: 'folder' } satisfies OptionType)),
-      ...articles.map(x => ({ ...x, type: 'article' } satisfies OptionType))
+      ...articles.map(x => ({ ...x, type: 'article' } satisfies OptionType)),
+      ...tests.map(x => ({ ...x, type: 'test' } satisfies OptionType))
     ], x => x.order);
   });
 
@@ -79,11 +87,21 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     return f;
   });
 
+  protected readonly _tests = computed(() => {
+    const parentId = this._folderId();
+    const f = this._store.selectSignal(TestsState.getTests)()(parentId);
+    return f;
+  });
+
   constructor() {
     super();
     effect(() => {
       const parentId = this._folderId();
-      this._store.dispatch([new FoldersActions.FetchFolders(parentId), new ArticlesActions.FetchArticles(parentId)]);
+      this._store.dispatch([
+        new FoldersActions.FetchFolders(parentId),
+        new ArticlesActions.FetchArticles(parentId),
+        new TestsActions.FetchTests(parentId)
+      ]);
     });
 
     effect(() => {
@@ -107,6 +125,9 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
       case 'article':
         this._articlesEditor.openArticle(f);
         break;
+      case 'test':
+        this._testsEditor.openTest(f);
+        break;
       default:
         throw new Error('Unknown option type');
     }
@@ -126,6 +147,12 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
             this._affectOptionId.set(null);
           });
         break;
+      case 'test':
+        this._store.dispatch(new TestsActions.UpdateTest(option.id, { name: name ?? '' }))
+          .subscribe(() => {
+            this._affectOptionId.set(null);
+          });
+        break;
       default:
         throw new Error('Unknown option type');
     }
@@ -139,6 +166,10 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     if (option.type === 'article') {
       return 'file-contract';
     }
+
+    if (option.type === 'test') {
+      return 'sliders';
+    }
     throw new Error('Unknown option type');
   }
 
@@ -151,6 +182,9 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
         break;
       case 'article':
         s = this._store.dispatch(new ArticlesActions.DeleteArticle(option.id));
+        break;
+      case 'test':
+        s = this._store.dispatch(new TestsActions.DeleteTest(option.id));
         break;
       default:
         throw new Error('Unknown option type');
@@ -167,7 +201,7 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
   protected _handleDrop(event: CdkDragDrop<OptionType[]>) {
     const options = this._options();
     moveItemInArray(options, event.previousIndex, event.currentIndex);
-    const actions: Array<FoldersActions.UpdateFolder | ArticlesActions.UpdateArticle> = [];
+    const actions: Array<FoldersActions.UpdateFolder | ArticlesActions.UpdateArticle | TestsActions.UpdateTest> = [];
     options.forEach((option, index) => {
       const toUpdate = { ...option };
       delete toUpdate.type;
@@ -177,6 +211,9 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
       }
       else if (option.type === 'article') {
         actions.push(new ArticlesActions.UpdateArticle(option.id, toUpdate));
+      }
+      else if (option.type === 'test') {
+        actions.push(new TestsActions.UpdateTest(option.id, toUpdate));
       }
     });
     this._store.dispatch(actions);

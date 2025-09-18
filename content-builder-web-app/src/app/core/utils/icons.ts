@@ -30,6 +30,7 @@ export class AppIconsRegistry {
     icons.forEach((iconDefinition) => {
       library.add(iconDefinition);
       const i = icon({ prefix: 'fas', iconName: iconDefinition.iconName });
+      console.info(`Adding icon: ${iconDefinition.iconName}`);
       this._registry.addSvgIconLiteral(
         iconDefinition.iconName,
         this._sanitizer.bypassSecurityTrustHtml(i.html[0])

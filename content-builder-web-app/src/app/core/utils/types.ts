@@ -23,5 +23,35 @@ export type AppArticleVm = {
 } & AppBaseVm;
 
 export type AppTestVm = {
-  
+  accessabilityConditions?: NullableValue<AppTestAccessablityCondition[]>;
 } & AppBaseVm;
+
+export enum AppTestAccessablityLogicalOperator {
+  And = 'and',
+  Or = 'or'
+}
+
+export type AppTestAccessablityCondition = {
+  logicalOperator?: AppTestAccessablityLogicalOperator;
+} & (AppTestAccessablityConditionTest | AppTestAccessablityConditionArticle);
+
+export type AppTestAccessablityConditionTest = {
+  type: 'test';
+  testId: string;
+  data: AppTestAccessablityConditionTestScore | AppTestAccessablityConditionTestSuccedded;
+};
+
+export type AppTestAccessablityConditionTestScore = {
+  type: 'score';
+  score: number;
+};
+export type AppTestAccessablityConditionTestSuccedded = {
+  type: 'succedded';
+  success: boolean;
+};
+
+export type AppTestAccessablityConditionArticle = {
+  type: 'article';
+  articleId: string;
+  isReaded?: NullableValue<boolean>;
+};
