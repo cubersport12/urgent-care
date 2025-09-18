@@ -7,7 +7,7 @@
     "build": "ng build --base-href=/urgent-care/content-builder/ --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "update": "ng update @angular/core @angular/cli @angular/cdk @angular/material"
+    "update": "ng update @angular/core @angular/cli @angular/cdk @angular/material --force"
   },
   "private": true,
   "overrides": {
