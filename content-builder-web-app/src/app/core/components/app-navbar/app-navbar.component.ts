@@ -7,6 +7,7 @@ import { Store } from '@ngxs/store';
 import { ArticleEditorService } from '../article-editor';
 import { AppFoldersStorageService } from '@/core/api';
 import { AppBreadcrumbsComponent } from '../app-breadcrumbs';
+import { TestsEditorService } from '../test-editor';
 
 @Component({
   selector: 'app-navbar',
@@ -19,6 +20,7 @@ import { AppBreadcrumbsComponent } from '../app-breadcrumbs';
 })
 export class AppNavbarComponent extends BaseRoutedClass {
   private readonly _store = inject(Store);
+  private readonly _testsEditor = inject(TestsEditorService);
   private readonly _articlesEditor = inject(ArticleEditorService);
   private readonly _explorer = inject(FoldersExplorerService);
   private readonly _dispatched = inject(AppLoading);
@@ -49,6 +51,10 @@ export class AppNavbarComponent extends BaseRoutedClass {
 
   protected _createArticle() {
     this._articlesEditor.openArticle({ parentId: this._folderId() });
+  }
+
+  protected _createTest() {
+    this._testsEditor.openTest({ parentId: this._folderId() });
   }
 
   protected _navigate(folderId: string): void {

@@ -14,3 +14,9 @@ export const articleSchema = z.object({
   includeToStatistics: z.boolean().nullable(),
   linksToArticles: z.array(z.object({ key: z.string(), articleId: z.string() })).nullable()
 });
+export const testSchema = z.object({
+  id: z.string(),
+  order: z.number().nullable(),
+  name: z.string(),
+  parentId: z.string().nullable()
+});

@@ -8,13 +8,9 @@
       <mat-icon svgIcon="file-contract"></mat-icon>
         Добавить текстовый документ
     </button>
-    <button [disabled]="true" size="sm" mat-flat-button color="primary">
+    <button (click)="_createTest()" size="sm" mat-flat-button color="primary">
       <mat-icon svgIcon="file-circle-check"></mat-icon>
       Создать тест
-    </button>
-    <button [disabled]="true" size="sm" mat-flat-button color="primary">
-      <mat-icon svgIcon="file-circle-check"></mat-icon>
-      Создать вариативный тест
     </button>
     <button [disabled]="true" size="sm" mat-flat-button color="primary">
       <mat-icon svgIcon="video"></mat-icon>
