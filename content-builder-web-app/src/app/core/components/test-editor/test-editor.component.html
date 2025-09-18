@@ -10,7 +10,7 @@
       <mat-label>Наименование</mat-label>
       <input matInput [formControl]="_form.controls.name">
     </mat-form-field>
-    <app-test-conditions-builder [formControl]="_form.controls.conditions" />
+    <app-test-conditions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.conditions" />
   </form>
   <div class="grow overflow-auto">
 

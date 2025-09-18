@@ -47,7 +47,7 @@ export class TestsEditorService {
   styles: ``
 })
 export class TestEditorComponent {
-  private readonly _dialogData = inject<AppTestVm>(MAT_DIALOG_DATA);
+  protected readonly _dialogData = inject<AppTestVm>(MAT_DIALOG_DATA);
   private readonly _ref = inject(MatDialogRef);
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
@@ -76,14 +76,19 @@ export class TestEditorComponent {
   }
 
   private _reset(): void {
-    const { name } = this._dialogData;
-    this._form.reset({ name });
+    const { name, accessabilityConditions } = this._dialogData;
+    this._form.reset({ name, conditions: accessabilityConditions ?? [] });
   }
 
   private _createTest(): void {
-    const { name } = this._form.getRawValue();
+    const { name, conditions } = this._form.getRawValue();
     const newId = generateGUID();
-    this._store.dispatch(new TestsActions.CreateTest({ ...this._dialogData, name: name!, id: newId }))
+    this._store.dispatch(new TestsActions.CreateTest({
+      ...this._dialogData,
+      name: name!,
+      id: newId,
+      accessabilityConditions: conditions
+    }))
       .subscribe(() => {
         this._handleClose();
       });

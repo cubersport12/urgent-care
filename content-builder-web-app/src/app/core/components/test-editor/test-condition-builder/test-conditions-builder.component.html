@@ -1,1 +1,13 @@
-<p>test-condition-builder works!</p>
+<div class="flex flex-col gap-1">
+  <p>Правила активации теста:</p>
+  <div class="flex flex-col gap-1 p-1">
+    @for (condition of _conditions(); track $index) {
+      <div class="flex gap-1 items-center p-1 stroke-gray-400 border rounded">
+        #{{$index + 1}}. {{_humanizeCondition()(condition, $index)}}
+      </div>
+    }
+    <button (click)="_handleCreate()" mat-mini-fab size="sm" type="button" title="Добавить правило..">
+      <mat-icon svgIcon="plus" />
+    </button>
+  </div>
+</div>
