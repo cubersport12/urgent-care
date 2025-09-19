@@ -1,0 +1,64 @@
+<form class="flex flex-col gap-1 w-full h-full p-3" [formGroup]="_form">
+  <div class="flex gap-1">
+    <mat-form-field class="grow">
+      <mat-label>
+        Наименование
+      </mat-label>
+      <input [formControl]="_form.controls.name" matInput type="text">
+    </mat-form-field>
+  </div>
+  <mat-form-field class="w-full">
+    <mat-label>
+      Текст вопроса
+    </mat-label>
+    <textarea [formControl]="_form.controls.questionText" matInput rows="2"></textarea>
+  </mat-form-field>
+  <div class="flex gap-1 w-full justify-end">
+    <button type="button" (click)="_handleAnswerCreate()" mat-button color="primary">
+      <mat-icon svgIcon="plus" />
+      Добавить вопрос
+    </button>
+  </div>
+  <div class="grow overflow-auto">
+    <table mat-table [dataSource]="_form.value.answers ?? []">
+      <ng-container matColumnDef="index">
+        <th mat-header-cell *matHeaderCellDef>#</th>
+        <td mat-cell *matCellDef="let element; let i = index">{{i + 1}}</td>
+      </ng-container>
+      <ng-container matColumnDef="answerText">
+        <th mat-header-cell *matHeaderCellDef>Текст</th>
+        <td mat-cell *matCellDef="let element">{{element.answerText}}</td>
+      </ng-container>
+      <ng-container matColumnDef="score">
+        <th mat-header-cell *matHeaderCellDef>Баллы</th>
+        <td mat-cell *matCellDef="let element">{{element.score}}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let element">
+          <div class="flex items-center justify-center gap-1">
+            <button mat-icon-button (click)="_handleEdit(element)" type="button">
+              <mat-icon svgIcon="pen-to-square" />
+            </button>
+            <button mat-icon-button color="warn" (click)="_handleDelete(element)" type="button">
+              <mat-icon svgIcon="trash" />
+            </button>
+          </div>
+        </td>
+      </ng-container>
+      @let displayedColumns = ["index", "answerText", "score", "actions"];
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr [ngClass]="{ 'bg-green-700': row.isCorrect }" mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+  <div class="flex w-full justify-end gap-1">
+    <button [disabled]="!_form.dirty" (click)="_handleSubmit()" type="button" mat-flat-button color="primary">
+      <mat-icon svgIcon="check" />
+      Сохранить
+    </button>
+    <button mat-button color="warn" (click)="_handleClose()" type="button">
+      <mat-icon svgIcon="xmark" />
+      Закрыть
+    </button>
+  </div>
+</form>

@@ -1,7 +1,7 @@
 import { AppTestAccessablityCondition, AppTestAccessablityLogicalOperator, NullableValue } from '@/core/utils';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { MatMiniFabButton } from '@angular/material/button';
+import { MatIconButton, MatMiniFabButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { TestConditionItemBuilderComponent } from '../test-condition-item-builder/test-condition-item-builder.component';
@@ -9,6 +9,7 @@ import { take } from 'rxjs';
 import { Store } from '@ngxs/store';
 import { ArticlesState, TestsState } from '@/core/store';
 import { upperFirst } from 'lodash';
+import { MatRipple } from '@angular/material/core';
 
 type ControlValueType = AppTestAccessablityCondition[];
 
@@ -16,7 +17,9 @@ type ControlValueType = AppTestAccessablityCondition[];
   selector: 'app-test-conditions-builder',
   imports: [
     MatMiniFabButton,
-    MatIcon
+    MatIcon,
+    MatIconButton,
+    MatRipple
   ],
   templateUrl: './test-conditions-builder.component.html',
   styles: ``,
@@ -62,7 +65,7 @@ export class TestConditionsBuilderComponent implements ControlValueAccessor {
 
   protected _humanizeCondition = computed(() => {
     const tests = this._store.selectSignal(TestsState.getTests)()(this.folderId());
-    // const articles = this._store.selectSignal(ArticlesState.getArticles)()(this.folderId());
+    const articles = this._store.selectSignal(ArticlesState.getArticles)()(this.folderId());
     return (condition: AppTestAccessablityCondition, index: number): string => {
       const result: string[] = [];
       if (index > 0) {
@@ -80,24 +83,55 @@ export class TestConditionsBuilderComponent implements ControlValueAccessor {
         }
       }
 
+      if (condition.type === 'article') {
+        const a = articles.find(x => x.id === condition.articleId);
+        result.push(`статья [${a?.name}] должна быть ${condition.isReaded ? 'прочитанной' : 'непрочитанной'}`);
+      }
+
       return upperFirst(result.join(' '));
     };
   });
 
-  protected _handleCreate(): void {
+  private _openCondition(c: NullableValue<AppTestAccessablityCondition>): void {
     this._dialog.open(TestConditionItemBuilderComponent, {
       width: '400px',
       hasBackdrop: true,
       disableClose: true,
       data: {
-        folderId: this.folderId()
+        folderId: this.folderId(),
+        condition: c
       }
     })
       .afterClosed()
       .pipe(take(1))
-      .subscribe((c: AppTestAccessablityCondition) => {
-        this._conditions.update(prev => [...prev, c]);
+      .subscribe((result: AppTestAccessablityCondition) => {
+        if (result == null) {
+          return;
+        }
+        this._conditions.update((prev) => {
+          const index = prev.findIndex(x => x === c);
+          if (index !== -1) {
+            prev.splice(index, 1, result);
+          }
+          else {
+            prev.push(result);
+          }
+          return [...prev];
+        });
         this._changed();
       });
+  }
+
+  protected _handleEdit(c: AppTestAccessablityCondition): void {
+    this._openCondition(c);
+  }
+
+  protected _handleDelete(c: AppTestAccessablityCondition): void {
+    this._conditions.update(prev => prev.filter(x => x !== c));
+    this._changed();
+  }
+
+  protected _handleCreate(): void {
+    this._openCondition(null);
   }
 }

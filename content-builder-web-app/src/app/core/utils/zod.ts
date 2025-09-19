@@ -20,6 +20,21 @@ export const testSchema = z.object({
   order: z.number().nullable(),
   name: z.string(),
   parentId: z.string().nullable(),
+  minScore: z.number().nullable().optional(),
+  maxErrors: z.number().nullable().optional(),
+  questions: z.array(z.object({
+    id: z.string(),
+    order: z.number().nullable(),
+    questionText: z.string(),
+    name: z.string(),
+    image: z.string().nullable().optional(),
+    answers: z.array(z.object({
+      answerText: z.string(),
+      isCorrect: z.boolean(),
+      score: z.number().nullable(),
+      image: z.string().nullable().optional()
+    })).nullable()
+  })).nullable().optional(),
   accessabilityConditions: z.array(z.object({
     logicalOperator: z.enum([AppTestAccessablityLogicalOperator.And, AppTestAccessablityLogicalOperator.Or]),
     type: z.enum(['test', 'article']),

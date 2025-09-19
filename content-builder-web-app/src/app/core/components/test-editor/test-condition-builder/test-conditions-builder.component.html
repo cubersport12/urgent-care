@@ -1,9 +1,16 @@
 <div class="flex flex-col gap-1">
-  <p>Правила активации теста:</p>
+  <h5>Правила активации теста</h5>
   <div class="flex flex-col gap-1 p-1">
     @for (condition of _conditions(); track $index) {
       <div class="flex gap-1 items-center p-1 stroke-gray-400 border rounded">
-        #{{$index + 1}}. {{_humanizeCondition()(condition, $index)}}
+        <button (click)="_handleEdit(condition)" type="button" mat-ripple title="Нажмите, чтобы редактировать" class="cursor-pointer text-left grow items-center text-ellipsis overflow-hidden">#{{$index + 1}}. {{_humanizeCondition()(condition, $index)}}</button>
+
+        <button type="button" (click)="_handleEdit(condition)" matIconButton color="warning" title="Редактировать">
+          <mat-icon svgIcon="pen-to-square" />
+        </button>
+        <button type="button" (click)="_handleDelete(condition)" matIconButton color="warning" title="Удалить">
+          <mat-icon svgIcon="trash" />
+        </button>
       </div>
     }
     <button (click)="_handleCreate()" mat-mini-fab size="sm" type="button" title="Добавить правило..">

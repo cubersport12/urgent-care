@@ -1,0 +1,41 @@
+<div class="w-full h-full overflow-hidden flex flex-col gap-1">
+  <h5>Вопросы теста</h5>
+  <div class="flex gap-1 w-full justify-end">
+    <button type="button" (click)="_handleCreate()" mat-button color="primary">
+      <mat-icon svgIcon="plus" />
+      Добавить вопрос
+    </button>
+  </div>
+  <div class="grow overflow-auto">
+    <table mat-table [dataSource]="_questions()" class="mat-elevation-z8">
+      <ng-container matColumnDef="index">
+        <th mat-header-cell *matHeaderCellDef>#</th>
+        <td mat-cell *matCellDef="let element; let i = index">{{i + 1}}</td>
+      </ng-container>
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Наименование</th>
+        <td mat-cell *matCellDef="let element">{{element.name}}</td>
+      </ng-container>
+      <ng-container matColumnDef="info">
+        <th mat-header-cell *matHeaderCellDef>Информация</th>
+        <td mat-cell *matCellDef="let element">Инфо по тесту...</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let element">
+          <div class="flex items-center justify-center gap-1">
+            <button mat-icon-button (click)="_handleEdit(element)" type="button">
+              <mat-icon svgIcon="pen-to-square" />
+            </button>
+            <button mat-icon-button color="warn" (click)="_handleDelete(element)" type="button">
+              <mat-icon svgIcon="trash" />
+            </button>
+          </div>
+        </td>
+      </ng-container>
+      @let displayedColumns = ["index", "name", "info", "actions"];
+       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+</div>

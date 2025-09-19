@@ -24,7 +24,22 @@ export type AppArticleVm = {
 
 export type AppTestVm = {
   accessabilityConditions?: NullableValue<AppTestAccessablityCondition[]>;
+  questions?: NullableValue<AppTestQuestionVm[]>;
+  minScore?: NullableValue<number>;
+  maxErrors?: NullableValue<number>;
 } & AppBaseVm;
+
+export type AppTestQuestionVm = {
+  questionText: string;
+  image?: NullableValue<string>;
+  answers: NullableValue<AppTestQuestionAnswerVm[]>;
+} & AppBaseVm;
+export type AppTestQuestionAnswerVm = {
+  answerText: string;
+  image?: NullableValue<string>;
+  score?: number;
+  isCorrect?: boolean;
+};
 
 export enum AppTestAccessablityLogicalOperator {
   And = 'and',

@@ -1,5 +1,5 @@
 import { AppLoading, TestsActions } from '@/core/store';
-import { AppTestAccessablityCondition, AppTestVm, generateGUID } from '@/core/utils';
+import { AppTestAccessablityCondition, AppTestQuestionVm, AppTestVm, generateGUID, NullableValue } from '@/core/utils';
 import { Component, computed, effect, inject, Injectable } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
@@ -7,10 +7,10 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dial
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatMenu } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngxs/store';
 import { TestConditionsBuilderComponent } from './test-condition-builder/test-conditions-builder.component';
+import { TestQuestionsBuilderComponent } from './test-questions-builder/test-questions-builder.component';
 
 @Injectable({
   providedIn: 'root'
@@ -41,7 +41,7 @@ export class TestsEditorService {
     MatFormFieldModule,
     MatInputModule,
     TestConditionsBuilderComponent,
-    MatMenu
+    TestQuestionsBuilderComponent
   ],
   templateUrl: './test-editor.component.html',
   styles: ``
@@ -59,7 +59,10 @@ export class TestEditorComponent {
 
   protected readonly _form = new FormGroup({
     name: new FormControl<string>('', Validators.required),
-    conditions: new FormControl<AppTestAccessablityCondition[]>([])
+    conditions: new FormControl<AppTestAccessablityCondition[]>([]),
+    questions: new FormControl<AppTestQuestionVm[]>([]),
+    minScore: new FormControl<NullableValue<number>>(null),
+    maxErrors: new FormControl<NullableValue<number>>(null)
   });
 
   constructor() {
@@ -76,18 +79,38 @@ export class TestEditorComponent {
   }
 
   private _reset(): void {
-    const { name, accessabilityConditions } = this._dialogData;
-    this._form.reset({ name, conditions: accessabilityConditions ?? [] });
+    const { name, accessabilityConditions, questions, minScore, maxErrors } = this._dialogData;
+    this._form.reset({
+      name,
+      conditions: accessabilityConditions ?? [],
+      questions: questions ?? [],
+      minScore,
+      maxErrors
+    });
+  }
+
+  private _getTestVm(): AppTestVm {
+    const { name, conditions, maxErrors, minScore, questions } = this._form.value;
+    const result: AppTestVm = {
+      ...(this._dialogData ?? {}),
+      name: name!,
+      accessabilityConditions: conditions ?? [],
+      maxErrors,
+      minScore,
+      questions: questions ?? []
+    };
+    if ('type' in result) {
+      delete result['type'];
+    }
+    return result;
   }
 
   private _createTest(): void {
-    const { name, conditions } = this._form.getRawValue();
     const newId = generateGUID();
+    const toCreate = this._getTestVm();
     this._store.dispatch(new TestsActions.CreateTest({
-      ...this._dialogData,
-      name: name!,
-      id: newId,
-      accessabilityConditions: conditions
+      ...toCreate,
+      id: newId
     }))
       .subscribe(() => {
         this._handleClose();
@@ -95,7 +118,10 @@ export class TestEditorComponent {
   }
 
   private _updateTest(): void {
-
+    this._store.dispatch(new TestsActions.UpdateTest(this._dialogData.id, this._getTestVm()))
+      .subscribe(() => {
+        this._handleClose();
+      });
   }
 
   protected _handleSubmit(): void {

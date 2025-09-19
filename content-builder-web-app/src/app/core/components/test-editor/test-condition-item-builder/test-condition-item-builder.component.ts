@@ -1,7 +1,12 @@
-import { ArticlesState, TestsActions, TestsState } from '@/core/store';
-import { AppTestAccessablityCondition, AppTestAccessablityConditionArticle, AppTestAccessablityConditionTest, AppTestAccessablityConditionTestScore, AppTestAccessablityConditionTestSuccedded, AppTestAccessablityLogicalOperator } from '@/core/utils';
-import { Component, computed, DestroyRef, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ArticlesState, TestsState } from '@/core/store';
+import {
+  AppTestAccessablityCondition,
+  AppTestAccessablityConditionArticle,
+  AppTestAccessablityConditionTest,
+  AppTestAccessablityConditionTestScore,
+  AppTestAccessablityConditionTestSuccedded,
+  AppTestAccessablityLogicalOperator } from '@/core/utils';
+import { Component, computed, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -32,7 +37,7 @@ type TestParamType = AppTestAccessablityConditionTestScore['type'] | AppTestAcce
 })
 export class TestConditionItemBuilderComponent {
   private readonly _ref = inject(MatDialogRef);
-  private readonly _dialogData = inject<{ folderId: string; test?: AppTestAccessablityCondition }>(MAT_DIALOG_DATA);
+  private readonly _dialogData = inject<{ folderId: string; condition?: AppTestAccessablityCondition }>(MAT_DIALOG_DATA);
   private readonly _store = inject(Store);
   protected readonly _logicalOperators: AppTestAccessablityLogicalOperator[] = [AppTestAccessablityLogicalOperator.And, AppTestAccessablityLogicalOperator.Or];
   protected readonly _conditionTypes: ConditionType[] = ['article', 'test'];
@@ -61,6 +66,51 @@ export class TestConditionItemBuilderComponent {
     const s = this._store.selectSignal(ArticlesState.getArticles)();
     return s(this._dialogData.folderId);
   });
+
+  constructor() {
+    this._resetForm();
+  }
+
+  private _resetForm(): void {
+    if (this._dialogData.condition) {
+      const c = this._dialogData.condition;
+      const v: typeof this._form.value = {};
+      if (c.type === 'test') {
+        const data = c.data;
+        v.type = 'test';
+        v.logicalOperator = c.logicalOperator ?? AppTestAccessablityLogicalOperator.And;
+        v.test = {
+          testId: c.testId
+        };
+        if (data?.type === 'score') {
+          v.test.type = 'score';
+          v.test.score = data.score;
+        }
+        else if (data?.type === 'succedded') {
+          v.test.type = 'succedded';
+          v.test.success = data.success;
+        }
+        else {
+          throw new Error('Unknown condition type');
+        }
+      }
+      else if (c.type === 'article') {
+        v.type = 'article';
+        v.logicalOperator = c.logicalOperator ?? AppTestAccessablityLogicalOperator.And;
+        v.article = {
+          articleId: c.articleId
+        };
+        if (c.isReaded) {
+          v.article.isReaded = c.isReaded;
+        }
+      }
+      else {
+        throw new Error('Unknown condition type');
+      }
+
+      this._form.reset(v);
+    }
+  }
 
   protected _translateConditionType(type: ConditionType): string {
     switch (type) {
