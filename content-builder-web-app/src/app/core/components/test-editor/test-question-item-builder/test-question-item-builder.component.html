@@ -13,6 +13,56 @@
     </mat-label>
     <textarea [formControl]="_form.controls.questionText" matInput rows="2"></textarea>
   </mat-form-field>
+  <mat-checkbox [formControl]="_form.controls.useActivationCondition">Использовать условие активации вопроса</mat-checkbox>
+  @if (_form.value.useActivationCondition) {
+    <div class="flex gap-1 w-full flex-wrap">
+      <mat-form-field class="grow">
+        <mat-label>Вид события</mat-label>
+        <mat-select [formControl]="_form.controls.activationCondition.controls.kind">
+          @for(type of _conditionTypes; track $index) {
+            <mat-option [value]="type">
+              {{_humanizeConditionKind(type)}}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      @switch (_form.value.activationCondition?.kind) {
+        @case (AppTestQuestionActivationConditionKind.CompleteQuestion) {
+          <mat-form-field class="grow">
+            <mat-label>Вопрос</mat-label>
+            <mat-select [formControl]="_form.controls.activationCondition.controls.relationQuestionId">
+              @for(question of _dialogData.questions; track $index) {
+                <mat-option [value]="question.id">
+                  {{question.name}}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field class="grow">
+            <mat-label>Тип данных</mat-label>
+            <mat-select [formControl]="_form.controls.activationCondition.controls.data.controls.type">
+              @for(type of _conditionDataTypes; track $index) {
+                <mat-option [value]="type">
+                  {{_humanizeConditionDataType(type)}}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          @switch (_form.getRawValue().activationCondition.data.type) {
+            @case ('score') {
+              <mat-form-field class="grow">
+                <mat-label>Мин. количество баллов</mat-label>
+                <input [formControl]="_form.controls.activationCondition.controls.data.controls.score" matInput type="number">
+              </mat-form-field>
+            }
+            @case ('correct') {
+              <mat-checkbox class="grow" [formControl]="_form.controls.activationCondition.controls.data.controls.isCorrect">Правильный ответ?</mat-checkbox>
+            }
+          }
+        }
+      }
+    </div>
+  }
   <div class="flex gap-1 w-full justify-end">
     <button type="button" (click)="_handleAnswerCreate()" mat-button color="primary">
       <mat-icon svgIcon="plus" />

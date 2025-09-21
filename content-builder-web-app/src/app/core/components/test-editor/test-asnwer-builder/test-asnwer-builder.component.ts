@@ -48,7 +48,7 @@ export class TestAsnwerBuilderComponent {
     const v = this._form.getRawValue();
     this._ref.close({
       ...v,
-      score: v.score == null ? (v.isCorrect ? 1 : 0) : v.score
+      score: !v.score ? (v.isCorrect ? 1 : 0) : v.score
     });
   }
 

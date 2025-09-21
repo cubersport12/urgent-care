@@ -33,12 +33,29 @@ export type AppTestQuestionVm = {
   questionText: string;
   image?: NullableValue<string>;
   answers: NullableValue<AppTestQuestionAnswerVm[]>;
+  activationCondition?: AppTestQuestionActivationCondition;
 } & AppBaseVm;
 export type AppTestQuestionAnswerVm = {
   answerText: string;
   image?: NullableValue<string>;
   score?: number;
   isCorrect?: boolean;
+};
+export enum AppTestQuestionActivationConditionKind {
+  CompleteQuestion = 'CompleteQuestion'
+}
+export type AppTestQuestionActivationConditionScoreData = {
+  type: 'score';
+  score: number;
+};
+export type AppTestQuestionActivationConditionCorrectData = {
+  type: 'correct';
+  isCorrect: boolean;
+};
+export type AppTestQuestionActivationCondition = {
+  kind: AppTestQuestionActivationConditionKind;
+  data: AppTestQuestionActivationConditionScoreData | AppTestQuestionActivationConditionCorrectData;
+  relationQuestionId: string;
 };
 
 export enum AppTestAccessablityLogicalOperator {

@@ -1,4 +1,4 @@
-import { AppTestQuestionAnswerVm, AppTestQuestionVm, generateGUID, NullableValue } from '@/core/utils';
+import { AppTestQuestionActivationConditionKind, AppTestQuestionAnswerVm, AppTestQuestionVm, AppTestVm, generateGUID, NullableValue } from '@/core/utils';
 import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -33,14 +33,27 @@ import { cloneDeep } from 'lodash';
 export class TestQuestionItemBuilderComponent {
   private readonly _ref = inject(MatDialogRef);
   private readonly _dialog = inject(MatDialog);
-  private readonly _dialogData = inject<{ folderId: string; question?: AppTestQuestionVm }>(MAT_DIALOG_DATA);
+  protected readonly _dialogData = inject<{ folderId: string; question?: AppTestQuestionVm; questions: AppTestQuestionVm[] }>(MAT_DIALOG_DATA);
+  protected readonly AppTestQuestionActivationConditionKind = AppTestQuestionActivationConditionKind;
+  protected readonly _conditionDataTypes = ['score', 'correct'];
+  protected readonly _conditionTypes: AppTestQuestionActivationConditionKind[] = [AppTestQuestionActivationConditionKind.CompleteQuestion];
 
   protected readonly _form = new FormGroup({
     name: new FormControl<string>('', Validators.required),
     questionText: new FormControl<string>('', Validators.required),
     image: new FormControl<NullableValue<string>>(null),
     answers: new FormControl<AppTestQuestionAnswerVm[]>([]),
-    order: new FormControl<NullableValue<number>>(null)
+    order: new FormControl<NullableValue<number>>(null),
+    useActivationCondition: new FormControl<boolean>(false),
+    activationCondition: new FormGroup({
+      kind: new FormControl(AppTestQuestionActivationConditionKind.CompleteQuestion),
+      relationQuestionId: new FormControl<NullableValue<string>>(null, Validators.required),
+      data: new FormGroup({
+        type: new FormControl<'score' | 'correct'>('correct'),
+        score: new FormControl<NullableValue<number>>(null),
+        isCorrect: new FormControl<boolean>(true)
+      })
+    })
   });
 
   constructor() {
@@ -51,19 +64,47 @@ export class TestQuestionItemBuilderComponent {
     if (this._dialogData.question == null) {
       return;
     }
-    this._form.reset(this._dialogData.question);
+    this._form.reset({
+      ...this._dialogData.question,
+      useActivationCondition: this._dialogData.question.activationCondition != null
+    });
   }
 
   protected _handleSubmit(): void {
+    const value = this._form.getRawValue() as Partial<typeof this._form.value>;
+    if (!value.useActivationCondition) {
+      delete value.activationCondition;
+      delete value.useActivationCondition;
+    }
     this._ref.close({
       ...(this._dialogData.question ?? {}),
       id: this._dialogData.question?.id ?? generateGUID(),
-      ...this._form.getRawValue()
+      ...value
     });
   }
 
   protected _handleClose(): void {
     this._ref.close(null);
+  }
+
+  protected _humanizeConditionDataType(type: string): string {
+    switch (type) {
+      case 'score':
+        return 'Баллы';
+      case 'correct':
+        return 'Правильность';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  protected _humanizeConditionKind(kind: AppTestQuestionActivationConditionKind): string {
+    switch (kind) {
+      case AppTestQuestionActivationConditionKind.CompleteQuestion:
+        return 'По завершенному вопроса';
+      default:
+        return 'Unknown';
+    }
   }
 
   private _openAnswer(answer: NullableValue<AppTestQuestionAnswerVm>): void {

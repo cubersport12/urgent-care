@@ -8,7 +8,9 @@ import { MatIcon } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { TestQuestionItemBuilderComponent } from '../test-question-item-builder/test-question-item-builder.component';
 import { take } from 'rxjs';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, sum, sumBy } from 'lodash';
+import { NgClass } from '@angular/common';
+import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 
 type ControlValueType = AppTestQuestionVm[];
 
@@ -20,10 +22,35 @@ type ControlValueType = AppTestQuestionVm[];
     MatIconButton,
     MatRipple,
     MatTableModule,
-    MatButton
+    MatButton,
+    NgClass,
+    CdkDropList,
+    CdkDrag
   ],
   templateUrl: './test-questions-builder.component.html',
-  styles: ``,
+  styles: `
+    .cdk-drag-preview {
+      box-sizing: border-box;
+      border-radius: 4px;
+      box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+        0 8px 10px 1px rgba(0, 0, 0, 0.14),
+        0 3px 14px 2px rgba(0, 0, 0, 0.12);
+      background-color: white;
+    }
+    .cdk-drag-placeholder {
+      opacity: 0;
+    }
+    .example-drag-cursor {
+      cursor: move;
+    }
+    .cdk-drag-animating {
+      transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    .cdk-drop-list-dragging .mat-row:not(.cdk-drag-placeholder) {
+      transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+    }
+  `,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -72,7 +99,8 @@ export class TestQuestionsBuilderComponent implements ControlValueAccessor {
       disableClose: true,
       data: {
         folderId: this.folderId(),
-        question: q ? cloneDeep(q) : q
+        question: q ? cloneDeep(q) : q,
+        questions: this._questions()
       }
     })
       .afterClosed()
@@ -112,5 +140,39 @@ export class TestQuestionsBuilderComponent implements ControlValueAccessor {
 
   protected _handleCreate(): void {
     this._openQuestion(null);
+  }
+
+  protected _handleQuestionDrop(event: CdkDragDrop<AppTestQuestionVm[]>): void {
+    this._questions.update((p) => {
+      const newP = [...p];
+      moveItemInArray(newP, event.previousIndex, event.currentIndex);
+      newP.forEach((question, index) => {
+        question.order = index;
+      });
+      return newP;
+    });
+    this._changed();
+  }
+
+  protected _getQuestionInfoTest(q: AppTestQuestionVm): string {
+    const result: string[] = [];
+    if (q.activationCondition != null) {
+      result.push('Вопрос с условием активации');
+    }
+    else {
+      // result.push('Обычный вопрос');
+    }
+    if (q.answers != null && q.answers.length > 0) {
+      result.push('Ответов - ' + q.answers.length);
+
+      const correctAnswersCount = q.answers.filter(x => x.isCorrect).length;
+      if (correctAnswersCount > 0) {
+        result.push('Корректных ответов - ' + correctAnswersCount);
+      }
+
+      const scores = sum(q.answers.map(x => x.score ?? 0));
+      result.push('Всего баллов - ' + scores);
+    }
+    return result.join('. ');
   }
 }

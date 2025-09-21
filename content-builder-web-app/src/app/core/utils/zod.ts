@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AppTestAccessablityLogicalOperator } from './types';
+import { AppTestAccessablityLogicalOperator, AppTestQuestionActivationConditionKind } from './types';
 
 export const folderSchema = z.object({ id: z.string(), order: z.number().nullable(), name: z.string(), parentId: z.string().nullable() });
 
@@ -28,6 +28,15 @@ export const testSchema = z.object({
     questionText: z.string(),
     name: z.string(),
     image: z.string().nullable().optional(),
+    activationCondition: z.object({
+      kind: z.enum([AppTestQuestionActivationConditionKind.CompleteQuestion]),
+      data: z.object({
+        type: z.enum(['score', 'correct']),
+        score: z.number().nullable().optional(),
+        isCorrect: z.boolean().nullable().optional()
+      }),
+      relationQuestionId: z.string()
+    }).nullable().optional(),
     answers: z.array(z.object({
       answerText: z.string(),
       isCorrect: z.boolean(),
