@@ -43,7 +43,26 @@ export default function Article() {
             window.top.postMessage(href);
           }
         };
-      })
+      });
+
+      function scaleToFit() {
+        var element = document.getElementById("page-container");
+        if (element == null) {
+          element = document.body;
+        } else {
+          document.body.style.overflow = 'hidden';  
+        }
+        var scale = element.clientWidth/element.scrollWidth;
+        document.body.style.transform = \`scale(\${scale})\`;
+        document.body.style.margin = '0';
+        document.body.style.padding = '0';
+        
+        document.body.style.transformOrigin = 'top left';
+        document.body.style.width = \`\${100/scale}vw\`;
+        document.body.style.height = \`\${100/scale}vh\`
+      }
+      window.addEventListener('load', scaleToFit);
+      window.addEventListener('resize', scaleToFit);
   `;
 
   if (isNative) {
