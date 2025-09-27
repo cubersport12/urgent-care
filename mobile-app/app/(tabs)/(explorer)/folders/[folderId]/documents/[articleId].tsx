@@ -27,6 +27,35 @@ export default function Article() {
     router.navigate({ pathname: '/folders/[folderId]/documents/[articleId]', params: { articleId: l.articleId, folderId: a.data?.parentId ?? '' } });
   }, [article?.data]);
 
+  const injectedJavaScript = () => `
+      ${isNative ? `document.body.style.opacity = '0';` : ''}
+      function scaleToFit() {
+        var element = document.getElementById("page-container");
+        if (element == null) {
+          element = document.body;
+        } else {
+          document.body.style.overflow = 'hidden';  
+        }
+        var scale = element.clientWidth/element.scrollWidth;
+        console.log(scale);
+        document.body.style.transform = 'scale(' + scale + ')';
+        document.body.style.margin = '0';
+        document.body.style.padding = '0';
+        document.body.style.transformOrigin = 'top left';
+        document.body.style.width = 100.1/scale + 'vw';
+        document.body.style.height = 100.1/scale + 'vh';
+      }
+      window.addEventListener('load', scaleToFit);
+      window.addEventListener('resize', scaleToFit);
+      ${isNative
+        ? `
+        scaleToFit();
+        document.body.style.opacity = '1';
+        `
+        : ''}
+      
+  `;
+
   const injectedJavaScriptBeforeContent = (htmlBg: string = 'transparent') => `
       document.body.style.backgroundColor = 'transparent';
       const html = document.querySelector('html');
@@ -44,34 +73,16 @@ export default function Article() {
           }
         };
       });
-
-      function scaleToFit() {
-        var element = document.getElementById("page-container");
-        if (element == null) {
-          element = document.body;
-        } else {
-          document.body.style.overflow = 'hidden';  
-        }
-        var scale = element.clientWidth/element.scrollWidth;
-        document.body.style.transform = \`scale(\${scale})\`;
-        document.body.style.margin = '0';
-        document.body.style.padding = '0';
-        
-        document.body.style.transformOrigin = 'top left';
-        document.body.style.width = \`\${100/scale}vw\`;
-        document.body.style.height = \`\${100/scale}vh\`
-      }
-      window.addEventListener('load', scaleToFit);
-      window.addEventListener('resize', scaleToFit);
+      ${injectedJavaScript()}
   `;
 
   if (isNative) {
     return (
       <WebView
         useWebView2
-        scalesPageToFit={false}
         onMessage={event => handleHref(event.nativeEvent.data)}
         injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContent()}
+        injectedJavaScript={injectedJavaScript()}
         androidLayerType="hardware" // Для Android
         overScrollMode="never"
         style={{ flex: 1, backgroundColor: 'transparent', width: '100%', height: '100%', overflow: 'hidden' }}

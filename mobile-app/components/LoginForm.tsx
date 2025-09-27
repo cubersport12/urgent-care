@@ -13,16 +13,9 @@ import { AlertCircleIcon } from './ui/icon';
 import { Button, ButtonIcon, ButtonText } from './ui/button';
 import { Text } from './ui/text';
 import { View } from 'react-native';
-import { LogIn, AtSign, Chrome } from 'lucide-react-native';
+import { LogIn, AtSign } from 'lucide-react-native';
 import { HStack } from './ui/hstack';
-import { useEffect, useState } from 'react';
-import {
-  GoogleSignin,
-  statusCodes,
-  isErrorWithCode,
-  isSuccessResponse,
-  isNoSavedCredentialFoundResponse
-} from '@react-native-google-signin/google-signin';
+import { useState } from 'react';
 import { Center } from './ui/center';
 import RegisterForm from './RegisterForm';
 import { supabase } from '@/supabase';
@@ -177,66 +170,66 @@ const LoginEmailForm = () => {
   );
 }; */
 
-const GoogleLoginButton = () => {
-  useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: '968549272760-1efe2ldo7kbm2a7qr3nuasiegcc33rau.apps.googleusercontent.com'
-    });
-  }, []);
-  const signIn = async () => {
-    try {
-      await GoogleSignin.hasPlayServices();
-      const response = await GoogleSignin.signIn();
+// const GoogleLoginButton = () => {
+//   useEffect(() => {
+//     GoogleSignin.configure({
+//       webClientId: '968549272760-1efe2ldo7kbm2a7qr3nuasiegcc33rau.apps.googleusercontent.com'
+//     });
+//   }, []);
+//   const signIn = async () => {
+//     try {
+//       await GoogleSignin.hasPlayServices();
+//       const response = await GoogleSignin.signIn();
 
-      if (isSuccessResponse(response)) {
-        await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: response.data.idToken ?? ''
-        });
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      else if (isNoSavedCredentialFoundResponse(response as any)) {
-        console.log('need createAccount', response.data);
-        // Android and Apple only.
-        // No saved credential found (user has not signed in yet, or they revoked access)
-        // call `createAccount()`
-      }
-    }
-    catch (error) {
-      console.error('-------------->', error);
-      if (isErrorWithCode(error)) {
-        switch (error.code) {
-          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            // Android-only, you probably have hit rate limiting.
-            // You can still call `presentExplicitSignIn` in this case.
-            break;
-          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            // Android: play services not available or outdated.
-            // Get more details from `error.userInfo`.
-            // Web: when calling an unimplemented api (requestAuthorization)
-            // or when the Google Client Library is not loaded yet.
-            break;
-          default:
-          // something else happened
-        }
-      }
-      else {
-        // an error that's not related to google sign in occurred
-      }
-    }
-  };
-  return (
-    <Button onPress={() => void signIn()} className="grow" variant="solid" action="secondary" size="lg">
-      <ButtonIcon as={Chrome} />
-      <ButtonText>Google</ButtonText>
-    </Button>
-  );
-};
+//       if (isSuccessResponse(response)) {
+//         await supabase.auth.signInWithIdToken({
+//           provider: 'google',
+//           token: response.data.idToken ?? ''
+//         });
+//       }
+//       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+//       else if (isNoSavedCredentialFoundResponse(response as any)) {
+//         console.log('need createAccount', response.data);
+//         // Android and Apple only.
+//         // No saved credential found (user has not signed in yet, or they revoked access)
+//         // call `createAccount()`
+//       }
+//     }
+//     catch (error) {
+//       console.error('-------------->', error);
+//       if (isErrorWithCode(error)) {
+//         switch (error.code) {
+//           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+//             // Android-only, you probably have hit rate limiting.
+//             // You can still call `presentExplicitSignIn` in this case.
+//             break;
+//           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+//             // Android: play services not available or outdated.
+//             // Get more details from `error.userInfo`.
+//             // Web: when calling an unimplemented api (requestAuthorization)
+//             // or when the Google Client Library is not loaded yet.
+//             break;
+//           default:
+//           // something else happened
+//         }
+//       }
+//       else {
+//         // an error that's not related to google sign in occurred
+//       }
+//     }
+//   };
+//   return (
+//     <Button onPress={() => void signIn()} className="grow" variant="solid" action="secondary" size="lg">
+//       <ButtonIcon as={Chrome} />
+//       <ButtonText>Google</ButtonText>
+//     </Button>
+//   );
+// };
 
 const LoginProviders = () => {
   return (
     <HStack className="w-full justify-end gap-1">
-      <GoogleLoginButton />
+      {/* <GoogleLoginButton /> */}
       {/*    <AppleLoginButton /> */}
     </HStack>
   );
