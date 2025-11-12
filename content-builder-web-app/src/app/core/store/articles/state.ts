@@ -58,7 +58,7 @@ export class ArticlesState {
       }));
   }
 
-  @Action(ArticlesActions.UpdateArticle, { cancelUncompleted: true })
+  @Action(ArticlesActions.UpdateArticle)
   private _updateArticle(ctx: StateContext<ArticlesStateModel>, { articleId, payload }: ArticlesActions.UpdateArticle) {
     return this._articlesStorage.updateArticle({ id: articleId, ...payload } as AppArticleVm)
       .pipe(tap(() => {

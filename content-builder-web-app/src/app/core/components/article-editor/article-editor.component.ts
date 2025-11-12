@@ -200,9 +200,30 @@ export class ArticleEditorComponent {
     }
   }
 
+  private _transformHtml(html: string): string {
+    // const el = document.createElement('div');
+    // el.innerHTML = html;
+
+    // const pageContainer = document.getElementById('page-container');
+    // if (pageContainer != null) {
+    //   const toRemoveElements = new Set<Element>();
+    //   for (let index = 0; index < pageContainer.children.length; index++) {
+    //     const element = pageContainer.children[index];
+    //     if (!element.textContent.trim().length) {
+    //       toRemoveElements.add(element);
+    //     }
+    //   }
+
+    //   toRemoveElements.forEach(x => x.remove());
+    // }
+
+    return html;
+  }
+
   protected async _openFile() {
     try {
-      const html = (await openFileAsBuffer('text/html')) as string;
+      let html = (await openFileAsBuffer('text/html')) as string;
+      html = this._transformHtml(html);
       const linksToArticles = this._parseLinks(html).map(x => ({ key: x })) as AppLinkToArticleVm[];
       this._form.patchValue({ html, linksToArticles });
       this._setArtcilesLinksControls(linksToArticles);

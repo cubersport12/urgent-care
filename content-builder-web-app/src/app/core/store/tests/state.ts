@@ -58,7 +58,7 @@ export class TestsState {
       }));
   }
 
-  @Action(TestsActions.UpdateTest, { cancelUncompleted: true })
+  @Action(TestsActions.UpdateTest)
   private _updateTest(ctx: StateContext<TestsStateModel>, { testId, payload }: TestsActions.UpdateTest) {
     return this._testsStorage.updateTest({ id: testId, ...payload } as AppTestVm)
       .pipe(tap(() => {
