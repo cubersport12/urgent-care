@@ -24,7 +24,7 @@ export class FoldersState {
 
   @Selector()
   public static getFolders(state: FoldersStateModel) {
-    return (parentId: NullableValue<string>) => state.folders[getNullableId(parentId)];
+    return (parentId: NullableValue<string>) => [...state.folders[getNullableId(parentId)] ?? []];
   }
 
   @Action(FoldersActions.CreateFolder, { cancelUncompleted: true })

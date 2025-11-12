@@ -12,6 +12,9 @@ import { Store } from '@ngxs/store';
 import { TestConditionsBuilderComponent } from './test-condition-builder/test-conditions-builder.component';
 import { TestQuestionsBuilderComponent } from './test-questions-builder/test-questions-builder.component';
 import { MatCheckbox } from '@angular/material/checkbox';
+import { AppFilesStorageService } from '@/core/api';
+import { forkJoin, Observable, of } from 'rxjs';
+import { cloneDeep } from 'lodash';
 
 @Injectable({
   providedIn: 'root'
@@ -50,9 +53,12 @@ export class TestsEditorService {
 })
 export class TestEditorComponent {
   protected readonly _dialogData = inject<AppTestVm>(MAT_DIALOG_DATA);
+  private readonly _filesStorage = inject(AppFilesStorageService);
   private readonly _ref = inject(MatDialogRef);
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
+  private readonly _toSaveFiles = new Map<string, Blob>();
+  private readonly _toRemoveFiles = new Set<string>();
 
   protected readonly _isPending = computed(() =>
     this._dispatched.isDispatched(TestsActions.CreateTest)()
@@ -87,7 +93,7 @@ export class TestEditorComponent {
     this._form.reset({
       name,
       conditions: accessabilityConditions ?? [],
-      questions: questions ?? [],
+      questions: (questions ?? []).map(x => cloneDeep(x)),
       minScore,
       maxErrors,
       showCorrectAnswer,
@@ -116,20 +122,41 @@ export class TestEditorComponent {
   private _createTest(): void {
     const newId = generateGUID();
     const toCreate = this._getTestVm();
-    this._store.dispatch(new TestsActions.CreateTest({
-      ...toCreate,
-      id: newId
-    }))
+    forkJoin([
+      this._store.dispatch(new TestsActions.CreateTest({
+        ...toCreate,
+        id: newId
+      })),
+      this._saveFiles()
+    ])
       .subscribe(() => {
         this._handleClose();
       });
   }
 
   private _updateTest(): void {
-    this._store.dispatch(new TestsActions.UpdateTest(this._dialogData.id, this._getTestVm()))
+    forkJoin([
+      this._store.dispatch(new TestsActions.UpdateTest(this._dialogData.id, this._getTestVm())),
+      this._saveFiles()
+    ])
       .subscribe(() => {
         this._handleClose();
       });
+  }
+
+  private _saveFiles(): Observable<void> {
+    if (this._toSaveFiles.size > 0 || this._toRemoveFiles.size > 0) {
+      const array: Observable<string | void>[] = [];
+      this._toSaveFiles.forEach((file, id) => {
+        array.push(this._filesStorage.uploadFile(id, file));
+      });
+      this._toRemoveFiles.forEach((file, id) => {
+        array.push(this._filesStorage.deleteFile(id));
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return forkJoin(array) as any;
+    }
+    return of(void 0);
   }
 
   protected _handleSubmit(): void {
@@ -144,5 +171,15 @@ export class TestEditorComponent {
 
   protected _handleClose(): void {
     this._ref.close();
+  }
+
+  public addToSaveFile(id: string, file: Blob): void {
+    this._toSaveFiles.set(id, file);
+    this._form.markAsDirty();
+  }
+
+  public addToRemoveFile(id: string): void {
+    this._toRemoveFiles.add(id);
+    this._form.markAsDirty();
   }
 }

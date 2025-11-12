@@ -13,6 +13,10 @@
     </mat-label>
     <textarea [formControl]="_form.controls.questionText" matInput rows="2"></textarea>
   </mat-form-field>
+  <button mat-flat-button type="button" color="primary" (click)="_openFile()">
+    <mat-icon svgIcon="file-contract" />
+    Выбрать изображение {{_form.value.image ? '(' + _form.value.image + ')' : ''}}
+  </button>
   <mat-checkbox [formControl]="_form.controls.useActivationCondition">Использовать условие активации вопроса</mat-checkbox>
   @if (_form.value.useActivationCondition) {
     <div class="flex gap-1 w-full flex-wrap">

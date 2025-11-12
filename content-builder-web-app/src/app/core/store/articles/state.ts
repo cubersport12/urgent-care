@@ -21,12 +21,12 @@ export class ArticlesState {
 
   @Selector()
   public static getAllArticles(state: ArticlesStateModel) {
-    return state.articles ?? [];
+    return [...state.articles ?? []];
   }
 
   @Selector()
   public static getArticles(state: ArticlesStateModel) {
-    return (parentId: NullableValue<string>) => state.articles?.filter(x => x.parentId == parentId) ?? [];
+    return (parentId: NullableValue<string>) => [...state.articles?.filter(x => x.parentId == parentId) ?? []];
   }
 
   @Action(ArticlesActions.FetchArticles, { cancelUncompleted: true })

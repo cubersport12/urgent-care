@@ -21,12 +21,12 @@ export class TestsState {
 
   @Selector()
   public static getAllTests(state: TestsStateModel) {
-    return state.articles ?? [];
+    return [...state.articles ?? []].map(x => ({ ...x }));
   }
 
   @Selector()
   public static getTests(state: TestsStateModel) {
-    return (parentId: NullableValue<string>) => state.articles?.filter(x => x.parentId == parentId) ?? [];
+    return (parentId: NullableValue<string>) => [...state.articles?.filter(x => x.parentId == parentId) ?? []].map(x => ({ ...x }));
   }
 
   @Action(TestsActions.FetchTests, { cancelUncompleted: true })
