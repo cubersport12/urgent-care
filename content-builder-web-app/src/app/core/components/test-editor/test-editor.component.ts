@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngxs/store';
 import { TestConditionsBuilderComponent } from './test-condition-builder/test-conditions-builder.component';
 import { TestQuestionsBuilderComponent } from './test-questions-builder/test-questions-builder.component';
+import { MatCheckbox } from '@angular/material/checkbox';
 
 @Injectable({
   providedIn: 'root'
@@ -39,6 +40,7 @@ export class TestsEditorService {
     ReactiveFormsModule,
     MatSelectModule,
     MatFormFieldModule,
+    MatCheckbox,
     MatInputModule,
     TestConditionsBuilderComponent,
     TestQuestionsBuilderComponent
@@ -62,7 +64,9 @@ export class TestEditorComponent {
     conditions: new FormControl<AppTestAccessablityCondition[]>([]),
     questions: new FormControl<AppTestQuestionVm[]>([]),
     minScore: new FormControl<NullableValue<number>>(null),
-    maxErrors: new FormControl<NullableValue<number>>(null)
+    maxErrors: new FormControl<NullableValue<number>>(null),
+    showCorrectAnswer: new FormControl<boolean>(true),
+    includeToStatistics: new FormControl<boolean>(false)
   });
 
   constructor() {
@@ -79,24 +83,28 @@ export class TestEditorComponent {
   }
 
   private _reset(): void {
-    const { name, accessabilityConditions, questions, minScore, maxErrors } = this._dialogData;
+    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics } = this._dialogData;
     this._form.reset({
       name,
       conditions: accessabilityConditions ?? [],
       questions: questions ?? [],
       minScore,
-      maxErrors
+      maxErrors,
+      showCorrectAnswer,
+      includeToStatistics
     });
   }
 
   private _getTestVm(): AppTestVm {
-    const { name, conditions, maxErrors, minScore, questions } = this._form.value;
+    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics } = this._form.value;
     const result: AppTestVm = {
       ...(this._dialogData ?? {}),
       name: name!,
       accessabilityConditions: conditions ?? [],
       maxErrors,
       minScore,
+      showCorrectAnswer,
+      includeToStatistics,
       questions: questions ?? []
     };
     if ('type' in result) {

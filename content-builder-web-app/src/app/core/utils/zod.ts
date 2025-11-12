@@ -22,6 +22,8 @@ export const testSchema = z.object({
   parentId: z.string().nullable(),
   minScore: z.number().nullable().optional(),
   maxErrors: z.number().nullable().optional(),
+  showCorrectAnswer: z.boolean().nullable(),
+  includeToStatistics: z.boolean().nullable(),
   questions: z.array(z.object({
     id: z.string(),
     order: z.number().nullable(),

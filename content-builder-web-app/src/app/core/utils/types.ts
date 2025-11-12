@@ -27,6 +27,8 @@ export type AppTestVm = {
   questions?: NullableValue<AppTestQuestionVm[]>;
   minScore?: NullableValue<number>;
   maxErrors?: NullableValue<number>;
+  showCorrectAnswer?: NullableValue<boolean>;
+  includeToStatistics?: NullableValue<boolean>;
 } & AppBaseVm;
 
 export type AppTestQuestionVm = {
