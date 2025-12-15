@@ -52,6 +52,10 @@ jobs:
           channel: stable
           version: 3.0.2
 
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.1
+
       - name: Install dependencies
         run: flutter pub get
         working-directory: ./mobile_app
