@@ -54,7 +54,7 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
-	working-directory: ./mobile_app
+        working-directory: ./mobile_app
 
       - name: Сборка Web
         run: flutter build web
