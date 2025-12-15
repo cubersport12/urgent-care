@@ -46,13 +46,19 @@ jobs:
         run: npm run build
         working-directory: ./content-builder-web-app
 
-      - name: Установка зависимостей mobile app
-        run: npm install
-        working-directory: ./mobile-app
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+          version: 3.0.2
 
-      - name: Сборка приложения mobile app
-        run: npm run web:build
-        working-directory: ./mobile-app
+      - name: Install dependencies
+        run: flutter pub get
+	working-directory: ./mobile_app
+
+      - name: Сборка Web
+        run: flutter build web
+        working-directory: ./content-builder-web-app
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
