@@ -1,6 +1,6 @@
-import { AppTestQuestionActivationConditionKind, AppTestQuestionAnswerVm, AppTestQuestionVm, AppTestVm, generateGUID, NullableValue } from '@/core/utils';
+import { AppTestQuestionActivationConditionKind, AppTestQuestionAnswerVm, AppTestQuestionVm, generateGUID, NullableValue, openFileAsBuffer } from '@/core/utils';
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -13,6 +13,8 @@ import { MatTableModule } from '@angular/material/table';
 import { take } from 'rxjs';
 import { TestAsnwerBuilderComponent } from '../test-asnwer-builder/test-asnwer-builder.component';
 import { cloneDeep } from 'lodash';
+import { TestEditorComponent } from '../test-editor.component';
+import { AppFilesStorageService } from '@/core/api';
 
 @Component({
   selector: 'app-test-question-item-builder',
@@ -31,15 +33,19 @@ import { cloneDeep } from 'lodash';
   styles: ``
 })
 export class TestQuestionItemBuilderComponent {
+  private readonly _filesStorage = inject(AppFilesStorageService);
+  private readonly _testEditor = inject(TestEditorComponent);
   private readonly _ref = inject(MatDialogRef);
+  private readonly _files = new Map<string, Blob>();
   private readonly _dialog = inject(MatDialog);
   protected readonly _dialogData = inject<{ folderId: string; question?: AppTestQuestionVm; questions: AppTestQuestionVm[] }>(MAT_DIALOG_DATA);
+  private readonly _id = this._dialogData.question?.id ?? generateGUID();
   protected readonly AppTestQuestionActivationConditionKind = AppTestQuestionActivationConditionKind;
   protected readonly _conditionDataTypes = ['score', 'correct'];
   protected readonly _conditionTypes: AppTestQuestionActivationConditionKind[] = [AppTestQuestionActivationConditionKind.CompleteQuestion];
 
   protected readonly _form = new FormGroup({
-    name: new FormControl<string>('', Validators.required),
+    name: new FormControl<string>(''),
     questionText: new FormControl<string>('', Validators.required),
     image: new FormControl<NullableValue<string>>(null),
     answers: new FormControl<AppTestQuestionAnswerVm[]>([]),
@@ -60,6 +66,17 @@ export class TestQuestionItemBuilderComponent {
     this._reset();
   }
 
+  private _fetchQuestionFile(): void {
+    const image = this._dialogData.question?.image;
+    if (image == null) {
+      return;
+    }
+    this._filesStorage.downloadFile(image)
+      .subscribe((r) => {
+        this._files.set(image, r);
+      });
+  }
+
   private _reset(): void {
     if (this._dialogData.question == null) {
       return;
@@ -76,9 +93,13 @@ export class TestQuestionItemBuilderComponent {
       delete value.activationCondition;
       delete value.useActivationCondition;
     }
+    this._files.forEach((file, id) => {
+      this._testEditor.addToSaveFile(id, file);
+    });
+
     this._ref.close({
       ...(this._dialogData.question ?? {}),
-      id: this._dialogData.question?.id ?? generateGUID(),
+      id: this._id,
       ...value
     });
   }
@@ -148,5 +169,15 @@ export class TestQuestionItemBuilderComponent {
 
   protected _handleAnswerCreate(): void {
     this._openAnswer(null);
+  }
+
+  protected async _openFile() {
+    const image = await openFileAsBuffer('image/*', 'file') as File;
+    const imageId = image.name;
+    this._files.set(imageId, image);
+    this._form.patchValue({
+      image: imageId
+    });
+    this._form.markAllAsDirty();
   }
 }

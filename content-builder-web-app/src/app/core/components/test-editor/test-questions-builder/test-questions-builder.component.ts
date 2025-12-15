@@ -1,5 +1,5 @@
 import { AppTestQuestionVm, NullableValue } from '@/core/utils';
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, inject, Injector, input, signal, ViewContainerRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MatMiniFabButton, MatIconButton, MatButton } from '@angular/material/button';
 import { MatRipple } from '@angular/material/core';
@@ -11,6 +11,7 @@ import { take } from 'rxjs';
 import { cloneDeep, sum, sumBy } from 'lodash';
 import { NgClass } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+import { TestEditorComponent } from '../test-editor.component';
 
 type ControlValueType = AppTestQuestionVm[];
 
@@ -64,7 +65,10 @@ type ControlValueType = AppTestQuestionVm[];
 })
 export class TestQuestionsBuilderComponent implements ControlValueAccessor {
   private _fn: NullableValue<(value: ControlValueType) => void>;
+  private readonly _testEditor = inject(TestEditorComponent);
   private readonly _dialog = inject(MatDialog);
+  private readonly _injector = inject(Injector);
+  private readonly _vcr = inject(ViewContainerRef);
 
   protected readonly _disabled = signal(false);
   protected readonly _questions = signal<ControlValueType>([]);
@@ -96,6 +100,8 @@ export class TestQuestionsBuilderComponent implements ControlValueAccessor {
     this._dialog.open(TestQuestionItemBuilderComponent, {
       width: '80%',
       hasBackdrop: true,
+      viewContainerRef: this._vcr,
+      injector: this._injector,
       disableClose: true,
       data: {
         folderId: this.folderId(),
@@ -105,7 +111,7 @@ export class TestQuestionsBuilderComponent implements ControlValueAccessor {
     })
       .afterClosed()
       .pipe(take(1))
-      .subscribe((result: AppTestQuestionVm) => {
+      .subscribe((result: AppTestQuestionVm & { file?: File }) => {
         if (result == null) {
           return;
         }
@@ -135,6 +141,9 @@ export class TestQuestionsBuilderComponent implements ControlValueAccessor {
       }
       return [...prev];
     });
+    if (q.image) {
+      this._testEditor.addToRemoveFile(q.image);
+    }
     this._changed();
   }
 
