@@ -10,9 +10,10 @@ import { IconSymbol } from './ui/icon-symbol';
 type TestViewProps = {
   test: AppTestVm;
   onBack: () => void;
+  onStart?: () => void;
 };
 
-export function TestView({ test, onBack }: TestViewProps) {
+export function TestView({ test, onBack, onStart }: TestViewProps) {
   const opacity = useSharedValue(0);
 
   useEffect(() => {
@@ -28,6 +29,8 @@ export function TestView({ test, onBack }: TestViewProps) {
   const tintColor = useThemeColor({}, 'tint');
   const backgroundColor = useThemeColor({}, 'background');
   const pressedBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2a2a2a' }, 'background');
+  // Используем фиксированный синий цвет для кнопок, чтобы текст был всегда виден
+  const buttonColor = '#0a7ea4';
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
@@ -50,60 +53,48 @@ export function TestView({ test, onBack }: TestViewProps) {
           <ThemedText type="title" style={styles.title}>
             {test.name}
           </ThemedText>
-          {test.minScore !== undefined && test.minScore !== null && (
-            <ThemedText style={styles.meta}>
-              Минимальный балл: {test.minScore}
-            </ThemedText>
-          )}
-          {test.maxErrors !== undefined && test.maxErrors !== null && (
-            <ThemedText style={styles.meta}>
-              Максимальное количество ошибок: {test.maxErrors}
-            </ThemedText>
-          )}
-          {test.questions && test.questions.length > 0 && (
-            <ThemedView style={styles.section}>
-              <ThemedText type="subtitle" style={styles.sectionTitle}>
-                Вопросы ({test.questions.length}):
-              </ThemedText>
-              {test.questions.map((question, index) => (
-                <ThemedView key={question.id} style={styles.questionItem}>
-                  <ThemedText style={styles.questionNumber}>
-                    Вопрос {index + 1}
-                  </ThemedText>
-                  <ThemedText style={styles.questionText}>
-                    {question.questionText}
-                  </ThemedText>
-                  {question.image && (
-                    <ThemedText style={styles.questionImage}>
-                      [Изображение: {question.image}]
-                    </ThemedText>
-                  )}
-                  {question.answers && question.answers.length > 0 && (
-                    <ThemedView style={styles.answersContainer}>
-                      {question.answers.map((answer, answerIndex) => (
-                        <ThemedText key={answerIndex} style={styles.answerItem}>
-                          • {answer.answerText}
-                          {answer.isCorrect && ' ✓'}
-                          {answer.score !== undefined && ` (${answer.score} баллов)`}
-                        </ThemedText>
-                      ))}
-                    </ThemedView>
-                  )}
+          <ThemedView style={styles.infoCard}>
+            {test.questions && test.questions.length > 0 && (
+              <ThemedView style={[styles.infoRow, styles.infoRowFirst]}>
+                <IconSymbol name="questionmark.circle.fill" size={24} color={tintColor} />
+                <ThemedView style={styles.infoRowContent}>
+                  <ThemedText style={styles.infoLabel}>Количество вопросов</ThemedText>
+                  <ThemedText style={styles.infoValue}>{test.questions.length}</ThemedText>
                 </ThemedView>
-              ))}
-            </ThemedView>
-          )}
-          {test.accessabilityConditions && test.accessabilityConditions.length > 0 && (
-            <ThemedView style={styles.section}>
-              <ThemedText type="subtitle" style={styles.sectionTitle}>
-                Условия доступности:
-              </ThemedText>
-              {test.accessabilityConditions.map((condition, index) => (
-                <ThemedText key={index} style={styles.conditionItem}>
-                  • {condition.type === 'test' ? 'Тест' : 'Статья'}: {condition.type === 'test' ? condition.testId : condition.articleId}
-                </ThemedText>
-              ))}
-            </ThemedView>
+              </ThemedView>
+            )}
+            {test.minScore !== undefined && test.minScore !== null && (
+              <ThemedView style={styles.infoRow}>
+                <IconSymbol name="star.fill" size={24} color={tintColor} />
+                <ThemedView style={styles.infoRowContent}>
+                  <ThemedText style={styles.infoLabel}>Минимальный балл</ThemedText>
+                  <ThemedText style={styles.infoValue}>{test.minScore}</ThemedText>
+                </ThemedView>
+              </ThemedView>
+            )}
+            {test.maxErrors !== undefined && test.maxErrors !== null && (
+              <ThemedView style={[styles.infoRow, styles.infoRowLast]}>
+                <IconSymbol name="exclamationmark.triangle.fill" size={24} color={tintColor} />
+                <ThemedView style={styles.infoRowContent}>
+                  <ThemedText style={styles.infoLabel}>Максимальное количество ошибок</ThemedText>
+                  <ThemedText style={styles.infoValue}>{test.maxErrors}</ThemedText>
+                </ThemedView>
+              </ThemedView>
+            )}
+          </ThemedView>
+          {onStart && (
+            <Pressable
+              onPress={onStart}
+              style={({ pressed }) => [
+                styles.startButton,
+                {
+                  backgroundColor: pressed ? buttonColor + 'CC' : buttonColor,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <ThemedText style={styles.startButtonText}>Начать</ThemedText>
+            </Pressable>
           )}
         </ThemedView>
       </ScrollView>
@@ -139,54 +130,83 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 16,
+    padding: 20,
   },
   title: {
-    marginBottom: 16,
+    marginBottom: 32,
+    fontSize: 32,
+    fontWeight: 'bold',
+    lineHeight: 40,
   },
-  meta: {
-    marginBottom: 8,
+  infoCard: {
+    padding: 24,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+    marginBottom: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    gap: 16,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.06)',
+  },
+  infoRowFirst: {
+    marginTop: 0,
+  },
+  infoRowLast: {
+    marginBottom: 0,
+    paddingBottom: 0,
+    borderBottomWidth: 0,
+  },
+  infoRowContent: {
+    flex: 1,
+  },
+  infoLabel: {
     fontSize: 14,
-    opacity: 0.7,
+    opacity: 0.65,
+    marginBottom: 6,
+    fontWeight: '500',
+    letterSpacing: 0.3,
   },
-  section: {
-    marginTop: 24,
+  infoValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    lineHeight: 32,
   },
-  sectionTitle: {
-    marginBottom: 12,
-  },
-  questionItem: {
-    marginBottom: 20,
-    padding: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    borderRadius: 8,
-  },
-  questionNumber: {
-    fontWeight: '600',
-    marginBottom: 8,
-    fontSize: 16,
-  },
-  questionText: {
-    marginBottom: 8,
-    fontSize: 15,
-  },
-  questionImage: {
-    fontSize: 12,
-    opacity: 0.6,
-    marginBottom: 8,
-  },
-  answersContainer: {
+  startButton: {
     marginTop: 8,
-    paddingLeft: 8,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 60,
+    shadowColor: '#0a7ea4',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
   },
-  answerItem: {
-    marginBottom: 4,
-    fontSize: 14,
-  },
-  conditionItem: {
-    marginBottom: 8,
-    paddingLeft: 8,
-    fontSize: 14,
+  startButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
 

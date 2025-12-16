@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { TestProvider } from '@/contexts/test-context';
 import { ThemeProvider } from '@/contexts/theme-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -17,13 +18,15 @@ export default function RootLayout() {
   
   return (
     <ThemeProvider theme={theme}>
-      <NavigationThemeProvider value={theme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </NavigationThemeProvider>
+      <TestProvider>
+        <NavigationThemeProvider value={theme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </NavigationThemeProvider>
+      </TestProvider>
     </ThemeProvider>
   );
 }

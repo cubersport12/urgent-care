@@ -1,3 +1,4 @@
+import { useTest } from '@/contexts/test-context';
 import { AppArticleVm, AppFolderVm, AppTestVm } from '@/hooks/api/types';
 import { useArticles } from '@/hooks/api/useArticles';
 import { useFolders } from '@/hooks/api/useFolders';
@@ -7,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
+import { TestTakingView } from './test-taking-view';
 import { TestView } from './test-view';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
@@ -31,6 +33,7 @@ export function Explorer() {
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
   const previousFolderIdRef = useRef<string | undefined>(undefined);
   const opacity = useSharedValue(1);
+  const { isTestStarted, startTest, resetTest } = useTest();
 
   const tintColor = useThemeColor({}, 'tint');
   const foldersResponse = useFolders(currentFolderId);
@@ -141,9 +144,24 @@ export function Explorer() {
     // Возврат из article/test - просто закрываем их, остаемся в текущей папке
     setSelectedArticle(null);
     setSelectedTest(null);
+    resetTest();
     // Удаляем последний элемент из breadcrumb (article/test)
     setBreadcrumb(prev => prev.slice(0, -1));
     // Анимация появления списка
+    opacity.value = withTiming(1, { duration: 300 });
+  };
+
+  const handleStartTest = () => {
+    if (selectedTest) {
+      startTest(selectedTest);
+    }
+  };
+
+  const handleFinishTest = () => {
+    resetTest();
+    // Не сбрасываем selectedTest, чтобы вернуться к TestView
+    // setSelectedTest(null);
+    // setBreadcrumb(prev => prev.slice(0, -1));
     opacity.value = withTiming(1, { duration: 300 });
   };
 
@@ -185,9 +203,14 @@ export function Explorer() {
     return <ArticleView article={selectedArticle} onBack={handleBackFromItem} />;
   }
 
+  // Если тест начат, показываем TestTakingView
+  if (selectedTest && isTestStarted) {
+    return <TestTakingView onBack={handleBackFromItem} onFinish={handleFinishTest} />;
+  }
+
   // Если выбран тест, показываем TestView
   if (selectedTest) {
-    return <TestView test={selectedTest} onBack={handleBackFromItem} />;
+    return <TestView test={selectedTest} onBack={handleBackFromItem} onStart={handleStartTest} />;
   }
 
   // Показываем список элементов

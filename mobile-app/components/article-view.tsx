@@ -19,8 +19,6 @@ export function ArticleView({ article, onBack }: ArticleViewProps) {
   const { response: html, isLoading } = useFileContentString(`${article.id}.html`);
   const processedHtml = html?.replace(/color:#000000/g, 'color:white');
 
-  console.info('Длина html', processedHtml?.slice(0, 50) ?? 'Empty');
-
   const injectedJavaScript = () => `
     ${isNative ? `document.body.style.opacity = '0';` : ''}
     function scaleToFit() {
