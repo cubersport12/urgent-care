@@ -21,31 +21,121 @@ export function ArticleView({ article, onBack }: ArticleViewProps) {
 
   const injectedJavaScript = () => `
     ${isNative ? `document.body.style.opacity = '0';` : ''}
-    function scaleToFit() {
-      var element = document.getElementById("page-container");
-      if (element == null) {
-        element = document.body;
-      } else {
-        document.body.style.overflow = 'hidden';  
-      }
-      var scale = element.clientWidth/element.scrollWidth;
-      console.log(scale);
-      document.body.style.transform = 'scale(' + scale + ')';
-      document.body.style.margin = '0';
-      document.body.style.padding = '0';
-      document.body.style.transformOrigin = 'top left';
-      document.body.style.width = 100.1/scale + 'vw';
-      document.body.style.height = 100.1/scale + 'vh';
-    }
-    window.addEventListener('load', scaleToFit);
-    window.addEventListener('resize', scaleToFit);
-    ${isNative
-      ? `
-      scaleToFit();
-      document.body.style.opacity = '1';
-      `
-      : ''}
+    
+    (function() {
+      'use strict';
       
+      let isScaling = false;
+      let timer = null;
+      
+      function applyScale() {
+        if (isScaling) return;
+        isScaling = true;
+        
+        const container = document.getElementById('page-container');
+        if (!container) {
+          if (${isNative}) {
+            document.body.style.opacity = '1';
+          }
+          isScaling = false;
+          return;
+        }
+        
+        console.info('scaling....')
+        const contentElement = container.firstElementChild;
+        if (!contentElement) {
+          if (${isNative}) {
+            document.body.style.opacity = '1';
+          }
+          isScaling = false;
+          return;
+        }
+        
+        // Убеждаемся, что контейнер занимает всю ширину
+        // container.style.width = '100%';
+        // container.style.maxWidth = '100%';
+        container.style.margin = '0';
+        container.style.padding = '0';
+        
+        // Получаем ширину контейнера (всегда на всю страницу)
+        const containerWidth = container.getBoundingClientRect().width || container.clientWidth || container.offsetWidth || window.innerWidth;
+        // Получаем реальную ширину содержимого через getBoundingClientRect для точности
+        const contentRect = contentElement.getBoundingClientRect();
+        const contentWidth = contentRect.width || contentElement.scrollWidth || contentElement.offsetWidth || contentElement.clientWidth;
+        
+        if (containerWidth === 0 || contentWidth === 0) {
+          isScaling = false;
+          return;
+        }
+        
+        // Вычисляем scale: во сколько раз нужно увеличить содержимое
+        const scale = 'calc(100vw / ' + (contentElement.clientWidth + 10) +'px)';
+        
+        // Применяем scale к body для масштабирования всего содержимого
+        document.body.style.transform = 'scale(' + scale + ')';
+        document.body.style.transformOrigin = 'top left';
+        document.body.style.margin = '-1px';
+        document.body.style.padding = '0';
+        document.body.style.width = 'calc(100vw /' + scale + ' )';
+        document.body.style.height = 'calc(100vh /' + scale + ' )';
+        document.body.style.overflow = 'hidden';
+        
+        // Также применяем scale непосредственно к контейнеру для надежности
+        // container.style.transform = 'scale(1)';
+        // container.style.transformOrigin = 'top left';
+        
+        if (${isNative}) {
+          document.body.style.opacity = '1';
+        }
+        
+        setTimeout(() => {
+          isScaling = false;
+        }, 200);
+      }
+      
+      function init() {
+        // Даем время на загрузку контента и изображений
+        setTimeout(applyScale, 200);
+        
+        // Также пробуем после полной загрузки
+        if (document.readyState === 'complete') {
+          setTimeout(applyScale, 300);
+        } else {
+          window.addEventListener('load', () => {
+            setTimeout(applyScale, 300);
+          });
+        }
+        
+        const container = document.getElementById('page-container');
+        // if (container) {
+        //   const resizeObserver = new ResizeObserver(() => {
+        //     if (!isScaling) {
+        //       setTimeout(applyScale, 50);
+        //     }
+        //   });
+          
+        //   resizeObserver.observe(container);
+          
+        //   const contentElement = container.firstElementChild;
+        //   if (contentElement) {
+        //     resizeObserver.observe(contentElement);
+        //   }
+        // }
+        
+        window.addEventListener('resize', () => {
+          if (!isScaling) {
+          clearTimeout(timer);
+            timer = setTimeout(applyScale, 50);
+          }
+        });
+      }
+      
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
   `;
 
   const injectedJavaScriptBeforeContent = (htmlBg: string = 'transparent') => `
@@ -114,7 +204,8 @@ export function ArticleView({ article, onBack }: ArticleViewProps) {
           overScrollMode="never"
           style={{ flex: 1, backgroundColor: 'transparent', width: '100%', height: '100%', overflow: 'hidden' }}
           source={{ html: processedHtml ?? '' }}
-        /> : <iframe className="flex bg-transparent w-full h-full overflow-hidden"
+        /> : <iframe 
+          style={{ flex: 1, backgroundColor: 'transparent', width: '100%', height: '100%', overflow: 'hidden' }}
           src={URL.createObjectURL(new Blob([processedHtml?.replace('</body>', `<script>${injectedJavaScriptBeforeContent('rgb(1,1,1)')}</script></body>`) ?? ''], { type: 'text/html' }))} />
       )}
     </Animated.View>
