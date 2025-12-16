@@ -724,6 +724,7 @@ const styles = StyleSheet.create({
   questionTitle: {
     marginBottom: 24,
     fontSize: 20,
+    textAlign: 'center',
   },
   imageContainer: {
     marginBottom: 16,
