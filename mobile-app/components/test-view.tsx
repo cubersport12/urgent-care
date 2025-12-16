@@ -33,7 +33,7 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
   const buttonColor = '#0a7ea4';
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
       <ThemedView style={styles.header}>
         <Pressable
           onPress={onBack}
@@ -48,39 +48,38 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
           <ThemedText style={styles.backButtonText}>Назад</ThemedText>
         </Pressable>
       </ThemedView>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+      >
         <ThemedView style={styles.content}>
           <ThemedText type="title" style={styles.title}>
             {test.name}
           </ThemedText>
           <ThemedView style={styles.infoCard}>
-            {test.questions && test.questions.length > 0 && (
-              <ThemedView style={[styles.infoRow, styles.infoRowFirst]}>
-                <IconSymbol name="questionmark.circle.fill" size={24} color={tintColor} />
-                <ThemedView style={styles.infoRowContent}>
-                  <ThemedText style={styles.infoLabel}>Количество вопросов</ThemedText>
+            <ThemedView style={styles.infoRow}>
+              {test.questions && test.questions.length > 0 && (
+                <ThemedView style={styles.infoItem}>
+                  <IconSymbol name="questionmark.circle.fill" size={20} color={tintColor} />
                   <ThemedText style={styles.infoValue}>{test.questions.length}</ThemedText>
+                  <ThemedText style={styles.infoLabel}>Вопросов</ThemedText>
                 </ThemedView>
-              </ThemedView>
-            )}
-            {test.minScore !== undefined && test.minScore !== null && (
-              <ThemedView style={styles.infoRow}>
-                <IconSymbol name="star.fill" size={24} color={tintColor} />
-                <ThemedView style={styles.infoRowContent}>
-                  <ThemedText style={styles.infoLabel}>Минимальный балл</ThemedText>
+              )}
+              {test.minScore !== undefined && test.minScore !== null && (
+                <ThemedView style={styles.infoItem}>
+                  <IconSymbol name="star.fill" size={20} color={tintColor} />
                   <ThemedText style={styles.infoValue}>{test.minScore}</ThemedText>
+                  <ThemedText style={styles.infoLabel}>Мин. балл</ThemedText>
                 </ThemedView>
-              </ThemedView>
-            )}
-            {test.maxErrors !== undefined && test.maxErrors !== null && (
-              <ThemedView style={[styles.infoRow, styles.infoRowLast]}>
-                <IconSymbol name="exclamationmark.triangle.fill" size={24} color={tintColor} />
-                <ThemedView style={styles.infoRowContent}>
-                  <ThemedText style={styles.infoLabel}>Максимальное количество ошибок</ThemedText>
+              )}
+              {test.maxErrors !== undefined && test.maxErrors !== null && (
+                <ThemedView style={styles.infoItem}>
+                  <IconSymbol name="exclamationmark.triangle.fill" size={20} color={tintColor} />
                   <ThemedText style={styles.infoValue}>{test.maxErrors}</ThemedText>
+                  <ThemedText style={styles.infoLabel}>Макс. ошибок</ThemedText>
                 </ThemedView>
-              </ThemedView>
-            )}
+              )}
+            </ThemedView>
           </ThemedView>
           {onStart && (
             <Pressable
@@ -129,71 +128,75 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollViewContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   content: {
     padding: 20,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 400,
   },
   title: {
-    marginBottom: 32,
-    fontSize: 32,
+    marginBottom: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    lineHeight: 40,
+    lineHeight: 36,
+    textAlign: 'center',
   },
   infoCard: {
-    padding: 24,
+    padding: 16,
     borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-    marginBottom: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    // backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 2,
+    // },
+    // shadowOpacity: 0.08,
+    // shadowRadius: 8,
+    elevation: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
-    gap: 16,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.06)',
+    justifyContent: 'center',
+    gap: 20,
+    flexWrap: 'wrap',
   },
-  infoRowFirst: {
-    marginTop: 0,
-  },
-  infoRowLast: {
-    marginBottom: 0,
-    paddingBottom: 0,
-    borderBottomWidth: 0,
-  },
-  infoRowContent: {
-    flex: 1,
+  infoItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    minWidth: 70,
   },
   infoLabel: {
-    fontSize: 14,
-    opacity: 0.65,
-    marginBottom: 6,
+    fontSize: 12,
+    opacity: 0.7,
     fontWeight: '500',
-    letterSpacing: 0.3,
+    textAlign: 'center',
   },
   infoValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
-    lineHeight: 32,
+    lineHeight: 24,
   },
   startButton: {
-    marginTop: 8,
-    paddingVertical: 18,
-    paddingHorizontal: 32,
+    marginTop: 0,
+    paddingVertical: 16,
+    paddingHorizontal: 40,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 60,
+    minHeight: 56,
+    width: '100%',
+    maxWidth: 300,
     shadowColor: '#0a7ea4',
     shadowOffset: {
       width: 0,
