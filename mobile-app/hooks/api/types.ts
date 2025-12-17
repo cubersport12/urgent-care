@@ -87,3 +87,11 @@ export type AppTestAccessablityConditionArticle = {
   articleId: string;
   isReaded?: NullableValue<boolean>;
 };
+
+export type AppArticleStatsVm = {
+  id?: string;
+  readed?: boolean;
+  clientId: string;
+  articleId: string;
+  createdAt: string;
+}
