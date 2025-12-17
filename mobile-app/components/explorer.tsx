@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/theme';
 import { useTest } from '@/contexts/test-context';
 import { AppArticleVm, AppFolderVm, AppTestVm } from '@/hooks/api/types';
 import { fetchArticle, useArticles, useArticlesStats } from '@/hooks/api/useArticles';
@@ -529,9 +530,9 @@ function BackButton({ onPress }: BackButtonProps) {
 
 function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = false }: ExplorerItemComponentProps) {
   const backgroundColor = useThemeColor({}, 'background');
-  const pressedBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2a2a2a' }, 'background');
-  const successColor = '#4CAF50';
-  const disabledColor = useThemeColor({ light: '#cccccc', dark: '#666666' }, 'text');
+  const pressedBackgroundColor = useThemeColor({ light: Colors.light.pressedBackground, dark: Colors.dark.pressedBackground }, 'background');
+  const successColor = useThemeColor({}, 'success');
+  const disabledColor = useThemeColor({ light: Colors.light.disabledText, dark: Colors.dark.disabledText }, 'text');
 
   return (
     <Pressable

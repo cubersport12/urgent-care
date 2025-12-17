@@ -16,6 +16,23 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    // Primary colors
+    primary: '#0a7ea4',
+    primaryPressed: '#0a7ea4CC',
+    // Status colors
+    success: '#4CAF50',
+    error: '#F44336',
+    warning: '#FF9800',
+    // Neutral colors
+    white: '#FFFFFF',
+    black: '#000000',
+    // Background colors
+    pressedBackground: '#f0f0f0',
+    disabledBackground: '#cccccc',
+    disabledText: '#cccccc',
+    // Border colors
+    border: '#e0e0e0',
+    borderPrimary: '#0a7ea4',
   },
   dark: {
     text: '#ECEDEE',
@@ -24,6 +41,23 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    // Primary colors
+    primary: '#0a7ea4',
+    primaryPressed: '#0a7ea4CC',
+    // Status colors
+    success: '#4CAF50',
+    error: '#F44336',
+    warning: '#FF9800',
+    // Neutral colors
+    white: '#FFFFFF',
+    black: '#000000',
+    // Background colors
+    pressedBackground: '#2a2a2a',
+    disabledBackground: '#666666',
+    disabledText: '#666666',
+    // Border colors
+    border: '#333333',
+    borderPrimary: '#0a7ea4',
   },
 };
 

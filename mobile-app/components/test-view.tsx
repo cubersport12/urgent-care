@@ -1,10 +1,11 @@
 import { AppTestVm } from '@/hooks/api/types';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
+import { Button } from './ui/button';
 import { IconSymbol } from './ui/icon-symbol';
 
 type TestViewProps = {
@@ -28,25 +29,19 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
 
   const tintColor = useThemeColor({}, 'tint');
   const backgroundColor = useThemeColor({}, 'background');
-  const pressedBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2a2a2a' }, 'background');
-  // Используем фиксированный синий цвет для кнопок, чтобы текст был всегда виден
-  const buttonColor = '#0a7ea4';
 
   return (
     <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
       <ThemedView style={styles.header}>
-        <Pressable
+        <Button
+          title="Назад"
           onPress={onBack}
-          style={({ pressed }) => [
-            styles.backButton,
-            {
-              backgroundColor: pressed ? pressedBackgroundColor : backgroundColor,
-            },
-          ]}
-        >
-          <IconSymbol name="chevron.left" size={28} color={tintColor} />
-          <ThemedText style={styles.backButtonText}>Назад</ThemedText>
-        </Pressable>
+          variant="default"
+          icon="chevron.left"
+          iconPosition="left"
+          size="medium"
+          style={styles.backButton}
+        />
       </ThemedView>
       <ScrollView 
         style={styles.scrollView}
@@ -82,18 +77,14 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
             </ThemedView>
           </ThemedView>
           {onStart && (
-            <Pressable
+            <Button
+              title="Начать"
               onPress={onStart}
-              style={({ pressed }) => [
-                styles.startButton,
-                {
-                  backgroundColor: pressed ? buttonColor + 'CC' : buttonColor,
-                  opacity: pressed ? 0.8 : 1,
-                },
-              ]}
-            >
-              <ThemedText style={styles.startButtonText}>Начать</ThemedText>
-            </Pressable>
+              variant="primary"
+              size="large"
+              fullWidth
+              style={styles.startButton}
+            />
           )}
         </ThemedView>
       </ScrollView>

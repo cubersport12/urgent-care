@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/theme';
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
@@ -89,22 +90,22 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.02)',
   },
   answerItemSelected: {
-    borderColor: '#0a7ea4',
+    borderColor: Colors.light.primary,
     backgroundColor: 'rgba(10, 126, 164, 0.1)',
   },
   answerItemPressed: {
     opacity: 0.7,
   },
   answerItemCorrect: {
-    borderColor: '#4CAF50',
+    borderColor: Colors.light.success,
     backgroundColor: 'rgba(76, 175, 80, 0.1)',
   },
   answerItemIncorrect: {
-    borderColor: '#F44336',
+    borderColor: Colors.light.error,
     backgroundColor: 'rgba(244, 67, 54, 0.1)',
   },
   answerItemShouldBeSelected: {
-    borderColor: '#4CAF50',
+    borderColor: Colors.light.success,
     borderStyle: 'dashed',
     backgroundColor: 'rgba(76, 175, 80, 0.05)',
   },
@@ -124,16 +125,16 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxSelected: {
-    borderColor: '#0a7ea4',
-    backgroundColor: '#0a7ea4',
+    borderColor: Colors.light.primary,
+    backgroundColor: Colors.light.primary,
   },
   checkboxCorrect: {
-    borderColor: '#4CAF50',
-    backgroundColor: '#4CAF50',
+    borderColor: Colors.light.success,
+    backgroundColor: Colors.light.success,
   },
   checkboxIncorrect: {
-    borderColor: '#F44336',
-    backgroundColor: '#F44336',
+    borderColor: Colors.light.error,
+    backgroundColor: Colors.light.error,
   },
   radio: {
     width: 24,
@@ -145,25 +146,25 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   radioSelected: {
-    borderColor: '#0a7ea4',
+    borderColor: Colors.light.primary,
   },
   radioCorrect: {
-    borderColor: '#4CAF50',
+    borderColor: Colors.light.success,
   },
   radioIncorrect: {
-    borderColor: '#F44336',
+    borderColor: Colors.light.error,
   },
   radioInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#0a7ea4',
+    backgroundColor: Colors.light.primary,
   },
   radioInnerCorrect: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: Colors.light.success,
   },
   radioInnerIncorrect: {
-    backgroundColor: '#F44336',
+    backgroundColor: Colors.light.error,
   },
   answerText: {
     flex: 1,
@@ -173,11 +174,11 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
   },
   answerTextCorrect: {
-    color: '#4CAF50',
+    color: Colors.light.success,
     fontWeight: '600',
   },
   answerTextIncorrect: {
-    color: '#F44336',
+    color: Colors.light.error,
     fontWeight: '600',
   },
   resultMessage: {
@@ -338,15 +339,15 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.02)',
   },
   questionAnswerCorrect: {
-    borderColor: '#4CAF50',
+    borderColor: Colors.light.success,
     backgroundColor: 'rgba(76, 175, 80, 0.1)',
   },
   questionAnswerIncorrect: {
-    borderColor: '#F44336',
+    borderColor: Colors.light.error,
     backgroundColor: 'rgba(244, 67, 54, 0.1)',
   },
   questionAnswerShouldBeSelected: {
-    borderColor: '#4CAF50',
+    borderColor: Colors.light.success,
     borderStyle: 'dashed',
     backgroundColor: 'rgba(76, 175, 80, 0.05)',
   },
@@ -362,13 +363,13 @@ export const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0a7ea4',
+    backgroundColor: Colors.light.primary,
   },
   questionAnswerCheckboxCorrect: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: Colors.light.success,
   },
   questionAnswerCheckboxIncorrect: {
-    backgroundColor: '#F44336',
+    backgroundColor: Colors.light.error,
   },
   questionAnswerCheckboxEmpty: {
     width: 20,
@@ -382,15 +383,15 @@ export const styles = StyleSheet.create({
     fontSize: 15,
   },
   questionAnswerTextCorrect: {
-    color: '#4CAF50',
+    color: Colors.light.success,
     fontWeight: '600',
   },
   questionAnswerTextIncorrect: {
-    color: '#F44336',
+    color: Colors.light.error,
     fontWeight: '600',
   },
   questionAnswerTextShouldBeSelected: {
-    color: '#4CAF50',
+    color: Colors.light.success,
     fontWeight: '500',
   },
   questionScoreText: {

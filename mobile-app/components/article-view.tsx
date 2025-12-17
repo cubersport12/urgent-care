@@ -4,12 +4,12 @@ import { useDeviceId } from '@/hooks/use-device-id';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import WebView from 'react-native-webview';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
-import { IconSymbol } from './ui/icon-symbol';
+import { Button } from './ui/button';
 
 type ArticleViewProps = {
   article: AppArticleVm;
@@ -326,8 +326,6 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   });
 
   const tintColor = useThemeColor({}, 'tint');
-  const backgroundColor = useThemeColor({}, 'background');
-  const pressedBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2a2a2a' }, 'background');
   
   // Отслеживаем, прочитан ли документ, для показа кнопок навигации
   const [isRead, setIsRead] = useState(false);
@@ -361,18 +359,15 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
       <ThemedView style={styles.header}>
-        <Pressable
+        <Button
+          title="Назад"
           onPress={onBack}
-          style={({ pressed }) => [
-            styles.backButton,
-            {
-              backgroundColor: pressed ? pressedBackgroundColor : backgroundColor,
-            },
-          ]}
-        >
-          <IconSymbol name="chevron.left" size={28} color={tintColor} />
-          <ThemedText style={styles.backButtonText}>Назад</ThemedText>
-        </Pressable>
+          variant="default"
+          icon="chevron.left"
+          iconPosition="left"
+          size="medium"
+          style={styles.backButton}
+        />
       </ThemedView>
       {isLoading ? (
         <ThemedView style={styles.loadingContainer}>
@@ -423,47 +418,25 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
             <>
               {/* Кнопка "Назад" - переход к предыдущему документу */}
               {hasPrevious && onPrevious && (
-                <Pressable
+                <Button
+                  title="Назад"
                   onPress={onPrevious}
-                  style={({ pressed }) => [
-                    styles.navButton,
-                    styles.navButtonBack,
-                    {
-                      backgroundColor: pressed ? '#0a7ea4' : '#0a7ea4',
-                    },
-                  ]}
-                >
-                  <IconSymbol name="chevron.left" size={20} color="#FFFFFF" />
-                  <ThemedText 
-                    lightColor="#FFFFFF" 
-                    darkColor="#FFFFFF" 
-                    style={styles.navButtonText}
-                  >
-                    Назад
-                  </ThemedText>
-                </Pressable>
+                  variant="primary"
+                  icon="chevron.left"
+                  iconPosition="left"
+                  style={[styles.navButton, styles.navButtonBack]}
+                />
               )}
               {/* Кнопка "Далее" - переход к следующему документу */}
               {article.nextRunArticle && (
-                <Pressable
+                <Button
+                  title="Далее"
                   onPress={handleNext}
-                  style={({ pressed }) => [
-                    styles.navButton,
-                    styles.navButtonNext,
-                    {
-                      backgroundColor: pressed ? '#0a7ea4' : '#0a7ea4',
-                    },
-                  ]}
-                >
-                  <ThemedText 
-                    lightColor="#FFFFFF" 
-                    darkColor="#FFFFFF" 
-                    style={styles.navButtonText}
-                  >
-                    Далее
-                  </ThemedText>
-                  <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />
-                </Pressable>
+                  variant="primary"
+                  icon="chevron.right"
+                  iconPosition="right"
+                  style={[styles.navButton, styles.navButtonNext]}
+                />
               )}
             </>
           )}
@@ -535,13 +508,6 @@ const styles = StyleSheet.create({
   navButton: {
     position: 'absolute',
     bottom: Platform.select({ ios: 20, default: 12 }),
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 44,
     zIndex: 10,
   },
   navButtonBack: {
@@ -549,11 +515,6 @@ const styles = StyleSheet.create({
   },
   navButtonNext: {
     right: 16,
-  },
-  navButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
   },
 });
 

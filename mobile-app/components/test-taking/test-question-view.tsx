@@ -20,9 +20,11 @@ type TestQuestionViewProps = {
   onNext: () => void;
 };
 
-const successColor = '#4CAF50';
-const errorColor = '#F44336';
-const buttonColor = '#0a7ea4';
+import { Colors } from '@/constants/theme';
+
+const successColor = Colors.light.success;
+const errorColor = Colors.light.error;
+const buttonColor = Colors.light.primary;
 
 export function TestQuestionView({
   onBack,
