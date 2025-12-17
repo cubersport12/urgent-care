@@ -1,6 +1,6 @@
 import { useTest } from '@/contexts/test-context';
 import { AppArticleVm, AppFolderVm, AppTestVm } from '@/hooks/api/types';
-import { useArticles } from '@/hooks/api/useArticles';
+import { useArticles, useArticlesStats } from '@/hooks/api/useArticles';
 import { useFolders } from '@/hooks/api/useFolders';
 import { useTests } from '@/hooks/api/useTests';
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -39,6 +39,27 @@ export function Explorer() {
   const foldersResponse = useFolders(currentFolderId);
   const articlesResponse = useArticles(currentFolderId);
   const testsResponse = useTests(currentFolderId);
+  
+  // Получаем статистику для статей
+  const articlesIds = useMemo(() => {
+    return articlesResponse.data?.map(article => article.id) || [];
+  }, [articlesResponse.data]);
+  
+  const articlesStatsResponse = useArticlesStats(articlesIds);
+  
+  // Создаем Map для быстрого поиска прочитанных статей
+  const readArticlesMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    if (articlesStatsResponse.data) {
+      articlesStatsResponse.data.forEach(stat => {
+        if (stat.readed) {
+          map.set(stat.articleId, true);
+        }
+      });
+      console.log('Read articles map:', Array.from(map.entries()));
+    }
+    return map;
+  }, [articlesStatsResponse.data]);
 
   // Отслеживаем изменение currentFolderId для показа спиннера и анимации
   useEffect(() => {
@@ -142,6 +163,13 @@ export function Explorer() {
 
   const handleBackFromItem = () => {
     // Возврат из article/test - просто закрываем их, остаемся в текущей папке
+    // Обновляем статистику перед закрытием, если была открыта статья
+    if (selectedArticle) {
+      // Перезапрашиваем статистику для обновления списка
+      if (articlesStatsResponse.fetchData) {
+        void articlesStatsResponse.fetchData();
+      }
+    }
     setSelectedArticle(null);
     setSelectedTest(null);
     resetTest();
@@ -241,13 +269,20 @@ export function Explorer() {
               <ThemedText>Нет элементов</ThemedText>
             </ThemedView>
           ) : (
-            items.map((item) => (
-              <ExplorerItemComponent
-                key={`${item.type}-${item.data.id}`}
-                item={item}
-                onPress={() => handleItemPress(item)}
-              />
-            ))
+            items.map((item) => {
+              const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
+              if (item.type === 'article') {
+                console.log(`Article ${item.data.name} (${item.data.id}): isRead=${isRead}, map has: ${readArticlesMap.has(item.data.id)}`);
+              }
+              return (
+                <ExplorerItemComponent
+                  key={`${item.type}-${item.data.id}`}
+                  item={item}
+                  onPress={() => handleItemPress(item)}
+                  isRead={isRead}
+                />
+              );
+            })
           )}
         </ScrollView>
       </Animated.View>
@@ -258,6 +293,7 @@ export function Explorer() {
 type ExplorerItemComponentProps = {
   item: ExplorerItem;
   onPress: () => void;
+  isRead?: boolean;
 };
 
 type BreadcrumbProps = {
@@ -332,9 +368,10 @@ function BackButton({ onPress }: BackButtonProps) {
   );
 }
 
-function ExplorerItemComponent({ item, onPress }: ExplorerItemComponentProps) {
+function ExplorerItemComponent({ item, onPress, isRead = false }: ExplorerItemComponentProps) {
   const backgroundColor = useThemeColor({}, 'background');
   const pressedBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2a2a2a' }, 'background');
+  const successColor = '#4CAF50';
 
   return (
     <Pressable
@@ -350,7 +387,17 @@ function ExplorerItemComponent({ item, onPress }: ExplorerItemComponentProps) {
         <ThemedText style={styles.itemIcon}>
           {item.type === 'folder' ? '📁' : item.type === 'article' ? '📄' : '📝'}
         </ThemedText>
-        <ThemedText style={styles.itemName}>{item.data.name}</ThemedText>
+        <ThemedText 
+          style={[
+            styles.itemName,
+            item.type === 'article' && isRead && { color: successColor }
+          ]}
+        >
+          {item.data.name}
+        </ThemedText>
+        {item.type === 'article' && isRead && (
+          <IconSymbol name="checkmark" size={20} color={successColor} style={styles.itemCheckmark} />
+        )}
         {item.type === 'folder' && <ThemedText style={styles.itemArrow}>→</ThemedText>}
       </ThemedView>
     </Pressable>
@@ -451,6 +498,9 @@ const styles = StyleSheet.create({
   itemArrow: {
     fontSize: 18,
     color: '#0a7ea4',
+  },
+  itemCheckmark: {
+    marginLeft: 8,
   },
 });
 
