@@ -1,10 +1,10 @@
 import { useTest } from '@/contexts/test-context';
 import { AppArticleVm, AppFolderVm, AppTestVm } from '@/hooks/api/types';
-import { useArticles, useArticlesStats } from '@/hooks/api/useArticles';
+import { fetchArticle, useArticles, useArticlesStats } from '@/hooks/api/useArticles';
 import { useFolders } from '@/hooks/api/useFolders';
 import { useTests } from '@/hooks/api/useTests';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
@@ -31,6 +31,8 @@ export function Explorer() {
   const [selectedTest, setSelectedTest] = useState<AppTestVm | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
+  // История навигации по статьям для определения hasPrevious
+  const [articleNavigationHistory, setArticleNavigationHistory] = useState<string[]>([]);
   const previousFolderIdRef = useRef<string | undefined>(undefined);
   const opacity = useSharedValue(1);
   const { isTestStarted, startTest, resetTest } = useTest();
@@ -126,7 +128,84 @@ export function Explorer() {
     });
   }, [foldersResponse.data, articlesResponse.data, testsResponse.data]);
 
+  // Функция для проверки, должен ли элемент быть скрыт
+  const isItemHidden = useCallback((item: ExplorerItem, itemIndex: number): boolean => {
+    // Проверяем только статьи и тесты
+    if (item.type === 'folder') return false;
+
+    // Проверяем флаг hideWhileNotPrevComplete
+    const hideFlag = item.type === 'article' 
+      ? (item.data as AppArticleVm).hideWhileNotPrevComplete 
+      : false; // Для тестов пока не поддерживаем
+
+    if (!hideFlag) return false;
+
+    // Ищем предыдущий текстовый документ (статью)
+    for (let i = itemIndex - 1; i >= 0; i--) {
+      const prevItem = items[i];
+      
+      // Пропускаем папки
+      if (prevItem.type === 'folder') continue;
+
+      // Если нашли статью
+      if (prevItem.type === 'article') {
+        const prevArticle = prevItem.data as AppArticleVm;
+        
+        // Проверяем, включена ли статистика для предыдущей статьи
+        if (prevArticle.includeToStatistics) {
+          // Проверяем, прочитана ли предыдущая статья
+          const isPrevRead = readArticlesMap.get(prevArticle.id) || false;
+          // Если не прочитана, текущий элемент должен быть скрыт
+          return !isPrevRead;
+        }
+      }
+    }
+
+    // Если предыдущего текстового документа нет или он не включен в статистику, не скрываем
+    return false;
+  }, [items, readArticlesMap]);
+
+  // Функция для проверки, должен ли элемент быть disabled
+  const isItemDisabled = useCallback((item: ExplorerItem, itemIndex: number): boolean => {
+    // Проверяем только статьи и тесты
+    if (item.type === 'folder') return false;
+
+    // Проверяем флаг disableWhileNotPrevComplete
+    const disableFlag = item.type === 'article' 
+      ? (item.data as AppArticleVm).disableWhileNotPrevComplete 
+      : false; // Для тестов пока не поддерживаем
+
+    if (!disableFlag) return false;
+
+    // Ищем предыдущий текстовый документ (статью)
+    for (let i = itemIndex - 1; i >= 0; i--) {
+      const prevItem = items[i];
+      
+      // Пропускаем папки
+      if (prevItem.type === 'folder') continue;
+
+      // Если нашли статью
+      if (prevItem.type === 'article') {
+        const prevArticle = prevItem.data as AppArticleVm;
+        
+        // Проверяем, включена ли статистика для предыдущей статьи
+        if (prevArticle.includeToStatistics) {
+          // Проверяем, прочитана ли предыдущая статья
+          const isPrevRead = readArticlesMap.get(prevArticle.id) || false;
+          // Если не прочитана, текущий элемент должен быть disabled
+          return !isPrevRead;
+        }
+      }
+    }
+
+    // Если предыдущего текстового документа нет или он не включен в статистику, не блокируем
+    return false;
+  }, [items, readArticlesMap]);
+
   const handleItemPress = (item: ExplorerItem) => {
+    // Не обрабатываем нажатия на disabled элементы
+    // (это уже обрабатывается в Pressable, но на всякий случай)
+    
     if (item.type === 'folder') {
       setIsNavigating(true);
       opacity.value = withTiming(0, { duration: 200 });
@@ -138,6 +217,8 @@ export function Explorer() {
       opacity.value = withTiming(0, { duration: 200 });
       setSelectedArticle(item.data as AppArticleVm);
       setBreadcrumb(prev => [...prev, { id: item.data.id, name: item.data.name, type: 'article' }]);
+      // При открытии статьи напрямую из списка - это первый элемент в очереди
+      setArticleNavigationHistory([item.data.id]);
       setSelectedTest(null);
     } else if (item.type === 'test') {
       opacity.value = withTiming(0, { duration: 200 });
@@ -161,23 +242,64 @@ export function Explorer() {
     }
   };
 
-  const handleBackFromItem = () => {
-    // Возврат из article/test - просто закрываем их, остаемся в текущей папке
-    // Обновляем статистику перед закрытием, если была открыта статья
+  // Обработчик возврата в папку (верхняя кнопка "Назад")
+  const handleBackToFolder = () => {
+    // Всегда выходим в папку, независимо от истории навигации
     if (selectedArticle) {
       // Перезапрашиваем статистику для обновления списка
       if (articlesStatsResponse.fetchData) {
         void articlesStatsResponse.fetchData();
       }
+      setArticleNavigationHistory([]);
     }
     setSelectedArticle(null);
     setSelectedTest(null);
     resetTest();
-    // Удаляем последний элемент из breadcrumb (article/test)
-    setBreadcrumb(prev => prev.slice(0, -1));
+    // Удаляем все элементы article из breadcrumb
+    setBreadcrumb(prev => prev.filter(b => b.type !== 'article' && b.type !== 'test'));
     // Анимация появления списка
     opacity.value = withTiming(1, { duration: 300 });
   };
+
+  // Обработчик перехода к предыдущему документу (нижняя кнопка "Назад")
+  const handlePreviousArticle = useCallback(async () => {
+    if (articleNavigationHistory.length > 1) {
+      const previousArticleId = articleNavigationHistory[articleNavigationHistory.length - 2];
+      try {
+        // Запрашиваем предыдущую статью по ID через API
+        const result = await fetchArticle(previousArticleId);
+        const previousArticle = result.data;
+        
+        if (previousArticle) {
+          opacity.value = withTiming(0, { duration: 200 });
+          setSelectedArticle(previousArticle);
+          setArticleNavigationHistory(prev => prev.slice(0, -1));
+          setBreadcrumb(prev => {
+            // Удаляем последний элемент article из breadcrumb
+            const newBreadcrumb = [...prev];
+            // Ищем последний индекс article с конца
+            let lastArticleIndex = -1;
+            for (let i = newBreadcrumb.length - 1; i >= 0; i--) {
+              if (newBreadcrumb[i].type === 'article') {
+                lastArticleIndex = i;
+                break;
+              }
+            }
+            if (lastArticleIndex !== -1) {
+              newBreadcrumb.splice(lastArticleIndex, 1);
+            }
+            // Добавляем предыдущую статью
+            return [...newBreadcrumb, { id: previousArticle.id, name: previousArticle.name, type: 'article' }];
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching previous article:', error);
+      }
+    }
+  }, [articleNavigationHistory, opacity]);
+
+  // Обработчик возврата из article/test (для совместимости)
+  const handleBackFromItem = handleBackToFolder;
 
   const handleStartTest = () => {
     if (selectedTest) {
@@ -219,6 +341,25 @@ export function Explorer() {
     setSelectedTest(null);
   };
 
+  // Обработчик перехода к следующему документу
+  const handleNextArticle = useCallback(async (nextArticleId: string) => {
+    try {
+      // Запрашиваем статью по ID через API
+      const result = await fetchArticle(nextArticleId);
+      const nextArticle = result.data;
+      
+      if (nextArticle) {
+        opacity.value = withTiming(0, { duration: 200 });
+        setSelectedArticle(nextArticle);
+        setBreadcrumb(prev => [...prev, { id: nextArticle.id, name: nextArticle.name, type: 'article' }]);
+        // Добавляем в историю навигации - теперь есть предыдущий элемент
+        setArticleNavigationHistory(prev => [...prev, nextArticleId]);
+      }
+    } catch (error) {
+      console.error('Error fetching article:', error);
+    }
+  }, [opacity]);
+
   // Анимированный стиль для списка
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -228,7 +369,19 @@ export function Explorer() {
 
   // Если выбрана статья, показываем ArticleView
   if (selectedArticle) {
-    return <ArticleView article={selectedArticle} onBack={handleBackFromItem} />;
+    // Определяем, есть ли предыдущий документ в истории навигации
+    // Если в истории больше одного элемента, значит мы перешли через "Далее"
+    const hasPrevious = articleNavigationHistory.length > 1;
+    
+    return (
+      <ArticleView 
+        article={selectedArticle} 
+        onBack={handleBackToFolder}
+        onNext={handleNextArticle}
+        onPrevious={handlePreviousArticle}
+        hasPrevious={hasPrevious}
+      />
+    );
   }
 
   // Если тест начат, показываем TestTakingView
@@ -269,20 +422,25 @@ export function Explorer() {
               <ThemedText>Нет элементов</ThemedText>
             </ThemedView>
           ) : (
-            items.map((item) => {
-              const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
-              if (item.type === 'article') {
-                console.log(`Article ${item.data.name} (${item.data.id}): isRead=${isRead}, map has: ${readArticlesMap.has(item.data.id)}`);
-              }
-              return (
-                <ExplorerItemComponent
-                  key={`${item.type}-${item.data.id}`}
-                  item={item}
-                  onPress={() => handleItemPress(item)}
-                  isRead={isRead}
-                />
-              );
-            })
+            items
+              .map((item, index) => ({ item, index }))
+              .filter(({ item, index }) => !isItemHidden(item, index))
+              .map(({ item, index }) => {
+                const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
+                const isDisabled = isItemDisabled(item, index);
+                if (item.type === 'article') {
+                  console.log(`Article ${item.data.name} (${item.data.id}): isRead=${isRead}, map has: ${readArticlesMap.has(item.data.id)}`);
+                }
+                return (
+                  <ExplorerItemComponent
+                    key={`${item.type}-${item.data.id}`}
+                    item={item}
+                    onPress={() => handleItemPress(item)}
+                    isRead={isRead}
+                    isDisabled={isDisabled}
+                  />
+                );
+              })
           )}
         </ScrollView>
       </Animated.View>
@@ -294,6 +452,7 @@ type ExplorerItemComponentProps = {
   item: ExplorerItem;
   onPress: () => void;
   isRead?: boolean;
+  isDisabled?: boolean;
 };
 
 type BreadcrumbProps = {
@@ -368,18 +527,21 @@ function BackButton({ onPress }: BackButtonProps) {
   );
 }
 
-function ExplorerItemComponent({ item, onPress, isRead = false }: ExplorerItemComponentProps) {
+function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = false }: ExplorerItemComponentProps) {
   const backgroundColor = useThemeColor({}, 'background');
   const pressedBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2a2a2a' }, 'background');
   const successColor = '#4CAF50';
+  const disabledColor = useThemeColor({ light: '#cccccc', dark: '#666666' }, 'text');
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={isDisabled ? undefined : onPress}
+      disabled={isDisabled}
       style={({ pressed }) => [
         styles.item,
         {
-          backgroundColor: pressed ? pressedBackgroundColor : backgroundColor,
+          backgroundColor: pressed && !isDisabled ? pressedBackgroundColor : backgroundColor,
+          opacity: isDisabled ? 0.5 : 1,
         },
       ]}
     >
@@ -390,12 +552,13 @@ function ExplorerItemComponent({ item, onPress, isRead = false }: ExplorerItemCo
         <ThemedText 
           style={[
             styles.itemName,
-            item.type === 'article' && isRead && { color: successColor }
+            item.type === 'article' && isRead && !isDisabled && { color: successColor },
+            isDisabled && { color: disabledColor },
           ]}
         >
           {item.data.name}
         </ThemedText>
-        {item.type === 'article' && isRead && (
+        {item.type === 'article' && isRead && !isDisabled && (
           <IconSymbol name="checkmark" size={20} color={successColor} style={styles.itemCheckmark} />
         )}
         {item.type === 'folder' && <ThemedText style={styles.itemArrow}>→</ThemedText>}

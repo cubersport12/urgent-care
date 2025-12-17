@@ -1,6 +1,6 @@
 import { supabase } from '@/supabase';
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDeviceId } from '../use-device-id';
 import { AppArticleStatsVm, AppArticleVm, NullableValue } from './types';
 import { useSupabaseFetch } from './useSupabaseFetch';
@@ -129,12 +129,18 @@ export const useArticlesStats = (articlesIds: string[]) => {
   const [isLoading, setIsLoading] = useState(true);
   const { deviceId } = useDeviceId();
 
+  // Создаем стабильный ключ для массива articlesIds
+  const articlesIdsKey = useMemo(() => [...articlesIds].sort().join(','), [articlesIds]);
+  
+  // Мемоизируем articlesIds для использования в fetchData
+  const memoizedArticlesIds = useMemo(() => articlesIds, [articlesIdsKey]);
+
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const r = await useSupabaseFetch('articles_stats', ref => {
-        let query = ref.in('articleId', articlesIds);
+        let query = ref.in('articleId', memoizedArticlesIds);
         if (deviceId) {
           query = query.eq('clientId', deviceId);
         }
@@ -144,7 +150,7 @@ export const useArticlesStats = (articlesIds: string[]) => {
     } finally {
       setIsLoading(false);
     }
-  }, [articlesIds, deviceId]);
+  }, [memoizedArticlesIds, deviceId]);
 
   useEffect(() => {
     if (articlesIds.length > 0 && deviceId) {

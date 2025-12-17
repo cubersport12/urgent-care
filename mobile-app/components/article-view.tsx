@@ -3,7 +3,7 @@ import { AppArticleStatsVm, AppArticleVm } from '@/hooks/api/types';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import WebView from 'react-native-webview';
@@ -14,9 +14,12 @@ import { IconSymbol } from './ui/icon-symbol';
 type ArticleViewProps = {
   article: AppArticleVm;
   onBack: () => void;
+  onNext?: (articleId: string) => void;
+  onPrevious?: () => void;
+  hasPrevious?: boolean;
 };
 
-export function ArticleView({ article, onBack }: ArticleViewProps) {
+export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious = false }: ArticleViewProps) {
   const isNative = Platform.select({ web: false, default: true });
   const { response: html, isLoading } = useFileContentString(`${article.id}.html`);
   const processedHtml = html?.replace(/color:#000000/g, 'color:white');
@@ -24,8 +27,11 @@ export function ArticleView({ article, onBack }: ArticleViewProps) {
   // Используем useRef вместо useState, чтобы избежать перерисовки компонента
   const isMarkedAsReadRef = useRef(false);
   
+  // Мемоизируем массив article.id, чтобы избежать бесконечных запросов
+  const articleIds = useMemo(() => [article.id], [article.id]);
+  
   // Проверяем, прочитана ли статья уже
-  const articlesStatsResponse = useArticlesStats([article.id]);
+  const articlesStatsResponse = useArticlesStats(articleIds);
   
   // Устанавливаем флаг, если статья уже прочитана
   useEffect(() => {
@@ -63,40 +69,41 @@ export function ArticleView({ article, onBack }: ArticleViewProps) {
 
       // Устанавливаем флаг через ref, не вызывая перерисовку
       isMarkedAsReadRef.current = true;
+      // Обновляем состояние для показа кнопок навигации
+      setIsRead(true);
     } catch (error) {
       console.error('Error marking article as read:', error);
     }
   }, [deviceId, article.id]);
 
   const injectedJavaScript = () => `
-    ${isNative ? `document.body.style.opacity = '0';` : ''}
-    
     (function() {
       'use strict';
       
       let isScaling = false;
       let timer = null;
+      let throttleTimer = null;
       let isMarkedAsRead = false;
       const SCROLL_THRESHOLD = 50; // Порог в пикселях от конца документа
+      const THROTTLE_DELAY = 100; // Задержка throttle в миллисекундах
+      
+      // Устанавливаем opacity в 0 в начале
+      document.body.style.opacity = '0';
+      document.body.style.transition = 'opacity 0.3s ease-in-out';
       
       function applyScale() {
         if (isScaling) return;
         isScaling = true;
-        
         const container = document.getElementById('page-container');
         if (!container) {
-          if (${isNative}) {
-            document.body.style.opacity = '1';
-          }
+          document.body.style.opacity = '1';
           isScaling = false;
           return;
         }
         
         const contentElement = container.firstElementChild;
         if (!contentElement) {
-          if (${isNative}) {
-            document.body.style.opacity = '1';
-          }
+          document.body.style.opacity = '1';
           isScaling = false;
           return;
         }
@@ -131,25 +138,42 @@ export function ArticleView({ article, onBack }: ArticleViewProps) {
         // container.style.transform = 'scale(1)';
         // container.style.transformOrigin = 'top left';
         
-        if (${isNative}) {
+        // Устанавливаем opacity в 1 после скейла с анимацией
+        setTimeout(() => {
           document.body.style.opacity = '1';
-        }
+        }, 50);
         
         setTimeout(() => {
           isScaling = false;
         }, 200);
       }
       
+      // Throttled версия applyScale
+      function throttledApplyScale() {
+        // Если уже есть запланированный вызов, игнорируем текущий
+        if (throttleTimer !== null) {
+          return;
+        }
+        
+        // Выполняем сразу
+        applyScale();
+        
+        // Устанавливаем таймер для следующего возможного вызова
+        throttleTimer = setTimeout(() => {
+          throttleTimer = null;
+        }, THROTTLE_DELAY);
+      }
+      
       function init() {
         // Даем время на загрузку контента и изображений
-        setTimeout(applyScale, 200);
+        setTimeout(throttledApplyScale, 200);
         
         // Также пробуем после полной загрузки
         if (document.readyState === 'complete') {
-          setTimeout(applyScale, 300);
+          setTimeout(throttledApplyScale, 300);
         } else {
           window.addEventListener('load', () => {
-            setTimeout(applyScale, 300);
+            setTimeout(throttledApplyScale, 300);
           });
         }
         
@@ -157,8 +181,8 @@ export function ArticleView({ article, onBack }: ArticleViewProps) {
         
         window.addEventListener('resize', () => {
           if (!isScaling) {
-          clearTimeout(timer);
-            timer = setTimeout(applyScale, 50);
+            clearTimeout(timer);
+            timer = setTimeout(throttledApplyScale, 50);
           }
         });
       }
@@ -304,6 +328,35 @@ export function ArticleView({ article, onBack }: ArticleViewProps) {
   const tintColor = useThemeColor({}, 'tint');
   const backgroundColor = useThemeColor({}, 'background');
   const pressedBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2a2a2a' }, 'background');
+  
+  // Отслеживаем, прочитан ли документ, для показа кнопок навигации
+  const [isRead, setIsRead] = useState(false);
+  
+  // Обновляем состояние isRead при изменении статистики
+  useEffect(() => {
+    if (articlesStatsResponse.data && articlesStatsResponse.data.length > 0) {
+      const articleStat = articlesStatsResponse.data.find(stat => stat.articleId === article.id);
+      setIsRead(articleStat?.readed || false);
+    }
+  }, [articlesStatsResponse.data, article.id]);
+  
+  // Обновляем isRead при пометке как прочитанного
+  // Используем отдельный эффект для отслеживания изменений через markAsRead
+  useEffect(() => {
+    // Проверяем ref периодически или при изменении article.id
+    const checkReadStatus = () => {
+      if (isMarkedAsReadRef.current) {
+        setIsRead(true);
+      }
+    };
+    checkReadStatus();
+  }, [article.id]);
+  
+  const handleNext = useCallback(() => {
+    if (article.nextRunArticle && onNext) {
+      onNext(article.nextRunArticle);
+    }
+  }, [article.nextRunArticle, onNext]);
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
@@ -327,43 +380,94 @@ export function ArticleView({ article, onBack }: ArticleViewProps) {
           <ThemedText style={styles.loadingText}>Загрузка...</ThemedText>
         </ThemedView>
       ) : (
-        isNative ? <WebView 
-          useWebView2
-          onMessage={(event) => {
-            try {
-              const data = JSON.parse(event.nativeEvent.data);
-              if (data.type === 'scrollToEnd') {
-                void markAsRead();
-              }
-            } catch {
-              // Игнорируем ошибки парсинга для других сообщений
-            }
-          }}
-          injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContent()}
-          injectedJavaScript={injectedJavaScript()}
-          androidLayerType="hardware" // Для Android
-          overScrollMode="never"
-          style={{ flex: 1, backgroundColor: 'transparent', width: '100%', height: '100%', overflow: 'hidden' }}
-          source={{ html: processedHtml ?? '' }}
-        /> : <iframe 
-          style={{ flex: 1, backgroundColor: 'transparent', width: '100%', height: '100%', overflow: 'hidden' }}
-          src={URL.createObjectURL(new Blob([processedHtml?.replace('</body>', `<script>${injectedJavaScriptBeforeContent('rgb(1,1,1)')}</script></body>`) ?? ''], { type: 'text/html' }))}
-          onLoad={() => {
-            // Для веб-версии добавляем обработчик через postMessage
-            if (typeof window !== 'undefined') {
-              window.addEventListener('message', (event) => {
-                try {
-                  const data = JSON.parse(event.data);
-                  if (data.type === 'scrollToEnd') {
-                    void markAsRead();
-                  }
-                } catch {
-                  // Игнорируем ошибки парсинга
+        <>
+          {isNative ? <WebView 
+            useWebView2
+            onMessage={(event) => {
+              try {
+                const data = JSON.parse(event.nativeEvent.data);
+                if (data.type === 'scrollToEnd') {
+                  void markAsRead();
                 }
-              });
-            }
-          }}
-        />
+              } catch {
+                // Игнорируем ошибки парсинга для других сообщений
+              }
+            }}
+            injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContent()}
+            injectedJavaScript={injectedJavaScript()}
+            androidLayerType="hardware" // Для Android
+            overScrollMode="never"
+            style={{ flex: 1, backgroundColor: 'transparent', width: '100%', height: '100%', overflow: 'hidden' }}
+            source={{ html: processedHtml ?? '' }}
+          /> : <iframe 
+            style={{ flex: 1, backgroundColor: 'transparent', width: '100%', height: '100%', overflow: 'hidden' }}
+            src={URL.createObjectURL(new Blob([processedHtml?.replace('</body>', `<script>${injectedJavaScriptBeforeContent('rgb(1,1,1)')}</script></body>`) ?? ''], { type: 'text/html' }))}
+            onLoad={() => {
+              // Для веб-версии добавляем обработчик через postMessage
+              if (typeof window !== 'undefined') {
+                window.addEventListener('message', (event) => {
+                  try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'scrollToEnd') {
+                      void markAsRead();
+                    }
+                  } catch {
+                    // Игнорируем ошибки парсинга
+                  }
+                });
+              }
+            }}
+          />}
+          {/* Кнопки навигации поверх WebView - показываются только после прочтения */}
+          {isRead && (hasPrevious || article.nextRunArticle) && (
+            <>
+              {/* Кнопка "Назад" - переход к предыдущему документу */}
+              {hasPrevious && onPrevious && (
+                <Pressable
+                  onPress={onPrevious}
+                  style={({ pressed }) => [
+                    styles.navButton,
+                    styles.navButtonBack,
+                    {
+                      backgroundColor: pressed ? '#0a7ea4' : '#0a7ea4',
+                    },
+                  ]}
+                >
+                  <IconSymbol name="chevron.left" size={20} color="#FFFFFF" />
+                  <ThemedText 
+                    lightColor="#FFFFFF" 
+                    darkColor="#FFFFFF" 
+                    style={styles.navButtonText}
+                  >
+                    Назад
+                  </ThemedText>
+                </Pressable>
+              )}
+              {/* Кнопка "Далее" - переход к следующему документу */}
+              {article.nextRunArticle && (
+                <Pressable
+                  onPress={handleNext}
+                  style={({ pressed }) => [
+                    styles.navButton,
+                    styles.navButtonNext,
+                    {
+                      backgroundColor: pressed ? '#0a7ea4' : '#0a7ea4',
+                    },
+                  ]}
+                >
+                  <ThemedText 
+                    lightColor="#FFFFFF" 
+                    darkColor="#FFFFFF" 
+                    style={styles.navButtonText}
+                  >
+                    Далее
+                  </ThemedText>
+                  <IconSymbol name="chevron.right" size={20} color="#FFFFFF" />
+                </Pressable>
+              )}
+            </>
+          )}
+        </>
       )}
     </Animated.View>
   );
@@ -427,6 +531,29 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     opacity: 0.7,
+  },
+  navButton: {
+    position: 'absolute',
+    bottom: Platform.select({ ios: 20, default: 12 }),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 44,
+    zIndex: 10,
+  },
+  navButtonBack: {
+    left: 16,
+  },
+  navButtonNext: {
+    right: 16,
+  },
+  navButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#FFFFFF',
   },
 });
 
