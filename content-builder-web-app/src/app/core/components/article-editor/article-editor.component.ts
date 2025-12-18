@@ -28,7 +28,8 @@ import {
   MatDialog,
   MatDialogRef
 } from '@angular/material/dialog';
-import { AppArticleVm, AppLinkToArticleVm, generateGUID, NullableValue, openFileAsBuffer } from '@/core/utils';
+import { AppArticleVm, AppLinkToArticleVm, generateGUID, NullableValue, openFile } from '@/core/utils';
+import JSZip from 'jszip';
 import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions, ArticlesState } from '@/core/store';
 import { finalize, mergeMap, Observable } from 'rxjs';
@@ -202,7 +203,18 @@ export class ArticleEditorComponent {
 
   protected async _openFile() {
     try {
-      const html = (await openFileAsBuffer('text/html')) as string;
+      const file = await openFile(['.html', '.zip', 'text/html', 'application/zip', 'application/x-zip-compressed']);
+      let html: string;
+
+      // Проверяем, является ли файл ZIP
+      if (file.type === 'application/zip' || file.name.toLowerCase().endsWith('.zip')) {
+        html = await this._processZipFile(file);
+      }
+      else {
+        // Обычный HTML файл
+        html = await file.text();
+      }
+
       const linksToArticles = this._parseLinks(html).map(x => ({ key: x })) as AppLinkToArticleVm[];
       this._form.patchValue({ html, linksToArticles });
       this._setArtcilesLinksControls(linksToArticles);
@@ -212,6 +224,140 @@ export class ArticleEditorComponent {
     catch (e) {
       console.error(e);
     }
+  }
+
+  private async _processZipFile(file: File): Promise<string> {
+    const zip = new JSZip();
+    const zipData = await file.arrayBuffer();
+    const zipContent = await zip.loadAsync(zipData);
+
+    // Ищем HTML файл в архиве
+    let htmlFileName: string | null = null;
+    for (const fileName in zipContent.files) {
+      if (!zipContent.files[fileName].dir && fileName.toLowerCase().endsWith('.html')) {
+        htmlFileName = fileName;
+        break;
+      }
+    }
+
+    if (!htmlFileName) {
+      throw new Error('HTML file not found in ZIP archive');
+    }
+
+    // Читаем HTML файл
+    const html = await zipContent.files[htmlFileName].async('string');
+
+    // Создаем DOM парсер для работы с HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Получаем директорию HTML файла для разрешения относительных путей
+    const htmlDir = htmlFileName.includes('/')
+      ? htmlFileName.substring(0, htmlFileName.lastIndexOf('/') + 1)
+      : '';
+
+    // Находим все изображения
+    const images = doc.querySelectorAll<HTMLImageElement>('img[src]');
+    const imagePromises: Promise<void>[] = [];
+
+    images.forEach((img) => {
+      const src = img.getAttribute('src');
+      if (!src) return;
+
+      // Нормализуем путь к изображению
+      let imagePath = src;
+
+      // Убираем начальный слеш, если есть
+      if (imagePath.startsWith('/')) {
+        imagePath = imagePath.substring(1);
+      }
+
+      // Если путь относительный, добавляем директорию HTML файла
+      if (!imagePath.startsWith('http://') && !imagePath.startsWith('https://') && !imagePath.startsWith('data:')) {
+        if (!imagePath.includes('/')) {
+          // Относительный путь в той же директории
+          imagePath = htmlDir + imagePath;
+        }
+        else if (!imagePath.startsWith(htmlDir)) {
+          // Относительный путь, но не начинается с директории HTML
+          imagePath = htmlDir + imagePath;
+        }
+      }
+
+      // Ищем изображение в ZIP архиве (пробуем разные варианты)
+      const possiblePaths = [
+        imagePath,
+        imagePath.replace(/\\/g, '/'), // Заменяем обратные слеши
+        htmlDir + imagePath.split('/').pop(), // Только имя файла в директории HTML
+        imagePath.split('/').pop() // Только имя файла в корне
+      ];
+
+      let imageFile: JSZip.JSZipObject | null = null;
+      let foundPath: string | null = null;
+      for (const path of possiblePaths) {
+        if (!path) continue;
+        const file = zipContent.files[path];
+        if (file && !file.dir) {
+          imageFile = file;
+          foundPath = path;
+          break;
+        }
+      }
+
+      if (imageFile && foundPath) {
+        const imagePathForMime = foundPath;
+        const promise = imageFile.async('base64').then((base64) => {
+          // Определяем MIME тип по расширению файла
+          const extension = imagePathForMime.toLowerCase().split('.').pop();
+          let mimeType = 'image/png'; // По умолчанию
+
+          switch (extension) {
+            case 'jpg':
+            case 'jpeg':
+              mimeType = 'image/jpeg';
+              break;
+            case 'png':
+              mimeType = 'image/png';
+              break;
+            case 'gif':
+              mimeType = 'image/gif';
+              break;
+            case 'webp':
+              mimeType = 'image/webp';
+              break;
+            case 'svg':
+              mimeType = 'image/svg+xml';
+              break;
+            case 'bmp':
+              mimeType = 'image/bmp';
+              break;
+            case 'ico':
+              mimeType = 'image/x-icon';
+              break;
+          }
+
+          // Создаем data URI
+          const dataUri = `data:${mimeType};base64,${base64}`;
+          img.setAttribute('src', dataUri);
+          const setSizes = (el: HTMLElement) => {
+            if (el.style.width) {
+              el.style.width = `min(100%, ${el.style.width})`;
+            }
+            if (el.style.height) {
+              el.style.height = 'auto';
+            }
+          };
+          setSizes(img);
+          setSizes(img.parentElement as HTMLElement);
+        });
+        imagePromises.push(promise);
+      }
+    });
+
+    // Ждем загрузки всех изображений
+    await Promise.all(imagePromises);
+
+    return doc.documentElement.outerHTML;
   }
 
   protected _preventClick(event: MouseEvent) {
