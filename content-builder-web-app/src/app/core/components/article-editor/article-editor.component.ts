@@ -357,6 +357,30 @@ export class ArticleEditorComponent {
     // Ждем загрузки всех изображений
     await Promise.all(imagePromises);
 
+    // Добавляем стили для body через тег style
+    let styleElement = doc.querySelector('style');
+    if (!styleElement) {
+      styleElement = doc.createElement('style');
+      styleElement.setAttribute('type', 'text/css');
+      if (doc.head) {
+        doc.head.appendChild(styleElement);
+      }
+      else {
+        const head = doc.createElement('head');
+        doc.documentElement.insertBefore(head, doc.documentElement.firstChild);
+        head.appendChild(styleElement);
+      }
+    }
+
+    // Добавляем стили для body
+    const bodyStyles = 'body { padding: 0 !important; max-width: 100% !important; }';
+    const currentContent = styleElement.textContent || '';
+    if (!currentContent.includes('body { padding: 0')) {
+      styleElement.textContent = currentContent
+        ? `${currentContent}\n${bodyStyles}`
+        : bodyStyles;
+    }
+
     return doc.documentElement.outerHTML;
   }
 

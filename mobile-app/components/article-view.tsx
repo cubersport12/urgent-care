@@ -30,6 +30,91 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   // Мемоизируем массив article.id, чтобы избежать бесконечных запросов
   const articleIds = useMemo(() => [article.id], [article.id]);
   
+  const injectedJavaScript = () => `
+    (function() {
+      'use strict';
+      let timer = null;
+      let throttleTimer = null;
+      let isMarkedAsRead = false;
+      const SCROLL_THRESHOLD = 50; // Порог в пикселях от конца документа
+      const THROTTLE_DELAY = 100; // Задержка throttle в миллисекундах
+      
+      
+      function findScrollableElement() {
+        return document.body;
+      }
+      
+      function checkScrollPosition() {
+        if (isMarkedAsRead) return;
+
+        document.body.style.height = '100%';
+        document.body.style.overflow = 'auto';
+        document.documentElement.style.height = '100%';
+        document.documentElement.style.overflow = 'auto';
+        
+        const scrollableElement = findScrollableElement();
+        let scrollTop = 0;
+        let scrollHeight = 0;
+        let clientHeight = 0;
+        
+        if (scrollableElement) {
+          // Если это конкретный элемент
+          scrollTop = scrollableElement.scrollTop || 0;
+          scrollHeight = scrollableElement.scrollHeight || 0;
+          clientHeight = scrollableElement.clientHeight || 0;
+        } else {
+          // Если прокручивается window
+          scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+          scrollHeight = Math.max(
+            document.body.scrollHeight || 0,
+            document.documentElement.scrollHeight || 0
+          );
+          clientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || 0;
+        }
+        
+        // Проверяем, доскроллил ли пользователь до конца (с учетом порога)
+        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+        
+        if (distanceFromBottom <= SCROLL_THRESHOLD) {
+          isMarkedAsRead = true;
+          // Отправляем сообщение в React Native
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'scrollToEnd' }));
+          } else if (window.parent) {
+            window.parent.postMessage(JSON.stringify({ type: 'scrollToEnd' }), '*');
+          }
+        }
+      }
+      
+      // Добавляем обработчик прокрутки на правильный элемент
+      let scrollTimer = null;
+      const scrollableElement = findScrollableElement();
+
+      if (scrollableElement) {
+        // Если найден конкретный элемент, слушаем его прокрутку
+        scrollableElement.addEventListener('scroll', () => {
+          if (scrollTimer) {
+            clearTimeout(scrollTimer);
+          }
+          scrollTimer = setTimeout(checkScrollPosition, 100);
+        }, { passive: true });
+      } else {
+        // Если прокручивается window, слушаем его
+        window.addEventListener('scroll', () => {
+          if (scrollTimer) {
+            clearTimeout(scrollTimer);
+          }
+          scrollTimer = setTimeout(checkScrollPosition, 100);
+        }, { passive: true });
+      }
+      
+      // Также проверяем при загрузке, если контент уже виден полностью
+      window.addEventListener('load', () => {
+        setTimeout(checkScrollPosition, 500);
+      });
+    })();
+  `;
+
   // Проверяем, прочитана ли статья уже
   const articlesStatsResponse = useArticlesStats(articleIds);
   
@@ -76,228 +161,11 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     }
   }, [deviceId, article.id]);
 
-  const injectedJavaScript = () => `
-    (function() {
-      'use strict';
-      
-      let isScaling = false;
-      let timer = null;
-      let throttleTimer = null;
-      let isMarkedAsRead = false;
-      const SCROLL_THRESHOLD = 50; // Порог в пикселях от конца документа
-      const THROTTLE_DELAY = 100; // Задержка throttle в миллисекундах
-      
-      // Устанавливаем opacity в 0 в начале
-      document.body.style.opacity = '0';
-      document.body.style.transition = 'opacity 0.3s ease-in-out';
-      
-      function applyScale() {
-        if (isScaling) return;
-        isScaling = true;
-        const container = document.getElementById('page-container');
-        if (!container) {
-          document.body.style.opacity = '1';
-          isScaling = false;
-          return;
-        }
-        
-        const contentElement = container.firstElementChild;
-        if (!contentElement) {
-          document.body.style.opacity = '1';
-          isScaling = false;
-          return;
-        }
-        
-        container.style.margin = '0';
-        container.style.padding = '0';
-        
-        // Получаем ширину контейнера (всегда на всю страницу)
-        const containerWidth = container.getBoundingClientRect().width || container.clientWidth || container.offsetWidth || window.innerWidth;
-        // Получаем реальную ширину содержимого через getBoundingClientRect для точности
-        const contentRect = contentElement.getBoundingClientRect();
-        const contentWidth = contentRect.width || contentElement.scrollWidth || contentElement.offsetWidth || contentElement.clientWidth;
-        
-        if (containerWidth === 0 || contentWidth === 0) {
-          isScaling = false;
-          return;
-        }
-        
-        // Вычисляем scale: во сколько раз нужно увеличить содержимое
-        const scale = 'calc(100vw / ' + (contentElement.clientWidth + 10) +'px)';
-        
-        // Применяем scale к body для масштабирования всего содержимого
-        document.body.style.transform = 'scale(' + scale + ')';
-        document.body.style.transformOrigin = 'top left';
-        document.body.style.margin = '-1px';
-        document.body.style.padding = '0';
-        document.body.style.width = 'calc(100vw /' + scale + ' )';
-        document.body.style.height = 'calc(100vh /' + scale + ' )';
-        document.body.style.overflow = 'hidden';
-        
-        // Также применяем scale непосредственно к контейнеру для надежности
-        // container.style.transform = 'scale(1)';
-        // container.style.transformOrigin = 'top left';
-        
-        // Устанавливаем opacity в 1 после скейла с анимацией
-        setTimeout(() => {
-          document.body.style.opacity = '1';
-        }, 50);
-        
-        setTimeout(() => {
-          isScaling = false;
-        }, 200);
-      }
-      
-      // Throttled версия applyScale
-      function throttledApplyScale() {
-        // Если уже есть запланированный вызов, игнорируем текущий
-        if (throttleTimer !== null) {
-          return;
-        }
-        
-        // Выполняем сразу
-        applyScale();
-        
-        // Устанавливаем таймер для следующего возможного вызова
-        throttleTimer = setTimeout(() => {
-          throttleTimer = null;
-        }, THROTTLE_DELAY);
-      }
-      
-      function init() {
-        // Даем время на загрузку контента и изображений
-        setTimeout(throttledApplyScale, 200);
-        
-        // Также пробуем после полной загрузки
-        if (document.readyState === 'complete') {
-          setTimeout(throttledApplyScale, 300);
-        } else {
-          window.addEventListener('load', () => {
-            setTimeout(throttledApplyScale, 300);
-          });
-        }
-        
-        const container = document.getElementById('page-container');
-        
-        window.addEventListener('resize', () => {
-          if (!isScaling) {
-            clearTimeout(timer);
-            timer = setTimeout(throttledApplyScale, 50);
-          }
-        });
-      }
-      
-      function findScrollableElement() {
-        // Сначала проверяем наличие page-container
-        const pageContainer = document.getElementById('page-container');
-        if (pageContainer) {
-          return pageContainer;
-        }
-        
-        // Если page-container нет, ищем прокручиваемый элемент
-        // Проверяем body
-        const body = document.body;
-        if (body && (body.scrollHeight > body.clientHeight || body.style.overflow === 'auto' || body.style.overflow === 'scroll')) {
-          return body;
-        }
-        
-        // Проверяем html
-        const html = document.documentElement;
-        if (html && (html.scrollHeight > html.clientHeight || html.style.overflow === 'auto' || html.style.overflow === 'scroll')) {
-          return html;
-        }
-        
-        // Проверяем все элементы с overflow
-        const elementsWithOverflow = document.querySelectorAll('[style*="overflow"]');
-        for (let i = 0; i < elementsWithOverflow.length; i++) {
-          const el = elementsWithOverflow[i];
-          if (el.scrollHeight > el.clientHeight) {
-            return el;
-          }
-        }
-        
-        // По умолчанию используем window (для прокрутки всей страницы)
-        return null;
-      }
-      
-      function checkScrollPosition() {
-        if (isMarkedAsRead) return;
-        
-        const scrollableElement = findScrollableElement();
-        let scrollTop = 0;
-        let scrollHeight = 0;
-        let clientHeight = 0;
-        
-        if (scrollableElement) {
-          // Если это конкретный элемент
-          scrollTop = scrollableElement.scrollTop || 0;
-          scrollHeight = scrollableElement.scrollHeight || 0;
-          clientHeight = scrollableElement.clientHeight || 0;
-        } else {
-          // Если прокручивается window
-          scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-          scrollHeight = Math.max(
-            document.body.scrollHeight || 0,
-            document.documentElement.scrollHeight || 0
-          );
-          clientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || 0;
-        }
-        
-        // Проверяем, доскроллил ли пользователь до конца (с учетом порога)
-        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-        
-        if (distanceFromBottom <= SCROLL_THRESHOLD) {
-          isMarkedAsRead = true;
-          // Отправляем сообщение в React Native
-          if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'scrollToEnd' }));
-          } else if (window.parent) {
-            window.parent.postMessage(JSON.stringify({ type: 'scrollToEnd' }), '*');
-          }
-        }
-      }
-      
-      // Добавляем обработчик прокрутки на правильный элемент
-      let scrollTimer = null;
-      const scrollableElement = findScrollableElement();
-      
-      if (scrollableElement) {
-        // Если найден конкретный элемент, слушаем его прокрутку
-        scrollableElement.addEventListener('scroll', () => {
-          if (scrollTimer) {
-            clearTimeout(scrollTimer);
-          }
-          scrollTimer = setTimeout(checkScrollPosition, 100);
-        }, { passive: true });
-      } else {
-        // Если прокручивается window, слушаем его
-        window.addEventListener('scroll', () => {
-          if (scrollTimer) {
-            clearTimeout(scrollTimer);
-          }
-          scrollTimer = setTimeout(checkScrollPosition, 100);
-        }, { passive: true });
-      }
-      
-      // Также проверяем при загрузке, если контент уже виден полностью
-      window.addEventListener('load', () => {
-        setTimeout(checkScrollPosition, 500);
-      });
-      
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-      } else {
-        init();
-        setTimeout(checkScrollPosition, 500);
-      }
-    })();
-  `;
-
   const injectedJavaScriptBeforeContent = (htmlBg: string = 'transparent') => `
-    document.body.style.backgroundColor = 'transparent';
-    const html = document.querySelector('html');
-    html.style.backgroundColor = '${htmlBg}';
-    const head = document.querySelector('head');
+    // document.body.style.backgroundColor = 'transparent';
+    // const html = document.querySelector('html');
+    // html.style.backgroundColor = '${htmlBg}';
+    // const head = document.querySelector('head');
 
     document.querySelectorAll('a[href*="#uc:article"]').forEach(a => {
       a.onclick = (e) => { 
@@ -378,6 +246,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
         <>
           {isNative ? <WebView 
             useWebView2
+            injectedJavaScript={injectedJavaScript()}
             onMessage={(event) => {
               try {
                 const data = JSON.parse(event.nativeEvent.data);
@@ -389,7 +258,6 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
               }
             }}
             injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContent()}
-            injectedJavaScript={injectedJavaScript()}
             androidLayerType="hardware" // Для Android
             overScrollMode="never"
             style={{ flex: 1, backgroundColor: 'transparent', width: '100%', height: '100%', overflow: 'hidden' }}
