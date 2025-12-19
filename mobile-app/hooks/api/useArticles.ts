@@ -155,8 +155,6 @@ export const useArticlesStats = (articlesIds: string[]) => {
   useEffect(() => {
     if (articlesIds.length > 0 && deviceId) {
       void fetchData();
-    } else {
-      setIsLoading(false);
     }
   }, [fetchData, articlesIds.length, deviceId]);
 

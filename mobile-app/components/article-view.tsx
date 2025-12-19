@@ -3,7 +3,7 @@ import { AppArticleStatsVm, AppArticleVm } from '@/hooks/api/types';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import WebView from 'react-native-webview';
@@ -19,62 +19,90 @@ type ArticleViewProps = {
   hasPrevious?: boolean;
 };
 
-export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious = false }: ArticleViewProps) {
+// Компонент для кнопок навигации, который обновляется отдельно
+const NavigationButtons = memo(({
+  isRead,
+  hasPrevious,
+  article,
+  onNext,
+  onPrevious,
+}: {
+  isRead: boolean;
+  hasPrevious: boolean;
+  article: AppArticleVm;
+  onNext?: (articleId: string) => void;
+  onPrevious?: () => void;
+}) => {
+  const handleNext = useCallback(() => {
+    if (article.nextRunArticle && onNext) {
+      onNext(article.nextRunArticle);
+    }
+  }, [article.nextRunArticle, onNext]);
+
+  if (!isRead || (!hasPrevious && !article.nextRunArticle)) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* Кнопка "Назад" - переход к предыдущему документу */}
+      {hasPrevious && onPrevious && (
+        <Button
+          title="Назад"
+          onPress={onPrevious}
+          variant="primary"
+          icon="chevron.left"
+          iconPosition="left"
+          style={[styles.navButton, styles.navButtonBack]}
+        />
+      )}
+      {/* Кнопка "Далее" - переход к следующему документу */}
+      {article.nextRunArticle && (
+        <Button
+          title="Далее"
+          onPress={handleNext}
+          variant="primary"
+          icon="chevron.right"
+          iconPosition="right"
+          style={[styles.navButton, styles.navButtonNext]}
+        />
+      )}
+    </>
+  );
+});
+
+NavigationButtons.displayName = 'NavigationButtons';
+
+// Внутренний компонент, который перерисовывается только при изменении html/isLoading
+const ArticleViewContent = memo(({ 
+  html, 
+  isLoading, 
+  article, 
+  onBack, 
+  markAsReadRef,
+  tintColorRef,
+}: {
+  html: string | null | undefined;
+  isLoading: boolean;
+  article: AppArticleVm;
+  onBack: () => void;
+  markAsReadRef: React.MutableRefObject<() => Promise<void>>;
+  tintColorRef: React.MutableRefObject<string>;
+}) => {
   const isNative = Platform.select({ web: false, default: true });
-  const { response: html, isLoading } = useFileContentString(`${article.id}.html`);
   const processedHtml = html?.replace(/color:#000000/g, 'color:white');
-  const { deviceId } = useDeviceId();
-  // Используем useRef вместо useState, чтобы избежать перерисовки компонента
-  const isMarkedAsReadRef = useRef(false);
   
-  // Мемоизируем массив article.id, чтобы избежать бесконечных запросов
-  const articleIds = useMemo(() => [article.id], [article.id]);
-  
-  // Проверяем, прочитана ли статья уже
-  const articlesStatsResponse = useArticlesStats(articleIds);
-  
-  // Устанавливаем флаг, если статья уже прочитана
+  const opacity = useSharedValue(0);
+
   useEffect(() => {
-    if (articlesStatsResponse.data && articlesStatsResponse.data.length > 0) {
-      const articleStat = articlesStatsResponse.data.find(stat => stat.articleId === article.id);
-      if (articleStat?.readed) {
-        isMarkedAsReadRef.current = true;
-      }
-    }
-  }, [articlesStatsResponse.data, article.id]);
+    opacity.value = withTiming(1, { duration: 300 });
+  }, [opacity]);
 
-  // Создаем функцию напрямую, минуя хук, чтобы избежать перерисовки
-  const markAsRead = useCallback(async () => {
-    // Проверяем через ref, чтобы не вызывать перерисовку
-    if (isMarkedAsReadRef.current || !deviceId) return;
-    
-    try {
-      // Подготавливаем данные для вставки/обновления
-      const dataToUpsert = {
-        clientId: deviceId,
-        articleId: article.id,
-        readed: true,
-        createdAt: new Date().toISOString(),
-      } as Omit<AppArticleStatsVm, 'id'>;
-
-      // Используем upsert для добавления или обновления записи
-      // Конфликт определяется по комбинации clientId и articleId
-      await supabase
-        .from('articles_stats')
-        .upsert(dataToUpsert, {
-          onConflict: 'clientId,articleId',
-        })
-        .select()
-        .single();
-
-      // Устанавливаем флаг через ref, не вызывая перерисовку
-      isMarkedAsReadRef.current = true;
-      // Обновляем состояние для показа кнопок навигации
-      setIsRead(true);
-    } catch (error) {
-      console.error('Error marking article as read:', error);
-    }
-  }, [deviceId, article.id]);
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: opacity.value,
+    };
+  });
 
   const injectedJavaScript = () => `
     (function() {
@@ -88,22 +116,22 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
       const THROTTLE_DELAY = 100; // Задержка throttle в миллисекундах
       
       // Устанавливаем opacity в 0 в начале
-      document.body.style.opacity = '0';
-      document.body.style.transition = 'opacity 0.3s ease-in-out';
+      // document.documentElement.style.opacity = '0';
+      document.documentElement.style.transition = 'opacity 0.3s ease-in-out';
 
       function applyScale() {
         if (isScaling) return;
         isScaling = true;
         const container = document.getElementById('page-container');
         if (!container) {
-          document.body.style.opacity = '1';
+          // document.documentElement.style.opacity = '1';
           isScaling = false;
           return;
         }
         
         const contentElement = container.firstElementChild;
         if (!contentElement) {
-          document.body.style.opacity = '1';
+          // document.body.style.opacity = '1';
           isScaling = false;
           return;
         }
@@ -134,17 +162,15 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
         document.body.style.height = 'calc(100vh /' + scale + ' )';
         document.body.style.overflow = 'hidden';
         
-        // Также применяем scale непосредственно к контейнеру для надежности
-        // container.style.transform = 'scale(1)';
-        // container.style.transformOrigin = 'top left';
-        
         // Устанавливаем opacity в 1 после скейла с анимацией
         setTimeout(() => {
-          document.body.style.opacity = '1';
+          // document.documentElement.style.opacity = '1';
         }, 50);
         
         setTimeout(() => {
           isScaling = false;
+          // После применения масштабирования проверяем, не стал ли контент полностью виден
+          checkScrollPosition();
         }, 200);
       }
       
@@ -182,7 +208,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
         window.addEventListener('resize', () => {
           if (!isScaling) {
             clearTimeout(timer);
-            timer = setTimeout(throttledApplyScale, 50);
+            timer = setTimeout(throttledApplyScale, 100);
           }
         });
       }
@@ -243,10 +269,14 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
           clientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || 0;
         }
         
+        // Проверяем, нет ли прокрутки вообще (контент полностью виден)
+        const hasNoScroll = scrollHeight <= clientHeight;
+        
         // Проверяем, доскроллил ли пользователь до конца (с учетом порога)
         const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
         
-        if (distanceFromBottom <= SCROLL_THRESHOLD) {
+        // Если прокрутки нет или доскроллили до конца - считаем прочитанным
+        if (hasNoScroll || distanceFromBottom <= SCROLL_THRESHOLD) {
           isMarkedAsRead = true;
           // Отправляем сообщение в React Native
           if (window.ReactNativeWebView) {
@@ -280,15 +310,25 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
       }
       
       // Также проверяем при загрузке, если контент уже виден полностью
-      window.addEventListener('load', () => {
+      // Проверяем несколько раз с разными задержками, чтобы поймать случай, когда контент уже полностью виден
+      function checkOnLoad() {
+        checkScrollPosition();
+        // Проверяем еще раз через небольшую задержку, чтобы убедиться, что все загрузилось
+        setTimeout(checkScrollPosition, 100);
+        setTimeout(checkScrollPosition, 300);
         setTimeout(checkScrollPosition, 500);
-      });
+      }
+      
+      window.addEventListener('load', checkOnLoad);
       
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', () => {
+          init();
+          checkOnLoad();
+        });
       } else {
         init();
-        setTimeout(checkScrollPosition, 500);
+        checkOnLoad();
       }
     })();
   `;
@@ -298,7 +338,6 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     // const html = document.querySelector('html');
     // html.style.backgroundColor = '${htmlBg}';
     // const head = document.querySelector('head');
-
     document.querySelectorAll('a[href*="#uc:article"]').forEach(a => {
       a.onclick = (e) => { 
         e.preventDefault();
@@ -313,51 +352,8 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     ${injectedJavaScript()}
   `;
 
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    opacity.value = withTiming(1, { duration: 300 });
-  }, [opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-    };
-  });
-
-  const tintColor = useThemeColor({}, 'tint');
-  
-  // Отслеживаем, прочитан ли документ, для показа кнопок навигации
-  const [isRead, setIsRead] = useState(false);
-  
-  // Обновляем состояние isRead при изменении статистики
-  useEffect(() => {
-    if (articlesStatsResponse.data && articlesStatsResponse.data.length > 0) {
-      const articleStat = articlesStatsResponse.data.find(stat => stat.articleId === article.id);
-      setIsRead(articleStat?.readed || false);
-    }
-  }, [articlesStatsResponse.data, article.id]);
-  
-  // Обновляем isRead при пометке как прочитанного
-  // Используем отдельный эффект для отслеживания изменений через markAsRead
-  useEffect(() => {
-    // Проверяем ref периодически или при изменении article.id
-    const checkReadStatus = () => {
-      if (isMarkedAsReadRef.current) {
-        setIsRead(true);
-      }
-    };
-    checkReadStatus();
-  }, [article.id]);
-  
-  const handleNext = useCallback(() => {
-    if (article.nextRunArticle && onNext) {
-      onNext(article.nextRunArticle);
-    }
-  }, [article.nextRunArticle, onNext]);
-
   return (
-    <Animated.View style={[styles.container]}>
+    <Animated.View style={[styles.container, animatedStyle]}>
       <ThemedView style={styles.header}>
         <Button
           title="Назад"
@@ -371,7 +367,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
       </ThemedView>
       {isLoading ? (
         <ThemedView style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={tintColor} />
+          <ActivityIndicator size="large" color={tintColorRef.current} />
           <ThemedText style={styles.loadingText}>Загрузка...</ThemedText>
         </ThemedView>
       ) : (
@@ -382,7 +378,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
               try {
                 const data = JSON.parse(event.nativeEvent.data);
                 if (data.type === 'scrollToEnd') {
-                  void markAsRead();
+                  void markAsReadRef.current();
                 }
               } catch {
                 // Игнорируем ошибки парсинга для других сообщений
@@ -404,7 +400,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
                   try {
                     const data = JSON.parse(event.data);
                     if (data.type === 'scrollToEnd') {
-                      void markAsRead();
+                      void markAsReadRef.current();
                     }
                   } catch {
                     // Игнорируем ошибки парсинга
@@ -413,35 +409,138 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
               }
             }}
           />}
-          {/* Кнопки навигации поверх WebView - показываются только после прочтения */}
-          {isRead && (hasPrevious || article.nextRunArticle) && (
-            <>
-              {/* Кнопка "Назад" - переход к предыдущему документу */}
-              {hasPrevious && onPrevious && (
-                <Button
-                  title="Назад"
-                  onPress={onPrevious}
-                  variant="primary"
-                  icon="chevron.left"
-                  iconPosition="left"
-                  style={[styles.navButton, styles.navButtonBack]}
-                />
-              )}
-              {/* Кнопка "Далее" - переход к следующему документу */}
-              {article.nextRunArticle && (
-                <Button
-                  title="Далее"
-                  onPress={handleNext}
-                  variant="primary"
-                  icon="chevron.right"
-                  iconPosition="right"
-                  style={[styles.navButton, styles.navButtonNext]}
-                />
-              )}
-            </>
-          )}
         </>
       )}
+    </Animated.View>
+  );
+}, (prevProps, nextProps) => {
+  // Перерисовываем только при изменении html или isLoading
+  return prevProps.html === nextProps.html && prevProps.isLoading === nextProps.isLoading;
+});
+
+ArticleViewContent.displayName = 'ArticleViewContent';
+
+export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious = false }: ArticleViewProps) {
+  // Единственный хук, который должен вызывать перерисовку
+  const { response: html, isLoading } = useFileContentString(`${article.id}.html`);
+  
+  // Все остальные хуки - данные хранятся в refs, чтобы не вызывать перерисовку
+  const { deviceId } = useDeviceId();
+  const deviceIdRef = useRef(deviceId);
+  useEffect(() => {
+    deviceIdRef.current = deviceId;
+  }, [deviceId]);
+
+  const tintColor = useThemeColor({}, 'tint');
+  const tintColorRef = useRef(tintColor);
+  useEffect(() => {
+    tintColorRef.current = tintColor;
+  }, [tintColor]);
+
+  // Используем useRef вместо useState, чтобы избежать перерисовки компонента
+  const isMarkedAsReadRef = useRef(false);
+  const isReadRef = useRef(false);
+  
+  // Мемоизируем массив article.id, чтобы избежать бесконечных запросов
+  const articleIds = useMemo(() => [article.id], [article.id]);
+  
+  // Проверяем, прочитана ли статья уже
+  const articlesStatsResponse = useArticlesStats(articleIds);
+  
+  // Устанавливаем флаг, если статья уже прочитана
+  useEffect(() => {
+    if (articlesStatsResponse.data && articlesStatsResponse.data.length > 0) {
+      const articleStat = articlesStatsResponse.data.find(stat => stat.articleId === article.id);
+      if (articleStat?.readed) {
+        isMarkedAsReadRef.current = true;
+        isReadRef.current = true;
+      }
+    }
+  }, [articlesStatsResponse.data, article.id]);
+
+  // Создаем функцию напрямую, минуя хук, чтобы избежать перерисовки
+  const markAsRead = useCallback(async () => {
+    // Проверяем через ref, чтобы не вызывать перерисовку
+    if (isMarkedAsReadRef.current || !deviceIdRef.current) return;
+    
+    try {
+      // Подготавливаем данные для вставки/обновления
+      const dataToUpsert = {
+        clientId: deviceIdRef.current,
+        articleId: article.id,
+        readed: true,
+        createdAt: new Date().toISOString(),
+      } as Omit<AppArticleStatsVm, 'id'>;
+
+      // Используем upsert для добавления или обновления записи
+      // Конфликт определяется по комбинации clientId и articleId
+      await supabase
+        .from('articles_stats')
+        .upsert(dataToUpsert, {
+          onConflict: 'clientId,articleId',
+        })
+        .select()
+        .single();
+
+      // Устанавливаем флаг через ref, не вызывая перерисовку
+      isMarkedAsReadRef.current = true;
+      isReadRef.current = true;
+    } catch (error) {
+      console.error('Error marking article as read:', error);
+    }
+  }, [article.id]);
+
+  const markAsReadRef = useRef(markAsRead);
+  useEffect(() => {
+    markAsReadRef.current = markAsRead;
+  }, [markAsRead]);
+
+  // Состояние для кнопок навигации - обновляется отдельно
+  // Кнопки показываются, если документ прочитан (из БД) или прокручен до конца
+  const [isRead, setIsRead] = useState(false);
+
+  // Обновляем isRead при изменении статистики (если документ уже был прочитан ранее)
+  useEffect(() => {
+    if (articlesStatsResponse.data && articlesStatsResponse.data.length > 0) {
+      const articleStat = articlesStatsResponse.data.find(stat => stat.articleId === article.id);
+      const readStatus = articleStat?.readed || false;
+      setIsRead(readStatus);
+      isReadRef.current = readStatus;
+    }
+  }, [articlesStatsResponse.data, article.id]);
+
+  // Обновляем markAsRead, чтобы он обновлял состояние isRead
+  // Устанавливаем isRead сразу, чтобы кнопки появились немедленно при прокрутке до конца
+  const markAsReadWithUpdate = useCallback(async () => {
+    // Сразу обновляем состояние, чтобы кнопки появились немедленно
+    setIsRead(true);
+    isReadRef.current = true;
+    // Затем помечаем как прочитанное в базе данных
+    await markAsRead();
+  }, [markAsRead]);
+
+  const markAsReadRefWithUpdate = useRef(markAsReadWithUpdate);
+  useEffect(() => {
+    markAsReadRefWithUpdate.current = markAsReadWithUpdate;
+  }, [markAsReadWithUpdate]);
+
+  return (
+    <Animated.View style={styles.container}>
+      <ArticleViewContent
+        html={html}
+        isLoading={isLoading}
+        article={article}
+        onBack={onBack}
+        markAsReadRef={markAsReadRefWithUpdate}
+        tintColorRef={tintColorRef}
+      />
+      <NavigationButtons
+        isRead={isRead}
+        hasPrevious={hasPrevious}
+        article={article}
+        onNext={onNext}
+        onPrevious={onPrevious}
+      />
     </Animated.View>
   );
 }

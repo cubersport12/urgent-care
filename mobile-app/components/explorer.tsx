@@ -429,9 +429,7 @@ export function Explorer() {
               .map(({ item, index }) => {
                 const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
                 const isDisabled = isItemDisabled(item, index);
-                if (item.type === 'article') {
-                  console.log(`Article ${item.data.name} (${item.data.id}): isRead=${isRead}, map has: ${readArticlesMap.has(item.data.id)}`);
-                }
+
                 return (
                   <ExplorerItemComponent
                     key={`${item.type}-${item.data.id}`}
