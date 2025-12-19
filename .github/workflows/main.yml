@@ -29,6 +29,13 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '20' # Укажите нужную версию Node.js
+
+      - name: Set Up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu' # See 'Supported distributions' for available options
+          java-version: '17'
+          cache: 'gradle'
       
       - name: Установка зависимостей Start Page
         run: npm install
@@ -50,9 +57,27 @@ jobs:
         run: npm install
         working-directory: ./mobile-app
 
-      - name: Сборка приложения mobile app
+      - name: Сборка приложения mobile Web App
         run: npm run web:build
         working-directory: ./mobile-app
+
+      - name: Change wrapper permissions
+        run: chmod +x ./gradlew
+        working-directory: ./mobile-app/android
+
+      - name: Build Android app
+        run: ./gradlew build
+        working-directory: ./mobile-app/android
+
+      - name: Build apk release project (APK) - mobile-app module
+        run: ./gradlew assemble
+        working-directory: ./mobile-app/android
+
+      - name: Upload apk file
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-app-release.apk
+          path: ./mobile-app/android/app/build/outputs/apk/release/app-release.apk
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
