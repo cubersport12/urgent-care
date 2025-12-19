@@ -29,13 +29,6 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '20' # Укажите нужную версию Node.js
-
-      - name: Set Up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu' # See 'Supported distributions' for available options
-          java-version: '17'
-          cache: 'gradle'
       
       - name: Установка зависимостей Start Page
         run: npm install
@@ -60,6 +53,17 @@ jobs:
       - name: Сборка приложения mobile Web App
         run: npm run web:build
         working-directory: ./mobile-app
+
+      - name: Prebuild mobile app
+        run: npm run prebuild
+        working-directory: ./mobile-app
+
+      - name: Set Up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu' # See 'Supported distributions' for available options
+          java-version: '17'
+          cache: 'gradle'
 
       - name: Change wrapper permissions
         run: chmod +x ./gradlew
