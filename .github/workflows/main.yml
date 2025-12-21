@@ -54,41 +54,6 @@ jobs:
         run: npm run web:build
         working-directory: ./mobile-app
 
-      - name: Prebuild mobile app
-        run: npm run prebuild
-        working-directory: ./mobile-app
-
-      - name: Remove unused Docker images
-        run: docker system prune -af
-
-      - name: Clean up temporary files
-        run: sudo rm -rf /tmp/*
-
-      - name: Set Up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu' # See 'Supported distributions' for available options
-          java-version: '17'
-          cache: 'gradle'
-
-      - name: Change wrapper permissions
-        run: chmod +x ./gradlew
-        working-directory: ./mobile-app/android
-
-      - name: Build Android app
-        run: ./gradlew build
-        working-directory: ./mobile-app/android
-
-      - name: Build apk release project (APK) - mobile-app module
-        run: ./gradlew assemble
-        working-directory: ./mobile-app/android
-
-      - name: Upload apk file
-        uses: actions/upload-artifact@v4
-        with:
-          name: mobile-app-release.apk
-          path: ./mobile-app/android/app/build/outputs/apk/release/app-release.apk
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
