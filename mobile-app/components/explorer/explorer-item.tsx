@@ -11,15 +11,29 @@ type ExplorerItemComponentProps = {
   onPress: () => void;
   isRead?: boolean;
   isDisabled?: boolean;
+  testStats?: {
+    passed: boolean | null | undefined;
+    completedAt?: string | null;
+    startedAt?: string | null;
+  };
+  description?: string;
 };
 
-export function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = false }: ExplorerItemComponentProps) {
+export function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = false, testStats, description }: ExplorerItemComponentProps) {
   const itemBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: '#080d18' }, 'background');
   const pressedBackgroundColor = useThemeColor({ light: Colors.light.pressedBackground, dark: Colors.dark.pressedBackground }, 'background');
   const successColor = useThemeColor({}, 'success');
+  const errorColor = useThemeColor({}, 'error');
   const disabledColor = useThemeColor({ light: Colors.light.disabledText, dark: Colors.dark.disabledText }, 'text');
   const descriptionColor = useThemeColor({ light: '#666666', dark: '#9BA1A6' }, 'text');
   const iconColor = useThemeColor({}, 'icon');
+  
+  // Определяем, какую иконку показывать для теста
+  const testStatusIcon = item.type === 'test' && testStats && testStats.passed !== null && testStats.passed !== undefined
+    ? testStats.passed
+      ? { name: 'checkmark.circle.fill' as const, color: successColor }
+      : { name: 'xmark.circle.fill' as const, color: errorColor }
+    : null;
 
   return (
     <Pressable
@@ -41,6 +55,9 @@ export function ExplorerItemComponent({ item, onPress, isRead = false, isDisable
           {item.type === 'article' && isRead && !isDisabled && (
             <IconSymbol name="checkmark.circle.fill" size={12} color={successColor} style={styles.itemCheckmark} />
           )}
+          {item.type === 'test' && testStatusIcon && !isDisabled && (
+            <IconSymbol name={testStatusIcon.name} size={12} color={testStatusIcon.color} style={styles.itemCheckmark} />
+          )}
         </ThemedView>
         <ThemedView style={styles.itemTextContainer}>
           <ThemedText 
@@ -52,16 +69,18 @@ export function ExplorerItemComponent({ item, onPress, isRead = false, isDisable
           >
             {item.data.name}
           </ThemedText>
-          <ThemedText 
-            style={[
-              styles.itemDescription,
-              { color: descriptionColor },
-              isDisabled && { opacity: 0.5 },
-            ]}
-          >
-            Для описания надо доработать конструктор...
-            {/* Описание будет добавлено, когда появится в данных */}
-          </ThemedText>
+          {description && (
+            <ThemedText 
+              style={[
+                styles.itemDescription,
+                { color: descriptionColor },
+                isDisabled && { opacity: 0.5 },
+              ]}
+            >
+              {testStats?.passed ? 'Успешно пройден ' : 'Не пройден '}
+              {description}
+            </ThemedText>
+          )}
         </ThemedView>
         {item.type === 'folder' && (
           <IconSymbol name="chevron.right" size={20} color={iconColor} />

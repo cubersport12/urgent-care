@@ -2,9 +2,9 @@ import { Colors } from '@/constants/theme';
 import { useTest } from '@/contexts/test-context';
 import { AppArticleVm, AppTestStatsVm, AppTestVm } from '@/hooks/api/types';
 import { fetchArticle, useArticles, useArticlesStats } from '@/hooks/api/useArticles';
-import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useFolders } from '@/hooks/api/useFolders';
 import { useTests } from '@/hooks/api/useTests';
+import { useAddOrUpdateTestStats, useTestsStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -54,6 +54,13 @@ export function Explorer() {
   
   const articlesStatsResponse = useArticlesStats(articlesIds);
   
+  // Получаем статистику для тестов
+  const testsIds = useMemo(() => {
+    return testsResponse.data?.map(test => test.id) || [];
+  }, [testsResponse.data]);
+  
+  const testsStatsResponse = useTestsStats(testsIds);
+  
   // Создаем Map для быстрого поиска прочитанных статей
   const readArticlesMap = useMemo(() => {
     const map = new Map<string, boolean>();
@@ -67,6 +74,17 @@ export function Explorer() {
     }
     return map;
   }, [articlesStatsResponse.data]);
+
+  // Создаем Map для быстрого поиска статистики тестов
+  const testsStatsMap = useMemo(() => {
+    const map = new Map<string, AppTestStatsVm>();
+    if (testsStatsResponse.data) {
+      testsStatsResponse.data.forEach(stat => {
+        map.set(stat.testId, stat);
+      });
+    }
+    return map;
+  }, [testsStatsResponse.data]);
 
   // Отслеживаем изменение currentFolderId для показа спиннера и анимации
   useEffect(() => {
@@ -565,6 +583,23 @@ export function Explorer() {
                 {filteredItems.map(({ item, index }) => {
                   const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
                   const isDisabled = isItemDisabled(item, index);
+                  
+                  // Получаем статистику теста, если это тест
+                  const testStats = item.type === 'test' ? testsStatsMap.get(item.data.id) : undefined;
+                  
+                  // Формируем описание для теста с датой
+                  let description: string | undefined;
+                  if (item.type === 'test' && testStats) {
+                    if (testStats.completedAt) {
+                      // Если есть время завершения, выводим только его
+                      const completedDate = new Date(testStats.completedAt);
+                      description = completedDate.toLocaleString();
+                    } else if (testStats.startedAt) {
+                      // Если нет времени завершения, но есть время начала, выводим его
+                      const startedDate = new Date(testStats.startedAt);
+                      description = startedDate.toLocaleString();
+                    }
+                  }
 
                   return (
                     <ExplorerItemComponent
@@ -573,6 +608,12 @@ export function Explorer() {
                       onPress={() => handleItemPress(item)}
                       isRead={isRead}
                       isDisabled={isDisabled}
+                      testStats={testStats ? {
+                        passed: testStats.passed,
+                        completedAt: testStats.completedAt,
+                        startedAt: testStats.startedAt,
+                      } : undefined}
+                      description={description}
                     />
                   );
                 })}
