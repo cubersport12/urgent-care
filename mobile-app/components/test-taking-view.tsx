@@ -86,7 +86,18 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
       if (selectedAnswers.length === 0) return;
       
       submitAnswer(question.id, selectedAnswers);
-      setShowResult(true);
+      
+      // Если showCorrectAnswer === false, сразу переходим к следующему вопросу без показа результатов
+      if (test.showCorrectAnswer === false) {
+        if (isLastQuestion) {
+          finishTest();
+        } else {
+          setSelectedAnswers([]);
+          nextQuestion();
+        }
+      } else {
+        setShowResult(true);
+      }
     }
   };
 

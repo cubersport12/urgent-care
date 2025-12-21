@@ -9,33 +9,19 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  headerRight: {
+  headerContent: {
     flexDirection: 'row',
+    display: 'flex',
     alignItems: 'center',
-    gap: 12,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    gap: 8,
     minHeight: 44,
-    justifyContent: 'flex-start',
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '400',
+    overflow: 'hidden',
   },
   progressText: {
     fontSize: 14,
     fontWeight: '600',
-    opacity: 0.7,
+    marginLeft: 8,
   },
   finishTestButton: {
     marginTop: 12,
@@ -60,60 +46,68 @@ export const styles = StyleSheet.create({
   content: {
     padding: 16,
   },
+  questionContainer: {
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   questionTitle: {
-    marginBottom: 24,
     fontSize: 20,
     textAlign: 'center',
+    marginTop: 16,
+  },
+  questionTitleWithoutImage: {
+    marginTop: 0,
   },
   imageContainer: {
-    marginBottom: 16,
+    width: '100%',
+    marginBottom: 0,
     padding: 12,
     backgroundColor: 'rgba(0, 0, 0, 0.05)',
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderStyle: 'solid',
   },
   imagePlaceholder: {
     fontSize: 12,
     opacity: 0.6,
   },
+  questionImage: {
+    width: '100%',
+    minHeight: 200,
+    maxHeight: 400,
+    borderRadius: 8,
+  },
+  divider: {
+    height: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    borderStyle: 'dashed',
+    marginVertical: 16,
+  },
   answersContainer: {
     marginBottom: 24,
     gap: 12,
   },
-  answerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 12,
+  answerButton: {
     borderWidth: 2,
     borderColor: '#e0e0e0',
     backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderRadius: 12,
   },
-  answerItemSelected: {
+  answerButtonSelected: {
     borderColor: Colors.light.primary,
     backgroundColor: 'rgba(10, 126, 164, 0.1)',
   },
-  answerItemPressed: {
-    opacity: 0.7,
-  },
-  answerItemCorrect: {
-    borderColor: Colors.light.success,
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-  },
-  answerItemIncorrect: {
-    borderColor: Colors.light.error,
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
-  },
-  answerItemShouldBeSelected: {
+  answerButtonShouldBeSelected: {
     borderColor: Colors.light.success,
     borderStyle: 'dashed',
     backgroundColor: 'rgba(76, 175, 80, 0.05)',
-  },
-  answerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
   },
   checkbox: {
     width: 24,

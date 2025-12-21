@@ -55,22 +55,28 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
             <ThemedView style={styles.infoRow}>
               {test.questions && test.questions.length > 0 && (
                 <ThemedView style={styles.infoItem}>
-                  <IconSymbol name="questionmark.circle.fill" size={20} color={tintColor} />
-                  <ThemedText style={styles.infoValue}>{test.questions.length}</ThemedText>
+                  <ThemedView style={styles.infoRowHorizontal}>
+                    <IconSymbol name="questionmark.circle.fill" size={28} color={tintColor} />
+                    <ThemedText style={styles.infoValue}>{test.questions.length}</ThemedText>
+                  </ThemedView>
                   <ThemedText style={styles.infoLabel}>Вопросов</ThemedText>
                 </ThemedView>
               )}
               {test.minScore !== undefined && test.minScore !== null && (
                 <ThemedView style={styles.infoItem}>
-                  <IconSymbol name="star.fill" size={20} color={tintColor} />
-                  <ThemedText style={styles.infoValue}>{test.minScore}</ThemedText>
+                  <ThemedView style={styles.infoRowHorizontal}>
+                    <IconSymbol name="star.fill" size={28} color={tintColor} />
+                    <ThemedText style={styles.infoValue}>{test.minScore}</ThemedText>
+                  </ThemedView>
                   <ThemedText style={styles.infoLabel}>Мин. балл</ThemedText>
                 </ThemedView>
               )}
               {test.maxErrors !== undefined && test.maxErrors !== null && (
                 <ThemedView style={styles.infoItem}>
-                  <IconSymbol name="exclamationmark.triangle.fill" size={20} color={tintColor} />
-                  <ThemedText style={styles.infoValue}>{test.maxErrors}</ThemedText>
+                  <ThemedView style={styles.infoRowHorizontal}>
+                    <IconSymbol name="exclamationmark.triangle.fill" size={28} color={tintColor} />
+                    <ThemedText style={styles.infoValue}>{test.maxErrors}</ThemedText>
+                  </ThemedView>
                   <ThemedText style={styles.infoLabel}>Макс. ошибок</ThemedText>
                 </ThemedView>
               )}
@@ -164,8 +170,13 @@ const styles = StyleSheet.create({
   infoItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 8,
     minWidth: 70,
+  },
+  infoRowHorizontal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   infoLabel: {
     fontSize: 12,
@@ -174,9 +185,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   infoValue: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: '700',
-    lineHeight: 24,
+    lineHeight: 32,
   },
   startButton: {
     marginTop: 0,

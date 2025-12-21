@@ -1,11 +1,15 @@
+import { Colors } from '@/constants/theme';
 import { useTest } from '@/contexts/test-context';
+import { useFileImage } from '@/hooks/api/useFileImage';
 import { saveTestResult } from '@/hooks/api/useTestResults';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { Alert, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Alert, Platform, Pressable, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { BackButton } from '../explorer/back-button';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
-import { IconSymbol } from '../ui/icon-symbol';
+import { Button } from '../ui/button';
 import { styles } from './styles';
 import { getAnswerStatus } from './utils';
 
@@ -19,8 +23,6 @@ type TestQuestionViewProps = {
   onAnswerToggle: (index: number) => void;
   onNext: () => void;
 };
-
-import { Colors } from '@/constants/theme';
 
 const successColor = Colors.light.success;
 const errorColor = Colors.light.error;
@@ -42,7 +44,6 @@ export function TestQuestionView({
     answers,
     getCurrentQuestion,
     submitAnswer,
-    nextQuestion,
     finishTest,
     getTotalScore,
     getTotalErrors,
@@ -50,14 +51,21 @@ export function TestQuestionView({
 
   const question = getCurrentQuestion();
   const backgroundColor = useThemeColor({}, 'background');
-  const pressedBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2a2a2a' }, 'background');
-  const tintColor = useThemeColor({}, 'tint');
+  const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#1a1a1a' }, 'border');
+
+  // Загружаем изображение, если оно есть
+  const { response: imageDataUrl, isLoading: isLoadingImage } = useFileImage(
+    question?.image || ''
+  );
 
   if (!test || !question) return null;
 
   const totalQuestions = test.questions?.length || 0;
   const currentAnswer = answers.find((a) => a.questionId === question.id);
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
+  
+  // Определяем, нужно ли показывать результаты (учитываем showCorrectAnswer)
+  const shouldShowResults = showResult && (test.showCorrectAnswer !== false);
 
   const handleFinish = async () => {
     if (!test) return;
@@ -130,129 +138,104 @@ export function TestQuestionView({
 
   return (
     <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
-      <ThemedView style={styles.header}>
-        <Pressable
-          onPress={onBack}
-          style={({ pressed }) => [
-            styles.backButton,
-            {
-              backgroundColor: pressed ? pressedBackgroundColor : backgroundColor,
-            },
-          ]}
-        >
-          <IconSymbol name="chevron.left" size={28} color={tintColor} />
-          <ThemedText style={styles.backButtonText}>Назад</ThemedText>
-        </Pressable>
-        <ThemedText style={styles.progressText}>
-          Вопрос {currentQuestionIndex + 1} из {totalQuestions}
-        </ThemedText>
+      <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
+        <ThemedView style={styles.headerContent}>
+          <BackButton onPress={onBack} label="Назад" />
+          <ThemedText style={styles.progressText}>
+            Вопрос {currentQuestionIndex + 1} из {totalQuestions}
+          </ThemedText>
+        </ThemedView>
       </ThemedView>
       <ScrollView style={styles.scrollView}>
         <ThemedView style={styles.content}>
-          <ThemedText type="subtitle" style={styles.questionTitle}>
-            {question.questionText}
-          </ThemedText>
-          {question.image && (
-            <ThemedView style={styles.imageContainer}>
-              <ThemedText style={styles.imagePlaceholder}>
-                [Изображение: {question.image}]
-              </ThemedText>
-            </ThemedView>
-          )}
+          <ThemedView style={styles.questionContainer}>
+            {question.image && (
+              <ThemedView style={styles.imageContainer}>
+                {isLoadingImage ? (
+                  <ThemedText style={styles.imagePlaceholder}>Загрузка изображения...</ThemedText>
+                ) : imageDataUrl ? (
+                  <Image
+                    source={{ uri: imageDataUrl }}
+                    style={styles.questionImage}
+                    contentFit="contain"
+                    transition={200}
+                  />
+                ) : (
+                  <ThemedText style={styles.imagePlaceholder}>
+                    [Изображение: {question.image}]
+                  </ThemedText>
+                )}
+              </ThemedView>
+            )}
+            <ThemedText 
+              type="subtitle" 
+              style={[
+                styles.questionTitle,
+                !question.image && styles.questionTitleWithoutImage
+              ]}
+            >
+              {question.questionText}
+            </ThemedText>
+          </ThemedView>
+          <ThemedView style={styles.divider} />
           {question.answers && question.answers.length > 0 && (
             <ThemedView style={styles.answersContainer}>
               {question.answers.map((answer, index) => {
                 const status = getAnswerStatus(
                   index,
-                  showResult,
+                  shouldShowResults,
                   question,
                   answers,
                   question.id
                 );
                 const isSelected = selectedAnswers.includes(index);
 
+                // Определяем иконку для результата (только если показываем результаты)
+                const resultIcon = shouldShowResults && status 
+                  ? (status === 'correct' ? 'checkmark.circle.fill' : 'xmark.circle.fill')
+                  : undefined;
+
+                // Определяем стили для кнопки в зависимости от состояния
+                const buttonStyles: any[] = [styles.answerButton];
+                
+                if (shouldShowResults) {
+                  if (status === 'correct') {
+                    buttonStyles.push({
+                      borderColor: Colors.light.success,
+                      backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    });
+                  } else if (status === 'incorrect') {
+                    buttonStyles.push({
+                      borderColor: Colors.light.error,
+                      backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                    });
+                  }
+                } else if (isSelected) {
+                  buttonStyles.push(styles.answerButtonSelected);
+                }
+                
+                if (shouldShowResults && status === 'should-be-selected') {
+                  buttonStyles.push(styles.answerButtonShouldBeSelected);
+                }
+
                 return (
-                  <Pressable
+                  <Button
                     key={index}
+                    title={answer.answerText}
                     onPress={() => onAnswerToggle(index)}
                     disabled={showResult}
-                    style={({ pressed }) => [
-                      styles.answerItem,
-                      isSelected && styles.answerItemSelected,
-                      status === 'correct' && styles.answerItemCorrect,
-                      status === 'incorrect' && styles.answerItemIncorrect,
-                      status === 'should-be-selected' && styles.answerItemShouldBeSelected,
-                      pressed && !showResult && styles.answerItemPressed,
-                    ]}
-                  >
-                    <View style={styles.answerContent}>
-                      {isMultiSelect ? (
-                        <View
-                          style={[
-                            styles.checkbox,
-                            isSelected && styles.checkboxSelected,
-                            status === 'correct' && styles.checkboxCorrect,
-                            status === 'incorrect' && styles.checkboxIncorrect,
-                          ]}
-                        >
-                          {isSelected && (
-                            <IconSymbol
-                              name="checkmark"
-                              size={16}
-                              color={
-                                status === 'correct'
-                                  ? '#fff'
-                                  : status === 'incorrect'
-                                  ? '#fff'
-                                  : tintColor
-                              }
-                            />
-                          )}
-                        </View>
-                      ) : (
-                        <View
-                          style={[
-                            styles.radio,
-                            isSelected && styles.radioSelected,
-                            status === 'correct' && styles.radioCorrect,
-                            status === 'incorrect' && styles.radioIncorrect,
-                          ]}
-                        >
-                          {isSelected && (
-                            <View
-                              style={[
-                                styles.radioInner,
-                                status === 'correct' && styles.radioInnerCorrect,
-                                status === 'incorrect' && styles.radioInnerIncorrect,
-                              ]}
-                            />
-                          )}
-                        </View>
-                      )}
-                      <ThemedText
-                        style={[
-                          styles.answerText,
-                          isSelected && styles.answerTextSelected,
-                          status === 'correct' && styles.answerTextCorrect,
-                          status === 'incorrect' && styles.answerTextIncorrect,
-                        ]}
-                      >
-                        {answer.answerText}
-                      </ThemedText>
-                    </View>
-                    {showResult && status && (
-                      <IconSymbol
-                        name={status === 'correct' ? 'checkmark.circle.fill' : 'xmark.circle.fill'}
-                        size={24}
-                        color={status === 'correct' ? successColor : errorColor}
-                      />
-                    )}
-                  </Pressable>
+                    variant="default"
+                    size="medium"
+                    icon={resultIcon}
+                    iconPosition="right"
+                    fullWidth
+                    style={buttonStyles}
+                  />
                 );
               })}
             </ThemedView>
           )}
-          {showResult && currentAnswer && (
+          {shouldShowResults && currentAnswer && (
             <ThemedView
               style={[
                 styles.resultMessage,
