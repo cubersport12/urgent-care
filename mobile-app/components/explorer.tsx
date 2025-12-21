@@ -1,31 +1,22 @@
 import { Colors } from '@/constants/theme';
 import { useTest } from '@/contexts/test-context';
-import { AppArticleVm, AppFolderVm, AppTestVm } from '@/hooks/api/types';
+import { AppArticleVm, AppTestVm } from '@/hooks/api/types';
 import { fetchArticle, useArticles, useArticlesStats } from '@/hooks/api/useArticles';
 import { useFolders } from '@/hooks/api/useFolders';
 import { useTests } from '@/hooks/api/useTests';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
+import { BackButton } from './explorer/back-button';
+import { ExplorerItemComponent } from './explorer/explorer-item';
+import { FolderMenu } from './explorer/folder-menu';
+import { BreadcrumbItem, ExplorerItem } from './explorer/types';
 import { TestTakingView } from './test-taking-view';
 import { TestView } from './test-view';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
-import { Button } from './ui/button';
-import { IconSymbol } from './ui/icon-symbol';
-
-type ExplorerItem = {
-  type: 'folder' | 'article' | 'test';
-  data: AppFolderVm | AppArticleVm | AppTestVm;
-};
-
-type BreadcrumbItem = {
-  id: string;
-  name: string;
-  type: 'folder' | 'article' | 'test';
-};
 
 export function Explorer() {
   const [currentFolderId, setCurrentFolderId] = useState<string | undefined>(undefined);
@@ -49,7 +40,6 @@ export function Explorer() {
   const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#1a1a1a' }, 'border');
   const currentFolderButtonBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: Colors.dark.buttonBackground }, 'background');
   const descriptionColor = useThemeColor({ light: '#666666', dark: '#9BA1A6' }, 'text');
-  const iconColor = useThemeColor({}, 'icon');
   const foldersResponse = useFolders(currentFolderId);
   const articlesResponse = useArticles(currentFolderId);
   const testsResponse = useTests(currentFolderId);
@@ -486,91 +476,17 @@ export function Explorer() {
                     {currentFolderName}
                   </ThemedText>
                 </Pressable>
-                <Modal
+                <FolderMenu
                   visible={isFolderMenuOpen}
-                  transparent={true}
-                  animationType="fade"
-                  onRequestClose={() => setIsFolderMenuOpen(false)}
-                >
-                  <Pressable 
-                    style={[styles.menuOverlay]}
-                    onPress={() => setIsFolderMenuOpen(false)}
-                  >
-                    <ThemedView 
-                      style={styles.menuContainer}
-                      onStartShouldSetResponder={() => true}
-                    >
-                      <ThemedView style={styles.menuHeader}>
-                        <ThemedText style={styles.menuTitle}>Параметры</ThemedText>
-                        <Pressable onPress={() => setIsFolderMenuOpen(false)}>
-                          <IconSymbol name="xmark.circle.fill" size={24} color={iconColor} />
-                        </Pressable>
-                      </ThemedView>
-                      <ThemedView style={styles.menuContent}>
-                        <ThemedText style={styles.menuSectionTitle}>Фильтры</ThemedText>
-                        <View style={styles.menuFilterButtons}>
-                          {folderStats.foldersCount > 0 && (
-                            <Pressable
-                              onPress={() => setShowFolders(!showFolders)}
-                              style={({ pressed }) => [
-                                styles.menuFilterButton,
-                                showFolders && styles.menuFilterButtonActive,
-                                showFolders && { backgroundColor: '#0c1227' },
-                              ]}
-                            >
-                              <ThemedText 
-                                style={[
-                                  styles.menuFilterButtonText, 
-                                  showFolders ? styles.filterButtonTextActive : { color: descriptionColor }
-                                ]}
-                              >
-                                📁 {folderStats.foldersCount}
-                              </ThemedText>
-                            </Pressable>
-                          )}
-                          {folderStats.articlesCount > 0 && (
-                            <Pressable
-                              onPress={() => setShowArticles(!showArticles)}
-                              style={({ pressed }) => [
-                                styles.menuFilterButton,
-                                showArticles && styles.menuFilterButtonActive,
-                                showArticles && { backgroundColor: '#0c1227' },
-                              ]}
-                            >
-                              <ThemedText 
-                                style={[
-                                  styles.menuFilterButtonText, 
-                                  showArticles ? styles.filterButtonTextActive : { color: descriptionColor }
-                                ]}
-                              >
-                                📄 {folderStats.articlesCount}
-                              </ThemedText>
-                            </Pressable>
-                          )}
-                          {folderStats.testsCount > 0 && (
-                            <Pressable
-                              onPress={() => setShowTests(!showTests)}
-                              style={({ pressed }) => [
-                                styles.menuFilterButton,
-                                showTests && styles.menuFilterButtonActive,
-                                showTests && { backgroundColor: '#0c1227' },
-                              ]}
-                            >
-                              <ThemedText 
-                                style={[
-                                  styles.menuFilterButtonText, 
-                                  showTests ? styles.filterButtonTextActive : { color: descriptionColor }
-                                ]}
-                              >
-                                📝 {folderStats.testsCount}
-                              </ThemedText>
-                            </Pressable>
-                          )}
-                        </View>
-                      </ThemedView>
-                    </ThemedView>
-                  </Pressable>
-                </Modal>
+                  onClose={() => setIsFolderMenuOpen(false)}
+                  folderStats={folderStats}
+                  showFolders={showFolders}
+                  showArticles={showArticles}
+                  showTests={showTests}
+                  onToggleFolders={() => setShowFolders(!showFolders)}
+                  onToggleArticles={() => setShowArticles(!showArticles)}
+                  onToggleTests={() => setShowTests(!showTests)}
+                />
               </>
             )}
           </ThemedView>
@@ -651,88 +567,6 @@ export function Explorer() {
   );
 }
 
-type ExplorerItemComponentProps = {
-  item: ExplorerItem;
-  onPress: () => void;
-  isRead?: boolean;
-  isDisabled?: boolean;
-};
-
-type BackButtonProps = {
-  onPress: () => void;
-  label: string;
-};
-
-function BackButton({ onPress, label }: BackButtonProps) {
-  return (
-    <Button
-      title={label}
-      onPress={onPress}
-      variant="default"
-      size="small"
-      icon="chevron.left"
-      iconPosition="left"
-    />
-  );
-}
-
-function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = false }: ExplorerItemComponentProps) {
-  const itemBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: '#080d18' }, 'background');
-  const pressedBackgroundColor = useThemeColor({ light: Colors.light.pressedBackground, dark: Colors.dark.pressedBackground }, 'background');
-  const successColor = useThemeColor({}, 'success');
-  const disabledColor = useThemeColor({ light: Colors.light.disabledText, dark: Colors.dark.disabledText }, 'text');
-  const descriptionColor = useThemeColor({ light: '#666666', dark: '#9BA1A6' }, 'text');
-  const iconColor = useThemeColor({}, 'icon');
-
-  return (
-    <Pressable
-      onPress={isDisabled ? undefined : onPress}
-      disabled={isDisabled}
-      style={({ pressed }) => [
-        styles.item,
-        {
-          backgroundColor: pressed && !isDisabled ? pressedBackgroundColor : itemBackground,
-          opacity: isDisabled ? 0.5 : 1,
-        },
-      ]}
-    >
-      <ThemedView style={styles.itemContent}>
-        <ThemedView style={styles.itemIconContainer}>
-          <ThemedText style={styles.itemIcon}>
-            {item.type === 'folder' ? '📁' : item.type === 'article' ? '📄' : '📝'}
-          </ThemedText>
-          {item.type === 'article' && isRead && !isDisabled && (
-            <IconSymbol name="checkmark.circle.fill" size={12} color={successColor} style={styles.itemCheckmark} />
-          )}
-        </ThemedView>
-        <ThemedView style={styles.itemTextContainer}>
-          <ThemedText 
-            style={[
-              styles.itemName,
-              item.type === 'article' && isRead && !isDisabled && { color: successColor },
-              isDisabled && { color: disabledColor },
-            ]}
-          >
-            {item.data.name}
-          </ThemedText>
-          <ThemedText 
-            style={[
-              styles.itemDescription,
-              { color: descriptionColor },
-              isDisabled && { opacity: 0.5 },
-            ]}
-          >
-            Для описания надо доработать конструктор...
-            {/* Описание будет добавлено, когда появится в данных */}
-          </ThemedText>
-        </ThemedView>
-        {item.type === 'folder' && (
-          <IconSymbol name="chevron.right" size={20} color={iconColor} />
-        )}
-      </ThemedView>
-    </Pressable>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
@@ -791,58 +625,6 @@ const styles = StyleSheet.create({
   filterButtonTextActive: {
     color: Colors.light.white,
   },
-  menuOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  menuContainer: {
-    borderRadius: 16,
-    padding: 20,
-    minWidth: 280,
-    maxWidth: '90%',
-  },
-  menuHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  menuTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-  },
-  menuContent: {
-    gap: 16,
-  },
-  menuSectionTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    opacity: 0.7,
-    marginBottom: 12,
-  },
-  menuFilterButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  menuFilterButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    minHeight: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  menuFilterButtonActive: {
-    opacity: 1,
-  },
-  menuFilterButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
   scrollViewContainer: {
     flex: 1,
   },
@@ -884,49 +666,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textDecorationLine: 'underline',
     textAlign: 'right'
-  },
-  item: {
-    marginBottom: 12,
-    borderRadius: 12,
-    marginHorizontal: 16,
-  },
-  itemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-    backgroundColor: 'none'
-  },
-  itemIconContainer: {
-    position: 'relative',
-    marginRight: 12,
-    backgroundColor: 'none'
-  },
-  itemIcon: {
-    fontSize: 38,
-    lineHeight: -1
-  },
-  itemTextContainer: {
-    flex: 1,
-    backgroundColor: 'none',
-    paddingBottom: 0
-  },
-  itemName: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  itemDescription: {
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  itemArrow: {
-    fontSize: 18,
-    color: '#0a7ea4',
-  },
-  itemCheckmark: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    fontSize: 20
   },
 });
 
