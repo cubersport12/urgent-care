@@ -28,7 +28,7 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
-  const backgroundColor = useThemeColor({}, 'background');
+  const buttonBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: Colors.dark.buttonBackground }, 'background');
   const pressedBackgroundColor = useThemeColor({ light: Colors.light.pressedBackground, dark: Colors.dark.pressedBackground }, 'background');
   
   const getButtonColors = () => {
@@ -53,7 +53,7 @@ export function Button({
         };
       case 'default':
         return {
-          backgroundColor: backgroundColor,
+          backgroundColor: buttonBackground,
           pressedBackgroundColor: pressedBackgroundColor,
           textColor: useThemeColor({}, 'text'),
         };

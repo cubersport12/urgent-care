@@ -30,13 +30,15 @@ export const Colors = {
     pressedBackground: '#f0f0f0',
     disabledBackground: '#cccccc',
     disabledText: '#cccccc',
+    buttonBackground: '#fff',
+    tabBarBackground: '#fff',
     // Border colors
     border: '#e0e0e0',
     borderPrimary: '#0a7ea4',
   },
   dark: {
     text: '#ECEDEE',
-    background: '#151718',
+    background: '#070a15',
     tint: tintColorDark,
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
@@ -55,6 +57,8 @@ export const Colors = {
     pressedBackground: '#2a2a2a',
     disabledBackground: '#666666',
     disabledText: '#666666',
+    buttonBackground: '#080d18',
+    tabBarBackground: '#0c121f',
     // Border colors
     border: '#333333',
     borderPrimary: '#0a7ea4',

@@ -6,13 +6,14 @@ import { useFolders } from '@/hooks/api/useFolders';
 import { useTests } from '@/hooks/api/useTests';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
 import { TestTakingView } from './test-taking-view';
 import { TestView } from './test-view';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
+import { Button } from './ui/button';
 import { IconSymbol } from './ui/icon-symbol';
 
 type ExplorerItem = {
@@ -34,11 +35,21 @@ export function Explorer() {
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
   // История навигации по статьям для определения hasPrevious
   const [articleNavigationHistory, setArticleNavigationHistory] = useState<string[]>([]);
+  // Состояния для toggle-кнопок фильтрации
+  const [showFolders, setShowFolders] = useState(true);
+  const [showArticles, setShowArticles] = useState(true);
+  const [showTests, setShowTests] = useState(true);
+  // Состояние для меню папки
+  const [isFolderMenuOpen, setIsFolderMenuOpen] = useState(false);
   const previousFolderIdRef = useRef<string | undefined>(undefined);
   const opacity = useSharedValue(1);
   const { isTestStarted, startTest, resetTest } = useTest();
 
   const tintColor = useThemeColor({}, 'tint');
+  const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#1a1a1a' }, 'border');
+  const currentFolderButtonBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: Colors.dark.buttonBackground }, 'background');
+  const descriptionColor = useThemeColor({ light: '#666666', dark: '#9BA1A6' }, 'text');
+  const iconColor = useThemeColor({}, 'icon');
   const foldersResponse = useFolders(currentFolderId);
   const articlesResponse = useArticles(currentFolderId);
   const testsResponse = useTests(currentFolderId);
@@ -96,6 +107,73 @@ export function Explorer() {
   const displayBreadcrumb = useMemo(() => {
     return breadcrumb;
   }, [breadcrumb]);
+
+  // Определяем название родительской папки для кнопки "Назад"
+  const parentFolderName = useMemo(() => {
+    const folderItems = displayBreadcrumb.filter(item => item.type === 'folder');
+    if (folderItems.length > 0) {
+      // Берем предпоследнюю папку (последняя - текущая)
+      const parentFolder = folderItems[folderItems.length - 2];
+      return parentFolder?.name || 'Назад';
+    }
+    return 'Назад';
+  }, [displayBreadcrumb]);
+
+  // Определяем имя текущей папки
+  const currentFolderName = useMemo(() => {
+    // Если мы в корневой папке (currentFolderId === undefined), возвращаем "Обучение"
+    if (currentFolderId === undefined) {
+      return 'Обучение';
+    }
+    const folderItems = displayBreadcrumb.filter(item => item.type === 'folder');
+    if (folderItems.length > 0) {
+      // Берем последнюю папку (текущая)
+      return folderItems[folderItems.length - 1]?.name || '';
+    }
+    return '';
+  }, [displayBreadcrumb, currentFolderId]);
+
+  // Статистика по текущей папке
+  const folderStats = useMemo(() => {
+    const foldersCount = foldersResponse.data?.length || 0;
+    const articlesCount = articlesResponse.data?.length || 0;
+    const testsCount = testsResponse.data?.length || 0;
+    return { foldersCount, articlesCount, testsCount };
+  }, [foldersResponse.data, articlesResponse.data, testsResponse.data]);
+
+  // Вычисляем количество скрытых элементов
+  const hiddenStats = useMemo(() => {
+    const hiddenFolders = !showFolders ? folderStats.foldersCount : 0;
+    const hiddenArticles = !showArticles ? folderStats.articlesCount : 0;
+    const hiddenTests = !showTests ? folderStats.testsCount : 0;
+    const totalHidden = hiddenFolders + hiddenArticles + hiddenTests;
+    return { hiddenFolders, hiddenArticles, hiddenTests, totalHidden };
+  }, [showFolders, showArticles, showTests, folderStats]);
+
+  // Формируем текст о скрытых элементах
+  const hiddenText = useMemo(() => {
+    const parts: string[] = [];
+    if (hiddenStats.hiddenFolders > 0) {
+      parts.push(`📁 ${hiddenStats.hiddenFolders}`);
+    }
+    if (hiddenStats.hiddenArticles > 0) {
+      parts.push(`📄 ${hiddenStats.hiddenArticles}`);
+    }
+    if (hiddenStats.hiddenTests > 0) {
+      parts.push(`📝 ${hiddenStats.hiddenTests}`);
+    }
+    if (parts.length > 0) {
+      return `Скрыто: ${parts.join(', ')}`;
+    }
+    return '';
+  }, [hiddenStats]);
+
+  // Функция для сброса всех фильтров
+  const handleResetFilters = () => {
+    setShowFolders(true);
+    setShowArticles(true);
+    setShowTests(true);
+  };
 
   const items = useMemo(() => {
     const explorerItems: ExplorerItem[] = [];
@@ -229,19 +307,6 @@ export function Explorer() {
     }
   };
 
-  const handleBreadcrumbPress = (index: number) => {
-    const targetItem = displayBreadcrumb[index];
-    // Кликабельны только папки
-    if (targetItem.type === 'folder') {
-      // Переходим к папке и обрезаем breadcrumb до этого элемента
-      setIsNavigating(true);
-      opacity.value = withTiming(0, { duration: 200 });
-      setCurrentFolderId(targetItem.id);
-      setBreadcrumb(breadcrumb.slice(0, index + 1));
-      setSelectedArticle(null);
-      setSelectedTest(null);
-    }
-  };
 
   // Обработчик возврата в папку (верхняя кнопка "Назад")
   const handleBackToFolder = () => {
@@ -398,49 +463,188 @@ export function Explorer() {
   // Показываем список элементов
   return (
     <ThemedView style={styles.container}>
-      {displayBreadcrumb.length > 0 && (
-        <ThemedView style={styles.header}>
+      {(displayBreadcrumb.length > 0 || currentFolderId === undefined) && (
+        <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
           <ThemedView style={styles.headerContent}>
             {currentFolderId !== undefined && (
-              <BackButton onPress={handleBackFromFolder} />
+              <BackButton onPress={handleBackFromFolder} label={parentFolderName} />
             )}
-            <Breadcrumb 
-              items={displayBreadcrumb} 
-              onItemPress={handleBreadcrumbPress}
-            />
+            {currentFolderName && (
+              <>
+                <Pressable
+                  onPress={() => setIsFolderMenuOpen(true)}
+                  style={[styles.currentFolderButton, { flexGrow: 1, backgroundColor: currentFolderButtonBackground }]}
+                >
+                  <ThemedText>
+                    📁
+                  </ThemedText>
+                  <ThemedText 
+                    style={styles.currentFolderName}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {currentFolderName}
+                  </ThemedText>
+                </Pressable>
+                <Modal
+                  visible={isFolderMenuOpen}
+                  transparent={true}
+                  animationType="fade"
+                  onRequestClose={() => setIsFolderMenuOpen(false)}
+                >
+                  <Pressable 
+                    style={[styles.menuOverlay]}
+                    onPress={() => setIsFolderMenuOpen(false)}
+                  >
+                    <ThemedView 
+                      style={styles.menuContainer}
+                      onStartShouldSetResponder={() => true}
+                    >
+                      <ThemedView style={styles.menuHeader}>
+                        <ThemedText style={styles.menuTitle}>Параметры</ThemedText>
+                        <Pressable onPress={() => setIsFolderMenuOpen(false)}>
+                          <IconSymbol name="xmark.circle.fill" size={24} color={iconColor} />
+                        </Pressable>
+                      </ThemedView>
+                      <ThemedView style={styles.menuContent}>
+                        <ThemedText style={styles.menuSectionTitle}>Фильтры</ThemedText>
+                        <View style={styles.menuFilterButtons}>
+                          {folderStats.foldersCount > 0 && (
+                            <Pressable
+                              onPress={() => setShowFolders(!showFolders)}
+                              style={({ pressed }) => [
+                                styles.menuFilterButton,
+                                showFolders && styles.menuFilterButtonActive,
+                                showFolders && { backgroundColor: '#0c1227' },
+                              ]}
+                            >
+                              <ThemedText 
+                                style={[
+                                  styles.menuFilterButtonText, 
+                                  showFolders ? styles.filterButtonTextActive : { color: descriptionColor }
+                                ]}
+                              >
+                                📁 {folderStats.foldersCount}
+                              </ThemedText>
+                            </Pressable>
+                          )}
+                          {folderStats.articlesCount > 0 && (
+                            <Pressable
+                              onPress={() => setShowArticles(!showArticles)}
+                              style={({ pressed }) => [
+                                styles.menuFilterButton,
+                                showArticles && styles.menuFilterButtonActive,
+                                showArticles && { backgroundColor: '#0c1227' },
+                              ]}
+                            >
+                              <ThemedText 
+                                style={[
+                                  styles.menuFilterButtonText, 
+                                  showArticles ? styles.filterButtonTextActive : { color: descriptionColor }
+                                ]}
+                              >
+                                📄 {folderStats.articlesCount}
+                              </ThemedText>
+                            </Pressable>
+                          )}
+                          {folderStats.testsCount > 0 && (
+                            <Pressable
+                              onPress={() => setShowTests(!showTests)}
+                              style={({ pressed }) => [
+                                styles.menuFilterButton,
+                                showTests && styles.menuFilterButtonActive,
+                                showTests && { backgroundColor: '#0c1227' },
+                              ]}
+                            >
+                              <ThemedText 
+                                style={[
+                                  styles.menuFilterButtonText, 
+                                  showTests ? styles.filterButtonTextActive : { color: descriptionColor }
+                                ]}
+                              >
+                                📝 {folderStats.testsCount}
+                              </ThemedText>
+                            </Pressable>
+                          )}
+                        </View>
+                      </ThemedView>
+                    </ThemedView>
+                  </Pressable>
+                </Modal>
+              </>
+            )}
           </ThemedView>
         </ThemedView>
       )}
       <Animated.View style={[styles.scrollViewContainer, animatedStyle]}>
-        <ScrollView style={styles.scrollView}>
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
           {isLoading ? (
             <ThemedView style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={tintColor} />
               <ThemedText style={styles.loadingText}>Загрузка...</ThemedText>
             </ThemedView>
-          ) : items.length === 0 ? (
-            <ThemedView style={styles.emptyContainer}>
-              <ThemedText>Нет элементов</ThemedText>
-            </ThemedView>
-          ) : (
-            items
+          ) : (() => {
+            // Фильтруем элементы
+            const filteredItems = items
               .map((item, index) => ({ item, index }))
-              .filter(({ item, index }) => !isItemHidden(item, index))
-              .map(({ item, index }) => {
-                const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
-                const isDisabled = isItemDisabled(item, index);
+              .filter(({ item, index }) => {
+                // Фильтрация по типу элемента в зависимости от состояния toggle-кнопок
+                if (item.type === 'folder' && !showFolders) return false;
+                if (item.type === 'article' && !showArticles) return false;
+                if (item.type === 'test' && !showTests) return false;
+                return !isItemHidden(item, index);
+              });
 
+            // Если нет элементов для отображения
+            if (filteredItems.length === 0) {
+              // Если применены фильтры, показываем сначала "Ничего нет", потом надпись о скрытых элементах
+              if (hiddenText) {
                 return (
-                  <ExplorerItemComponent
-                    key={`${item.type}-${item.data.id}`}
-                    item={item}
-                    onPress={() => handleItemPress(item)}
-                    isRead={isRead}
-                    isDisabled={isDisabled}
-                  />
+                  <ThemedView style={styles.emptyContainer}>
+                    <ThemedText style={styles.emptyText}>Ничего нет</ThemedText>
+                    <Pressable onPress={handleResetFilters} style={styles.hiddenItemsContainer}>
+                      <ThemedText style={[styles.hiddenItemsText, { color: descriptionColor }]}>
+                        {hiddenText}
+                      </ThemedText>
+                    </Pressable>
+                  </ThemedView>
                 );
-              })
-          )}
+              }
+              // Если фильтры не применены, показываем только "Ничего нет"
+              return (
+                <ThemedView style={styles.emptyContainer}>
+                  <ThemedText style={styles.emptyText}>Ничего нет</ThemedText>
+                </ThemedView>
+              );
+            }
+
+            // Если есть скрытые элементы, показываем надпись
+            return (
+              <>
+                {hiddenText && (
+                  <Pressable onPress={handleResetFilters} style={styles.hiddenItemsContainer}>
+                    <ThemedText style={[styles.hiddenItemsText, { color: descriptionColor }]}>
+                      {hiddenText}
+                    </ThemedText>
+                  </Pressable>
+                )}
+                {filteredItems.map(({ item, index }) => {
+                  const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
+                  const isDisabled = isItemDisabled(item, index);
+
+                  return (
+                    <ExplorerItemComponent
+                      key={`${item.type}-${item.data.id}`}
+                      item={item}
+                      onPress={() => handleItemPress(item)}
+                      isRead={isRead}
+                      isDisabled={isDisabled}
+                    />
+                  );
+                })}
+              </>
+            );
+          })()}
         </ScrollView>
       </Animated.View>
     </ThemedView>
@@ -454,83 +658,31 @@ type ExplorerItemComponentProps = {
   isDisabled?: boolean;
 };
 
-type BreadcrumbProps = {
-  items: BreadcrumbItem[];
-  onItemPress: (index: number) => void;
-};
-
-function Breadcrumb({ items, onItemPress }: BreadcrumbProps) {
-  const tintColor = useThemeColor({}, 'tint');
-  const textColor = useThemeColor({}, 'text');
-  const separatorColor = useThemeColor({ light: '#999', dark: '#666' }, 'text');
-
-  return (
-    <ThemedView style={styles.breadcrumb}>
-      {items.map((item, index) => (
-        <ThemedView key={`${item.type}-${item.id}-${index}`} style={styles.breadcrumbItem}>
-          {index > 0 && (
-            <ThemedText style={[styles.breadcrumbSeparator, { color: separatorColor }]}>
-              {' / '}
-            </ThemedText>
-          )}
-          {item.type === 'folder' ? (
-            <Pressable onPress={() => onItemPress(index)}>
-              <ThemedText
-                style={[
-                  styles.breadcrumbText,
-                  { color: index === items.length - 1 ? textColor : tintColor },
-                  index === items.length - 1 && styles.breadcrumbTextActive,
-                ]}
-              >
-                {item.name}
-              </ThemedText>
-            </Pressable>
-          ) : (
-            <ThemedText
-              style={[
-                styles.breadcrumbText,
-                styles.breadcrumbTextActive,
-                { color: textColor },
-              ]}
-            >
-              {item.name}
-            </ThemedText>
-          )}
-        </ThemedView>
-      ))}
-    </ThemedView>
-  );
-}
-
 type BackButtonProps = {
   onPress: () => void;
+  label: string;
 };
 
-function BackButton({ onPress }: BackButtonProps) {
-  const tintColor = useThemeColor({}, 'tint');
-  const backgroundColor = useThemeColor({}, 'background');
-  const pressedBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2a2a2a' }, 'background');
-
+function BackButton({ onPress, label }: BackButtonProps) {
   return (
-    <Pressable
+    <Button
+      title={label}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.backButton,
-        {
-          backgroundColor: pressed ? pressedBackgroundColor : backgroundColor,
-        },
-      ]}
-    >
-      <IconSymbol name="chevron.left" size={28} color={tintColor} />
-    </Pressable>
+      variant="default"
+      size="small"
+      icon="chevron.left"
+      iconPosition="left"
+    />
   );
 }
 
 function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = false }: ExplorerItemComponentProps) {
-  const backgroundColor = useThemeColor({}, 'background');
+  const itemBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: '#080d18' }, 'background');
   const pressedBackgroundColor = useThemeColor({ light: Colors.light.pressedBackground, dark: Colors.dark.pressedBackground }, 'background');
   const successColor = useThemeColor({}, 'success');
   const disabledColor = useThemeColor({ light: Colors.light.disabledText, dark: Colors.dark.disabledText }, 'text');
+  const descriptionColor = useThemeColor({ light: '#666666', dark: '#9BA1A6' }, 'text');
+  const iconColor = useThemeColor({}, 'icon');
 
   return (
     <Pressable
@@ -539,28 +691,44 @@ function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = fal
       style={({ pressed }) => [
         styles.item,
         {
-          backgroundColor: pressed && !isDisabled ? pressedBackgroundColor : backgroundColor,
+          backgroundColor: pressed && !isDisabled ? pressedBackgroundColor : itemBackground,
           opacity: isDisabled ? 0.5 : 1,
         },
       ]}
     >
       <ThemedView style={styles.itemContent}>
-        <ThemedText style={styles.itemIcon}>
-          {item.type === 'folder' ? '📁' : item.type === 'article' ? '📄' : '📝'}
-        </ThemedText>
-        <ThemedText 
-          style={[
-            styles.itemName,
-            item.type === 'article' && isRead && !isDisabled && { color: successColor },
-            isDisabled && { color: disabledColor },
-          ]}
-        >
-          {item.data.name}
-        </ThemedText>
-        {item.type === 'article' && isRead && !isDisabled && (
-          <IconSymbol name="checkmark" size={20} color={successColor} style={styles.itemCheckmark} />
+        <ThemedView style={styles.itemIconContainer}>
+          <ThemedText style={styles.itemIcon}>
+            {item.type === 'folder' ? '📁' : item.type === 'article' ? '📄' : '📝'}
+          </ThemedText>
+          {item.type === 'article' && isRead && !isDisabled && (
+            <IconSymbol name="checkmark.circle.fill" size={12} color={successColor} style={styles.itemCheckmark} />
+          )}
+        </ThemedView>
+        <ThemedView style={styles.itemTextContainer}>
+          <ThemedText 
+            style={[
+              styles.itemName,
+              item.type === 'article' && isRead && !isDisabled && { color: successColor },
+              isDisabled && { color: disabledColor },
+            ]}
+          >
+            {item.data.name}
+          </ThemedText>
+          <ThemedText 
+            style={[
+              styles.itemDescription,
+              { color: descriptionColor },
+              isDisabled && { opacity: 0.5 },
+            ]}
+          >
+            Для описания надо доработать конструктор...
+            {/* Описание будет добавлено, когда появится в данных */}
+          </ThemedText>
+        </ThemedView>
+        {item.type === 'folder' && (
+          <IconSymbol name="chevron.right" size={20} color={iconColor} />
         )}
-        {item.type === 'folder' && <ThemedText style={styles.itemArrow}>→</ThemedText>}
       </ThemedView>
     </Pressable>
   );
@@ -574,7 +742,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
   },
   headerContent: {
     flexDirection: 'row',
@@ -582,48 +749,109 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     minHeight: 44,
-    flexWrap: 'wrap',
+    overflow: 'hidden'
+    // flexWrap: 'wrap',
   },
-  backButton: {
-    borderRadius: 8,
+  currentFolderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 12,
-    minWidth: 44,
-    minHeight: 44,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  currentFolderName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: 8,
+    flexShrink: 1,
+  },
+  filterButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 'auto',
+  },
+  filterButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    minHeight: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  breadcrumb: {
+  filterButtonActive: {
+    opacity: 1,
+  },
+  filterButtonText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  filterButtonTextActive: {
+    color: Colors.light.white,
+  },
+  menuOverlay: {
     flex: 1,
-    display: 'flex',
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 4,
-    // minHeight: 44,
-    justifyContent: 'flex-start',
+    padding: 20,
   },
-  breadcrumbItem: {
+  menuContainer: {
+    borderRadius: 16,
+    padding: 20,
+    minWidth: 280,
+    maxWidth: '90%',
+  },
+  menuHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 20,
   },
-  breadcrumbSeparator: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginHorizontal: 2,
-  },
-  breadcrumbText: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '400',
-  },
-  breadcrumbTextActive: {
+  menuTitle: {
+    fontSize: 18,
     fontWeight: '600',
+    flex: 1,
+  },
+  menuContent: {
+    gap: 16,
+  },
+  menuSectionTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    opacity: 0.7,
+    marginBottom: 12,
+  },
+  menuFilterButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  menuFilterButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    minHeight: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuFilterButtonActive: {
+    opacity: 1,
+  },
+  menuFilterButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   scrollViewContainer: {
     flex: 1,
   },
   scrollView: {
     flex: 1,
+  },
+  scrollViewContent: {
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -637,32 +865,68 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   emptyContainer: {
-    padding: 32,
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+    padding: 32,
+    gap: 16,
+  },
+  emptyText: {
+    fontSize: 16,
+    opacity: 0.7,
+  },
+  hiddenItemsContainer: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  hiddenItemsText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    textDecorationLine: 'underline',
+    textAlign: 'right'
   },
   item: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    marginBottom: 12,
+    borderRadius: 12,
+    marginHorizontal: 16,
   },
   itemContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 8,
+    backgroundColor: 'none'
+  },
+  itemIconContainer: {
+    position: 'relative',
+    marginRight: 12,
+    backgroundColor: 'none'
   },
   itemIcon: {
-    fontSize: 24,
-    marginRight: 12,
+    fontSize: 38,
+    lineHeight: -1
+  },
+  itemTextContainer: {
+    flex: 1,
+    backgroundColor: 'none',
+    paddingBottom: 0
   },
   itemName: {
-    flex: 1,
     fontSize: 16,
+    marginBottom: 4,
+  },
+  itemDescription: {
+    fontSize: 14,
+    opacity: 0.7,
   },
   itemArrow: {
     fontSize: 18,
     color: '#0a7ea4',
   },
   itemCheckmark: {
-    marginLeft: 8,
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    fontSize: 20
   },
 });
 
