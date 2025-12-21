@@ -1,5 +1,7 @@
 import { useTest } from '@/contexts/test-context';
-import { useEffect, useState } from 'react';
+import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
+import { useDeviceId } from '@/hooks/use-device-id';
+import { useEffect, useRef, useState } from 'react';
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { TestQuestionView } from './test-taking/test-question-view';
 import { TestResultsView } from './test-taking/test-results-view';
@@ -18,15 +20,53 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
     submitAnswer,
     nextQuestion,
     finishTest,
+    getTotalScore,
+    getTotalErrors,
+    answers,
+    startedAt,
   } = useTest();
+  const { deviceId } = useDeviceId();
+
+  // Хук для сохранения статистики теста (вызываем всегда, но используем только когда нужно)
+  const testStatsHook = useAddOrUpdateTestStats({
+    clientId: deviceId || '',
+    testId: test?.id || '',
+    startedAt: startedAt || new Date().toISOString(),
+  });
 
   const question = getCurrentQuestion();
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [isMultiSelect, setIsMultiSelect] = useState(false);
+  const previousAnswersLengthRef = useRef(0);
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(1);
+  
+  // Обновляем статистику после каждого ответа - рассчитываем passed
+  useEffect(() => {
+    if (test && deviceId && startedAt && testStatsHook && answers.length !== previousAnswersLengthRef.current) {
+      previousAnswersLengthRef.current = answers.length;
+      
+      const totalScore = getTotalScore();
+      const totalErrors = getTotalErrors();
+      
+      // Рассчитываем passed на основе текущих результатов
+      const isPassed =
+        (test.minScore === undefined || test.minScore === null || totalScore >= test.minScore) &&
+        (test.maxErrors === undefined || test.maxErrors === null || totalErrors <= test.maxErrors);
+      
+      // Обновляем статистику с текущим значением passed
+      const updateStats = async () => {
+        try {
+          await testStatsHook.addOrUpdate({ passed: isPassed });
+        } catch (error) {
+          console.error('Error updating test stats after answer:', error);
+        }
+      };
+      void updateStats();
+    }
+  }, [test, deviceId, startedAt, testStatsHook, answers, getTotalScore, getTotalErrors]);
 
   useEffect(() => {
     if (!question) return;
@@ -71,7 +111,7 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (showResult) {
       if (isLastQuestion) {
         // На последнем вопросе после показа результата переходим к странице результатов
@@ -86,6 +126,8 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
       if (selectedAnswers.length === 0) return;
       
       submitAnswer(question.id, selectedAnswers);
+      
+      // Статистика обновляется автоматически через useEffect при изменении totalScoreAccumulated
       
       // Если showCorrectAnswer === false, сразу переходим к следующему вопросу без показа результатов
       if (test.showCorrectAnswer === false) {

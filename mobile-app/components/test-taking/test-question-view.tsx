@@ -2,6 +2,8 @@ import { Colors } from '@/constants/theme';
 import { useTest } from '@/contexts/test-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { saveTestResult } from '@/hooks/api/useTestResults';
+import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
+import { useDeviceId } from '@/hooks/use-device-id';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { Image } from 'expo-image';
 import { Alert, Platform, Pressable, ScrollView } from 'react-native';
@@ -47,7 +49,16 @@ export function TestQuestionView({
     finishTest,
     getTotalScore,
     getTotalErrors,
+    startedAt,
   } = useTest();
+  const { deviceId } = useDeviceId();
+
+  // Хук для сохранения статистики теста (вызываем всегда, но используем только когда нужно)
+  const testStatsHook = useAddOrUpdateTestStats({
+    clientId: deviceId || '',
+    testId: test?.id || '',
+    startedAt: startedAt || new Date().toISOString(),
+  });
 
   const question = getCurrentQuestion();
   const backgroundColor = useThemeColor({}, 'background');
@@ -84,6 +95,21 @@ export function TestQuestionView({
         isPassed,
         answers: answers,
       });
+      
+      // Сохраняем completedAt и passed в статистику
+      if (deviceId && startedAt && test) {
+        try {
+          const completedAt = new Date().toISOString();
+          await testStatsHook.addOrUpdate({
+            completedAt,
+            passed: isPassed,
+          });
+        } catch (error) {
+          console.error('Error saving test stats on finish:', error);
+          // Не блокируем завершение теста при ошибке сохранения статистики
+        }
+      }
+      
       finishTest();
       onFinish();
     } catch (error) {
@@ -136,11 +162,16 @@ export function TestQuestionView({
     }
   };
 
+  const handleBack = () => {
+    // При нажатии на кнопку "Назад" вызываем ту же процедуру завершения теста
+    handleFinishWithConfirmation();
+  };
+
   return (
     <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
       <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
         <ThemedView style={styles.headerContent}>
-          <BackButton onPress={onBack} label="Назад" />
+          <BackButton onPress={handleBack} label="Назад" />
           <ThemedText style={styles.progressText}>
             Вопрос {currentQuestionIndex + 1} из {totalQuestions}
           </ThemedText>

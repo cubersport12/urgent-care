@@ -1,9 +1,11 @@
 import { Colors } from '@/constants/theme';
 import { useTest } from '@/contexts/test-context';
-import { AppArticleVm, AppTestVm } from '@/hooks/api/types';
+import { AppArticleVm, AppTestStatsVm, AppTestVm } from '@/hooks/api/types';
 import { fetchArticle, useArticles, useArticlesStats } from '@/hooks/api/useArticles';
+import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useFolders } from '@/hooks/api/useFolders';
 import { useTests } from '@/hooks/api/useTests';
+import { useDeviceId } from '@/hooks/use-device-id';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
@@ -40,6 +42,7 @@ export function Explorer() {
   const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#1a1a1a' }, 'border');
   const currentFolderButtonBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: Colors.dark.buttonBackground }, 'background');
   const descriptionColor = useThemeColor({ light: '#666666', dark: '#9BA1A6' }, 'text');
+  const { deviceId } = useDeviceId();
   const foldersResponse = useFolders(currentFolderId);
   const articlesResponse = useArticles(currentFolderId);
   const testsResponse = useTests(currentFolderId);
@@ -357,9 +360,24 @@ export function Explorer() {
   // Обработчик возврата из article/test (для совместимости)
   const handleBackFromItem = handleBackToFolder;
 
-  const handleStartTest = () => {
-    if (selectedTest) {
+  // Хук для сохранения статистики теста (вызываем всегда, но используем только когда нужно)
+  const testStatsHook = useAddOrUpdateTestStats({
+    clientId: deviceId || '',
+    testId: selectedTest?.id || '',
+    startedAt: new Date().toISOString(),
+  });
+
+  const handleStartTest = async () => {
+    if (selectedTest && deviceId) {
+      const startedAt = new Date().toISOString();
       startTest(selectedTest);
+      // Сохраняем startedAt в статистику
+      try {
+        await testStatsHook.addOrUpdate({ startedAt });
+      } catch (error) {
+        console.error('Error saving test start time:', error);
+        // Не блокируем запуск теста при ошибке сохранения статистики
+      }
     }
   };
 

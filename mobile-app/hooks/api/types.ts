@@ -91,9 +91,17 @@ export type AppTestAccessablityConditionArticle = {
 };
 
 export type AppArticleStatsVm = {
-  id?: string;
   readed?: boolean;
   clientId: string;
   articleId: string;
   createdAt: string;
+}
+
+export type AppTestStatsVm = {
+  clientId: string;
+  testId: string;
+  startedAt: string;
+  completedAt?: NullableValue<string>;
+  passed?: NullableValue<boolean>;
+  data?: NullableValue<any>;
 }

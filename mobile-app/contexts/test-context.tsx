@@ -14,6 +14,8 @@ type TestContextType = {
   answers: TestAnswer[];
   isTestStarted: boolean;
   isTestCompleted: boolean;
+  totalScoreAccumulated: number; // Накопленный счетчик баллов с начала теста
+  startedAt: string | null; // Время начала теста
   startTest: (test: AppTestVm) => void;
   submitAnswer: (questionId: string, answerIds: number[] | string[]) => void;
   nextQuestion: () => void;
@@ -32,11 +34,15 @@ export function TestProvider({ children }: { children: ReactNode }) {
   const [answers, setAnswers] = useState<TestAnswer[]>([]);
   const [isTestStarted, setIsTestStarted] = useState(false);
   const [isTestCompleted, setIsTestCompleted] = useState(false);
+  const [totalScoreAccumulated, setTotalScoreAccumulated] = useState(0); // Накопленный счетчик баллов
+  const [startedAt, setStartedAt] = useState<string | null>(null); // Время начала теста
 
   const startTest = (testData: AppTestVm) => {
     setTest(testData);
     setCurrentQuestionIndex(0);
     setAnswers([]);
+    setTotalScoreAccumulated(0); // Сбрасываем счетчик баллов
+    setStartedAt(new Date().toISOString()); // Сохраняем время начала теста
     setIsTestStarted(true);
     setIsTestCompleted(false);
   };
@@ -76,11 +82,17 @@ export function TestProvider({ children }: { children: ReactNode }) {
     setAnswers(prev => {
       const existingIndex = prev.findIndex(a => a.questionId === questionId);
       if (existingIndex >= 0) {
+        // Если ответ уже был дан, вычитаем старые баллы и добавляем новые
+        const oldAnswer = prev[existingIndex];
+        setTotalScoreAccumulated(current => current - oldAnswer.score + score);
         const updated = [...prev];
         updated[existingIndex] = newAnswer;
         return updated;
+      } else {
+        // Если это новый ответ, добавляем баллы к счетчику
+        setTotalScoreAccumulated(current => current + score);
+        return [...prev, newAnswer];
       }
-      return [...prev, newAnswer];
     });
   };
 
@@ -102,6 +114,8 @@ export function TestProvider({ children }: { children: ReactNode }) {
     setTest(null);
     setCurrentQuestionIndex(0);
     setAnswers([]);
+    setTotalScoreAccumulated(0);
+    setStartedAt(null);
     setIsTestStarted(false);
     setIsTestCompleted(false);
   };
@@ -127,6 +141,8 @@ export function TestProvider({ children }: { children: ReactNode }) {
         answers,
         isTestStarted,
         isTestCompleted,
+        totalScoreAccumulated,
+        startedAt,
         startTest,
         submitAnswer,
         nextQuestion,
