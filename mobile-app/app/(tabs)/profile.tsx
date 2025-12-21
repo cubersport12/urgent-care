@@ -7,7 +7,7 @@ import { useDeviceId } from '@/hooks/use-device-id';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import { ActivityIndicator, Alert, Platform, StyleSheet } from 'react-native';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
@@ -33,44 +33,82 @@ export default function ProfileScreen() {
 
   const handleClearStats = async () => {
     if (!deviceId) {
-      Alert.alert('Ошибка', 'Не удалось получить идентификатор устройства');
+      const errorMessage = 'Не удалось получить идентификатор устройства';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(errorMessage);
+      } else {
+        Alert.alert('Ошибка', errorMessage);
+      }
       return;
     }
 
-    Alert.alert(
-      'Очистить статистику',
-      'Вы уверены, что хотите очистить всю статистику по документам? Это действие нельзя отменить.',
-      [
-        {
-          text: 'Отмена',
-          style: 'cancel',
-        },
-        {
-          text: 'Очистить',
-          style: 'destructive',
-          onPress: async () => {
-            setIsClearing(true);
-            try {
-              const { error } = await supabase
-                .from('articles_stats')
-                .delete()
-                .eq('clientId', deviceId);
+    const message = 'Вы уверены, что хотите очистить всю статистику по документам и тестам? Это действие нельзя отменить.';
+    
+    const performClear = async () => {
+      setIsClearing(true);
+      try {
+        // Очищаем статистику статей
+        const articlesError = await supabase
+          .from('articles_stats')
+          .delete()
+          .eq('clientId', deviceId);
 
-              if (error) {
-                throw error;
-              }
+        if (articlesError.error) {
+          throw articlesError.error;
+        }
 
-              Alert.alert('Успешно', 'Статистика по документам очищена');
-            } catch (error) {
-              console.error('Error clearing stats:', error);
-              Alert.alert('Ошибка', 'Не удалось очистить статистику');
-            } finally {
-              setIsClearing(false);
-            }
+        // Очищаем статистику тестов
+        const testsError = await supabase
+          .from('tests_stats')
+          .delete()
+          .eq('clientId', deviceId);
+
+        if (testsError.error) {
+          throw testsError.error;
+        }
+
+        const successMessage = 'Статистика по документам и тестам очищена';
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert(successMessage);
+        } else {
+          Alert.alert('Успешно', successMessage);
+        }
+      } catch (error) {
+        console.error('Error clearing stats:', error);
+        const errorMessage = 'Не удалось очистить статистику';
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert(errorMessage);
+        } else {
+          Alert.alert('Ошибка', errorMessage);
+        }
+      } finally {
+        setIsClearing(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      // Для веб используем window.confirm
+      if (typeof window !== 'undefined' && window.confirm(message)) {
+        void performClear();
+      }
+    } else {
+      // Для нативных платформ используем Alert.alert
+      Alert.alert(
+        'Очистить статистику',
+        message,
+        [
+          {
+            text: 'Отмена',
+            style: 'cancel',
           },
-        },
-      ]
-    );
+          {
+            text: 'Очистить',
+            style: 'destructive',
+            onPress: performClear,
+          },
+        ]
+      );
+    }
   };
 
   const getUserName = () => {
