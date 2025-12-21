@@ -21,12 +21,12 @@ export class ArticlesState {
 
   @Selector()
   public static getAllArticles(state: ArticlesStateModel) {
-    return state.articles ?? [];
+    return [...state.articles ?? []];
   }
 
   @Selector()
   public static getArticles(state: ArticlesStateModel) {
-    return (parentId: NullableValue<string>) => state.articles?.filter(x => x.parentId == parentId) ?? [];
+    return (parentId: NullableValue<string>) => [...state.articles?.filter(x => x.parentId == parentId) ?? []];
   }
 
   @Action(ArticlesActions.FetchArticles, { cancelUncompleted: true })
@@ -58,7 +58,7 @@ export class ArticlesState {
       }));
   }
 
-  @Action(ArticlesActions.UpdateArticle, { cancelUncompleted: true })
+  @Action(ArticlesActions.UpdateArticle)
   private _updateArticle(ctx: StateContext<ArticlesStateModel>, { articleId, payload }: ArticlesActions.UpdateArticle) {
     return this._articlesStorage.updateArticle({ id: articleId, ...payload } as AppArticleVm)
       .pipe(tap(() => {

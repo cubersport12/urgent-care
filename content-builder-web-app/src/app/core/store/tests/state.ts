@@ -21,12 +21,12 @@ export class TestsState {
 
   @Selector()
   public static getAllTests(state: TestsStateModel) {
-    return state.articles ?? [];
+    return [...state.articles ?? []].map(x => ({ ...x }));
   }
 
   @Selector()
   public static getTests(state: TestsStateModel) {
-    return (parentId: NullableValue<string>) => state.articles?.filter(x => x.parentId == parentId) ?? [];
+    return (parentId: NullableValue<string>) => [...state.articles?.filter(x => x.parentId == parentId) ?? []].map(x => ({ ...x }));
   }
 
   @Action(TestsActions.FetchTests, { cancelUncompleted: true })
@@ -58,7 +58,7 @@ export class TestsState {
       }));
   }
 
-  @Action(TestsActions.UpdateTest, { cancelUncompleted: true })
+  @Action(TestsActions.UpdateTest)
   private _updateTest(ctx: StateContext<TestsStateModel>, { testId, payload }: TestsActions.UpdateTest) {
     return this._testsStorage.updateTest({ id: testId, ...payload } as AppTestVm)
       .pipe(tap(() => {

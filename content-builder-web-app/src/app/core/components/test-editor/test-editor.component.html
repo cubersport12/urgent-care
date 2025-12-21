@@ -14,6 +14,14 @@
         <input matInput [formControl]="_form.controls.minScore">
       </mat-form-field>
     </div>
+    <div class="flex gpa-1 w-full">
+      <mat-checkbox [formControl]="_form.controls.showCorrectAnswer">
+        Показывать правильный ответ в вопросах
+      </mat-checkbox>
+      <mat-checkbox [formControl]="_form.controls.includeToStatistics">
+        Тест участвует в статистике
+      </mat-checkbox>
+    </div>
     <app-test-conditions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.conditions" />
     <app-test-questions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.questions" />
   </form>
