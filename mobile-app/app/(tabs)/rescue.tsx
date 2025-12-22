@@ -3,16 +3,20 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Fonts } from '@/constants/theme';
+import { useThemeColorSimple } from '@/hooks/use-theme-color';
 import { StyleSheet } from 'react-native';
 
 export default function RescueScreen() {
+  const headerBackground = useThemeColorSimple('layout2');
+  const headerIcon = useThemeColorSimple('neutral');
+  
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
+      headerBackgroundColor={{ light: headerBackground, dark: headerBackground }}
       headerImage={
         <IconSymbol
           size={310}
-          color="#808080"
+          color={headerIcon}
           name="cross.fill"
           style={styles.headerImage}
         />
@@ -35,7 +39,7 @@ export default function RescueScreen() {
 
 const styles = StyleSheet.create({
   headerImage: {
-    color: '#808080',
+    // color will be set dynamically
     bottom: -90,
     alignSelf: 'center',
     position: 'absolute',

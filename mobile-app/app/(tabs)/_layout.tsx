@@ -14,16 +14,16 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[theme].tint,
+        tabBarActiveTintColor: Colors[theme].primary,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          backgroundColor: Colors[theme].tabBarBackground,
+          backgroundColor: Colors[theme].page,
         },
         headerStyle: {
-          backgroundColor: Colors[theme].tabBarBackground,
+          backgroundColor: Colors[theme].page,
         },
-        headerTintColor: Colors[theme].text,
+        headerTintColor: Colors[theme].onLayout1,
         headerTitleStyle: {
           fontWeight: '600',
         },
@@ -35,7 +35,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
           headerTitle: () => (
             <View style={styles.headerTitle}>
-              <IconSymbol size={24} name="house.fill" color={Colors[theme].tint} />
+              <IconSymbol size={24} name="house.fill" color={Colors[theme].primary} />
               <ThemedText style={styles.headerTitleText}>Обучение</ThemedText>
             </View>
           ),
@@ -48,7 +48,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="cross.fill" color={color} />,
           headerTitle: () => (
             <View style={styles.headerTitle}>
-              <IconSymbol size={24} name="cross.fill" color={Colors[theme].tint} />
+              <IconSymbol size={24} name="cross.fill" color={Colors[theme].primary} />
               <ThemedText style={styles.headerTitleText}>Спасение</ThemedText>
             </View>
           ),
@@ -61,7 +61,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
           headerTitle: () => (
             <View style={styles.headerTitle}>
-              <IconSymbol size={24} name="person.fill" color={Colors[theme].tint} />
+              <IconSymbol size={24} name="person.fill" color={Colors[theme].primary} />
               <ThemedText style={styles.headerTitleText}>Профиль</ThemedText>
             </View>
           ),

@@ -4,7 +4,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColorSimple } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, StyleSheet } from 'react-native';
@@ -14,7 +14,12 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isClearing, setIsClearing] = useState(false);
   const { deviceId } = useDeviceId();
-  const tintColor = useThemeColor({}, 'tint');
+  const tintColor = useThemeColorSimple('primary');
+  const headerBackground = useThemeColorSimple('layout2');
+  const headerIcon = useThemeColorSimple('neutral');
+  const avatarBackground = useThemeColorSimple('error');
+  const whiteColor = useThemeColorSimple('onPrimary');
+  const shadowColor = useThemeColorSimple('shadow');
 
   useEffect(() => {
     const getUser = async () => {
@@ -138,11 +143,11 @@ export default function ProfileScreen() {
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
+      headerBackgroundColor={{ light: headerBackground, dark: headerBackground }}
       headerImage={
         <IconSymbol
           size={310}
-          color="#808080"
+          color={headerIcon}
           name="person.fill"
           style={styles.headerImage}
         />
@@ -156,7 +161,7 @@ export default function ProfileScreen() {
         <>
           <ThemedView style={styles.userInfoContainer}>
             <ThemedView style={styles.avatarContainer}>
-              <ThemedText style={styles.avatarText}>{userInitial}</ThemedText>
+              <ThemedText style={[styles.avatarText, { color: whiteColor }]}>{userInitial}</ThemedText>
             </ThemedView>
             <ThemedText type="defaultSemiBold" style={styles.userName}>
               {userName}
@@ -186,7 +191,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   headerImage: {
-    color: '#808080',
+    // color will be set dynamically
     bottom: -90,
     alignSelf: 'center',
     position: 'absolute',
@@ -210,10 +215,10 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#F44336',
+    // backgroundColor will be set dynamically
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    // shadowColor will be set dynamically
     shadowOffset: {
       width: 0,
       height: 2,
@@ -225,7 +230,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    // color will be set dynamically
   },
   userName: {
     fontSize: 20,

@@ -1,7 +1,5 @@
-import { Colors } from '@/constants/theme';
-import { useTheme } from '@/contexts/theme-context';
 import { AppTestQuestionVm } from '@/hooks/api/types';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColorSimple } from '@/hooks/use-theme-color';
 import { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../themed-text';
@@ -29,9 +27,6 @@ type QuestionAccordionProps = {
   testQuestions: AppTestQuestionVm[] | undefined;
 };
 
-const successColor = '#4CAF50';
-const errorColor = '#F44336';
-
 export function QuestionAccordion({
   question,
   questionIndex,
@@ -41,8 +36,17 @@ export function QuestionAccordion({
   testQuestions,
 }: QuestionAccordionProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { theme } = useTheme();
-  const pressedBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2a2a2a' }, 'background');
+  const pressedBackgroundColor = useThemeColorSimple('layout2');
+  const successColor = useThemeColorSimple('success');
+  const errorColor = useThemeColorSimple('error');
+  const successContainer = useThemeColorSimple('successContainer');
+  const errorContainer = useThemeColorSimple('errorContainer');
+  const iconColor = useThemeColorSimple('neutral');
+  const whiteColor = useThemeColorSimple('onPrimary');
+  
+  // Create alpha colors from containers
+  const successAlpha20 = successContainer + '33'; // ~20% opacity
+  const errorAlpha20 = errorContainer + '33'; // ~20% opacity
 
   return (
     <ThemedView
@@ -69,7 +73,7 @@ export function QuestionAccordion({
               name="chevron.right"
               size={18}
               weight="medium"
-              color={theme === 'light' ? Colors.light.icon : Colors.dark.icon}
+              color={iconColor}
               style={{ transform: [{ rotate: isOpen ? '90deg' : '0deg' }] }}
             />
             <ThemedText
@@ -86,8 +90,8 @@ export function QuestionAccordion({
                 styles.accordionStatusBadge,
                 {
                   backgroundColor: questionAnswer.isCorrect
-                    ? 'rgba(76, 175, 80, 0.2)'
-                    : 'rgba(244, 67, 54, 0.2)',
+                    ? successAlpha20
+                    : errorAlpha20,
                 },
               ]}
             >
@@ -140,7 +144,7 @@ export function QuestionAccordion({
                           <IconSymbol
                             name="checkmark"
                             size={14}
-                            color={status === 'correct' ? '#fff' : '#fff'}
+                            color={whiteColor}
                           />
                         </View>
                       ) : (

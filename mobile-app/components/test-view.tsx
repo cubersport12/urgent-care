@@ -1,5 +1,5 @@
 import { AppTestVm } from '@/hooks/api/types';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColorSimple } from '@/hooks/use-theme-color';
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -27,12 +27,16 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
     };
   });
 
-  const tintColor = useThemeColor({}, 'tint');
-  const backgroundColor = useThemeColor({}, 'background');
+  const tintColor = useThemeColorSimple('primary');
+  const backgroundColor = useThemeColorSimple('page');
+  const borderColor = useThemeColorSimple('border');
+  const shadowColor = useThemeColorSimple('shadow');
+  const primaryShadow = useThemeColorSimple('primary');
+  const whiteColor = useThemeColorSimple('onPrimary');
 
   return (
     <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
-      <ThemedView style={styles.header}>
+      <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
         <Button
           title="Назад"
           onPress={onBack}
@@ -89,7 +93,7 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
               variant="primary"
               size="large"
               fullWidth
-              style={styles.startButton}
+              style={[styles.startButton, { shadowColor: primaryShadow }]}
             />
           )}
         </ThemedView>
@@ -148,7 +152,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     // backgroundColor: 'rgba(0, 0, 0, 0.05)',
     marginBottom: 24,
-    shadowColor: '#000',
+    // shadowColor will be set dynamically
     // shadowOffset: {
     //   width: 0,
     //   height: 2,
@@ -199,7 +203,7 @@ const styles = StyleSheet.create({
     minHeight: 56,
     width: '100%',
     maxWidth: 300,
-    shadowColor: '#0a7ea4',
+    // shadowColor will be set dynamically
     shadowOffset: {
       width: 0,
       height: 4,
@@ -209,7 +213,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   startButtonText: {
-    color: '#fff',
+    // color will be set dynamically
     fontSize: 18,
     fontWeight: '600',
   },

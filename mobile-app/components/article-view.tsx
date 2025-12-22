@@ -1,7 +1,7 @@
 import { useArticlesStats, useFileContentString } from '@/hooks/api';
 import { AppArticleStatsVm, AppArticleVm } from '@/hooks/api/types';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColorSimple } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet } from 'react-native';
@@ -354,7 +354,7 @@ const ArticleViewContent = memo(({
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
-      <ThemedView style={styles.header}>
+      <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
         <Button
           title="Назад"
           onPress={onBack}
@@ -431,7 +431,8 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     deviceIdRef.current = deviceId;
   }, [deviceId]);
 
-  const tintColor = useThemeColor({}, 'tint');
+  const tintColor = useThemeColorSimple('primary');
+  const borderColor = useThemeColorSimple('border');
   const tintColorRef = useRef(tintColor);
   useEffect(() => {
     tintColorRef.current = tintColor;
@@ -553,7 +554,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    // borderBottomColor will be set dynamically
     alignItems: 'flex-start',
   },
   backButton: {

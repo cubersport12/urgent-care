@@ -1,5 +1,4 @@
-import { Colors } from '@/constants/theme';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColorSimple, useThemeValue } from '@/hooks/use-theme-color';
 import { Pressable, StyleSheet } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
@@ -20,13 +19,14 @@ type ExplorerItemComponentProps = {
 };
 
 export function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = false, testStats, description }: ExplorerItemComponentProps) {
-  const itemBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: '#080d18' }, 'background');
-  const pressedBackgroundColor = useThemeColor({ light: Colors.light.pressedBackground, dark: Colors.dark.pressedBackground }, 'background');
-  const successColor = useThemeColor({}, 'success');
-  const errorColor = useThemeColor({}, 'error');
-  const disabledColor = useThemeColor({ light: Colors.light.disabledText, dark: Colors.dark.disabledText }, 'text');
-  const descriptionColor = useThemeColor({ light: '#666666', dark: '#9BA1A6' }, 'text');
-  const iconColor = useThemeColor({}, 'icon');
+  const itemBackground = useThemeColorSimple('layout1');
+  const pressedBackgroundColor = useThemeColorSimple('layout2');
+  const successColor = useThemeColorSimple('success');
+  const errorColor = useThemeColorSimple('error');
+  const neutralSoft = useThemeColorSimple('neutralSoft');
+  const iconColor = useThemeColorSimple('neutral');
+  const onLayout1 = useThemeColorSimple('onLayout1');
+  const disabledOpacityValue = useThemeValue('disabledOpacity');
   
   // Определяем, какую иконку показывать для теста
   const testStatusIcon = item.type === 'test' && testStats && testStats.passed !== null && testStats.passed !== undefined
@@ -61,11 +61,11 @@ export function ExplorerItemComponent({ item, onPress, isRead = false, isDisable
         </ThemedView>
         <ThemedView style={styles.itemTextContainer}>
           <ThemedText 
-            style={[
-              styles.itemName,
-              item.type === 'article' && isRead && !isDisabled && { color: successColor },
-              isDisabled && { color: disabledColor },
-            ]}
+                   style={[
+                     styles.itemName,
+                     item.type === 'article' && isRead && !isDisabled && { color: successColor },
+                     isDisabled && { opacity: disabledOpacityValue, color: onLayout1 },
+                   ]}
           >
             {item.data.name}
           </ThemedText>
@@ -73,8 +73,8 @@ export function ExplorerItemComponent({ item, onPress, isRead = false, isDisable
             <ThemedText 
               style={[
                 styles.itemDescription,
-                { color: descriptionColor },
-                isDisabled && { opacity: 0.5 },
+                { color: neutralSoft },
+                isDisabled && { opacity: disabledOpacityValue },
               ]}
             >
               {testStats?.passed ? 'Успешно пройден ' : 'Не пройден '}

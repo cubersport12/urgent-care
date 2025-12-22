@@ -3,7 +3,7 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors } from '@/constants/theme';
+import { Colors, Shadows, ThemeValues } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme-context';
 
 export function useThemeColor(
@@ -18,4 +18,32 @@ export function useThemeColor(
   } else {
     return Colors[theme][colorName];
   }
+}
+
+/**
+ * Simplified version of useThemeColor that doesn't require props.
+ * Colors must be defined in the theme (constants/theme.ts).
+ */
+export function useThemeColorSimple(
+  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
+) {
+  const { theme } = useTheme();
+  return Colors[theme][colorName];
+}
+
+/**
+ * Hook to get theme values (numeric values like opacity)
+ */
+export function useThemeValue<T extends keyof typeof ThemeValues>(
+  valueName: T
+): typeof ThemeValues[T] {
+  return ThemeValues[valueName];
+}
+
+/**
+ * Hook to get shadow styles based on theme and elevation level
+ */
+export function useThemeShadow(level: 'small' | 'medium' | 'large') {
+  const { theme } = useTheme();
+  return Shadows[theme][level];
 }

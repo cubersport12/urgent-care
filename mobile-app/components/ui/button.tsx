@@ -1,5 +1,4 @@
-import { Colors } from '@/constants/theme';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColorSimple, useThemeValue } from '@/hooks/use-theme-color';
 import { Platform, Pressable, StyleSheet, type PressableProps } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { IconSymbol } from './icon-symbol';
@@ -28,40 +27,48 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
-  const buttonBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: Colors.dark.buttonBackground }, 'background');
-  const pressedBackgroundColor = useThemeColor({ light: Colors.light.pressedBackground, dark: Colors.dark.pressedBackground }, 'background');
+  const primaryColor = useThemeColorSimple('primary');
+  const onPrimaryColor = useThemeColorSimple('onPrimary');
+  const successColor = useThemeColorSimple('success');
+  const onSuccessColor = useThemeColorSimple('onSuccess');
+  const errorColor = useThemeColorSimple('error');
+  const onErrorColor = useThemeColorSimple('onError');
+  const layout1 = useThemeColorSimple('layout1');
+  const layout2 = useThemeColorSimple('layout2');
+  const onLayout1 = useThemeColorSimple('onLayout1');
+  const disabledOpacityValue = useThemeValue('disabledOpacity');
   
   const getButtonColors = () => {
     switch (variant) {
       case 'primary':
         return {
-          backgroundColor: Colors.light.primary,
-          pressedBackgroundColor: Colors.light.primaryPressed,
-          textColor: Colors.light.white,
+          backgroundColor: primaryColor,
+          pressedBackgroundColor: primaryColor + 'CC',
+          textColor: onPrimaryColor,
         };
       case 'success':
         return {
-          backgroundColor: Colors.light.success,
-          pressedBackgroundColor: Colors.light.success + 'CC',
-          textColor: Colors.light.white,
+          backgroundColor: successColor,
+          pressedBackgroundColor: successColor + 'CC',
+          textColor: onSuccessColor,
         };
       case 'error':
         return {
-          backgroundColor: Colors.light.error,
-          pressedBackgroundColor: Colors.light.error + 'CC',
-          textColor: Colors.light.white,
+          backgroundColor: errorColor,
+          pressedBackgroundColor: errorColor + 'CC',
+          textColor: onErrorColor,
         };
       case 'default':
         return {
-          backgroundColor: buttonBackground,
-          pressedBackgroundColor: pressedBackgroundColor,
-          textColor: useThemeColor({}, 'text'),
+          backgroundColor: layout1,
+          pressedBackgroundColor: layout2,
+          textColor: onLayout1,
         };
       default:
         return {
-          backgroundColor: Colors.light.primary,
-          pressedBackgroundColor: Colors.light.primaryPressed,
-          textColor: Colors.light.white,
+          backgroundColor: primaryColor,
+          pressedBackgroundColor: primaryColor + 'CC',
+          textColor: onPrimaryColor,
         };
     }
   };
@@ -106,14 +113,14 @@ export function Button({
         styles.button,
         {
           backgroundColor: isDisabled 
-            ? (variant === 'default' ? pressedBackgroundColor : Colors.light.disabledBackground)
+            ? (variant === 'default' ? layout2 : layout2)
             : pressed 
             ? colors.pressedBackgroundColor 
             : colors.backgroundColor,
           paddingHorizontal: sizeStyles.paddingHorizontal,
           paddingVertical: sizeStyles.paddingVertical,
           minHeight: sizeStyles.minHeight,
-          opacity: isDisabled ? 0.5 : pressed ? 0.8 : 1,
+          opacity: isDisabled ? disabledOpacityValue : pressed ? 0.8 : 1,
           width: fullWidth ? '100%' : 'auto',
         },
         style,
@@ -128,12 +135,12 @@ export function Button({
             <IconSymbol 
               name={icon} 
               size={sizeStyles.fontSize} 
-              color={isDisabled ? Colors.light.disabledText : colors.textColor} 
+              color={isDisabled ? onLayout1 : colors.textColor} 
             />
           )}
           <ThemedText
-            lightColor={isDisabled ? Colors.light.disabledText : colors.textColor}
-            darkColor={isDisabled ? Colors.dark.disabledText : colors.textColor}
+            lightColor={isDisabled ? onLayout1 : colors.textColor}
+            darkColor={isDisabled ? onLayout1 : colors.textColor}
             style={[
               styles.text,
               { fontSize: sizeStyles.fontSize },
@@ -145,7 +152,7 @@ export function Button({
             <IconSymbol 
               name={icon} 
               size={sizeStyles.fontSize} 
-              color={isDisabled ? Colors.light.disabledText : colors.textColor} 
+              color={isDisabled ? onLayout1 : colors.textColor} 
             />
           )}
         </>

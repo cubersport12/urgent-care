@@ -1,10 +1,9 @@
-import { Colors } from '@/constants/theme';
 import { useTest } from '@/contexts/test-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { saveTestResult } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColorSimple } from '@/hooks/use-theme-color';
 import { Image } from 'expo-image';
 import { Alert, Platform, Pressable, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -25,10 +24,6 @@ type TestQuestionViewProps = {
   onAnswerToggle: (index: number) => void;
   onNext: () => void;
 };
-
-const successColor = Colors.light.success;
-const errorColor = Colors.light.error;
-const buttonColor = Colors.light.primary;
 
 export function TestQuestionView({
   onBack,
@@ -61,8 +56,18 @@ export function TestQuestionView({
   });
 
   const question = getCurrentQuestion();
-  const backgroundColor = useThemeColor({}, 'background');
-  const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#1a1a1a' }, 'border');
+  const backgroundColor = useThemeColorSimple('page');
+  const borderColor = useThemeColorSimple('border');
+  const successColor = useThemeColorSimple('success');
+  const errorColor = useThemeColorSimple('error');
+  const buttonColor = useThemeColorSimple('primary');
+  const successContainer = useThemeColorSimple('successContainer');
+  const errorContainer = useThemeColorSimple('errorContainer');
+  const disabledBackground = useThemeColorSimple('layout2');
+  
+  // Create alpha colors from containers
+  const successAlpha10 = successContainer + '1A'; // ~10% opacity
+  const errorAlpha10 = errorContainer + '1A'; // ~10% opacity
 
   // Загружаем изображение, если оно есть
   const { response: imageDataUrl, isLoading: isLoadingImage } = useFileImage(
@@ -232,13 +237,13 @@ export function TestQuestionView({
                 if (shouldShowResults) {
                   if (status === 'correct') {
                     buttonStyles.push({
-                      borderColor: Colors.light.success,
-                      backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                      borderColor: successColor,
+                      backgroundColor: successAlpha10,
                     });
                   } else if (status === 'incorrect') {
                     buttonStyles.push({
-                      borderColor: Colors.light.error,
-                      backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                      borderColor: errorColor,
+                      backgroundColor: errorAlpha10,
                     });
                   }
                 } else if (isSelected) {
@@ -272,8 +277,8 @@ export function TestQuestionView({
                 styles.resultMessage,
                 {
                   backgroundColor: currentAnswer.isCorrect
-                    ? 'rgba(76, 175, 80, 0.1)'
-                    : 'rgba(244, 67, 54, 0.1)',
+                    ? successAlpha10
+                    : errorAlpha10,
                 },
               ]}
             >
@@ -302,7 +307,7 @@ export function TestQuestionView({
               {
                 backgroundColor:
                   !showResult && selectedAnswers.length === 0
-                    ? '#ccc'
+                    ? disabledBackground
                     : pressed
                     ? buttonColor + 'CC'
                     : buttonColor,

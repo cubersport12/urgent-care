@@ -6,7 +6,7 @@ import { useFolders } from '@/hooks/api/useFolders';
 import { useTests } from '@/hooks/api/useTests';
 import { useAddOrUpdateTestStats, useTestsStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColorSimple } from '@/hooks/use-theme-color';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -38,10 +38,10 @@ export function Explorer() {
   const opacity = useSharedValue(1);
   const { isTestStarted, startTest, resetTest } = useTest();
 
-  const tintColor = useThemeColor({}, 'tint');
-  const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#1a1a1a' }, 'border');
-  const currentFolderButtonBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: Colors.dark.buttonBackground }, 'background');
-  const descriptionColor = useThemeColor({ light: '#666666', dark: '#9BA1A6' }, 'text');
+  const tintColor = useThemeColorSimple('primary');
+  const borderColor = useThemeColorSimple('border');
+  const currentFolderButtonBackground = useThemeColorSimple('layout1');
+  const descriptionColor = useThemeColorSimple('neutralSoft');
   const { deviceId } = useDeviceId();
   const foldersResponse = useFolders(currentFolderId);
   const articlesResponse = useArticles(currentFolderId);

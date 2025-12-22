@@ -1,5 +1,4 @@
-import { Colors } from '@/constants/theme';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColorSimple } from '@/hooks/use-theme-color';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
@@ -32,10 +31,12 @@ export function FolderMenu({
   onToggleArticles,
   onToggleTests,
 }: FolderMenuProps) {
-  const currentFolderButtonBackground = useThemeColor({ light: Colors.light.buttonBackground, dark: Colors.dark.buttonBackground }, 'background');
-  const descriptionColor = useThemeColor({ light: '#666666', dark: '#9BA1A6' }, 'text');
-  const iconColor = useThemeColor({}, 'icon');
-  const borderColor = useThemeColor({ light: '#e0e0e0', dark: '#1a1a1a' }, 'border');
+  const currentFolderButtonBackground = useThemeColorSimple('page');
+  const descriptionColor = useThemeColorSimple('neutralSoft');
+  const iconColor = useThemeColorSimple('neutral');
+  const borderColor = useThemeColorSimple('border');
+  const filterButtonActiveBackground = useThemeColorSimple('primaryContainer');
+  const whiteColor = useThemeColorSimple('onPrimary');
 
   return (
     <Modal
@@ -67,13 +68,13 @@ export function FolderMenu({
                   style={({ pressed }) => [
                     styles.menuFilterButton,
                     showFolders && styles.menuFilterButtonActive,
-                    showFolders && { backgroundColor: '#0c1227' },
+                    showFolders && { backgroundColor: filterButtonActiveBackground },
                   ]}
                 >
                   <ThemedText 
                     style={[
                       styles.menuFilterButtonText, 
-                      showFolders ? styles.filterButtonTextActive : { color: descriptionColor }
+                      showFolders ? { color: whiteColor } : { color: descriptionColor }
                     ]}
                   >
                     📁 {folderStats.foldersCount}
@@ -86,13 +87,13 @@ export function FolderMenu({
                   style={({ pressed }) => [
                     styles.menuFilterButton,
                     showArticles && styles.menuFilterButtonActive,
-                    showArticles && { backgroundColor: '#0c1227' },
+                    showArticles && { backgroundColor: filterButtonActiveBackground },
                   ]}
                 >
                   <ThemedText 
                     style={[
                       styles.menuFilterButtonText, 
-                      showArticles ? styles.filterButtonTextActive : { color: descriptionColor }
+                      showArticles ? { color: whiteColor } : { color: descriptionColor }
                     ]}
                   >
                     📄 {folderStats.articlesCount}
@@ -105,13 +106,13 @@ export function FolderMenu({
                   style={({ pressed }) => [
                     styles.menuFilterButton,
                     showTests && styles.menuFilterButtonActive,
-                    showTests && { backgroundColor: '#0c1227' },
+                    showTests && { backgroundColor: filterButtonActiveBackground },
                   ]}
                 >
                   <ThemedText 
                     style={[
                       styles.menuFilterButtonText, 
-                      showTests ? styles.filterButtonTextActive : { color: descriptionColor }
+                      showTests ? { color: whiteColor } : { color: descriptionColor }
                     ]}
                   >
                     📝 {folderStats.testsCount}
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   filterButtonTextActive: {
-    color: Colors.light.white,
+    // Color will be set dynamically
   },
 });
 
