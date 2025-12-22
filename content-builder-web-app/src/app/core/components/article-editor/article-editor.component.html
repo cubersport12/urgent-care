@@ -8,8 +8,8 @@
       <mat-icon svgIcon="file-contract" />
       Выбрать файл
     </button>
-    @if (_form.value.html) {
-      <button mat-flat-button color="primary" (click)="_preventClick($event);_openHtmlContentInWindow()">
+    @if (_pdfUrl()) {
+      <button mat-flat-button color="primary" (click)="_preventClick($event);_openPdfContentInWindow()">
         <mat-icon svgIcon="window-maximize" />
         Просмотреть документ
       </button>
@@ -47,30 +47,6 @@
     <mat-checkbox [formControl]="_form.controls.includeToStatistics">
       Участвует в статистике
     </mat-checkbox>
-
-    @let links = _linksNames();
-    @if (links?.length) {
-      <p>Ссылки в документах:</p>
-      <div class="flex gap-1 flex-wrap p-1">
-        @for (link of _linksNames(); track $index) {
-          @let linkForm = _findArticleLinkForm(link);
-          <button mat-stroked-button color="primary" [matMenuTriggerFor]="menu" (click)="_preventClick($event);">
-            <div class="flex gap-1 items-center">
-              {{link}}
-              @if (!linkForm?.value?.articleId) {
-                <app-circle-pulse />
-              }
-            </div>
-          </button>
-          <mat-menu #menu>
-            @for (art of _allArticles(); track $index) {
-              <button mat-menu-item [ngClass]="{ '!bg-gray-400': art.id === linkForm?.value?.articleId }" (click)="_addOrUpdateLink(link, art.id)">{{art.name}}</button>
-            }
-          </mat-menu>
-        }
-      </div>
-    }
-
   </div>
 
 

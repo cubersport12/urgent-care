@@ -254,7 +254,7 @@ export function TestQuestionView({
                     onPress={() => onAnswerToggle(index)}
                     disabled={showResult}
                     variant="default"
-                    size="medium"
+                    size="small"
                     icon={resultIcon}
                     iconPosition="right"
                     fullWidth

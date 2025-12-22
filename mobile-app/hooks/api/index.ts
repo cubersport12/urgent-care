@@ -2,6 +2,7 @@
 
 export * from './types';
 export * from './useArticles';
+export * from './useFilePdf';
 export * from './useFolders';
 export * from './useSupabaseFetch';
 export * from './useTestResults';

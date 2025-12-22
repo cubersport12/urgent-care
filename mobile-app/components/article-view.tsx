@@ -1,4 +1,4 @@
-import { useArticlesStats, useFileContentString } from '@/hooks/api';
+import { useArticlesStats, useFilePdf } from '@/hooks/api';
 import { AppArticleStatsVm, AppArticleVm } from '@/hooks/api/types';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
@@ -6,7 +6,7 @@ import { supabase } from '@/supabase';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import WebView from 'react-native-webview';
+import { PdfView } from './pdf-view/pdf-view';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 import { Button } from './ui/button';
@@ -73,25 +73,22 @@ const NavigationButtons = memo(({
 
 NavigationButtons.displayName = 'NavigationButtons';
 
-// Внутренний компонент, который перерисовывается только при изменении html/isLoading
+// Внутренний компонент, который перерисовывается только при изменении pdfUri/isLoading
 const ArticleViewContent = memo(({ 
-  html, 
+  pdfUri, 
   isLoading, 
   article, 
   onBack, 
   markAsReadRef,
   tintColorRef,
 }: {
-  html: string | null | undefined;
+  pdfUri: string | null | undefined;
   isLoading: boolean;
   article: AppArticleVm;
   onBack: () => void;
   markAsReadRef: React.MutableRefObject<() => Promise<void>>;
   tintColorRef: React.MutableRefObject<string>;
 }) => {
-  const isNative = Platform.select({ web: false, default: true });
-  const processedHtml = html?.replace(/color:#000000/g, 'color:white');
-  
   const opacity = useSharedValue(0);
 
   useEffect(() => {
@@ -104,255 +101,20 @@ const ArticleViewContent = memo(({
     };
   });
 
-  const injectedJavaScript = () => `
-    (function() {
-      'use strict';
-      
-      let isScaling = false;
-      let timer = null;
-      let throttleTimer = null;
-      let isMarkedAsRead = false;
-      const SCROLL_THRESHOLD = 50; // Порог в пикселях от конца документа
-      const THROTTLE_DELAY = 100; // Задержка throttle в миллисекундах
-      
-      // Устанавливаем opacity в 0 в начале
-      // document.documentElement.style.opacity = '0';
-      document.documentElement.style.transition = 'opacity 0.3s ease-in-out';
-
-      function applyScale() {
-        if (isScaling) return;
-        isScaling = true;
-        const container = document.getElementById('page-container');
-        if (!container) {
-          // document.documentElement.style.opacity = '1';
-          isScaling = false;
-          return;
-        }
-        
-        const contentElement = container.firstElementChild;
-        if (!contentElement) {
-          // document.body.style.opacity = '1';
-          isScaling = false;
-          return;
-        }
-        
-        container.style.margin = '0';
-        container.style.padding = '0';
-        
-        // Получаем ширину контейнера (всегда на всю страницу)
-        const containerWidth = container.getBoundingClientRect().width || container.clientWidth || container.offsetWidth || window.innerWidth;
-        // Получаем реальную ширину содержимого через getBoundingClientRect для точности
-        const contentRect = contentElement.getBoundingClientRect();
-        const contentWidth = contentRect.width || contentElement.scrollWidth || contentElement.offsetWidth || contentElement.clientWidth;
-        
-        if (containerWidth === 0 || contentWidth === 0) {
-          isScaling = false;
-          return;
-        }
-        
-        // Вычисляем scale: во сколько раз нужно увеличить содержимое
-        const scale = 'calc(100vw / ' + (contentElement.clientWidth + 10) +'px)';
-        
-        // Применяем scale к body для масштабирования всего содержимого
-        document.body.style.transform = 'scale(' + scale + ')';
-        document.body.style.transformOrigin = 'top left';
-        document.body.style.margin = '-1px';
-        document.body.style.padding = '0';
-        document.body.style.width = 'calc(100vw /' + scale + ' )';
-        document.body.style.height = 'calc(100vh /' + scale + ' )';
-        document.body.style.overflow = 'hidden';
-        
-        // Устанавливаем opacity в 1 после скейла с анимацией
-        setTimeout(() => {
-          // document.documentElement.style.opacity = '1';
-        }, 50);
-        
-        setTimeout(() => {
-          isScaling = false;
-          // После применения масштабирования проверяем, не стал ли контент полностью виден
-          checkScrollPosition();
-        }, 200);
-      }
-      
-      // Throttled версия applyScale
-      function throttledApplyScale() {
-        // Если уже есть запланированный вызов, игнорируем текущий
-        if (throttleTimer !== null) {
-          return;
-        }
-        
-        // Выполняем сразу
-        applyScale();
-        
-        // Устанавливаем таймер для следующего возможного вызова
-        throttleTimer = setTimeout(() => {
-          throttleTimer = null;
-        }, THROTTLE_DELAY);
-      }
-      
-      function init() {
-        // Даем время на загрузку контента и изображений
-        setTimeout(throttledApplyScale, 200);
-        
-        // Также пробуем после полной загрузки
-        if (document.readyState === 'complete') {
-          setTimeout(throttledApplyScale, 300);
-        } else {
-          window.addEventListener('load', () => {
-            setTimeout(throttledApplyScale, 300);
-          });
-        }
-        
-        const container = document.getElementById('page-container');
-        
-        window.addEventListener('resize', () => {
-          if (!isScaling) {
-            clearTimeout(timer);
-            timer = setTimeout(throttledApplyScale, 100);
-          }
-        });
-      }
-      
-      function findScrollableElement() {
-        // Сначала проверяем наличие page-container
-        const pageContainer = document.getElementById('page-container');
-        if (pageContainer) {
-          return pageContainer;
-        }
-        
-        // Если page-container нет, ищем прокручиваемый элемент
-        // Проверяем body
-        const body = document.body;
-        if (body && (body.scrollHeight > body.clientHeight || body.style.overflow === 'auto' || body.style.overflow === 'scroll')) {
-          return body;
-        }
-        
-        // Проверяем html
-        const html = document.documentElement;
-        if (html && (html.scrollHeight > html.clientHeight || html.style.overflow === 'auto' || html.style.overflow === 'scroll')) {
-          return html;
-        }
-        
-        // Проверяем все элементы с overflow
-        const elementsWithOverflow = document.querySelectorAll('[style*="overflow"]');
-        for (let i = 0; i < elementsWithOverflow.length; i++) {
-          const el = elementsWithOverflow[i];
-          if (el.scrollHeight > el.clientHeight) {
-            return el;
-          }
-        }
-        
-        // По умолчанию используем window (для прокрутки всей страницы)
-        return null;
-      }
-      
-      function checkScrollPosition() {
-        if (isMarkedAsRead) return;
-        
-        const scrollableElement = findScrollableElement();
-        let scrollTop = 0;
-        let scrollHeight = 0;
-        let clientHeight = 0;
-        
-        if (scrollableElement) {
-          // Если это конкретный элемент
-          scrollTop = scrollableElement.scrollTop || 0;
-          scrollHeight = scrollableElement.scrollHeight || 0;
-          clientHeight = scrollableElement.clientHeight || 0;
-        } else {
-          // Если прокручивается window
-          scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-          scrollHeight = Math.max(
-            document.body.scrollHeight || 0,
-            document.documentElement.scrollHeight || 0
-          );
-          clientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight || 0;
-        }
-        
-        // Проверяем, нет ли прокрутки вообще (контент полностью виден)
-        const hasNoScroll = scrollHeight <= clientHeight;
-        
-        // Проверяем, доскроллил ли пользователь до конца (с учетом порога)
-        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
-        
-        // Если прокрутки нет или доскроллили до конца - считаем прочитанным
-        if (hasNoScroll || distanceFromBottom <= SCROLL_THRESHOLD) {
-          isMarkedAsRead = true;
-          // Отправляем сообщение в React Native
-          if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'scrollToEnd' }));
-          } else if (window.parent) {
-            window.parent.postMessage(JSON.stringify({ type: 'scrollToEnd' }), '*');
-          }
-        }
-      }
-      
-      // Добавляем обработчик прокрутки на правильный элемент
-      let scrollTimer = null;
-      const scrollableElement = findScrollableElement();
-      
-      if (scrollableElement) {
-        // Если найден конкретный элемент, слушаем его прокрутку
-        scrollableElement.addEventListener('scroll', () => {
-          if (scrollTimer) {
-            clearTimeout(scrollTimer);
-          }
-          scrollTimer = setTimeout(checkScrollPosition, 100);
-        }, { passive: true });
-      } else {
-        // Если прокручивается window, слушаем его
-        window.addEventListener('scroll', () => {
-          if (scrollTimer) {
-            clearTimeout(scrollTimer);
-          }
-          scrollTimer = setTimeout(checkScrollPosition, 100);
-        }, { passive: true });
-      }
-      
-      // Также проверяем при загрузке, если контент уже виден полностью
-      // Проверяем несколько раз с разными задержками, чтобы поймать случай, когда контент уже полностью виден
-      function checkOnLoad() {
-        checkScrollPosition();
-        // Проверяем еще раз через небольшую задержку, чтобы убедиться, что все загрузилось
-        setTimeout(checkScrollPosition, 100);
-        setTimeout(checkScrollPosition, 300);
-        setTimeout(checkScrollPosition, 500);
-      }
-      
-      window.addEventListener('load', checkOnLoad);
-      
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-          init();
-          checkOnLoad();
-        });
-      } else {
-        init();
-        checkOnLoad();
-      }
-    })();
-  `;
-
-  const injectedJavaScriptBeforeContent = (htmlBg: string = 'transparent') => `
-    // document.body.style.backgroundColor = 'transparent';
-    // const html = document.querySelector('html');
-    // html.style.backgroundColor = '${htmlBg}';
-    // const head = document.querySelector('head');
-    document.querySelectorAll('a[href*="#uc:article"]').forEach(a => {
-      a.onclick = (e) => { 
-        e.preventDefault();
-        const href = a.getAttribute('href');
-        if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(href);
-        } else {
-          window.top.postMessage(href);
-        }
-      };
-    });
-    ${injectedJavaScript()}
-  `;
-
   const { border: borderColor } = useAppTheme();
+  
+  // Состояние для отслеживания прочтения PDF
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const isMarkedAsReadRef = useRef(false);
+  
+  // Отслеживаем, когда пользователь доскроллил до конца PDF
+  useEffect(() => {
+    if (totalPages > 0 && currentPage >= totalPages && !isMarkedAsReadRef.current) {
+      isMarkedAsReadRef.current = true;
+      void markAsReadRef.current();
+    }
+  }, [currentPage, totalPages, markAsReadRef]);
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
       <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
@@ -371,59 +133,40 @@ const ArticleViewContent = memo(({
           <ActivityIndicator size="large" color={tintColorRef.current} />
           <ThemedText style={styles.loadingText}>Загрузка...</ThemedText>
         </ThemedView>
-      ) : (
-        <>
-          {isNative ? <WebView 
-            useWebView2
-            onMessage={(event) => {
-              try {
-                const data = JSON.parse(event.nativeEvent.data);
-                if (data.type === 'scrollToEnd') {
-                  void markAsReadRef.current();
-                }
-              } catch {
-                // Игнорируем ошибки парсинга для других сообщений
-              }
-            }}
-            injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContent()}
-            injectedJavaScript={injectedJavaScript()}
-            androidLayerType="hardware" // Для Android
-            overScrollMode="never"
-            style={{ flex: 1, backgroundColor: 'transparent', width: '100%', height: '100%', overflow: 'hidden' }}
-            source={{ html: processedHtml ?? '' }}
-          /> : <iframe 
-            style={{ flex: 1, backgroundColor: 'transparent', width: '100%', height: '100%', overflow: 'hidden' }}
-            src={URL.createObjectURL(new Blob([processedHtml?.replace('</body>', `<script>${injectedJavaScriptBeforeContent('rgb(1,1,1)')}</script></body>`) ?? ''], { type: 'text/html' }))}
-            onLoad={() => {
-              // Для веб-версии добавляем обработчик через postMessage
-              if (typeof window !== 'undefined') {
-                window.addEventListener('message', (event) => {
-                  try {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'scrollToEnd') {
-                      void markAsReadRef.current();
-                    }
-                  } catch {
-                    // Игнорируем ошибки парсинга
-                  }
-                });
-              }
-            }}
-          />}
-        </>
-      )}
+      ) : pdfUri ? (
+        <PdfView
+          source={pdfUri}
+          onLoad={() => {
+            // Для веб считаем PDF прочитанным сразу после загрузки
+            // (для PDF в iframe сложно отследить прокрутку)
+            // Для нативных платформ onLoad вызывается только для одностраничных PDF
+            // void markAsReadRef.current();
+          }}
+          onPageChanged={(page: number, numberOfPages: number) => {
+            // Для нативных платформ отслеживаем переход на последнюю страницу
+            if (Platform.OS !== 'web') {
+              setCurrentPage(page);
+              setTotalPages(numberOfPages);
+            }
+          }}
+          onError={(error) => {
+            console.error('PDF error:', error);
+          }}
+          style={styles.pdf}
+        />
+      ) : null}
     </Animated.View>
   );
 }, (prevProps, nextProps) => {
-  // Перерисовываем только при изменении html или isLoading
-  return prevProps.html === nextProps.html && prevProps.isLoading === nextProps.isLoading;
+  // Перерисовываем только при изменении pdfUri или isLoading
+  return prevProps.pdfUri === nextProps.pdfUri && prevProps.isLoading === nextProps.isLoading;
 });
 
 ArticleViewContent.displayName = 'ArticleViewContent';
 
 export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious = false }: ArticleViewProps) {
   // Единственный хук, который должен вызывать перерисовку
-  const { response: html, isLoading } = useFileContentString(`${article.id}.html`);
+  const { response: pdfUri, isLoading } = useFilePdf(`${article.id}.pdf`);
   
   // Все остальные хуки - данные хранятся в refs, чтобы не вызывать перерисовку
   const { deviceId } = useDeviceId();
@@ -529,7 +272,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   return (
     <Animated.View style={styles.container}>
       <ArticleViewContent
-        html={html}
+        pdfUri={pdfUri}
         isLoading={isLoading}
         article={article}
         onBack={onBack}
@@ -616,5 +359,10 @@ const styles = StyleSheet.create({
   },
   navButtonNext: {
     right: 16,
+  },
+  pdf: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
 });
