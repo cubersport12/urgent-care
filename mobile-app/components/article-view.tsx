@@ -1,7 +1,7 @@
 import { useArticlesStats, useFileContentString } from '@/hooks/api';
 import { AppArticleStatsVm, AppArticleVm } from '@/hooks/api/types';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useThemeColorSimple } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet } from 'react-native';
@@ -352,6 +352,7 @@ const ArticleViewContent = memo(({
     ${injectedJavaScript()}
   `;
 
+  const { border: borderColor } = useAppTheme();
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
       <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
@@ -431,8 +432,8 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     deviceIdRef.current = deviceId;
   }, [deviceId]);
 
-  const tintColor = useThemeColorSimple('primary');
-  const borderColor = useThemeColorSimple('border');
+  const { primary: tintColor } = useAppTheme();
+  
   const tintColorRef = useRef(tintColor);
   useEffect(() => {
     tintColorRef.current = tintColor;

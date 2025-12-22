@@ -31,6 +31,11 @@ export function useThemeColorSimple(
   return Colors[theme][colorName];
 }
 
+export function useAppTheme() {
+  const { theme } = useTheme();
+  return Colors[theme];
+}
+
 /**
  * Hook to get theme values (numeric values like opacity)
  */

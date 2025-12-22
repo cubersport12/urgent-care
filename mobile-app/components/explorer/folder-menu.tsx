@@ -1,4 +1,4 @@
-import { useThemeColorSimple } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/hooks/use-theme-color';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
@@ -31,12 +31,7 @@ export function FolderMenu({
   onToggleArticles,
   onToggleTests,
 }: FolderMenuProps) {
-  const currentFolderButtonBackground = useThemeColorSimple('page');
-  const descriptionColor = useThemeColorSimple('neutralSoft');
-  const iconColor = useThemeColorSimple('neutral');
-  const borderColor = useThemeColorSimple('border');
-  const filterButtonActiveBackground = useThemeColorSimple('primaryContainer');
-  const whiteColor = useThemeColorSimple('onPrimary');
+  const { layout2, neutralSoft: descriptionColor, neutral: iconColor, border: borderColor, primaryContainer: filterButtonActiveBackground, onPrimary: whiteColor } = useAppTheme();
 
   return (
     <Modal
@@ -46,11 +41,11 @@ export function FolderMenu({
       onRequestClose={onClose}
     >
       <Pressable 
-        style={[styles.menuOverlay, { backgroundColor: currentFolderButtonBackground }]}
+        style={[styles.menuOverlay]}
         onPress={onClose}
       >
         <ThemedView 
-          style={styles.menuContainer}
+          style={[styles.menuContainer, { backgroundColor: layout2 }]}
           onStartShouldSetResponder={() => true}
         >
           <ThemedView style={styles.menuHeader}>

@@ -1,4 +1,4 @@
-import { useThemeColorSimple, useThemeValue } from '@/hooks/use-theme-color';
+import { useAppTheme, useThemeValue } from '@/hooks/use-theme-color';
 import { Pressable, StyleSheet } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
@@ -19,13 +19,7 @@ type ExplorerItemComponentProps = {
 };
 
 export function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = false, testStats, description }: ExplorerItemComponentProps) {
-  const itemBackground = useThemeColorSimple('layout1');
-  const pressedBackgroundColor = useThemeColorSimple('layout2');
-  const successColor = useThemeColorSimple('success');
-  const errorColor = useThemeColorSimple('error');
-  const neutralSoft = useThemeColorSimple('neutralSoft');
-  const iconColor = useThemeColorSimple('neutral');
-  const onLayout1 = useThemeColorSimple('onLayout1');
+  const { layout1: itemBackground, layout2: pressedBackgroundColor, success: successColor, error: errorColor, neutralSoft, neutral: iconColor, onLayout1 } = useAppTheme();
   const disabledOpacityValue = useThemeValue('disabledOpacity');
   
   // Определяем, какую иконку показывать для теста

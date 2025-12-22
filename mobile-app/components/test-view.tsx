@@ -1,5 +1,5 @@
 import { AppTestVm } from '@/hooks/api/types';
-import { useThemeColorSimple } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/hooks/use-theme-color';
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -27,12 +27,7 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
     };
   });
 
-  const tintColor = useThemeColorSimple('primary');
-  const backgroundColor = useThemeColorSimple('page');
-  const borderColor = useThemeColorSimple('border');
-  const shadowColor = useThemeColorSimple('shadow');
-  const primaryShadow = useThemeColorSimple('primary');
-  const whiteColor = useThemeColorSimple('onPrimary');
+  const { primary: tintColor, page: backgroundColor, border: borderColor, shadow: shadowColor, primary: primaryShadow, onPrimary: whiteColor } = useAppTheme();
 
   return (
     <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>

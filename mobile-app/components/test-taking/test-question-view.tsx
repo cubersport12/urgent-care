@@ -3,7 +3,7 @@ import { useFileImage } from '@/hooks/api/useFileImage';
 import { saveTestResult } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useThemeColorSimple } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/hooks/use-theme-color';
 import { Image } from 'expo-image';
 import { Alert, Platform, Pressable, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -56,14 +56,7 @@ export function TestQuestionView({
   });
 
   const question = getCurrentQuestion();
-  const backgroundColor = useThemeColorSimple('page');
-  const borderColor = useThemeColorSimple('border');
-  const successColor = useThemeColorSimple('success');
-  const errorColor = useThemeColorSimple('error');
-  const buttonColor = useThemeColorSimple('primary');
-  const successContainer = useThemeColorSimple('successContainer');
-  const errorContainer = useThemeColorSimple('errorContainer');
-  const disabledBackground = useThemeColorSimple('layout2');
+  const { page: backgroundColor, border: borderColor, success: successColor, error: errorColor, primary: buttonColor, successContainer, errorContainer, layout2: disabledBackground } = useAppTheme();
   
   // Create alpha colors from containers
   const successAlpha10 = successContainer + '1A'; // ~10% opacity

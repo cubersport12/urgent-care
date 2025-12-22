@@ -1,5 +1,5 @@
 import { AppTestQuestionVm } from '@/hooks/api/types';
-import { useThemeColorSimple } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/hooks/use-theme-color';
 import { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../themed-text';
@@ -36,13 +36,7 @@ export function QuestionAccordion({
   testQuestions,
 }: QuestionAccordionProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const pressedBackgroundColor = useThemeColorSimple('layout2');
-  const successColor = useThemeColorSimple('success');
-  const errorColor = useThemeColorSimple('error');
-  const successContainer = useThemeColorSimple('successContainer');
-  const errorContainer = useThemeColorSimple('errorContainer');
-  const iconColor = useThemeColorSimple('neutral');
-  const whiteColor = useThemeColorSimple('onPrimary');
+  const { layout2: pressedBackgroundColor, success: successColor, error: errorColor, successContainer, errorContainer, neutral: iconColor, onPrimary: whiteColor } = useAppTheme();
   
   // Create alpha colors from containers
   const successAlpha20 = successContainer + '33'; // ~20% opacity

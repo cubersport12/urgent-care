@@ -1,4 +1,4 @@
-import { useThemeColorSimple, useThemeValue } from '@/hooks/use-theme-color';
+import { useAppTheme, useThemeValue } from '@/hooks/use-theme-color';
 import { Platform, Pressable, StyleSheet, type PressableProps } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { IconSymbol } from './icon-symbol';
@@ -27,15 +27,7 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
-  const primaryColor = useThemeColorSimple('primary');
-  const onPrimaryColor = useThemeColorSimple('onPrimary');
-  const successColor = useThemeColorSimple('success');
-  const onSuccessColor = useThemeColorSimple('onSuccess');
-  const errorColor = useThemeColorSimple('error');
-  const onErrorColor = useThemeColorSimple('onError');
-  const layout1 = useThemeColorSimple('layout1');
-  const layout2 = useThemeColorSimple('layout2');
-  const onLayout1 = useThemeColorSimple('onLayout1');
+  const { primary: primaryColor, onPrimary: onPrimaryColor, success: successColor, onSuccess: onSuccessColor, error: errorColor, onError: onErrorColor, layout1, layout2, onLayout1 } = useAppTheme();
   const disabledOpacityValue = useThemeValue('disabledOpacity');
   
   const getButtonColors = () => {

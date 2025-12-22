@@ -1,5 +1,5 @@
 import { useTest } from '@/contexts/test-context';
-import { useThemeColorSimple } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/hooks/use-theme-color';
 import { Pressable, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { ThemedText } from '../themed-text';
@@ -23,12 +23,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
     finishTest,
   } = useTest();
 
-  const backgroundColor = useThemeColorSimple('page');
-  const pressedBackgroundColor = useThemeColorSimple('layout2');
-  const tintColor = useThemeColorSimple('primary');
-  const successColor = useThemeColorSimple('success');
-  const errorColor = useThemeColorSimple('error');
-  const buttonColor = useThemeColorSimple('primary');
+  const { page: backgroundColor, layout2: pressedBackgroundColor, primary: tintColor, success: successColor, error: errorColor, primary: buttonColor } = useAppTheme();
 
   if (!test) return null;
 

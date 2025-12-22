@@ -4,7 +4,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useThemeColorSimple } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, StyleSheet } from 'react-native';
@@ -14,12 +14,7 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isClearing, setIsClearing] = useState(false);
   const { deviceId } = useDeviceId();
-  const tintColor = useThemeColorSimple('primary');
-  const headerBackground = useThemeColorSimple('layout2');
-  const headerIcon = useThemeColorSimple('neutral');
-  const avatarBackground = useThemeColorSimple('error');
-  const whiteColor = useThemeColorSimple('onPrimary');
-  const shadowColor = useThemeColorSimple('shadow');
+  const { primary: tintColor, layout2: headerBackground, neutral: headerIcon, error: avatarBackground, onPrimary: whiteColor, shadow: shadowColor } = useAppTheme();
 
   useEffect(() => {
     const getUser = async () => {
@@ -160,7 +155,7 @@ export default function ProfileScreen() {
       ) : (
         <>
           <ThemedView style={styles.userInfoContainer}>
-            <ThemedView style={styles.avatarContainer}>
+            <ThemedView style={[styles.avatarContainer, { backgroundColor: headerBackground }]}>
               <ThemedText style={[styles.avatarText, { color: whiteColor }]}>{userInitial}</ThemedText>
             </ThemedView>
             <ThemedText type="defaultSemiBold" style={styles.userName}>

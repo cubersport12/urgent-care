@@ -3,12 +3,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Fonts } from '@/constants/theme';
-import { useThemeColorSimple } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/hooks/use-theme-color';
 import { StyleSheet } from 'react-native';
 
 export default function RescueScreen() {
-  const headerBackground = useThemeColorSimple('layout2');
-  const headerIcon = useThemeColorSimple('neutral');
+  const { layout2: headerBackground, neutral: headerIcon } = useAppTheme();
   
   return (
     <ParallaxScrollView
