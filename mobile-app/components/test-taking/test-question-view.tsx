@@ -214,9 +214,7 @@ export function TestQuestionView({
     <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
       <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
         <ThemedView style={styles.headerContent}>
-          {test.showBackButton !== false && (
-            <BackButton onPress={handleBackToFolder} label="Назад" />
-          )}
+          <BackButton onPress={handleBackToFolder} label="Назад" />
         {/* <ThemedText style={styles.progressText}>
           Вопрос {currentQuestionIndex + 1} из {totalQuestions}
         </ThemedText> */}
