@@ -19,11 +19,14 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
     getCurrentQuestion,
     submitAnswer,
     nextQuestion,
+    previousQuestion,
     finishTest,
     getTotalScore,
     getTotalErrors,
     answers,
     startedAt,
+    areAllQuestionsVisited,
+    visitedQuestions,
   } = useTest();
   const { deviceId } = useDeviceId();
 
@@ -39,6 +42,8 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
   const [showResult, setShowResult] = useState(false);
   const [isMultiSelect, setIsMultiSelect] = useState(false);
   const previousAnswersLengthRef = useRef(0);
+  const previousQuestionIdRef = useRef<string | null>(null);
+  const previousVisitedQuestionsRef = useRef<Set<string>>(new Set());
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(1);
@@ -73,9 +78,28 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
     
     opacity.value = withTiming(1, { duration: 300 });
     scale.value = withTiming(1, { duration: 300 });
-    // Сбрасываем состояние при смене вопроса - ВАЖНО: делаем это синхронно
-    setSelectedAnswers([]);
-    setShowResult(false);
+    
+    // Проверяем, был ли вопрос посещен до перехода к нему
+    // Сохраняем предыдущее состояние visitedQuestions перед обновлением
+    const wasVisitedBefore = previousVisitedQuestionsRef.current.has(question.id);
+    
+    // Обновляем предыдущее состояние для следующей проверки
+    previousVisitedQuestionsRef.current = new Set(visitedQuestions);
+    previousQuestionIdRef.current = question.id;
+    
+    // Проверяем, есть ли уже ответ на этот вопрос
+    const existingAnswer = answers.find(a => a.questionId === question.id);
+    
+    if (existingAnswer) {
+      // Если есть ответ, показываем результат и восстанавливаем выбранные ответы
+      const answerIds = existingAnswer.answerIds.map(id => parseInt(id, 10));
+      setSelectedAnswers(answerIds);
+      setShowResult(true);
+    } else {
+      // Если ответа нет, сбрасываем состояние
+      setSelectedAnswers([]);
+      setShowResult(false);
+    }
 
     // Определяем, является ли вопрос мульти или сингл
     if (question.answers) {
@@ -83,7 +107,7 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
       setIsMultiSelect(correctAnswersCount > 1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [question?.id]); // Используем question.id для точного отслеживания смены вопроса
+  }, [question?.id, visitedQuestions]); // Используем question.id и visitedQuestions для отслеживания
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -113,8 +137,9 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
 
   const handleNext = async () => {
     if (showResult) {
-      if (isLastQuestion) {
-        // На последнем вопросе после показа результата переходим к странице результатов
+      // Проверяем, все ли вопросы посещены
+      if (areAllQuestionsVisited()) {
+        // Если все вопросы посещены, завершаем тест
         finishTest();
       } else {
         // Сбрасываем showResult перед переходом к следующему вопросу
@@ -131,7 +156,8 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
       
       // Если showCorrectAnswer === false, сразу переходим к следующему вопросу без показа результатов
       if (test.showCorrectAnswer === false) {
-        if (isLastQuestion) {
+        // Проверяем, все ли вопросы посещены
+        if (areAllQuestionsVisited()) {
           finishTest();
         } else {
           setSelectedAnswers([]);
@@ -143,13 +169,40 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
     }
   };
 
-  // Если тест завершен, показываем результаты
-  if (isTestCompleted || (test.questions && currentQuestionIndex >= test.questions.length)) {
+  const handleSkip = () => {
+    // Пропускаем вопрос без ответа
+    if (areAllQuestionsVisited()) {
+      finishTest();
+    } else {
+      setSelectedAnswers([]);
+      setShowResult(false);
+      nextQuestion();
+    }
+  };
+
+  const handlePrevious = () => {
+    // Переходим на предыдущий вопрос
+    setShowResult(false);
+    setSelectedAnswers([]);
+    previousQuestion();
+  };
+
+  // Если тест завершен (все вопросы посещены), показываем результаты
+  if (isTestCompleted || areAllQuestionsVisited()) {
     return <TestResultsView onBack={onBack} onFinish={onFinish} animatedStyle={animatedStyle} />;
     }
     
   // Иначе показываем текущий вопрос
-    return (
+  // Проверяем, был ли текущий вопрос посещен до перехода к нему (т.е. перешли через навигацию)
+  const wasCurrentQuestionVisitedBefore = previousVisitedQuestionsRef.current.has(question?.id || '');
+  const currentAnswer = answers.find(a => a.questionId === question?.id);
+  // Кнопка "Пропустить" не показывается только если:
+  // 1. На вопрос можно перейти через навигацию (он был посещен ДО перехода) И вопрос отвечен
+  // 2. Или вопрос отвечен
+  // Иначе кнопка показывается (включая случай, когда вопрос посещен, но не отвечен)
+  const canNavigateToCurrentQuestion = wasCurrentQuestionVisitedBefore && !!currentAnswer;
+  
+  return (
     <TestQuestionView
       onBack={onBack}
       onFinish={onFinish}
@@ -159,6 +212,9 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
       isMultiSelect={isMultiSelect}
       onAnswerToggle={handleAnswerToggle}
       onNext={handleNext}
+      onSkip={handleSkip}
+      onPrevious={handlePrevious}
+      canNavigateToQuestion={canNavigateToCurrentQuestion}
     />
   );
 }

@@ -1,5 +1,6 @@
 import { useTest } from '@/contexts/test-context';
 import { useAppTheme } from '@/hooks/use-theme-color';
+import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { ThemedText } from '../themed-text';
@@ -21,14 +22,45 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
     getTotalScore,
     getTotalErrors,
     finishTest,
+    processSkippedQuestions,
+    visitedQuestions,
   } = useTest();
 
   const { page: backgroundColor, layout2: pressedBackgroundColor, primary: tintColor, success: successColor, error: errorColor, primary: buttonColor } = useAppTheme();
 
+  // Обрабатываем пропущенные вопросы при монтировании компонента
+  useEffect(() => {
+    if (test) {
+      processSkippedQuestions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Выполняем только при монтировании
+
+  // Вычисляем финальные ответы (включая пропущенные вопросы) без изменения состояния
+  const finalAnswers = useMemo(() => {
+    if (!test || !test.questions) return answers;
+
+    // Находим все пропущенные вопросы (посещенные, но не отвеченные)
+    const skippedQuestions = test.questions.filter(
+      question => visitedQuestions.has(question.id) && !answers.find(a => a.questionId === question.id)
+    );
+
+    // Создаем ошибочные ответы для пропущенных вопросов
+    const skippedAnswers = skippedQuestions.map(question => ({
+      questionId: question.id,
+      answerIds: [], // Пустой массив - вопрос не был отвечен
+      isCorrect: false, // Пропущенный вопрос считается ошибочным
+      score: 0, // Пропущенный вопрос не дает баллов
+    }));
+
+    // Возвращаем финальный массив ответов (включая пропущенные)
+    return [...answers, ...skippedAnswers];
+  }, [test, answers, visitedQuestions]);
+
   if (!test) return null;
 
-  const totalScore = getTotalScore();
-  const totalErrors = getTotalErrors();
+  const totalScore = finalAnswers.reduce((sum, answer) => sum + answer.score, 0);
+  const totalErrors = finalAnswers.filter(answer => !answer.isCorrect).length;
   const isPassed =
     (test.minScore === undefined || test.minScore === null || totalScore >= test.minScore) &&
     (test.maxErrors === undefined || test.maxErrors === null || totalErrors <= test.maxErrors);
@@ -93,7 +125,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
           {/* Показываем результаты по каждому вопросу */}
           {test.questions &&
             test.questions.map((q, questionIndex) => {
-              const questionAnswer = answers.find((a) => a.questionId === q.id);
+              const questionAnswer = finalAnswers.find((a) => a.questionId === q.id);
               const savedAnswerIndices =
                 questionAnswer?.answerIds.map((id) => parseInt(id, 10)) || [];
 
@@ -104,7 +136,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
                   questionIndex={questionIndex}
                   questionAnswer={questionAnswer}
                   savedAnswerIndices={savedAnswerIndices}
-                  testAnswers={answers}
+                  testAnswers={finalAnswers}
                   testQuestions={test.questions}
                 />
               );

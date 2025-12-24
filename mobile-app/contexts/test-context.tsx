@@ -1,4 +1,4 @@
-import { AppTestQuestionVm, AppTestVm } from '@/hooks/api/types';
+import { AppTestQuestionActivationConditionKind, AppTestQuestionVm, AppTestVm } from '@/hooks/api/types';
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 
 export type TestAnswer = {
@@ -12,6 +12,7 @@ type TestContextType = {
   test: AppTestVm | null;
   currentQuestionIndex: number;
   answers: TestAnswer[];
+  visitedQuestions: Set<string>; // Множество ID посещенных вопросов
   isTestStarted: boolean;
   isTestCompleted: boolean;
   totalScoreAccumulated: number; // Накопленный счетчик баллов с начала теста
@@ -19,11 +20,15 @@ type TestContextType = {
   startTest: (test: AppTestVm) => void;
   submitAnswer: (questionId: string, answerIds: number[] | string[]) => void;
   nextQuestion: () => void;
+  previousQuestion: () => void;
+  goToQuestion: (questionId: string) => void;
   finishTest: () => void;
   resetTest: () => void;
   getCurrentQuestion: () => AppTestQuestionVm | null;
   getTotalScore: () => number;
   getTotalErrors: () => number;
+  areAllQuestionsVisited: () => boolean;
+  processSkippedQuestions: () => TestAnswer[]; // Обрабатывает пропущенные вопросы как ошибочные и возвращает финальные ответы
 };
 
 const TestContext = createContext<TestContextType | undefined>(undefined);
@@ -32,6 +37,7 @@ export function TestProvider({ children }: { children: ReactNode }) {
   const [test, setTest] = useState<AppTestVm | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<TestAnswer[]>([]);
+  const [visitedQuestions, setVisitedQuestions] = useState<Set<string>>(new Set());
   const [isTestStarted, setIsTestStarted] = useState(false);
   const [isTestCompleted, setIsTestCompleted] = useState(false);
   const [totalScoreAccumulated, setTotalScoreAccumulated] = useState(0); // Накопленный счетчик баллов
@@ -41,10 +47,16 @@ export function TestProvider({ children }: { children: ReactNode }) {
     setTest(testData);
     setCurrentQuestionIndex(0);
     setAnswers([]);
+    setVisitedQuestions(new Set());
     setTotalScoreAccumulated(0); // Сбрасываем счетчик баллов
     setStartedAt(new Date().toISOString()); // Сохраняем время начала теста
     setIsTestStarted(true);
     setIsTestCompleted(false);
+    
+    // Отмечаем первый вопрос как посещенный
+    if (testData.questions && testData.questions.length > 0) {
+      setVisitedQuestions(new Set([testData.questions[0].id]));
+    }
   };
 
   const submitAnswer = (questionId: string, answerIds: number[] | string[]) => {
@@ -96,13 +108,120 @@ export function TestProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  // Проверяет условие активации вопроса
+  const checkActivationCondition = (
+    { activationCondition }: AppTestQuestionVm,
+    currentAnswer: TestAnswer
+  ): boolean => {
+    if (!activationCondition || activationCondition.kind !== AppTestQuestionActivationConditionKind.CompleteQuestion) {
+      return false;
+    }
+
+    // Проверяем условие в зависимости от типа данных
+    if (activationCondition.data.type === 'score') {
+      return currentAnswer.score >= activationCondition.data.score;
+    } else if (activationCondition.data.type === 'correct') {
+      return currentAnswer.isCorrect === activationCondition.data.isCorrect;
+    }
+
+    return false;
+  };
+
   const nextQuestion = () => {
     if (!test || !test.questions) return;
     
-    if (currentQuestionIndex < test.questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    } else {
-      setIsTestCompleted(true);
+    const currentQuestion = test.questions[currentQuestionIndex];
+    if (!currentQuestion) return;
+
+    // Отмечаем текущий вопрос как посещенный
+    const updatedVisited = new Set([...visitedQuestions, currentQuestion.id]);
+    setVisitedQuestions(updatedVisited);
+
+    // Используем функциональное обновление для получения актуального состояния answers
+    setAnswers(currentAnswers => {
+      if (!test || !test.questions) return currentAnswers;
+
+      // Находим ответ на текущий вопрос (может быть только что добавлен)
+      const currentAnswer = currentAnswers.find(a => a.questionId === currentQuestion.id);
+
+      // Ищем вопросы с activationCondition, которые должны активироваться
+      const activatedQuestions: { question: AppTestQuestionVm; index: number }[] = [];
+      
+      test.questions.forEach((question, index) => {
+        if (question.activationCondition && question.activationCondition.relationQuestionId === currentQuestion.id) {
+          // Передаем currentAnswer для проверки условия активации
+          if (checkActivationCondition(question, currentAnswer!)) {
+            activatedQuestions.push({ question, index });
+          }
+        }
+      });
+
+      // Если есть активированные вопросы, выбираем тот, у которого order меньше всего
+      if (activatedQuestions.length > 0) {
+        activatedQuestions.sort((a, b) => (a.question.order || 0) - (b.question.order || 0));
+        const targetQuestion = activatedQuestions[0];
+        setCurrentQuestionIndex(targetQuestion.index);
+        setVisitedQuestions(new Set([...updatedVisited, targetQuestion.question.id]));
+        return currentAnswers; // Возвращаем без изменений
+      }
+
+      // Если нет активированных вопросов, ищем следующий неотвеченный вопрос в коллекции
+      // Начинаем поиск с текущего индекса + 1
+      let nextUnansweredIndex = -1;
+      for (let i = currentQuestionIndex + 1; i < test.questions.length; i++) {
+        const question = test.questions[i];
+        // Проверяем, есть ли ответ на этот вопрос
+        const hasAnswer = currentAnswers.find(a => a.questionId === question.id);
+        if (!hasAnswer) {
+          // Найден неотвеченный вопрос
+          nextUnansweredIndex = i;
+          break;
+        }
+      }
+
+      if (nextUnansweredIndex >= 0) {
+        // Найден следующий неотвеченный вопрос
+        setCurrentQuestionIndex(nextUnansweredIndex);
+        const nextQuestion = test.questions[nextUnansweredIndex];
+        if (nextQuestion) {
+          setVisitedQuestions(new Set([...updatedVisited, nextQuestion.id]));
+        }
+      } else {
+        // Если не найден следующий неотвеченный вопрос, проверяем, все ли вопросы посещены
+        const allVisited = test.questions.every(q => updatedVisited.has(q.id));
+        if (allVisited) {
+          setIsTestCompleted(true);
+        } else {
+          // Если не все вопросы посещены, ищем первый непосещенный
+          const unvisitedIndex = test.questions.findIndex(q => !updatedVisited.has(q.id));
+          if (unvisitedIndex >= 0) {
+            setCurrentQuestionIndex(unvisitedIndex);
+            setVisitedQuestions(new Set([...updatedVisited, test.questions[unvisitedIndex].id]));
+          } else {
+            setIsTestCompleted(true);
+          }
+        }
+      }
+
+      return currentAnswers; // Возвращаем без изменений
+    });
+  };
+
+  const previousQuestion = () => {
+    if (!test || !test.questions) return;
+    
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
+  const goToQuestion = (questionId: string) => {
+    if (!test || !test.questions) return;
+    
+    const questionIndex = test.questions.findIndex(q => q.id === questionId);
+    if (questionIndex >= 0) {
+      setCurrentQuestionIndex(questionIndex);
+      setVisitedQuestions(prev => new Set([...prev, questionId]));
     }
   };
 
@@ -114,10 +233,16 @@ export function TestProvider({ children }: { children: ReactNode }) {
     setTest(null);
     setCurrentQuestionIndex(0);
     setAnswers([]);
+    setVisitedQuestions(new Set());
     setTotalScoreAccumulated(0);
     setStartedAt(null);
     setIsTestStarted(false);
     setIsTestCompleted(false);
+  };
+
+  const areAllQuestionsVisited = (): boolean => {
+    if (!test || !test.questions) return false;
+    return test.questions.every(q => visitedQuestions.has(q.id));
   };
 
   const getCurrentQuestion = (): AppTestQuestionVm | null => {
@@ -133,12 +258,51 @@ export function TestProvider({ children }: { children: ReactNode }) {
     return answers.filter(answer => !answer.isCorrect).length;
   };
 
+  // Обрабатывает пропущенные вопросы (посещенные, но не отвеченные) как ошибочные
+  // Возвращает финальный массив ответов, включая пропущенные вопросы
+  const processSkippedQuestions = (): TestAnswer[] => {
+    if (!test || !test.questions) return answers;
+
+    // Находим все пропущенные вопросы (посещенные, но не отвеченные)
+    const skippedQuestions = test.questions.filter(
+      question => visitedQuestions.has(question.id) && !answers.find(a => a.questionId === question.id)
+    );
+
+    // Создаем ошибочные ответы для пропущенных вопросов
+    const skippedAnswers: TestAnswer[] = skippedQuestions.map(question => ({
+      questionId: question.id,
+      answerIds: [], // Пустой массив - вопрос не был отвечен
+      isCorrect: false, // Пропущенный вопрос считается ошибочным
+      score: 0, // Пропущенный вопрос не дает баллов
+    }));
+
+    // Обновляем состояние для отображения
+    if (skippedAnswers.length > 0) {
+      setAnswers(prev => {
+        const finalAnswers = [...prev];
+        skippedAnswers.forEach(skippedAnswer => {
+          // Проверяем, нет ли уже ответа на этот вопрос
+          const existingIndex = finalAnswers.findIndex(a => a.questionId === skippedAnswer.questionId);
+          if (existingIndex < 0) {
+            // Добавляем новый ошибочный ответ
+            finalAnswers.push(skippedAnswer);
+          }
+        });
+        return finalAnswers;
+      });
+    }
+
+    // Возвращаем финальный массив ответов (включая пропущенные)
+    return [...answers, ...skippedAnswers];
+  };
+
   return (
     <TestContext.Provider
       value={{
         test,
         currentQuestionIndex,
         answers,
+        visitedQuestions,
         isTestStarted,
         isTestCompleted,
         totalScoreAccumulated,
@@ -146,11 +310,15 @@ export function TestProvider({ children }: { children: ReactNode }) {
         startTest,
         submitAnswer,
         nextQuestion,
+        previousQuestion,
+        goToQuestion,
         finishTest,
         resetTest,
         getCurrentQuestion,
         getTotalScore,
         getTotalErrors,
+        areAllQuestionsVisited,
+        processSkippedQuestions,
       }}
     >
       {children}

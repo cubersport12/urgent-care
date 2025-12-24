@@ -18,6 +18,15 @@ export const styles = StyleSheet.create({
     minHeight: 44,
     overflow: 'hidden',
   },
+  questionsNavigation: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingVertical: 8,
+    gap: 4,
+  },
   progressText: {
     fontSize: 14,
     fontWeight: '600',
@@ -188,6 +197,41 @@ export const styles = StyleSheet.create({
   resultScoreText: {
     fontSize: 13,
     opacity: 0.7,
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  previousButton: {
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  previousButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  skipButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    borderWidth: 1,
+    marginTop: 8,
+    width: '100%',
+  },
+  skipButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   nextButton: {
     paddingVertical: 12,

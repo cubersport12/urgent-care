@@ -23,6 +23,9 @@ type TestQuestionViewProps = {
   isMultiSelect: boolean;
   onAnswerToggle: (index: number) => void;
   onNext: () => void;
+  onSkip: () => void;
+  onPrevious: () => void;
+  canNavigateToQuestion?: boolean;
 };
 
 export function TestQuestionView({
@@ -34,17 +37,24 @@ export function TestQuestionView({
   isMultiSelect,
   onAnswerToggle,
   onNext,
+  onSkip,
+  onPrevious,
+  canNavigateToQuestion = false,
 }: TestQuestionViewProps) {
   const {
     test,
     currentQuestionIndex,
     answers,
+    visitedQuestions,
     getCurrentQuestion,
     submitAnswer,
     finishTest,
     getTotalScore,
     getTotalErrors,
     startedAt,
+    goToQuestion,
+    areAllQuestionsVisited,
+    processSkippedQuestions,
   } = useTest();
   const { deviceId } = useDeviceId();
 
@@ -72,6 +82,12 @@ export function TestQuestionView({
   const totalQuestions = test.questions?.length || 0;
   const currentAnswer = answers.find((a) => a.questionId === question.id);
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
+  const isTestCompleted = areAllQuestionsVisited();
+  const isFirstQuestion = currentQuestionIndex === 0;
+  // Кнопка "Пропустить" показывается только если вопрос не отвечен и не был пропущен ранее
+  // Если на вопрос можно перейти через навигацию (он был посещен ранее и отвечен или пропущен),
+  // то кнопку не показываем
+  const shouldShowSkipButton = !showResult && !currentAnswer && !canNavigateToQuestion;
   
   // Определяем, нужно ли показывать результаты (учитываем showCorrectAnswer)
   const shouldShowResults = showResult && (test.showCorrectAnswer !== false);
@@ -79,8 +95,12 @@ export function TestQuestionView({
   const handleFinish = async () => {
     if (!test) return;
 
-    const totalScore = getTotalScore();
-    const totalErrors = getTotalErrors();
+    // Обрабатываем пропущенные вопросы как ошибочные и получаем финальные ответы
+    const finalAnswers = processSkippedQuestions();
+
+    // Рассчитываем итоговые результаты на основе финальных ответов
+    const totalScore = finalAnswers.reduce((sum, answer) => sum + answer.score, 0);
+    const totalErrors = finalAnswers.filter(answer => !answer.isCorrect).length;
     const isPassed =
       (test.minScore === undefined || test.minScore === null || totalScore >= test.minScore) &&
       (test.maxErrors === undefined || test.maxErrors === null || totalErrors <= test.maxErrors);
@@ -91,7 +111,7 @@ export function TestQuestionView({
         totalScore,
         totalErrors,
         isPassed,
-        answers: answers,
+        answers: finalAnswers,
       });
       
       // Сохраняем completedAt и passed в статистику
@@ -160,8 +180,8 @@ export function TestQuestionView({
     }
   };
 
-  const handleBack = () => {
-    // При нажатии на кнопку "Назад" вызываем ту же процедуру завершения теста
+  const handleBackToFolder = () => {
+    // При нажатии на кнопку "Назад" вызываем процедуру завершения теста
     handleFinishWithConfirmation();
   };
 
@@ -169,11 +189,84 @@ export function TestQuestionView({
     <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
       <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
         <ThemedView style={styles.headerContent}>
-          <BackButton onPress={handleBack} label="Назад" />
+          <BackButton onPress={handleBackToFolder} label="Назад" />
         <ThemedText style={styles.progressText}>
           Вопрос {currentQuestionIndex + 1} из {totalQuestions}
         </ThemedText>
         </ThemedView>
+        {/* Навигация по вопросам - показывается только если нет ни одного activationCondition в тесте */}
+        {test.questions && test.questions.length > 0 && 
+         !test.questions.some(q => q.activationCondition) && (
+          <ThemedView style={styles.questionsNavigation}>
+            {test.questions.map((q, index) => {
+              const isVisited = visitedQuestions.has(q.id);
+              const isCurrent = index === currentQuestionIndex;
+              const questionAnswer = answers.find(a => a.questionId === q.id);
+              const isCorrect = questionAnswer?.isCorrect;
+              const isSkipped = isVisited && !questionAnswer; // Посещен, но не отвечен
+              
+              // Определяем стиль в зависимости от состояния
+              let navStyle: any = {
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                borderWidth: 2,
+                borderColor: borderColor,
+                backgroundColor: isCurrent ? buttonColor : 'transparent',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginHorizontal: 4,
+              };
+
+              // Активный вопрос всегда primary цвет
+              if (isCurrent) {
+                navStyle.backgroundColor = buttonColor;
+                navStyle.borderColor = buttonColor;
+              } else {
+                // Если showCorrectAnswer = true, показываем правильные/неправильные для неактивных
+                if (test.showCorrectAnswer && isVisited && questionAnswer) {
+                  if (isCorrect) {
+                    navStyle.borderColor = successColor;
+                    navStyle.backgroundColor = successAlpha10;
+                  } else {
+                    navStyle.borderColor = errorColor;
+                    navStyle.backgroundColor = errorAlpha10;
+                  }
+                } else if (test.showCorrectAnswer === false && questionAnswer) {
+                  // Если showCorrectAnswer = false и вопрос отвечен, обводим primary рамкой
+                  navStyle.borderColor = buttonColor;
+                }
+              }
+
+              // Пропущенные вопросы (посещены, но не отвечены) - пунктирная рамка
+              if (isSkipped && !isCurrent) {
+                navStyle.borderStyle = 'dashed';
+              }
+
+              return (
+                <Pressable
+                  key={q.id}
+                  onPress={() => isVisited && goToQuestion(q.id)}
+                  disabled={!isVisited}
+                  style={[
+                    navStyle,
+                    !isVisited && { opacity: 0.5 },
+                  ]}
+                >
+                  <ThemedText
+                    style={{
+                      fontSize: 12,
+                      fontWeight: isCurrent ? 'bold' : 'normal',
+                      color: isCurrent ? '#fff' : undefined,
+                    }}
+                  >
+                    {index + 1}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </ThemedView>
+        )}
       </ThemedView>
       <ScrollView style={styles.scrollView}>
         <ThemedView style={styles.content}>
@@ -292,27 +385,85 @@ export function TestQuestionView({
               )}
             </ThemedView>
           )}
-          <Pressable
-            onPress={onNext}
-            disabled={!showResult && selectedAnswers.length === 0}
-            style={({ pressed }) => [
-              styles.nextButton,
-              {
-                backgroundColor:
-                  !showResult && selectedAnswers.length === 0
-                    ? disabledBackground
-                    : pressed
-                    ? buttonColor + 'CC'
-                    : buttonColor,
-                opacity: (!showResult && selectedAnswers.length === 0) || pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <ThemedText style={styles.nextButtonText}>
-              {showResult ? (isLastQuestion ? 'Завершить' : 'Далее') : 'Далее'}
-            </ThemedText>
-          </Pressable>
-          {!(isLastQuestion && showResult) && (
+          <ThemedView style={styles.buttonsRow}>
+            {!isFirstQuestion && !isTestCompleted ? (
+              <>
+                <Pressable
+                  onPress={onPrevious}
+                  style={({ pressed }) => [
+                    styles.previousButton,
+                    {
+                      flex: 1,
+                      backgroundColor: pressed ? borderColor + 'CC' : 'transparent',
+                      borderColor: borderColor,
+                      opacity: pressed ? 0.8 : 1,
+                    },
+                  ]}
+                >
+                  <ThemedText style={styles.previousButtonText}>Назад</ThemedText>
+                </Pressable>
+                <Pressable
+                  onPress={onNext}
+                  disabled={!showResult && selectedAnswers.length === 0}
+                  style={({ pressed }) => [
+                    styles.nextButton,
+                    {
+                      flex: 1,
+                      backgroundColor:
+                        !showResult && selectedAnswers.length === 0
+                          ? disabledBackground
+                          : pressed
+                          ? buttonColor + 'CC'
+                          : buttonColor,
+                      opacity: (!showResult && selectedAnswers.length === 0) || pressed ? 0.8 : 1,
+                    },
+                  ]}
+                >
+                  <ThemedText style={styles.nextButtonText}>
+                    {showResult ? (isTestCompleted ? 'Завершить' : 'Далее') : 'Далее'}
+                  </ThemedText>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable
+                onPress={onNext}
+                disabled={!showResult && selectedAnswers.length === 0}
+                style={({ pressed }) => [
+                  styles.nextButton,
+                  {
+                    flex: 1,
+                    backgroundColor:
+                      !showResult && selectedAnswers.length === 0
+                        ? disabledBackground
+                        : pressed
+                        ? buttonColor + 'CC'
+                        : buttonColor,
+                    opacity: (!showResult && selectedAnswers.length === 0) || pressed ? 0.8 : 1,
+                  },
+                ]}
+              >
+                <ThemedText style={styles.nextButtonText}>
+                  {showResult ? (isTestCompleted ? 'Завершить' : 'Далее') : 'Далее'}
+                </ThemedText>
+              </Pressable>
+            )}
+          </ThemedView>
+          {shouldShowSkipButton && (
+            <Pressable
+              onPress={onSkip}
+              style={({ pressed }) => [
+                styles.skipButton,
+                {
+                  backgroundColor: pressed ? borderColor + 'CC' : 'transparent',
+                  borderColor: borderColor,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <ThemedText style={styles.skipButtonText}>Пропустить</ThemedText>
+            </Pressable>
+          )}
+          {!isTestCompleted && (
             <Pressable
               onPress={handleFinishWithConfirmation}
               style={({ pressed }) => [
