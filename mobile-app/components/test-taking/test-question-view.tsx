@@ -190,9 +190,9 @@ export function TestQuestionView({
       <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
         <ThemedView style={styles.headerContent}>
           <BackButton onPress={handleBackToFolder} label="Назад" />
-        <ThemedText style={styles.progressText}>
+        {/* <ThemedText style={styles.progressText}>
           Вопрос {currentQuestionIndex + 1} из {totalQuestions}
-        </ThemedText>
+        </ThemedText> */}
         </ThemedView>
         {/* Навигация по вопросам - показывается только если нет ни одного activationCondition в тесте */}
         {test.questions && test.questions.length > 0 && 
