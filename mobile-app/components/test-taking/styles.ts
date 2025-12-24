@@ -99,6 +99,14 @@ export const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 8,
   },
+  answerButtonContainer: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    borderRadius: 8,
+    marginBottom: 8,
+    position: 'relative',
+  },
   answerButton: {
     borderWidth: 1,
     borderColor: '#e0e0e0',
@@ -108,6 +116,15 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 8,
+  },
+  answerButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+    width: '100%',
   },
   answerButtonSelected: {
     borderColor: Colors.light.primary,
@@ -172,6 +189,22 @@ export const styles = StyleSheet.create({
   answerText: {
     flex: 1,
     fontSize: 16,
+  },
+  answerBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  answerBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
   },
   answerTextSelected: {
     fontWeight: '600',

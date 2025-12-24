@@ -11,15 +11,33 @@
       </mat-form-field>
       <mat-form-field appearance="fill" class="grow">
         <mat-label>Проходной балл</mat-label>
-        <input matInput [formControl]="_form.controls.minScore">
+        <input matInput [formControl]="_form.controls.minScore" type="number">
+        <button mat-icon-button matSuffix type="button" (click)="_calculateMinScore()" [title]="'Автоматически посчитать проходной балл (макс: ' + _totalCorrectScore() + ')'">
+          <mat-icon svgIcon="calculator" />
+        </button>
+        @if (_scoreValidation().type === 'error') {
+          <mat-error>{{_scoreValidation().message}}</mat-error>
+        }
+        @if (_scoreValidation().type === 'warning') {
+          <mat-hint style="color: orange;">{{_scoreValidation().message}}</mat-hint>
+        }
       </mat-form-field>
     </div>
-    <div class="flex gpa-1 w-full">
+    <div class="flex gap-1 w-full flex-wrap">
       <mat-checkbox [formControl]="_form.controls.showCorrectAnswer">
         Показывать правильный ответ в вопросах
       </mat-checkbox>
       <mat-checkbox [formControl]="_form.controls.includeToStatistics">
         Тест участвует в статистике
+      </mat-checkbox>
+      <mat-checkbox [formControl]="_form.controls.showSkipButton">
+        Показывать кнопку пропускать
+      </mat-checkbox>
+      <mat-checkbox [formControl]="_form.controls.showNavigation">
+        Показывать навигацию
+      </mat-checkbox>
+      <mat-checkbox [formControl]="_form.controls.showBackButton">
+        Показывать кнопку назад
       </mat-checkbox>
     </div>
     <app-test-conditions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.conditions" />

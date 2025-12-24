@@ -29,6 +29,9 @@ export type AppTestVm = {
   maxErrors?: NullableValue<number>;
   showCorrectAnswer?: NullableValue<boolean>;
   includeToStatistics?: NullableValue<boolean>;
+  showSkipButton?: NullableValue<boolean>;
+  showNavigation?: NullableValue<boolean>;
+  showBackButton?: NullableValue<boolean>;
 } & AppBaseVm;
 
 export type AppTestQuestionVm = {

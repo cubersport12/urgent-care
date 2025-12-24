@@ -14,7 +14,7 @@ import { TestQuestionsBuilderComponent } from './test-questions-builder/test-que
 import { MatCheckbox } from '@angular/material/checkbox';
 import { AppFilesStorageService } from '@/core/api';
 import { forkJoin, Observable, of } from 'rxjs';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, sum } from 'lodash';
 
 @Injectable({
   providedIn: 'root'
@@ -72,7 +72,48 @@ export class TestEditorComponent {
     minScore: new FormControl<NullableValue<number>>(null),
     maxErrors: new FormControl<NullableValue<number>>(null),
     showCorrectAnswer: new FormControl<boolean>(true),
-    includeToStatistics: new FormControl<boolean>(false)
+    includeToStatistics: new FormControl<boolean>(false),
+    showSkipButton: new FormControl<boolean>(true),
+    showNavigation: new FormControl<boolean>(true),
+    showBackButton: new FormControl<boolean>(true)
+  });
+
+  // Вычисляем сумму правильных баллов
+  protected readonly _totalCorrectScore = computed(() => {
+    const questions = this._form.value.questions ?? [];
+    return sum(questions.map(q => {
+      if (!q.answers || q.answers.length === 0) return 0;
+      // Суммируем баллы правильных ответов
+      return sum(q.answers
+        .filter(a => a.isCorrect)
+        .map(a => a.score ?? 0));
+    }));
+  });
+
+  // Проверка валидности проходного балла
+  protected readonly _scoreValidation = computed(() => {
+    const minScore = this._form.value.minScore;
+    const totalScore = this._totalCorrectScore();
+    
+    if (minScore == null || totalScore === 0) {
+      return { type: null, message: null };
+    }
+
+    if (minScore > totalScore) {
+      return {
+        type: 'error',
+        message: `Проходной балл (${minScore}) превышает максимально возможный балл (${totalScore})`
+      };
+    }
+
+    if (minScore !== totalScore) {
+      return {
+        type: 'warning',
+        message: `Проходной балл (${minScore}) не равен максимально возможному баллу (${totalScore})`
+      };
+    }
+
+    return { type: null, message: null };
   });
 
   constructor() {
@@ -89,7 +130,7 @@ export class TestEditorComponent {
   }
 
   private _reset(): void {
-    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics } = this._dialogData;
+    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton } = this._dialogData;
     this._form.reset({
       name,
       conditions: accessabilityConditions ?? [],
@@ -97,12 +138,21 @@ export class TestEditorComponent {
       minScore,
       maxErrors,
       showCorrectAnswer,
-      includeToStatistics
+      includeToStatistics,
+      showSkipButton: showSkipButton ?? true,
+      showNavigation: showNavigation ?? true,
+      showBackButton: showBackButton ?? true
     });
   }
 
+  protected _calculateMinScore(): void {
+    const totalScore = this._totalCorrectScore();
+    this._form.patchValue({ minScore: totalScore });
+    this._form.controls.minScore.markAsDirty();
+  }
+
   private _getTestVm(): AppTestVm {
-    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics } = this._form.value;
+    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton } = this._form.value;
     const result: AppTestVm = {
       ...(this._dialogData ?? {}),
       name: name!,
@@ -111,7 +161,10 @@ export class TestEditorComponent {
       minScore,
       showCorrectAnswer,
       includeToStatistics,
-      questions: questions ?? []
+      questions: questions ?? [],
+      showSkipButton,
+      showNavigation,
+      showBackButton
     };
     if ('type' in result) {
       delete result['type'];

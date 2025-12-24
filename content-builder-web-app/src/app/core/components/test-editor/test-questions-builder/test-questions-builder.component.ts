@@ -98,7 +98,7 @@ export class TestQuestionsBuilderComponent implements ControlValueAccessor {
 
   private _openQuestion(q: NullableValue<AppTestQuestionVm>): void {
     this._dialog.open(TestQuestionItemBuilderComponent, {
-      width: '80%',
+      width: 'calc(80% + 100px)',
       hasBackdrop: true,
       viewContainerRef: this._vcr,
       injector: this._injector,

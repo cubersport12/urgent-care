@@ -144,42 +144,60 @@ export function TestProvider({ children }: { children: ReactNode }) {
       // Находим ответ на текущий вопрос (может быть только что добавлен)
       const currentAnswer = currentAnswers.find(a => a.questionId === currentQuestion.id);
 
-      // Ищем вопросы с activationCondition, которые должны активироваться
-      const activatedQuestions: { question: AppTestQuestionVm; index: number }[] = [];
-      
-      test.questions.forEach((question, index) => {
-        if (question.activationCondition && question.activationCondition.relationQuestionId === currentQuestion.id) {
-          // Передаем currentAnswer для проверки условия активации
-          if (checkActivationCondition(question, currentAnswer!)) {
-            activatedQuestions.push({ question, index });
+      // Функция для поиска следующего неотвеченного вопроса с проверкой условий активации
+      const findNextUnansweredQuestion = (startFromIndex: number): number | null => {
+        if (!test.questions) return null;
+        
+        // Сначала проверяем условия активации для всех вопросов, начиная с startFromIndex
+        const activatedQuestions: { question: AppTestQuestionVm; index: number }[] = [];
+        
+        test.questions.forEach((question, index) => {
+          if (index <= startFromIndex) return; // Пропускаем уже пройденные вопросы
+          
+          // Проверяем, есть ли ответ на этот вопрос - если есть, пропускаем
+          const hasAnswer = currentAnswers.find(a => a.questionId === question.id);
+          if (hasAnswer) return;
+          
+          // Если у вопроса есть activationCondition, проверяем условие
+          if (question.activationCondition && question.activationCondition.relationQuestionId === currentQuestion.id) {
+            // Передаем currentAnswer для проверки условия активации
+            if (checkActivationCondition(question, currentAnswer!)) {
+              activatedQuestions.push({ question, index });
+            }
+          }
+        });
+
+        // Если есть активированные вопросы, выбираем тот, у которого order меньше всего
+        if (activatedQuestions.length > 0) {
+          activatedQuestions.sort((a, b) => (a.question.order || 0) - (b.question.order || 0));
+          const targetQuestion = activatedQuestions[0];
+          // Проверяем, что на этот вопрос нет ответа
+          const hasAnswer = currentAnswers.find(a => a.questionId === targetQuestion.question.id);
+          if (!hasAnswer) {
+            return targetQuestion.index;
+          }
+          // Если на активированный вопрос есть ответ, ищем следующий
+          return findNextUnansweredQuestion(targetQuestion.index);
+        }
+
+        // Если нет активированных вопросов, ищем следующий неотвеченный вопрос в коллекции
+        for (let i = startFromIndex + 1; i < test.questions.length; i++) {
+          const question = test.questions[i];
+          // Проверяем, есть ли ответ на этот вопрос
+          const hasAnswer = currentAnswers.find(a => a.questionId === question.id);
+          if (!hasAnswer) {
+            // Найден неотвеченный вопрос
+            return i;
           }
         }
-      });
 
-      // Если есть активированные вопросы, выбираем тот, у которого order меньше всего
-      if (activatedQuestions.length > 0) {
-        activatedQuestions.sort((a, b) => (a.question.order || 0) - (b.question.order || 0));
-        const targetQuestion = activatedQuestions[0];
-        setCurrentQuestionIndex(targetQuestion.index);
-        setVisitedQuestions(new Set([...updatedVisited, targetQuestion.question.id]));
-        return currentAnswers; // Возвращаем без изменений
-      }
+        return null;
+      };
 
-      // Если нет активированных вопросов, ищем следующий неотвеченный вопрос в коллекции
-      // Начинаем поиск с текущего индекса + 1
-      let nextUnansweredIndex = -1;
-      for (let i = currentQuestionIndex + 1; i < test.questions.length; i++) {
-        const question = test.questions[i];
-        // Проверяем, есть ли ответ на этот вопрос
-        const hasAnswer = currentAnswers.find(a => a.questionId === question.id);
-        if (!hasAnswer) {
-          // Найден неотвеченный вопрос
-          nextUnansweredIndex = i;
-          break;
-        }
-      }
+      // Ищем следующий неотвеченный вопрос
+      const nextUnansweredIndex = findNextUnansweredQuestion(currentQuestionIndex);
 
-      if (nextUnansweredIndex >= 0) {
+      if (nextUnansweredIndex !== null) {
         // Найден следующий неотвеченный вопрос
         setCurrentQuestionIndex(nextUnansweredIndex);
         const nextQuestion = test.questions[nextUnansweredIndex];
@@ -192,8 +210,11 @@ export function TestProvider({ children }: { children: ReactNode }) {
         if (allVisited) {
           setIsTestCompleted(true);
         } else {
-          // Если не все вопросы посещены, ищем первый непосещенный
-          const unvisitedIndex = test.questions.findIndex(q => !updatedVisited.has(q.id));
+          // Если не все вопросы посещены, ищем первый непосещенный без ответа
+          const unvisitedIndex = test.questions.findIndex(q => {
+            const hasAnswer = currentAnswers.find(a => a.questionId === q.id);
+            return !updatedVisited.has(q.id) && !hasAnswer;
+          });
           if (unvisitedIndex >= 0) {
             setCurrentQuestionIndex(unvisitedIndex);
             setVisitedQuestions(new Set([...updatedVisited, test.questions[unvisitedIndex].id]));

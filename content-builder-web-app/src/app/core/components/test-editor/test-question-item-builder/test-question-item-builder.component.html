@@ -7,12 +7,14 @@
       <input [formControl]="_form.controls.name" matInput type="text">
     </mat-form-field>
   </div>
-  <mat-form-field class="w-full">
-    <mat-label>
-      Текст вопроса
-    </mat-label>
-    <textarea [formControl]="_form.controls.questionText" matInput rows="2"></textarea>
-  </mat-form-field>
+  <div  class="flex gap-1">
+    <mat-form-field class="w-full">
+      <mat-label>
+        Текст вопроса
+      </mat-label>
+      <textarea [formControl]="_form.controls.questionText" matInput rows="3"></textarea>
+    </mat-form-field>
+  </div>
   <button mat-flat-button type="button" color="primary" (click)="_openFile()">
     <mat-icon svgIcon="file-contract" />
     Выбрать изображение {{_form.value.image ? '(' + _form.value.image + ')' : ''}}

@@ -24,6 +24,9 @@ export const testSchema = z.object({
   maxErrors: z.number().nullable().optional(),
   showCorrectAnswer: z.boolean().nullable(),
   includeToStatistics: z.boolean().nullable(),
+  showSkipButton: z.boolean().nullable().optional(),
+  showNavigation: z.boolean().nullable().optional(),
+  showBackButton: z.boolean().nullable().optional(),
   questions: z.array(z.object({
     id: z.string(),
     order: z.number().nullable(),

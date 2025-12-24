@@ -10,7 +10,6 @@ import Animated from 'react-native-reanimated';
 import { BackButton } from '../explorer/back-button';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
-import { Button } from '../ui/button';
 import { styles } from './styles';
 import { getAnswerStatus } from './utils';
 
@@ -66,11 +65,12 @@ export function TestQuestionView({
   });
 
   const question = getCurrentQuestion();
-  const { page: backgroundColor, border: borderColor, success: successColor, error: errorColor, primary: buttonColor, successContainer, errorContainer, layout2: disabledBackground } = useAppTheme();
+  const { page: backgroundColor, border: borderColor, success: successColor, error: errorColor, warning: warningColor, primary: buttonColor, successContainer, errorContainer, warningContainer, layout2: disabledBackground } = useAppTheme();
   
   // Create alpha colors from containers
   const successAlpha10 = successContainer + '1A'; // ~10% opacity
   const errorAlpha10 = errorContainer + '1A'; // ~10% opacity
+  const warningAlpha10 = warningContainer + '1A'; // ~10% opacity
 
   // Загружаем изображение, если оно есть
   const { response: imageDataUrl, isLoading: isLoadingImage } = useFileImage(
@@ -84,13 +84,38 @@ export function TestQuestionView({
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
   const isTestCompleted = areAllQuestionsVisited();
   const isFirstQuestion = currentQuestionIndex === 0;
-  // Кнопка "Пропустить" показывается только если вопрос не отвечен и не был пропущен ранее
-  // Если на вопрос можно перейти через навигацию (он был посещен ранее и отвечен или пропущен),
-  // то кнопку не показываем
-  const shouldShowSkipButton = !showResult && !currentAnswer && !canNavigateToQuestion;
+  // Кнопка "Пропустить" показывается только если:
+  // 1. showSkipButton !== false
+  // 2. Вопрос не отвечен и не был пропущен ранее
+  // 3. Если на вопрос можно перейти через навигацию (он был посещен ранее и отвечен или пропущен), то кнопку не показываем
+  const shouldShowSkipButton = test.showSkipButton !== false && !showResult && !currentAnswer && !canNavigateToQuestion;
   
   // Определяем, нужно ли показывать результаты (учитываем showCorrectAnswer)
   const shouldShowResults = showResult && (test.showCorrectAnswer !== false);
+
+  // Определяем, является ли ответ частично правильным
+  const isPartiallyCorrect = (() => {
+    if (!currentAnswer || !question || !question.answers) return false;
+    
+    // Получаем выбранные ответы по индексам из currentAnswer
+    const answerIndices = currentAnswer.answerIds.map(id => parseInt(id, 10));
+    const selectedAnswers = question.answers.filter((_, index) => 
+      answerIndices.includes(index)
+    );
+    
+    // Находим правильные ответы
+    const correctAnswers = question.answers.filter(a => a.isCorrect);
+    const selectedCorrectAnswers = selectedAnswers.filter(a => a.isCorrect);
+    
+    // Частично правильный, если:
+    // 1. Выбраны некоторые правильные ответы, но не все
+    // 2. Или выбраны правильные, но также выбраны неправильные
+    const hasSomeCorrect = selectedCorrectAnswers.length > 0;
+    const notAllCorrect = selectedCorrectAnswers.length < correctAnswers.length;
+    const hasIncorrect = selectedAnswers.some(a => !a.isCorrect);
+    
+    return hasSomeCorrect && (notAllCorrect || hasIncorrect) && !currentAnswer.isCorrect;
+  })();
 
   const handleFinish = async () => {
     if (!test) return;
@@ -189,13 +214,16 @@ export function TestQuestionView({
     <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
       <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
         <ThemedView style={styles.headerContent}>
-          <BackButton onPress={handleBackToFolder} label="Назад" />
+          {test.showBackButton !== false && (
+            <BackButton onPress={handleBackToFolder} label="Назад" />
+          )}
         {/* <ThemedText style={styles.progressText}>
           Вопрос {currentQuestionIndex + 1} из {totalQuestions}
         </ThemedText> */}
         </ThemedView>
-        {/* Навигация по вопросам - показывается только если нет ни одного activationCondition в тесте */}
-        {test.questions && test.questions.length > 0 && 
+        {/* Навигация по вопросам - показывается если showNavigation !== false и нет ни одного activationCondition в тесте */}
+        {test.showNavigation !== false && 
+         test.questions && test.questions.length > 0 && 
          !test.questions.some(q => q.activationCondition) && (
           <ThemedView style={styles.questionsNavigation}>
             {test.questions.map((q, index) => {
@@ -311,48 +339,116 @@ export function TestQuestionView({
                   question.id
                 );
                 const isSelected = selectedAnswers.includes(index);
+                const isAnswerCorrect = answer.isCorrect || false;
 
-                // Определяем иконку для результата (только если показываем результаты)
-                const resultIcon = shouldShowResults && status 
-                  ? (status === 'correct' ? 'checkmark.circle.fill' : 'xmark.circle.fill')
-                  : undefined;
+                // Определяем, был ли ответ выбран (используем сохраненные ответы при показе результатов)
+                const wasSelected = shouldShowResults && currentAnswer
+                  ? currentAnswer.answerIds.map(id => parseInt(id, 10)).includes(index)
+                  : isSelected;
 
-                // Определяем стили для кнопки в зависимости от состояния
-                const buttonStyles: any[] = [styles.answerButton];
+                // Определяем подпись для ответа (только когда показываются результаты)
+                let answerLabel = '';
+                let answerLabelType: 'selected-correct' | 'selected-incorrect' | 'not-selected-correct' | null = null;
+                let shouldShowBadge = false;
                 
-                if (shouldShowResults) {
-                  if (status === 'correct') {
-                    buttonStyles.push({
-                      borderColor: successColor,
-                      backgroundColor: successAlpha10,
-                    });
-                  } else if (status === 'incorrect') {
-                    buttonStyles.push({
-                      borderColor: errorColor,
-                      backgroundColor: errorAlpha10,
+                if (shouldShowResults && currentAnswer) {
+                  // Когда показываются результаты:
+                  if (wasSelected) {
+                    // Пользователь выбрал ответ
+                    if (isAnswerCorrect) {
+                      // Выбрал верный ответ
+                      answerLabel = 'Выбрано';
+                      answerLabelType = 'selected-correct';
+                      shouldShowBadge = true;
+                    } else {
+                      // Выбрал неверный ответ
+                      answerLabel = 'Выбрано';
+                      answerLabelType = 'selected-incorrect';
+                      shouldShowBadge = true;
+                    }
+                  } else if (isAnswerCorrect) {
+                    // Пользователь не выбрал ответ, но ответ верный
+                    answerLabel = 'Не выбрано';
+                    answerLabelType = 'not-selected-correct';
+                    shouldShowBadge = true;
+                  }
+                  // Если пользователь не выбрал неправильный ответ - не показываем badge
+                }
+
+                // Определяем стили для контейнера кнопки в зависимости от состояния
+                const containerStyles: any[] = [styles.answerButtonContainer];
+                
+                if (shouldShowResults && currentAnswer) {
+                  if (wasSelected) {
+                    // Пользователь выбрал ответ
+                    if (isAnswerCorrect) {
+                      // Выбрал верный ответ - зеленый фон
+                      containerStyles.push({
+                        borderColor: successColor,
+                        backgroundColor: successAlpha10,
+                      });
+                    } else {
+                      // Выбрал неверный ответ - красный фон
+                      containerStyles.push({
+                        borderColor: errorColor,
+                        backgroundColor: errorAlpha10,
+                      });
+                    }
+                  } else if (isAnswerCorrect) {
+                    // Пользователь не выбрал ответ, но ответ верный - warning фон
+                    containerStyles.push({
+                      borderColor: warningColor,
+                      backgroundColor: warningAlpha10,
                     });
                   }
+                  // Если пользователь не выбрал неправильный ответ - обычный фон (не меняем)
                 } else if (isSelected) {
-                  buttonStyles.push(styles.answerButtonSelected);
+                  containerStyles.push(styles.answerButtonSelected);
                 }
                 
                 if (shouldShowResults && status === 'should-be-selected') {
-                  buttonStyles.push(styles.answerButtonShouldBeSelected);
+                  containerStyles.push(styles.answerButtonShouldBeSelected);
                 }
 
                 return (
-                  <Button
-                    key={index}
-                    title={answer.answerText}
-                    onPress={() => onAnswerToggle(index)}
-                    disabled={showResult}
-                    variant="default"
-                    size="small"
-                    icon={resultIcon}
-                    iconPosition="right"
-                    fullWidth
-                    style={buttonStyles}
-                      />
+                  <ThemedView key={index} style={[containerStyles, { position: 'relative' }]}>
+                    <Pressable
+                      onPress={() => onAnswerToggle(index)}
+                      disabled={showResult}
+                      style={styles.answerButtonContent}
+                    >
+                      <ThemedText style={styles.answerText} numberOfLines={0}>
+                        {answer.answerText}
+                      </ThemedText>
+                    </Pressable>
+                    {shouldShowBadge && answerLabel && (
+                      <ThemedView
+                        style={[
+                          styles.answerBadge,
+                          answerLabelType === 'selected-correct' && {
+                            backgroundColor: successColor,
+                          },
+                          answerLabelType === 'not-selected-correct' && {
+                            backgroundColor: warningColor,
+                          },
+                          answerLabelType === 'selected-incorrect' && {
+                            backgroundColor: errorColor,
+                          },
+                        ]}
+                      >
+                        <ThemedText
+                          style={[
+                            styles.answerBadgeText,
+                            {
+                              color: '#fff',
+                            },
+                          ]}
+                        >
+                          {answerLabel}
+                        </ThemedText>
+                      </ThemedView>
+                    )}
+                  </ThemedView>
                 );
               })}
             </ThemedView>
@@ -364,6 +460,8 @@ export function TestQuestionView({
                 {
                   backgroundColor: currentAnswer.isCorrect
                     ? successAlpha10
+                    : isPartiallyCorrect
+                    ? warningAlpha10
                     : errorAlpha10,
                 },
               ]}
@@ -372,11 +470,19 @@ export function TestQuestionView({
                 style={[
                   styles.resultMessageText,
                   {
-                    color: currentAnswer.isCorrect ? successColor : errorColor,
+                    color: currentAnswer.isCorrect 
+                      ? successColor 
+                      : isPartiallyCorrect
+                      ? warningColor
+                      : errorColor,
                   },
                 ]}
               >
-                {currentAnswer.isCorrect ? '✓ Правильный ответ!' : '✗ Неправильный ответ'}
+                {currentAnswer.isCorrect 
+                  ? '✓ Правильный ответ!' 
+                  : isPartiallyCorrect
+                  ? '⚠ Частично правильный ответ'
+                  : '✗ Неправильный ответ'}
               </ThemedText>
               {currentAnswer.score > 0 && (
                 <ThemedText style={styles.resultScoreText}>
@@ -386,7 +492,7 @@ export function TestQuestionView({
             </ThemedView>
           )}
           <ThemedView style={styles.buttonsRow}>
-            {!isFirstQuestion && !isTestCompleted ? (
+            {!isFirstQuestion && !isTestCompleted && test.showBackButton !== false ? (
               <>
                 <Pressable
                   onPress={onPrevious}

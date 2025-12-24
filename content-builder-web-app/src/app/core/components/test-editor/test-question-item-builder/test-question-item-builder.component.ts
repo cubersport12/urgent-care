@@ -79,6 +79,19 @@ export class TestQuestionItemBuilderComponent {
 
   private _reset(): void {
     if (this._dialogData.question == null) {
+      // При создании нового вопроса автоматически устанавливаем наименование
+      // Находим максимальный номер из существующих вопросов
+      const existingNumbers = this._dialogData.questions
+        .map((q) => {
+          const match = q.name?.match(/^№(\d+)$/);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(n => n > 0);
+      const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+      const questionNumber = maxNumber + 1;
+      this._form.patchValue({
+        name: `№${questionNumber}`
+      });
       return;
     }
     this._form.reset({
@@ -96,6 +109,19 @@ export class TestQuestionItemBuilderComponent {
     this._files.forEach((file, id) => {
       this._testEditor.addToSaveFile(id, file);
     });
+
+    // Если имя не заполнено, устанавливаем автоматически
+    if (!value.name || value.name.trim() === '') {
+      const existingNumbers = this._dialogData.questions
+        .map((q) => {
+          const match = q.name?.match(/^№(\d+)$/);
+          return match ? parseInt(match[1], 10) : 0;
+        })
+        .filter(n => n > 0);
+      const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+      const questionNumber = maxNumber + 1;
+      value.name = `№${questionNumber}`;
+    }
 
     this._ref.close({
       ...(this._dialogData.question ?? {}),
@@ -131,6 +157,7 @@ export class TestQuestionItemBuilderComponent {
   private _openAnswer(answer: NullableValue<AppTestQuestionAnswerVm>): void {
     this._dialog.open(TestAsnwerBuilderComponent, {
       hasBackdrop: true,
+      width: '500px',
       disableClose: true,
       data: answer ? cloneDeep(answer) : answer
     })
