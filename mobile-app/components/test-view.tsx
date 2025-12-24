@@ -56,7 +56,7 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
                 <ThemedView style={styles.infoItem}>
                   <ThemedView style={styles.infoRowHorizontal}>
                     <IconSymbol name="questionmark.circle.fill" size={28} color={tintColor} />
-                    <ThemedText style={styles.infoValue}>{test.questions.length}</ThemedText>
+                  <ThemedText style={styles.infoValue}>{test.questions.length}</ThemedText>
                   </ThemedView>
                   <ThemedText style={styles.infoLabel}>Вопросов</ThemedText>
                 </ThemedView>
@@ -65,7 +65,7 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
                 <ThemedView style={styles.infoItem}>
                   <ThemedView style={styles.infoRowHorizontal}>
                     <IconSymbol name="star.fill" size={28} color={tintColor} />
-                    <ThemedText style={styles.infoValue}>{test.minScore}</ThemedText>
+                  <ThemedText style={styles.infoValue}>{test.minScore}</ThemedText>
                   </ThemedView>
                   <ThemedText style={styles.infoLabel}>Мин. балл</ThemedText>
                 </ThemedView>
@@ -74,7 +74,7 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
                 <ThemedView style={styles.infoItem}>
                   <ThemedView style={styles.infoRowHorizontal}>
                     <IconSymbol name="exclamationmark.triangle.fill" size={28} color={tintColor} />
-                    <ThemedText style={styles.infoValue}>{test.maxErrors}</ThemedText>
+                  <ThemedText style={styles.infoValue}>{test.maxErrors}</ThemedText>
                   </ThemedView>
                   <ThemedText style={styles.infoLabel}>Макс. ошибок</ThemedText>
                 </ThemedView>

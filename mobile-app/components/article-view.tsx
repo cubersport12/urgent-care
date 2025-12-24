@@ -136,17 +136,18 @@ const ArticleViewContent = memo(({
       ) : pdfUri ? (
         <PdfView
           source={pdfUri}
-          onLoad={() => {
-            // Для веб считаем PDF прочитанным сразу после загрузки
-            // (для PDF в iframe сложно отследить прокрутку)
-            // Для нативных платформ onLoad вызывается только для одностраничных PDF
-            // void markAsReadRef.current();
-          }}
           onPageChanged={(page: number, numberOfPages: number) => {
             // Для нативных платформ отслеживаем переход на последнюю страницу
             if (Platform.OS !== 'web') {
               setCurrentPage(page);
               setTotalPages(numberOfPages);
+            }
+          }}
+          onScrollToEnd={() => {
+            // Для веб-платформы отслеживаем прокрутку до конца
+            if (!isMarkedAsReadRef.current) {
+              isMarkedAsReadRef.current = true;
+              void markAsReadRef.current();
             }
           }}
           onError={(error) => {

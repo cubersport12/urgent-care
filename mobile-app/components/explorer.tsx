@@ -519,7 +519,7 @@ export function Explorer() {
                   onToggleFolders={() => setShowFolders(!showFolders)}
                   onToggleArticles={() => setShowArticles(!showArticles)}
                   onToggleTests={() => setShowTests(!showTests)}
-                />
+            />
               </>
             )}
           </ThemedView>
@@ -578,8 +578,8 @@ export function Explorer() {
                   </Pressable>
                 )}
                 {filteredItems.map(({ item, index }) => {
-                  const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
-                  const isDisabled = isItemDisabled(item, index);
+                const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
+                const isDisabled = isItemDisabled(item, index);
                   
                   // Получаем статистику теста, если это тест
                   const testStats = item.type === 'test' ? testsStatsMap.get(item.data.id) : undefined;
@@ -598,21 +598,21 @@ export function Explorer() {
                     }
                   }
 
-                  return (
-                    <ExplorerItemComponent
-                      key={`${item.type}-${item.data.id}`}
-                      item={item}
-                      onPress={() => handleItemPress(item)}
-                      isRead={isRead}
-                      isDisabled={isDisabled}
+                return (
+                  <ExplorerItemComponent
+                    key={`${item.type}-${item.data.id}`}
+                    item={item}
+                    onPress={() => handleItemPress(item)}
+                    isRead={isRead}
+                    isDisabled={isDisabled}
                       testStats={testStats ? {
                         passed: testStats.passed,
                         completedAt: testStats.completedAt,
                         startedAt: testStats.startedAt,
                       } : undefined}
                       description={description}
-                    />
-                  );
+                  />
+                );
                 })}
               </>
             );

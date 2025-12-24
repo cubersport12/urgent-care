@@ -170,16 +170,16 @@ export function TestQuestionView({
       <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
         <ThemedView style={styles.headerContent}>
           <BackButton onPress={handleBack} label="Назад" />
-          <ThemedText style={styles.progressText}>
-            Вопрос {currentQuestionIndex + 1} из {totalQuestions}
-          </ThemedText>
+        <ThemedText style={styles.progressText}>
+          Вопрос {currentQuestionIndex + 1} из {totalQuestions}
+        </ThemedText>
         </ThemedView>
       </ThemedView>
       <ScrollView style={styles.scrollView}>
         <ThemedView style={styles.content}>
           <ThemedView style={styles.questionContainer}>
-            {question.image && (
-              <ThemedView style={styles.imageContainer}>
+          {question.image && (
+            <ThemedView style={styles.imageContainer}>
                 {isLoadingImage ? (
                   <ThemedText style={styles.imagePlaceholder}>Загрузка изображения...</ThemedText>
                 ) : imageDataUrl ? (
@@ -190,12 +190,12 @@ export function TestQuestionView({
                     transition={200}
                   />
                 ) : (
-                  <ThemedText style={styles.imagePlaceholder}>
-                    [Изображение: {question.image}]
-                  </ThemedText>
+              <ThemedText style={styles.imagePlaceholder}>
+                [Изображение: {question.image}]
+              </ThemedText>
                 )}
-              </ThemedView>
-            )}
+            </ThemedView>
+          )}
             <ThemedText 
               type="subtitle" 
               style={[
@@ -259,7 +259,7 @@ export function TestQuestionView({
                     iconPosition="right"
                     fullWidth
                     style={buttonStyles}
-                  />
+                      />
                 );
               })}
             </ThemedView>
