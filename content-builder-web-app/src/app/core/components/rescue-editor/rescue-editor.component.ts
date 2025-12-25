@@ -7,7 +7,9 @@ import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dial
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatTabsModule } from '@angular/material/tabs';
 import { Store } from '@ngxs/store';
+import { RescueLibraryEditorComponent } from '../rescue-library-editor';
 
 @Injectable({
   providedIn: 'root'
@@ -35,7 +37,9 @@ export class RescueEditorService {
     MatButton,
     ReactiveFormsModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    MatTabsModule,
+    RescueLibraryEditorComponent
   ],
   templateUrl: './rescue-editor.component.html',
   styles: ``

@@ -74,3 +74,46 @@ export const rescueItemSchema = z.object({
     maxDurationMin: z.number()
   })
 });
+
+export const rescueLibraryItemSchema = z.discriminatedUnion('type', [
+  z.object({
+    id: z.string(),
+    order: z.number().nullable().optional(),
+    name: z.string(),
+    parentId: z.string().nullable().optional(),
+    type: z.literal('folder'),
+    description: z.string().nullable().optional()
+  }),
+  z.object({
+    id: z.string(),
+    order: z.number().nullable().optional(),
+    name: z.string(),
+    parentId: z.string().nullable().optional(),
+    type: z.literal('test'),
+    description: z.string().nullable().optional()
+  }),
+  z.object({
+    id: z.string(),
+    order: z.number().nullable().optional(),
+    name: z.string(),
+    parentId: z.string().nullable().optional(),
+    type: z.literal('question'),
+    description: z.string().nullable().optional()
+  }),
+  z.object({
+    id: z.string(),
+    order: z.number().nullable().optional(),
+    name: z.string(),
+    parentId: z.string().nullable().optional(),
+    type: z.literal('medicine'),
+    description: z.string().nullable().optional()
+  }),
+  z.object({
+    id: z.string(),
+    order: z.number().nullable().optional(),
+    name: z.string(),
+    parentId: z.string().nullable().optional(),
+    type: z.literal('unknown'),
+    description: z.string().nullable().optional()
+  })
+]);

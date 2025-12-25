@@ -1,37 +1,40 @@
 <div class="flex flex-col w-full h-full overflow-hidden gap-1 p-2">
-  <form class="flex flex-col h-full w-full gap-1 p-4 overflow-hidden" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
+  <form class="flex flex-col w-full gap-1 p-4 overflow-hidden" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
     <div class="flex gap-1 w-full">
-      <mat-form-field appearance="fill" class="grow">
+        <mat-form-field appearance="fill" class="grow">
         <mat-label>Наименование</mat-label>
         <input matInput [formControl]="_form.controls.name">
       </mat-form-field>
       <mat-form-field appearance="fill" class="grow">
-        <mat-label>Дата создания</mat-label>
-        <input matInput type="datetime-local" [formControl]="_form.controls.createdAt">
+        <mat-label>Описание</mat-label>
+        <input matInput [formControl]="_form.controls.description" />
       </mat-form-field>
-    </div>
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Описание</mat-label>
-      <textarea matInput [formControl]="_form.controls.description" rows="4"></textarea>
-    </mat-form-field>
-    <div class="flex gap-1 w-full">
       <mat-form-field appearance="fill" class="grow">
         <mat-label>Максимальная длительность (минуты)</mat-label>
         <input matInput type="number" [formControl]="_form.controls.data.controls.maxDurationMin" min="1">
       </mat-form-field>
     </div>
   </form>
-  <div class="grow overflow-auto">
-
-  </div>
   <div class="flex w-full justify-end gap-1">
     <button [disabled]="_form.invalid || !_form.dirty || _isPending()" (click)="_handleSubmit()" type="submit" mat-flat-button color="primary">
       <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />
       Сохранить
     </button>
-    <button mat-button color="warn" (click)="_handleClose()">
-      <mat-icon svgIcon="xmark" />
-      Закрыть
-    </button>
   </div>
+  <mat-tab-group class="grow overflow-hidden">
+    <mat-tab label="Сюжет">
+      
+    </mat-tab>
+    <mat-tab label="Библиотека">
+      <div class="w-full h-full overflow-hidden">
+        <app-rescue-library-editor class="w-full h-full" />
+      </div>
+    </mat-tab>
+    <mat-tab label="Завершение">
+      <div class="w-full h-full p-4">
+        <!-- Пока пусто, позже добавится контент -->
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+
 </div>

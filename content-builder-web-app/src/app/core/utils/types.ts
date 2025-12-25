@@ -103,3 +103,27 @@ export type AppRescueItemVm = {
 export type AppRescueItemDataVm = {
   maxDurationMin: number;
 };
+
+// Модель элемента справочника из режима спасения
+// Это может быть как папка так и действие
+export type RescueLibraryItemVm = (RescueLibraryFolderVm | RescueLibraryTestVm | RescueLibraryQuestionVm | RescueLibraryMedicineVm) & { description?: string } | RescueLibraryUnknownVm;
+
+export type RescueLibraryFolderVm = {
+  type: 'folder';
+} & AppBaseVm;
+
+export type RescueLibraryTestVm = {
+  type: 'test';
+} & AppBaseVm;
+
+export type RescueLibraryQuestionVm = {
+  type: 'question';
+} & AppBaseVm;
+
+export type RescueLibraryMedicineVm = {
+  type: 'medicine';
+} & AppBaseVm;
+
+export type RescueLibraryUnknownVm = {
+  type: 'unknown';
+} & AppBaseVm;

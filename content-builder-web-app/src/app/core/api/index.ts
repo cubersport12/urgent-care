@@ -5,4 +5,5 @@ export * from './app-articles-storage.service';
 export * from './app-files-storage.service';
 export * from './app-folders-storage.service';
 export * from './app-rescue-storage.service';
+export * from './app-rescue-library-storage.service';
 export * from './base-storage';
