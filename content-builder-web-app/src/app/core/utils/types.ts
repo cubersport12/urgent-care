@@ -92,3 +92,14 @@ export type AppTestAccessablityConditionArticle = {
   articleId: string;
   isReaded?: NullableValue<boolean>;
 };
+
+// Режим спаасения
+export type AppRescueItemVm = {
+  createdAt: string;
+  description: string;
+  data: AppRescueItemDataVm;
+} & AppBaseVm;
+
+export type AppRescueItemDataVm = {
+  maxDurationMin: number;
+};

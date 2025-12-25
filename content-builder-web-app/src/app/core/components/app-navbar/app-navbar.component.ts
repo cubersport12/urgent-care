@@ -8,6 +8,7 @@ import { ArticleEditorService } from '../article-editor';
 import { AppFoldersStorageService } from '@/core/api';
 import { AppBreadcrumbsComponent } from '../app-breadcrumbs';
 import { TestsEditorService } from '../test-editor';
+import { RescueEditorService } from '../rescue-editor';
 
 @Component({
   selector: 'app-navbar',
@@ -22,6 +23,7 @@ export class AppNavbarComponent extends BaseRoutedClass {
   private readonly _store = inject(Store);
   private readonly _testsEditor = inject(TestsEditorService);
   private readonly _articlesEditor = inject(ArticleEditorService);
+  private readonly _rescueEditor = inject(RescueEditorService);
   private readonly _explorer = inject(FoldersExplorerService);
   private readonly _dispatched = inject(AppLoading);
   private readonly _service = inject(AppFoldersStorageService);
@@ -55,6 +57,10 @@ export class AppNavbarComponent extends BaseRoutedClass {
 
   protected _createTest() {
     this._testsEditor.openTest({ parentId: this._folderId() });
+  }
+
+  protected _createRescue() {
+    this._rescueEditor.openRescue({ parentId: this._folderId() });
   }
 
   protected _navigate(folderId: string): void {

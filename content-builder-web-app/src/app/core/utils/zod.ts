@@ -62,3 +62,15 @@ export const testSchema = z.object({
     isReaded: z.boolean().nullable().optional()
   })).nullable()
 });
+
+export const rescueItemSchema = z.object({
+  id: z.string(),
+  order: z.number().nullable().optional(),
+  name: z.string(),
+  parentId: z.string().nullable().optional(),
+  createdAt: z.string(),
+  description: z.string(),
+  data: z.object({
+    maxDurationMin: z.number()
+  })
+});

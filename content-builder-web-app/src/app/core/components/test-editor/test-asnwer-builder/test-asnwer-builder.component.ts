@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { CdkTableModule } from "@angular/cdk/table";
 
 @Component({
   selector: 'app-test-asnwer-builder',
@@ -18,8 +19,9 @@ import { MatSelectModule } from '@angular/material/select';
     MatFormFieldModule,
     MatInputModule,
     ReactiveFormsModule,
-    MatButton
-  ],
+    MatButton,
+    CdkTableModule
+],
   templateUrl: './test-asnwer-builder.component.html',
   styles: ``
 })
