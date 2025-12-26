@@ -25,7 +25,9 @@
   }
   <mat-tab-group class="grow overflow-hidden">
     <mat-tab label="Сюжет">
-      
+      <app-rescue-stories-builder 
+        [rescueId]="_dialogData.id"
+        [maxDurationMinutes]="_form.value.data?.maxDurationMin ?? 0" />
     </mat-tab>
     <mat-tab label="Библиотека">
       <div class="w-full h-full overflow-hidden">

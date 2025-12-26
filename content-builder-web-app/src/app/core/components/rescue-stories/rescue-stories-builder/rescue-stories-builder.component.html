@@ -1,0 +1,71 @@
+<div class="flex flex-col gap-4 p-1">
+  <div class="flex justify-between items-center">
+    <div class="text-sm text-gray-600">
+      Общая длительность: {{ _totalDuration() }} / {{ maxDurationMinutes() }} минут
+      @if (_totalDuration() > maxDurationMinutes()) {
+        <span class="text-red-500"> (превышена максимальная длительность)</span>
+      }
+    </div>
+    <div class="flex gap-2">
+      <button 
+        type="button" 
+        mat-flat-button 
+        color="primary"
+        (click)="_addStory()">
+        <mat-icon [svgIcon]="'circle-plus'"></mat-icon>
+        Создать сюжет
+      </button>
+      <button 
+        type="button" 
+        mat-flat-button 
+        color="primary"
+        [disabled]="_isPending() || _storiesArray().length === 0 || !rescueId() || rescueId()!.length === 0"
+        (click)="_handleSave()">
+        <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'"></mat-icon>
+        Сохранить
+      </button>
+    </div>
+  </div>
+
+  <mat-accordion [multi]="false">
+    @for (story of _storiesArray(); track story.id; let i = $index) {
+      <mat-expansion-panel 
+        [expanded]="_expandedIndex() === i"
+        (opened)="_onPanelOpened(i)"
+        (closed)="_onPanelClosed()">
+        <mat-expansion-panel-header>
+          <div class="story-header">
+            <div class="story-info">
+              <span class="font-medium">{{ story.name }}</span>
+              <span class="text-sm text-gray-600">
+                {{ _formatTimeFromMinutes(_parseTimeToMinutes(story.data.startAt)) }} - 
+                {{ _formatTimeFromMinutes(_parseTimeToMinutes(story.data.endAt)) }}
+              </span>
+              <span class="text-xs text-gray-500">
+                ({{ _getStoryDuration(i) }} мин)
+              </span>
+            </div>
+            <button 
+            class="mr-1"
+              type="button"
+              mat-icon-button
+              (click)="_deleteStory(i); $event.stopPropagation()"
+              color="warn">
+              <mat-icon [svgIcon]="'trash'"></mat-icon>
+            </button>
+          </div>
+        </mat-expansion-panel-header>
+        
+        <div class="p-4">
+          <app-rescue-story-item-form
+            [storyData]="story.data"
+            [storyName]="story.name"
+            [startAtDisabled]="_isStartAtDisabled(i)"
+            [maxDurationMinutes]="maxDurationMinutes()"
+            [totalDurationMinutes]="_getTotalDurationUpTo(i) - _getStoryDuration(i)"
+            (submitEvent)="_onStoryChange(i, $event)" />
+        </div>
+      </mat-expansion-panel>
+    }
+  </mat-accordion>
+</div>

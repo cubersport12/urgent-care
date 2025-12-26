@@ -1,0 +1,36 @@
+<form class="flex flex-col gap-4" [formGroup]="_form">
+  <div class="flex gap-2">
+    <mat-form-field appearance="fill" class="flex-1">
+      <mat-label>Название сюжета</mat-label>
+      <input 
+        matInput 
+        [formControl]="_form.controls.name"
+        placeholder="Введите название сюжета">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="flex-1">
+      <mat-label>Время начала (HH:mm:ss)</mat-label>
+      <input 
+        matInput 
+        type="time"
+        step="1"
+        [formControl]="_form.controls.startAt"
+        [disabled]="startAtDisabled()"
+        placeholder="00:00:00">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="flex-1">
+      <mat-label>Время окончания (HH:mm:ss)</mat-label>
+      <input 
+        matInput 
+        type="time"
+        step="1"
+        [formControl]="_form.controls.endAt"
+        placeholder="00:00:00">
+    </mat-form-field>
+  </div>
+  <div class="text-sm text-gray-600">
+    Длительность: {{ _duration() }} минут
+    @if (!_isValidDuration()) {
+      <span class="text-red-500"> (превышена максимальная длительность)</span>
+    }
+  </div>
+</form>

@@ -149,3 +149,27 @@ export type RescueLibraryTriggerVm = {
 export type RescueLibraryUnknownVm = {
   type: 'unknown';
 } & AppBaseVm;
+
+export type RescueStoryVm = {
+  rescueId: string;
+  description?: string;
+  createAt?: string;
+  data: RescueStoryDataVm;
+} & Omit<AppBaseVm, 'parentId'>;
+
+export type RescueStoryDataVm = {
+  startAt: string;
+  endAt: string;
+  scene: RescueStorySceneVm;
+};
+
+export type RescueStorySceneVm = {
+  backgroundImage: string;
+  triggers: RescueStorySceneTriggerVm[];
+};
+
+export type RescueStorySceneTriggerVm = {
+  triggerId: string;
+  position: Record<'x' | 'y', number>;
+  size: Record<'width' | 'height', number>;
+};

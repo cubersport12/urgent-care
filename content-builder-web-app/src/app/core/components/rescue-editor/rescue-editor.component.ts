@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Store } from '@ngxs/store';
 import { RescueLibraryEditorComponent } from '../rescue-library-editor';
+import { RescueStoriesBuilderComponent } from '../rescue-stories';
 
 @Injectable({
   providedIn: 'root'
@@ -39,7 +40,8 @@ export class RescueEditorService {
     MatFormFieldModule,
     MatInputModule,
     MatTabsModule,
-    RescueLibraryEditorComponent
+    RescueLibraryEditorComponent,
+    RescueStoriesBuilderComponent
   ],
   templateUrl: './rescue-editor.component.html',
   styles: ``

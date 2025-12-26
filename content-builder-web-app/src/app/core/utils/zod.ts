@@ -141,3 +141,37 @@ export const rescueLibraryItemSchema = z.discriminatedUnion('type', [
     }).nullable().optional()
   })
 ]);
+
+export const rescueStorySceneTriggerSchema = z.object({
+  triggerId: z.string(),
+  position: z.object({
+    x: z.number(),
+    y: z.number()
+  }),
+  size: z.object({
+    width: z.number(),
+    height: z.number()
+  })
+});
+
+export const rescueStorySceneSchema = z.object({
+  backgroundImage: z.string(),
+  triggers: z.array(rescueStorySceneTriggerSchema)
+});
+
+export const rescueStoryDataSchema = z.object({
+  startAt: z.string(),
+  endAt: z.string(),
+  scene: rescueStorySceneSchema
+});
+
+export const rescueStorySchema = z.object({
+  id: z.string(),
+  order: z.number().nullable().optional(),
+  name: z.string(),
+  parentId: z.string().nullable().optional(),
+  rescueId: z.string(),
+  description: z.string().nullable().optional(),
+  createAt: z.string().nullable().optional(),
+  data: rescueStoryDataSchema
+});
