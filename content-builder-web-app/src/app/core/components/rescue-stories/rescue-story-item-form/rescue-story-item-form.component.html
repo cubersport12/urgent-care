@@ -33,4 +33,130 @@
       <span class="text-red-500"> (превышена максимальная длительность)</span>
     }
   </div>
+
+  <!-- Scene Editor -->
+  <div class="scene-editor">
+    <!-- Tree Panel (Left) -->
+    <div class="tree-panel">
+      <app-rescue-library-tree (itemSelect)="_onTreeItemSelect($event)"></app-rescue-library-tree>
+    </div>
+
+    <!-- Image Panel (Center) -->
+    <div class="image-panel">
+      <button 
+        type="button"
+        mat-flat-button 
+        color="primary"
+        class="upload-button"
+        (click)="_triggerFileInput()">
+        <mat-icon [svgIcon]="'upload'"></mat-icon>
+        Загрузить изображение
+      </button>
+      <input 
+        #fileInput
+        type="file" 
+        accept="image/*" 
+        style="display: none;"
+        (change)="_onFileSelected($event)">
+      
+      <div 
+        #imageContainer
+        class="image-container"
+        [class.has-image]="_imagePreviewUrl()"
+        (dragover)="_onImageContainerDragOver($event)"
+        (drop)="_onImageContainerDrop($event)"
+        (click)="_onImageContainerClick($event)">
+        @if (_imagePreviewUrl()) {
+          <img [src]="_imagePreviewUrl()!" class="scene-image" alt="Scene background">
+        } @else {
+          <div class="flex items-center justify-center h-full text-gray-400">
+            Перетащите изображение или нажмите кнопку загрузки
+          </div>
+        }
+        
+        @for (trigger of storyData().scene.triggers; track trigger.triggerId) {
+          <div 
+            class="scene-element"
+            [class.selected]="_isElementSelected(trigger)"
+            [style]="_getElementStyle(trigger)"
+            draggable="true"
+            (click)="_onElementClick(trigger, $event)"
+            (dragstart)="_onElementDragStart($event, trigger)"
+            (dragover)="_onElementDragOver($event)"
+            (drop)="_onElementDrop($event)"
+            (dragend)="_onElementDragEnd($event)">
+            <mat-icon [svgIcon]="_getItemIcon(trigger.triggerId)"></mat-icon>
+            <span class="ml-1 text-xs">{{ _getItemName(trigger.triggerId) }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Params Panel (Right) -->
+    <div class="params-panel">
+      @if (_selectedElement()) {
+        <div class="flex flex-col gap-4">
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-medium">Параметры элемента</h3>
+            <button 
+              type="button"
+              mat-icon-button
+              color="warn"
+              (click)="_deleteSelectedElement()">
+              <mat-icon [svgIcon]="'trash'"></mat-icon>
+            </button>
+          </div>
+          <div class="text-sm text-gray-600 mb-2">
+            {{ _getItemName(_selectedElement()!.triggerId) }}
+          </div>
+          
+          <form [formGroup]="_elementParamsForm" class="flex flex-col gap-4">
+            <mat-form-field appearance="fill">
+              <mat-label>Позиция X (%)</mat-label>
+              <input 
+                matInput 
+                type="number"
+                [formControl]="_elementParamsForm.controls.positionX"
+                min="0"
+                max="100">
+            </mat-form-field>
+            
+            <mat-form-field appearance="fill">
+              <mat-label>Позиция Y (%)</mat-label>
+              <input 
+                matInput 
+                type="number"
+                [formControl]="_elementParamsForm.controls.positionY"
+                min="0"
+                max="100">
+            </mat-form-field>
+            
+            <mat-form-field appearance="fill">
+              <mat-label>Ширина (%)</mat-label>
+              <input 
+                matInput 
+                type="number"
+                [formControl]="_elementParamsForm.controls.width"
+                min="1"
+                max="100">
+            </mat-form-field>
+            
+            <mat-form-field appearance="fill">
+              <mat-label>Высота (%)</mat-label>
+              <input 
+                matInput 
+                type="number"
+                [formControl]="_elementParamsForm.controls.height"
+                min="1"
+                max="100">
+            </mat-form-field>
+          </form>
+        </div>
+      } @else {
+        <div class="text-gray-400 text-center">
+          Выберите элемент на изображении для редактирования параметров
+        </div>
+      }
+    </div>
+  </div>
 </form>

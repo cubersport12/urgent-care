@@ -152,6 +152,17 @@ export class RescueLibraryTreeComponent {
     this.itemSelect.emit(item);
   }
 
+  protected _onDragStart(event: DragEvent, item: RescueLibraryItemVm): void {
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'copy';
+      event.dataTransfer.setData('text/plain', item.id);
+      // Сохраняем данные элемента в dataTransfer для использования в drop
+      event.dataTransfer.setData('application/json', JSON.stringify({ id: item.id, name: item.name, type: item.type }));
+    }
+    // Эмитим событие выбора для синхронизации с родительским компонентом
+    this.itemSelect.emit(item);
+  }
+
   private _buildTree(items: RescueLibraryItemVm[]): TreeNode[] {
     const itemMap = new Map<string, RescueLibraryItemVm>();
     items.forEach(item => itemMap.set(item.id, item));

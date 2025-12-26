@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIcon } from '@angular/material/icon';
@@ -6,6 +6,9 @@ import { RescueStoryVm, RescueStoryDataVm, generateGUID, NullableValue } from '@
 import { RescueStoryItemFormComponent } from '../rescue-story-item-form';
 import { Store } from '@ngxs/store';
 import { RescueStoriesActions, RescueStoriesState, AppLoading } from '@/core/store';
+import { forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { AppFilesStorageService } from '@/core/api';
 
 @Component({
   selector: 'app-rescue-stories-builder',
@@ -36,12 +39,14 @@ import { RescueStoriesActions, RescueStoriesState, AppLoading } from '@/core/sto
 export class RescueStoriesBuilderComponent {
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
+  private readonly _filesStorage = inject(AppFilesStorageService);
 
   rescueId = input<NullableValue<string>>(null);
   maxDurationMinutes = input.required<number>();
 
   protected readonly _expandedIndex = signal<number | null>(null);
   protected readonly _storiesArray = signal<RescueStoryVm[]>([]);
+  private readonly _pendingImageFiles = signal<Map<string, File>>(new Map());
 
   protected readonly _stories = computed(() => {
     const rescueId = this.rescueId();
@@ -220,14 +225,68 @@ export class RescueStoriesBuilderComponent {
     this._storiesArray.set(updatedStories);
   }
 
+  protected _onImageFileEvent(storyIndex: number, event: { storyId: string; file: File }): void {
+    const pendingFiles = new Map(this._pendingImageFiles());
+    pendingFiles.set(event.storyId, event.file);
+    this._pendingImageFiles.set(pendingFiles);
+  }
+
   protected _handleSave(): void {
     const stories = this._storiesArray();
     const rescueId = this.rescueId();
+    const pendingFiles = this._pendingImageFiles();
 
     if (!rescueId || rescueId.length === 0) {
       return; // Нельзя сохранить без rescueId
     }
 
+    // Загружаем все изображения перед сохранением историй
+    const imageUploads = Array.from(pendingFiles.entries()).map(([storyId, file]) => {
+      const fileName = `rescue-story-${storyId}-${Date.now()}-${file.name}`;
+      return this._filesStorage.uploadFile(fileName, file).pipe(
+        map(imagePath => ({ storyId, imagePath }))
+      );
+    });
+
+    if (imageUploads.length > 0) {
+      forkJoin(imageUploads).subscribe({
+        next: (uploadResults) => {
+          // Обновляем пути к изображениям в историях
+          const imagePathMap = new Map(uploadResults.map(r => [r.storyId, r.imagePath]));
+          const updatedStories = stories.map((story) => {
+            const imagePath = imagePathMap.get(story.id);
+            if (imagePath) {
+              return {
+                ...story,
+                data: {
+                  ...story.data,
+                  scene: {
+                    ...story.data.scene,
+                    backgroundImage: imagePath
+                  }
+                }
+              };
+            }
+            return story;
+          });
+
+          // Сохраняем истории
+          this._saveStories(updatedStories, rescueId);
+          // Очищаем pending файлы
+          this._pendingImageFiles.set(new Map());
+        },
+        error: (err) => {
+          console.error('Ошибка загрузки изображений:', err);
+        }
+      });
+    }
+    else {
+      // Нет изображений для загрузки, просто сохраняем истории
+      this._saveStories(stories, rescueId);
+    }
+  }
+
+  private _saveStories(stories: RescueStoryVm[], rescueId: string): void {
     stories.forEach((story) => {
       // Убеждаемся, что rescueId установлен
       const storyToSave: RescueStoryVm = {

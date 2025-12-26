@@ -60,10 +60,12 @@
           <app-rescue-story-item-form
             [storyData]="story.data"
             [storyName]="story.name"
+            [storyId]="story.id"
             [startAtDisabled]="_isStartAtDisabled(i)"
             [maxDurationMinutes]="maxDurationMinutes()"
             [totalDurationMinutes]="_getTotalDurationUpTo(i) - _getStoryDuration(i)"
-            (submitEvent)="_onStoryChange(i, $event)" />
+            (submitEvent)="_onStoryChange(i, $event)"
+            (imageFileEvent)="_onImageFileEvent(i, $event)" />
         </div>
       </mat-expansion-panel>
     }
