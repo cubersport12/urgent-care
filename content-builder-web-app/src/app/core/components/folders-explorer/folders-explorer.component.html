@@ -11,7 +11,7 @@
     </ng-template>
   } @else {
     @for (item of _options(); track $index) {
-      <div class="flex flex-col w-24 gap-1 items-center relative" cdkDrag [cdkDragData]="item">
+      <div class="flex flex-col w-24 gap-1 items-center relative" cdkDrag [cdkDragData]="item" [style.opacity]="_isHidden(item) ? 0.6 : 1">
         @if (_isPending(item.id)()) {
           <ng-container [ngTemplateOutlet]="skeletonItem"></ng-container>
         } @else {

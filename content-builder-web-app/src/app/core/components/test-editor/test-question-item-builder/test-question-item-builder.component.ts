@@ -34,7 +34,7 @@ import { AppFilesStorageService } from '@/core/api';
 })
 export class TestQuestionItemBuilderComponent {
   private readonly _filesStorage = inject(AppFilesStorageService);
-  private readonly _testEditor = inject(TestEditorComponent);
+  private readonly _testEditor = inject(TestEditorComponent, { optional: true });
   private readonly _ref = inject(MatDialogRef);
   private readonly _files = new Map<string, Blob>();
   private readonly _dialog = inject(MatDialog);
@@ -106,9 +106,14 @@ export class TestQuestionItemBuilderComponent {
       delete value.activationCondition;
       delete value.useActivationCondition;
     }
-    this._files.forEach((file, id) => {
-      this._testEditor.addToSaveFile(id, file);
-    });
+    if (this._testEditor) {
+      this._files.forEach((file, id) => {
+        this._testEditor!.addToSaveFile(id, file);
+      });
+    }
+    else {
+      console.warn('Файлы не будут сохранены');
+    }
 
     // Если имя не заполнено, устанавливаем автоматически
     if (!value.name || value.name.trim() === '') {
@@ -123,11 +128,15 @@ export class TestQuestionItemBuilderComponent {
       value.name = `№${questionNumber}`;
     }
 
-    this._ref.close({
+    const result = {
       ...(this._dialogData.question ?? {}),
       id: this._id,
       ...value
-    });
+    } as AppTestQuestionVm & { files?: Map<string, Blob> };
+    if (!this._testEditor) {
+      result['files'] = this._files;
+    }
+    this._ref.close(result);
   }
 
   protected _handleClose(): void {

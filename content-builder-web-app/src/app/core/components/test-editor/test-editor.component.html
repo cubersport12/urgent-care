@@ -39,6 +39,9 @@
       <mat-checkbox [formControl]="_form.controls.showBackButton">
         Показывать кнопку назад
       </mat-checkbox>
+      <mat-checkbox [formControl]="_form.controls.hidden">
+        Скрытый
+      </mat-checkbox>
     </div>
     <app-test-conditions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.conditions" />
     <app-test-questions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.questions" />

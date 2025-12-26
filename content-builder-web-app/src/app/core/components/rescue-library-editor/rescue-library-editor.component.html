@@ -21,61 +21,56 @@
         <mat-icon svgIcon="kit-medical" />
         <span>Медикамент</span>
       </button>
+      <button mat-menu-item (click)="_handleCreate('trigger')">
+        <mat-icon svgIcon="bolt" />
+        <span>Триггер</span>
+      </button>
     </mat-menu>
     <button mat-flat-button color="warn" (click)="_handleDelete()" [disabled]="_isPending() || !_selectedItem()">
       <mat-icon svgIcon="trash" />
       Удалить
     </button>
   </div>
-  <div class="flex flex-1 overflow-hidden">
-    <div class="tree-container">
-      <div class="flex flex-col">
-        @for (flatItem of _visibleItems(); track flatItem.item.id) {
-          <button 
-            class="w-full text-left p-2 hover:bg-gray-700 flex items-center" 
-            (click)="_selectItem(flatItem.item)" 
-            [class.bg-blue-100]="_selectedItem()?.id === flatItem.item.id" 
-            [class.text-blue-900]="_selectedItem()?.id === flatItem.item.id"
-            [style.padding-left.px]="flatItem.level * 20 + 8">
-
-            <button 
-              [style.opacity]="_hasChildren(flatItem.item.id) ? 1 : 0"
-              class="mr-1 flex items-center justify-center hover:bg-gray-600 rounded"
-              (click)="_toggleExpand(flatItem.item.id, $event)"
-              type="button"
-              [title]="_isExpanded(flatItem.item.id) ? 'Свернуть' : 'Развернуть'">
-              <mat-icon [svgIcon]="_isExpanded(flatItem.item.id) ? 'chevron-down' : 'chevron-right'">
-              </mat-icon>
-            </button>
-            <mat-icon class=" mr-2" [svgIcon]="_getIconForType(flatItem.item.type)">
-            </mat-icon>
-            {{ flatItem.item.name }}
-          </button>
+  <as-split [direction]="'horizontal'" [gutterSize]="8" class="flex-1 overflow-hidden">
+    <as-split-area [size]="30" [minSize]="20" [maxSize]="60">
+      <app-rescue-library-tree 
+        [selectedItemId]="_selectedItem()?.id ?? null"
+        (itemSelect)="_onItemSelect($event)" />
+    </as-split-area>
+    <as-split-area [size]="70" [minSize]="40">
+      <div class="form-container">
+        @if (_selectedItem();as item) {
+          @if (_isFolder(item)) {
+            <app-rescue-library-folder-form 
+                [selectedItem]="item"
+                (submitEvent)="_handleSubmit($event)" />
+          }
+          @if (_isTest(item)) {
+            <app-rescue-library-test-form 
+              [selectedItem]="item"
+              (submitEvent)="_handleSubmit($event)"
+              (testCreatedOrEdited)="_handleTestCreatedOrEdited()" />
+          }
+          @if (_isQuestion(item)) {
+            <app-rescue-library-question-form 
+                [selectedItem]="item"
+                (submitEvent)="_handleSubmit($event)"
+                (questionCreatedOrEdited)="_handleQuestionCreatedOrEdited()" />
+          }
+          @if (_isMedicine(item)) {
+            <app-rescue-library-medicine-form 
+                [selectedItem]="item"
+                (submitEvent)="_handleSubmit($event)" />
+          }
+          @if (_isTrigger(item)) {
+            <app-rescue-library-trigger-form 
+                [selectedItem]="item"
+                (submitEvent)="_handleSubmit($event)" />
+          }
+        } @else {
+          <h5>Выберите элемент из дерева</h5>
         }
       </div>
-    </div>
-    <div class="form-container">
-    @if (_selectedItem()) {
-      <form class="flex flex-col gap-4" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
-        <mat-form-field appearance="fill" class="w-full">
-          <mat-label>Наименование</mat-label>
-          <input matInput [formControl]="_form.controls.name">
-        </mat-form-field>
-        <mat-form-field appearance="fill" class="w-full">
-          <mat-label>Описание</mat-label>
-          <textarea matInput [formControl]="_form.controls.description" rows="4"></textarea>
-        </mat-form-field>
-        <div class="flex justify-end gap-2">
-          <button [disabled]="_form.invalid || !_form.dirty || _isPending()" type="submit" mat-flat-button color="primary">
-            <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />
-            Сохранить
-          </button>
-        </div>
-      </form>
-    } @else {
-      <div class="flex items-center justify-center h-full text-gray-500">
-        Выберите элемент из дерева для редактирования
-      </div>
-    }
-  </div>
+    </as-split-area>
+  </as-split>
 </div>

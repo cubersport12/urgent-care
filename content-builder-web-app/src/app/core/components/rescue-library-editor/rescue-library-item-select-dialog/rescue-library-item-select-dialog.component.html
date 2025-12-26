@@ -1,0 +1,11 @@
+<div class="flex flex-col gap-1 w-full h-full overflow-hidden p-2">
+  <h2 class="text-lg font-semibold mb-4">Выберите элемент библиотеки</h2>
+  <div class="tree-container">
+    <app-rescue-library-tree 
+      [selectedItemId]="_data.selectedItemId ?? null"
+      (itemSelect)="_onItemSelect($event)" />
+  </div>
+  <div class="flex justify-end gap-2">
+    <button type="button" mat-button (click)="_onCancel()">Закрыть</button>
+  </div>
+</div>

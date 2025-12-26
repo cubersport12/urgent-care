@@ -15,12 +15,14 @@
       </mat-form-field>
     </div>
   </form>
-  <div class="flex w-full justify-end gap-1">
-    <button [disabled]="_form.invalid || !_form.dirty || _isPending()" (click)="_handleSubmit()" type="submit" mat-flat-button color="primary">
-      <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />
-      Сохранить
-    </button>
-  </div>
+  @if (_form.dirty) {
+    <div class="flex w-full justify-end gap-1">
+      <button [disabled]="_form.invalid || !_form.dirty || _isPending()" (click)="_handleSubmit()" type="submit" mat-flat-button color="primary">
+        <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />
+        Сохранить
+      </button>
+    </div>
+  }
   <mat-tab-group class="grow overflow-hidden">
     <mat-tab label="Сюжет">
       
@@ -36,5 +38,10 @@
       </div>
     </mat-tab>
   </mat-tab-group>
-
+  <div class="flex w-full justify-end gap-1">
+    <button mat-button color="warn" (click)="_handleClose()">
+      <mat-icon svgIcon="xmark" />
+      Закрыть
+    </button>
+  </div>
 </div>

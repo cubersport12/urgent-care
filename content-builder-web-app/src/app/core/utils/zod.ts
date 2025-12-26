@@ -15,6 +15,30 @@ export const articleSchema = z.object({
   includeToStatistics: z.boolean().nullable(),
   linksToArticles: z.array(z.object({ key: z.string(), articleId: z.string() })).nullable()
 });
+
+export const questionSchema = z.object({
+  id: z.string(),
+  order: z.number().nullable(),
+  questionText: z.string(),
+  name: z.string(),
+  image: z.string().nullable().optional(),
+  activationCondition: z.object({
+    kind: z.enum([AppTestQuestionActivationConditionKind.CompleteQuestion]),
+    data: z.object({
+      type: z.enum(['score', 'correct']),
+      score: z.number().nullable().optional(),
+      isCorrect: z.boolean().nullable().optional()
+    }),
+    relationQuestionId: z.string()
+  }).nullable().optional(),
+  answers: z.array(z.object({
+    answerText: z.string(),
+    isCorrect: z.boolean(),
+    score: z.number().nullable(),
+    image: z.string().nullable().optional()
+  })).nullable().optional()
+});
+
 export const testSchema = z.object({
   id: z.string(),
   order: z.number().nullable(),
@@ -27,28 +51,8 @@ export const testSchema = z.object({
   showSkipButton: z.boolean().nullable().optional(),
   showNavigation: z.boolean().nullable().optional(),
   showBackButton: z.boolean().nullable().optional(),
-  questions: z.array(z.object({
-    id: z.string(),
-    order: z.number().nullable(),
-    questionText: z.string(),
-    name: z.string(),
-    image: z.string().nullable().optional(),
-    activationCondition: z.object({
-      kind: z.enum([AppTestQuestionActivationConditionKind.CompleteQuestion]),
-      data: z.object({
-        type: z.enum(['score', 'correct']),
-        score: z.number().nullable().optional(),
-        isCorrect: z.boolean().nullable().optional()
-      }),
-      relationQuestionId: z.string()
-    }).nullable().optional(),
-    answers: z.array(z.object({
-      answerText: z.string(),
-      isCorrect: z.boolean(),
-      score: z.number().nullable(),
-      image: z.string().nullable().optional()
-    })).nullable()
-  })).nullable().optional(),
+  hidden: z.boolean().nullable().optional(),
+  questions: z.array(questionSchema).nullable().optional(),
   accessabilityConditions: z.array(z.object({
     logicalOperator: z.enum([AppTestAccessablityLogicalOperator.And, AppTestAccessablityLogicalOperator.Or]),
     type: z.enum(['test', 'article']),
@@ -90,6 +94,9 @@ export const rescueLibraryItemSchema = z.discriminatedUnion('type', [
     name: z.string(),
     parentId: z.string().nullable().optional(),
     type: z.literal('test'),
+    data: z.object({
+      testId: z.string().nullable().optional()
+    }).optional().nullable(),
     description: z.string().nullable().optional()
   }),
   z.object({
@@ -98,6 +105,9 @@ export const rescueLibraryItemSchema = z.discriminatedUnion('type', [
     name: z.string(),
     parentId: z.string().nullable().optional(),
     type: z.literal('question'),
+    data: z.object({
+      question: questionSchema.optional().nullable()
+    }).nullable().optional(),
     description: z.string().nullable().optional()
   }),
   z.object({
@@ -115,5 +125,16 @@ export const rescueLibraryItemSchema = z.discriminatedUnion('type', [
     parentId: z.string().nullable().optional(),
     type: z.literal('unknown'),
     description: z.string().nullable().optional()
+  }),
+  z.object({
+    id: z.string(),
+    order: z.number().nullable().optional(),
+    name: z.string(),
+    parentId: z.string().nullable().optional(),
+    type: z.literal('trigger'),
+    description: z.string().nullable().optional(),
+    data: z.object({
+      rescueLibraryItemId: z.string().nullable().optional()
+    }).nullable().optional()
   })
 ]);

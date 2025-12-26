@@ -63,7 +63,8 @@ export class RescueLibraryState {
     return this._rescueLibraryStorage.updateRescueLibraryItem({ id: rescueLibraryItemId, ...payload } as RescueLibraryItemVm)
       .pipe(tap(() => {
         ctx.setState(patch({
-          rescueLibraryItems: updateItem(x => x.id === rescueLibraryItemId, x => ({ ...x, ...payload }))
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          rescueLibraryItems: updateItem(x => x.id === rescueLibraryItemId, x => ({ ...x, ...payload as any }))
         }));
       }));
   }

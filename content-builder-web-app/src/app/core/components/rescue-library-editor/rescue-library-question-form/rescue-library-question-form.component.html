@@ -1,0 +1,29 @@
+<form class="flex flex-col gap-4" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
+  <mat-form-field appearance="fill" class="w-full">
+    <mat-label>Наименование</mat-label>
+    <input matInput [formControl]="_form.controls.name">
+  </mat-form-field>
+  <mat-form-field appearance="fill" class="w-full">
+    <mat-label>Описание</mat-label>
+    <textarea matInput [formControl]="_form.controls.description" rows="2"></textarea>
+  </mat-form-field>
+  <div class="flex gap-2">
+    @if (_hasQuestion()) {
+      <button type="button" mat-flat-button color="primary" (click)="_handleCreateOrEditQuestion()">
+        <mat-icon svgIcon="pen-to-square" />
+        Редактировать вопрос
+      </button>
+    } @else {
+      <button type="button" mat-flat-button color="primary" (click)="_handleCreateOrEditQuestion()">
+        <mat-icon svgIcon="plus" />
+        Создать вопрос
+      </button>
+    }
+  </div>
+  <div class="flex justify-end gap-2">
+    <button [disabled]="_form.invalid || !_form.dirty || _isPending()" type="submit" mat-flat-button color="primary">
+      <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />
+      Сохранить
+    </button>
+  </div>
+</form>

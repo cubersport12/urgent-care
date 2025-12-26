@@ -75,13 +75,14 @@ export class TestEditorComponent {
     includeToStatistics: new FormControl<boolean>(false),
     showSkipButton: new FormControl<boolean>(true),
     showNavigation: new FormControl<boolean>(true),
-    showBackButton: new FormControl<boolean>(true)
+    showBackButton: new FormControl<boolean>(true),
+    hidden: new FormControl<boolean>(false)
   });
 
   // Вычисляем сумму правильных баллов
   protected readonly _totalCorrectScore = computed(() => {
     const questions = this._form.value.questions ?? [];
-    return sum(questions.map(q => {
+    return sum(questions.map((q) => {
       if (!q.answers || q.answers.length === 0) return 0;
       // Суммируем баллы правильных ответов
       return sum(q.answers
@@ -94,7 +95,7 @@ export class TestEditorComponent {
   protected readonly _scoreValidation = computed(() => {
     const minScore = this._form.value.minScore;
     const totalScore = this._totalCorrectScore();
-    
+
     if (minScore == null || totalScore === 0) {
       return { type: null, message: null };
     }
@@ -130,7 +131,7 @@ export class TestEditorComponent {
   }
 
   private _reset(): void {
-    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton } = this._dialogData;
+    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden } = this._dialogData;
     this._form.reset({
       name,
       conditions: accessabilityConditions ?? [],
@@ -141,7 +142,8 @@ export class TestEditorComponent {
       includeToStatistics,
       showSkipButton: showSkipButton ?? true,
       showNavigation: showNavigation ?? true,
-      showBackButton: showBackButton ?? true
+      showBackButton: showBackButton ?? true,
+      hidden: hidden ?? false
     });
   }
 
@@ -152,7 +154,7 @@ export class TestEditorComponent {
   }
 
   private _getTestVm(): AppTestVm {
-    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton } = this._form.value;
+    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden } = this._form.value;
     const result: AppTestVm = {
       ...(this._dialogData ?? {}),
       name: name!,
@@ -164,7 +166,8 @@ export class TestEditorComponent {
       questions: questions ?? [],
       showSkipButton,
       showNavigation,
-      showBackButton
+      showBackButton,
+      hidden
     };
     if ('type' in result) {
       delete result['type'];

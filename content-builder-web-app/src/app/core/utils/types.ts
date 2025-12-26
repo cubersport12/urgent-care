@@ -32,6 +32,7 @@ export type AppTestVm = {
   showSkipButton?: NullableValue<boolean>;
   showNavigation?: NullableValue<boolean>;
   showBackButton?: NullableValue<boolean>;
+  hidden?: NullableValue<boolean>;
 } & AppBaseVm;
 
 export type AppTestQuestionVm = {
@@ -106,22 +107,43 @@ export type AppRescueItemDataVm = {
 
 // Модель элемента справочника из режима спасения
 // Это может быть как папка так и действие
-export type RescueLibraryItemVm = (RescueLibraryFolderVm | RescueLibraryTestVm | RescueLibraryQuestionVm | RescueLibraryMedicineVm) & { description?: string } | RescueLibraryUnknownVm;
+export type RescueLibraryItemVm = (RescueLibraryFolderVm | RescueLibraryTestVm | RescueLibraryQuestionVm | RescueLibraryMedicineVm | RescueLibraryTriggerVm) | RescueLibraryUnknownVm;
 
 export type RescueLibraryFolderVm = {
   type: 'folder';
+  description?: string;
 } & AppBaseVm;
 
 export type RescueLibraryTestVm = {
   type: 'test';
+  data?: {
+    testId: string;
+  };
+  description?: string;
 } & AppBaseVm;
 
 export type RescueLibraryQuestionVm = {
   type: 'question';
+  data?: {
+    question?: AppTestQuestionVm;
+  };
+  description?: string;
 } & AppBaseVm;
 
 export type RescueLibraryMedicineVm = {
   type: 'medicine';
+  description?: string;
+} & AppBaseVm;
+
+export type RescueLibraryTriggerVm = {
+  type: 'trigger';
+  description?: string;
+  data?: {
+    buttonType: 'button' | 'toggle';
+    onSvg?: string;
+    offSvg?: string;
+    rescueLibraryItemId?: string;
+  };
 } & AppBaseVm;
 
 export type RescueLibraryUnknownVm = {

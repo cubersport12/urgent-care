@@ -1,0 +1,38 @@
+<div class="tree-container">
+  <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
+    <!-- Leaf node template -->
+    <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding>
+      <button 
+        type="button"
+        class="w-full text-left p-2 hover:bg-gray-600 flex items-center" 
+        (click)="_selectItem(node.item)" 
+        [class.bg-blue-100]="selectedItemId() === node.item.id" 
+        [class.text-blue-900]="selectedItemId() === node.item.id">
+        <mat-icon class="mr-2" [svgIcon]="_getIconForType(node.item.type)"></mat-icon>
+        <span>{{ node.item.name }}</span>
+      </button>
+    </mat-tree-node>
+
+    <!-- Expandable node template -->
+    <mat-tree-node *matTreeNodeDef="let node; when: _hasChild" matTreeNodePadding>
+      <button 
+        type="button"
+        mat-icon-button 
+        matTreeNodeToggle
+        [attr.aria-label]="'toggle ' + node.item.name"
+        (click)="$event.stopPropagation()">
+        <mat-icon class="mat-icon-rtl-mirror" [svgIcon]="treeControl.isExpanded(node) ? 'chevron-down' : 'chevron-right'">
+        </mat-icon>
+      </button>
+      <button 
+        type="button"
+        class="flex-1 text-left p-2 hover:bg-gray-600 flex items-center" 
+        (click)="_selectItem(node.item)" 
+        [class.bg-blue-100]="selectedItemId() === node.item.id" 
+        [class.text-blue-900]="selectedItemId() === node.item.id">
+        <mat-icon class="mr-2" [svgIcon]="_getIconForType(node.item.type)"></mat-icon>
+        <span>{{ node.item.name }}</span>
+      </button>
+    </mat-tree-node>
+  </mat-tree>
+</div>

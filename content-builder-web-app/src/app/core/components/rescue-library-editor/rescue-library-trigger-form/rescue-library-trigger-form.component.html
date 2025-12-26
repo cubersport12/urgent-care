@@ -1,0 +1,31 @@
+<form class="flex flex-col gap-4 h-full overflow-hidden" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
+  <div class="flex gap-1 w-full">
+    <mat-form-field appearance="fill" class="grow">
+      <mat-label>Наименование</mat-label>
+      <input matInput [formControl]="_form.controls.name">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="grow">
+      <mat-label>Описание</mat-label>
+      <input matInput [formControl]="_form.controls.description" />
+    </mat-form-field>
+  </div>
+  <div class="flex flex-col gap-2">
+    <label class="text-sm font-medium">Элемент библиотеки</label>
+    <button 
+      type="button" 
+      mat-flat-button 
+      (click)="_openSelectDialog()"
+      class="w-full">
+      Выбрать элемент
+      @if (_selectedLibraryItem(); as item) {
+        (Выбрано: {{item.name}} ({{_getTypeLabel(item.type)}}))
+      }
+    </button>
+  </div>
+  <div class="flex justify-end gap-2">
+    <button [disabled]="_form.invalid || !_form.dirty || _isPending()" type="submit" mat-flat-button color="primary">
+      <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />
+      Сохранить
+    </button>
+  </div>
+</form>

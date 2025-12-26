@@ -97,6 +97,10 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     return f;
   });
 
+  protected _isHidden(item: OptionType): boolean {
+    return item.type === 'test' && item.hidden === true;
+  }
+
   protected readonly _tests = computed(() => {
     const parentId = this._folderId();
     const f = this._store.selectSignal(TestsState.getTests)()(parentId);
