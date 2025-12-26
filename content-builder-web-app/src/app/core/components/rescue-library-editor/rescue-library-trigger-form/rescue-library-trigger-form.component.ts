@@ -6,10 +6,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { AppLoading, RescueLibraryActions, RescueLibraryState } from '@/core/store';
 import { Store } from '@ngxs/store';
 import { RescueLibraryItemSelectDialogComponent } from '../rescue-library-item-select-dialog';
+import { SvgIconInputDialogComponent } from './svg-icon-input-dialog';
 import { take } from 'rxjs';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-rescue-library-trigger-form',
@@ -18,16 +21,22 @@ import { take } from 'rxjs';
     MatButton,
     ReactiveFormsModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    MatSelectModule
   ],
   templateUrl: './rescue-library-trigger-form.component.html',
-  styles: ``
+  styles: `
+    .icon-preview {
+      width: 32px;
+    }
+  `
 })
 export class RescueLibraryTriggerFormComponent {
   private readonly _dispatched = inject(AppLoading);
   private readonly _store = inject(Store);
   private readonly _dialog = inject(MatDialog);
   private readonly _vcr = inject(ViewContainerRef);
+  private readonly _sanitizer = inject(DomSanitizer);
 
   selectedItem = input.required<RescueLibraryTriggerVm>();
   submitEvent = output<RescueLibraryTriggerVm>();
@@ -35,7 +44,10 @@ export class RescueLibraryTriggerFormComponent {
   protected readonly _form = new FormGroup({
     name: new FormControl<string>('', Validators.required),
     description: new FormControl<string>(''),
-    rescueLibraryItemId: new FormControl<NullableValue<string>>(null)
+    rescueLibraryItemId: new FormControl<NullableValue<string>>(null),
+    buttonType: new FormControl<'button' | 'toggle'>('button', Validators.required),
+    onSvg: new FormControl<string>(''),
+    offSvg: new FormControl<string>('')
   });
 
   protected readonly _selectedLibraryItem = computed(() => {
@@ -90,7 +102,10 @@ export class RescueLibraryTriggerFormComponent {
         this._form.reset({
           name: item.name ?? '',
           description: item.description ?? '',
-          rescueLibraryItemId: item.data?.rescueLibraryItemId ?? null
+          rescueLibraryItemId: item.data?.rescueLibraryItemId ?? null,
+          buttonType: item.data?.buttonType ?? 'button',
+          onSvg: item.data?.onSvg ?? '',
+          offSvg: item.data?.offSvg ?? ''
         });
       }
     });
@@ -111,15 +126,17 @@ export class RescueLibraryTriggerFormComponent {
       return;
     }
 
-    const { name, description, rescueLibraryItemId } = this._form.value;
+    const { name, description, rescueLibraryItemId, buttonType, onSvg, offSvg } = this._form.value;
     const item = this.selectedItem();
     this.submitEvent.emit({
       ...item,
       name: name!,
       description: description ?? undefined,
       data: {
-        buttonType: 'button',
-        rescueLibraryItemId: rescueLibraryItemId ?? undefined
+        buttonType: buttonType ?? 'button',
+        rescueLibraryItemId: rescueLibraryItemId ?? undefined,
+        onSvg: buttonType === 'toggle' && onSvg ? onSvg : undefined,
+        offSvg: buttonType === 'toggle' && offSvg ? offSvg : undefined
       }
     });
   }
@@ -146,5 +163,48 @@ export class RescueLibraryTriggerFormComponent {
           this._form.controls.rescueLibraryItemId.markAsDirty();
         }
       });
+  }
+
+  protected _openSvgIconDialog(field: 'onSvg' | 'offSvg'): void {
+    const currentValue = this._form.value[field] ?? '';
+    const title = field === 'onSvg' ? 'Иконка для состояния ON' : 'Иконка для состояния OFF';
+
+    this._dialog.open(SvgIconInputDialogComponent, {
+      width: '600px',
+      height: '500px',
+      hasBackdrop: true,
+      viewContainerRef: this._vcr,
+      disableClose: false,
+      data: {
+        initialValue: currentValue,
+        title
+      }
+    })
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((result: string | undefined) => {
+        if (result !== undefined) {
+          this._form.patchValue({
+            [field]: result
+          });
+          this._form.controls[field].markAsDirty();
+        }
+      });
+  }
+
+  protected get _sanitizedOnSvg() {
+    const svg = this._form.value.onSvg;
+    if (!svg) {
+      return null;
+    }
+    return this._sanitizer.bypassSecurityTrustHtml(svg); // 1 = SecurityContext.HTML
+  };
+
+  protected get _sanitizedOffSvg() {
+    const svg = this._form.value.offSvg;
+    if (!svg) {
+      return null;
+    }
+    return this._sanitizer.bypassSecurityTrustHtml(svg); // 1 = SecurityContext.HTML
   }
 }

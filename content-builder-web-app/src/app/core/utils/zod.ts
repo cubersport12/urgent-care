@@ -134,6 +134,9 @@ export const rescueLibraryItemSchema = z.discriminatedUnion('type', [
     type: z.literal('trigger'),
     description: z.string().nullable().optional(),
     data: z.object({
+      buttonType: z.enum(['button', 'toggle']).optional(),
+      onSvg: z.string().optional(),
+      offSvg: z.string().optional(),
       rescueLibraryItemId: z.string().nullable().optional()
     }).nullable().optional()
   })

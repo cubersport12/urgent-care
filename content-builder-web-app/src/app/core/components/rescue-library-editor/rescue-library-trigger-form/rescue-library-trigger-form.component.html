@@ -10,7 +10,7 @@
     </mat-form-field>
   </div>
   <div class="flex flex-col gap-2">
-    <label class="text-sm font-medium">Элемент библиотеки</label>
+    <label class="text-sm font-medium">Элемент для запуска</label>
     <button 
       type="button" 
       mat-flat-button 
@@ -22,6 +22,51 @@
       }
     </button>
   </div>
+  <mat-form-field appearance="fill" class="w-full">
+    <mat-label>Тип кнопки</mat-label>
+    <mat-select [formControl]="_form.controls.buttonType">
+      <mat-option value="button">Кнопка</mat-option>
+      <mat-option value="toggle">Переключатель</mat-option>
+    </mat-select>
+  </mat-form-field>
+  @if (_form.getRawValue().buttonType === 'toggle') {
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-medium">Иконки для переключателя</label>
+      <div class="flex gap-2">
+        <div class="flex-1 flex flex-col gap-2">
+          <div class="flex gap-1 items-center">
+            <label class="text-xs text-gray-600">Иконка ON</label>
+            @if (_sanitizedOnSvg; as svg) {
+              <div class="icon-preview" [innerHTML]="svg"></div>
+            }
+          </div>
+          
+          <button 
+            type="button" 
+            mat-flat-button 
+            (click)="_openSvgIconDialog('onSvg')"
+            class="w-full">
+            {{ _form.value.onSvg ? 'Изменить иконку ON' : 'Выбрать иконку ON' }}
+          </button>
+        </div>
+        <div class="flex-1 flex flex-col gap-2">
+          <div class="flex gap-1 items-center">
+            <label class="text-xs text-gray-600">Иконка OFF</label>
+            @if (_sanitizedOffSvg; as svg) {
+              <div class="icon-preview" [innerHTML]="svg"></div>
+            }
+          </div>
+          <button 
+            type="button" 
+            mat-flat-button 
+            (click)="_openSvgIconDialog('offSvg')"
+            class="w-full">
+            {{ _form.value.offSvg ? 'Изменить иконку OFF' : 'Выбрать иконку OFF' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
   <div class="flex justify-end gap-2">
     <button [disabled]="_form.invalid || !_form.dirty || _isPending()" type="submit" mat-flat-button color="primary">
       <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />

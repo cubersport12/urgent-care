@@ -1,0 +1,29 @@
+<div class="dialog-content">
+  <h2 class="text-lg font-semibold mb-4">{{ _data.title }}</h2>
+  <mat-form-field appearance="fill" class="w-full">
+    <mat-label>SVG код</mat-label>
+    <textarea 
+      matInput 
+      [formControl]="_form.controls.svg" 
+      rows="10"
+      placeholder="Вставьте SVG код здесь..."></textarea>
+  </mat-form-field>
+  <div class="preview-container mb-4">
+    @if (_previewSvg; as svg) {
+      <div [innerHTML]="svg" style="width: 100px;" class="flex items-center justify-center"></div>
+    } @else {
+      <span class="text-gray-400">Предпросмотр появится здесь</span>
+    }
+  </div>
+  <div class="flex justify-end gap-2">
+    <button type="button" mat-button (click)="_onCancel()">Отмена</button>
+    <button 
+      type="button" 
+      mat-flat-button 
+      color="primary"
+      [disabled]="_form.invalid"
+      (click)="_onConfirm()">
+      Сохранить
+    </button>
+  </div>
+</div>
