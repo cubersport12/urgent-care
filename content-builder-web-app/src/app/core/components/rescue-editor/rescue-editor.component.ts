@@ -47,7 +47,11 @@ export class RescueEditorService {
     RescueStoriesBuilderComponent
   ],
   templateUrl: './rescue-editor.component.html',
-  styles: ``
+  styles: `
+    form {
+      min-height: min-content;
+    }
+  `
 })
 export class RescueEditorComponent {
   protected readonly _dialogData = inject<AppRescueItemVm>(MAT_DIALOG_DATA);

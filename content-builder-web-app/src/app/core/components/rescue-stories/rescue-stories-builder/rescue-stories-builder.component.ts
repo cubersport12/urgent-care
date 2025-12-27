@@ -108,7 +108,8 @@ export class RescueStoriesBuilderComponent {
       data: {
         scene: {
           backgroundImage: '',
-          items: []
+          items: [],
+          restritions: []
         }
       }
     };

@@ -119,6 +119,132 @@
               </mat-form-field>
             </div>
           </form>
+
+          @if (_isSelectedTrigger()) {
+            <mat-expansion-panel [expanded]="false" class="mt-2">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <h4 class="text-md font-medium m-0">Влияющие параметры</h4>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <div class="pt-2 overflow-auto">
+                @if (_triggerTableItems().length > 0 && _availableParameters().length > 0) {
+                  <table mat-table [dataSource]="_triggerTableItems()" class="w-full">
+                    <!-- Column: Item Name -->
+                    <ng-container matColumnDef="itemName">
+                      <th mat-header-cell *matHeaderCellDef>Элемент</th>
+                      <td mat-cell *matCellDef="let item">{{ item.name }}</td>
+                    </ng-container>
+
+                    <!-- Dynamic Columns: Parameters -->
+                    @for (parameter of _availableParameters(); track parameter.id) {
+                      <ng-container [matColumnDef]="'param_' + parameter.id">
+                        <th mat-header-cell *matHeaderCellDef>{{ parameter.label }}</th>
+                        <td mat-cell *matCellDef="let item">
+                          @if (parameter.category === 'duration') {
+                            @if (_getTriggerParameterControl(item.id, parameter.id); as control) {
+                              <input
+                              type="time"
+                              step="1"
+                              [formControl]="control"
+                              (keydown)="_onRestrictionInputKeyDown($event)"
+                              (keyup)="$event.stopPropagation()"
+                              placeholder="00:00:00">
+                            }
+                          } @else {
+                            @if (_getTriggerParameterControl(item.id, parameter.id); as control) {
+                              <input
+                                  type="number"
+                                  [formControl]="control"
+                                  (keydown)="_onRestrictionInputKeyDown($event)"
+                                  (keyup)="$event.stopPropagation()"
+                                  placeholder="Введите значение">
+                            }
+                          }
+                        </td>
+                      </ng-container>
+                    }
+
+                    <tr mat-header-row *matHeaderRowDef="_getTableDisplayedColumns()"></tr>
+                    <tr mat-row *matRowDef="let row; columns: _getTableDisplayedColumns();"></tr>
+                  </table>
+                } @else {
+                  <div class="text-sm text-gray-500">
+                    @if (_triggerTableItems().length === 0) {
+                      Нет элементов для отображения
+                    } @else {
+                      Нет доступных параметров
+                    }
+                  </div>
+                }
+              </div>
+            </mat-expansion-panel>
+          }
+
+          <mat-expansion-panel [expanded]="false" class="mt-2">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <h4 class="text-md font-medium m-0">Условия видимости</h4>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="pt-2">
+              <div class="flex flex-col gap-2">
+                @for (parameter of _availableParameters(); track parameter.id) {
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm flex-1">{{ parameter.label }}</span>
+                    @if (_isParameterInVisibleParams(parameter.id)) {
+                      @if (parameter.category === 'duration') {
+                        @if (_getVisibleParamControl(parameter.id); as control) {
+                          <mat-form-field appearance="fill" class="grow">
+                            <mat-label>Значение (HH:mm:ss)</mat-label>
+                            <input
+                              matInput
+                              type="time"
+                              step="1"
+                              [formControl]="control"
+                              (keydown)="_onRestrictionInputKeyDown($event)"
+                              (keyup)="$event.stopPropagation()"
+                              placeholder="00:00:00">
+                          </mat-form-field>
+                        }
+                      } @else {
+                        @if (_getVisibleParamControl(parameter.id); as control) {
+                          <mat-form-field appearance="fill" class="grow">
+                            <mat-label>Значение</mat-label>
+                            <input
+                              matInput
+                              type="number"
+                              [formControl]="control"
+                              (keydown)="_onRestrictionInputKeyDown($event)"
+                              (keyup)="$event.stopPropagation()"
+                              placeholder="Введите значение">
+                          </mat-form-field>
+                        }
+                      }
+                      <button
+                        type="button"
+                        mat-icon-button
+                        color="warn"
+                        (click)="_removeVisibleParam(parameter.id)">
+                        <mat-icon [svgIcon]="'trash'"></mat-icon>
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        mat-stroked-button
+                        (click)="_updateVisibleParam(parameter.id, parameter.category === 'duration' ? '00:00:00' : 0)">
+                        <mat-icon [svgIcon]="'plus'"></mat-icon>
+                        Установить
+                      </button>
+                    }
+                  </div>
+                }
+                @if (_availableParameters().length === 0) {
+                  <div class="text-sm text-gray-500">Нет доступных параметров</div>
+                }
+              </div>
+            </div>
+          </mat-expansion-panel>
         </div>
       } @else {
         <div class="flex flex-col gap-1">
@@ -133,6 +259,72 @@
                 placeholder="Введите название сюжета">
             </mat-form-field>
           </form>
+
+          <mat-expansion-panel [expanded]="false">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <h4 class="text-md font-medium m-0">Ограничения перехода</h4>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <div class="flex flex-col gap-2 pt-2">
+              <small class="text-gray-600">Переход сработает, когда изначальное значение параметра сцены изменится на установленное значение в сцене по модулю - +-</small>
+              @for (parameter of _availableParameters(); track parameter.id) {
+                <div class="flex items-center gap-2">
+                  <span class="text-sm flex-1">{{ parameter.label }}</span>
+                  @if (_isParameterInRestrictions(parameter.id)) {
+                    @if (parameter.category === 'duration') {
+                      <mat-form-field appearance="fill" class="grow">
+                        <mat-label>Значение (HH:mm:ss)</mat-label>
+                        @if (_getRestrictionParamControl(parameter.id); as control) {
+                          <input
+                            matInput
+                            size="sm"
+                            type="time"
+                            step="1"
+                            [formControl]="control"
+                            (keydown)="_onRestrictionInputKeyDown($event)"
+                            (keyup)="$event.stopPropagation()"
+                            placeholder="00:00:00">
+                        }
+                      </mat-form-field>
+                    } @else {
+                      <mat-form-field appearance="fill" class="grow">
+                        <mat-label>Значение</mat-label>
+                        @if (_getRestrictionParamControl(parameter.id); as control) {
+                          <input
+                            matInput
+                            size="sm"
+                            type="number"
+                            [formControl]="control"
+                            (keydown)="_onRestrictionInputKeyDown($event)"
+                            (keyup)="$event.stopPropagation()"
+                            placeholder="Введите значение">
+                        }
+                      </mat-form-field>
+                    }
+                    <button
+                      type="button"
+                      mat-icon-button
+                      color="warn"
+                      (click)="_removeRestrictionParam(parameter.id)">
+                      <mat-icon [svgIcon]="'trash'"></mat-icon>
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      mat-stroked-button
+                      (click)="_updateRestrictionParam(parameter.id, parameter.category === 'duration' ? '00:00:00' : 0)">
+                      <mat-icon [svgIcon]="'plus'"></mat-icon>
+                      Установить
+                    </button>
+                  }
+                </div>
+              }
+              @if (_availableParameters().length === 0) {
+                <div class="text-sm text-gray-500">Нет доступных параметров</div>
+              }
+            </div>
+          </mat-expansion-panel>
         </div>
       }
     </div>

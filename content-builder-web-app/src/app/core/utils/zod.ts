@@ -157,6 +157,11 @@ export const rescueLibraryItemSchema = z.discriminatedUnion('type', [
   })
 ]);
 
+export const rescueStorySceneTriggerParamSchema = z.object({
+  id: z.string(),
+  value: z.union([z.number(), z.string()])
+});
+
 export const rescueStorySceneTriggerSchema = z.object({
   triggerId: z.string(),
   position: z.object({
@@ -166,12 +171,24 @@ export const rescueStorySceneTriggerSchema = z.object({
   size: z.object({
     width: z.number(),
     height: z.number()
-  })
+  }),
+  parameters: z.array(rescueStorySceneTriggerParamSchema).optional(),
+  visibleParams: z.array(rescueStorySceneTriggerParamSchema).optional()
+});
+
+export const rescueStorySceneRestrictionParamSchema = z.object({
+  id: z.string(),
+  value: z.union([z.number(), z.string()])
+});
+
+export const rescueStorySceneRestrictionsSchema = z.object({
+  params: z.array(rescueStorySceneRestrictionParamSchema)
 });
 
 export const rescueStorySceneSchema = z.object({
   backgroundImage: z.string(),
-  items: z.array(rescueStorySceneTriggerSchema)
+  items: z.array(rescueStorySceneTriggerSchema),
+  restritions: z.array(rescueStorySceneRestrictionsSchema).optional()
 });
 
 export const rescueStoryDataSchema = z.object({

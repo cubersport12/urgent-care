@@ -4,12 +4,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { RescueStoryDataVm, RescueStorySceneTriggerVm, RescueLibraryItemVm, generateGUID } from '@/core/utils';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatTableModule } from '@angular/material/table';
+import { RescueStoryDataVm, RescueStorySceneTriggerVm, RescueLibraryItemVm, generateGUID, RescueStorySceneRestrictionParamVm, RescueStorySceneRestrictionsVm, RescueLibraryTriggerVm, RescueStorySceneTriggerParamVm } from '@/core/utils';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { RescueLibraryTreeComponent } from '@/core/components/rescue-library-editor/rescue-library-tree';
 import { CommonModule } from '@angular/common';
 import { Store } from '@ngxs/store';
-import { RescueLibraryState } from '@/core/store';
+import { RescueLibraryState, RescueState } from '@/core/store';
 import { AppFilesStorageService } from '@/core/api';
 
 @Component({
@@ -21,6 +23,8 @@ import { AppFilesStorageService } from '@/core/api';
     MatInputModule,
     MatButton,
     MatIcon,
+    MatExpansionModule,
+    MatTableModule,
     RescueLibraryTreeComponent
   ],
   templateUrl: './rescue-story-item-form.component.html',
@@ -101,6 +105,20 @@ import { AppFilesStorageService } from '@/core/api';
       padding: 16px;
       // background: #f5f5f5;
     }
+    table {
+      width: 100%;
+    }
+    .mat-mdc-form-field {
+      width: 100%;
+    }
+    td, th {
+      max-width: 150px;
+      min-width: 100px;
+    }
+    td input {
+      padding: 2px;
+      width: 100%;
+    }
     .upload-button {
       margin-bottom: 8px;
     }
@@ -113,6 +131,7 @@ export class RescueStoryItemFormComponent {
   storyData = input.required<RescueStoryDataVm>();
   storyName = input.required<string>();
   storyId = input<string>('');
+  rescueId = input<string>('');
   submitEvent = output<{ name: string; data: RescueStoryDataVm }>();
   imageFileEvent = output<{ storyId: string; file: File }>();
 
@@ -140,6 +159,31 @@ export class RescueStoryItemFormComponent {
     height: new FormControl<number>(10, [Validators.required, Validators.min(1), Validators.max(100)])
   });
 
+  // Форма для параметров триггера (Map: itemId_parameterId -> FormControl)
+  protected readonly _triggerParameterControls = new Map<string, FormControl<string | number>>();
+
+  // Форма для visibleParams триггера (Map: parameterId -> FormControl)
+  protected readonly _triggerVisibleParamControls = new Map<string, FormControl<string | number>>();
+
+  // Получаем параметры из rescue item
+  protected readonly _availableParameters = computed(() => {
+    const rescueId = this.rescueId();
+    if (!rescueId) {
+      return [];
+    }
+    const items = this._store.selectSignal(RescueState.getAllRescueItems)();
+    const rescueItem = items.find(item => item.id === rescueId);
+    return rescueItem?.data?.parameters || [];
+  });
+
+  // Получаем текущие restrictions из scene
+  protected readonly _currentRestrictions = computed(() => {
+    return this.storyData().scene.restritions || [];
+  });
+
+  // Форма для restrictions (один restriction с массивом params)
+  // Используем Map для хранения FormControl для каждого параметра
+  protected readonly _restrictionParamControls = new Map<string, FormControl<string | number>>();
 
   constructor() {
     // Отслеживаем изменения формы
@@ -201,6 +245,22 @@ export class RescueStoryItemFormComponent {
           }, { emitEvent: true });
         }
       }
+
+      // Инициализируем restrictions форму
+      const restrictions = data?.scene.restritions || [];
+      const params = restrictions.length > 0 ? restrictions[0].params || [] : [];
+
+      // Очищаем старые контролы
+      this._restrictionParamControls.clear();
+
+      // Создаем FormControl для каждого параметра в restrictions
+      params.forEach((param: RescueStorySceneRestrictionParamVm) => {
+        const control = new FormControl<string | number | null>(param.value, Validators.required);
+        control.valueChanges.subscribe(() => {
+          this._emitFormData();
+        });
+        this._restrictionParamControls.set(param.id, control as FormControl<string | number>);
+      });
     });
   }
 
@@ -345,7 +405,9 @@ export class RescueStoryItemFormComponent {
     const newTrigger: RescueStorySceneTriggerVm = {
       triggerId: draggedItem.id,
       position: { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) },
-      size: { width: 20, height: 10 }
+      size: { width: 20, height: 10 },
+      parameters: [],
+      visibleParams: []
     };
 
     const currentScene = this.storyData().scene;
@@ -431,6 +493,248 @@ export class RescueStoryItemFormComponent {
       width: trigger.size.width,
       height: trigger.size.height
     }, { emitEvent: false });
+
+    // Инициализируем форму параметров триггера (только для триггеров)
+    if (this._isSelectedTrigger()) {
+      this._initializeTriggerParameters(trigger);
+    }
+
+    // Инициализируем visibleParams для всех элементов
+    this._initializeElementVisibleParams(trigger);
+  }
+
+  private _initializeTriggerParameters(trigger: RescueStorySceneTriggerVm): void {
+    // Очищаем старые контролы
+    this._triggerParameterControls.clear();
+
+    // Получаем триггер из библиотеки
+    const libraryItems = this._store.selectSignal(RescueLibraryState.getAllRescueLibraryItems)();
+    const triggerItem = libraryItems.find(i => i.id === trigger.triggerId) as RescueLibraryTriggerVm | undefined;
+
+    if (!triggerItem || triggerItem.type !== 'trigger' || !triggerItem.data?.rescueLibraryItemId) {
+      return;
+    }
+
+    // Получаем элементы для таблицы
+    const tableItems = this._getTableItems(triggerItem.data.rescueLibraryItemId, libraryItems);
+    const parameters = this._availableParameters();
+
+    // Создаем FormControl для каждой комбинации itemId + parameterId
+    // Для всех строк используем одинаковое значение из trigger.parameters (если есть)
+    tableItems.forEach(item => {
+      parameters.forEach(param => {
+        const key = `${item.id}_${param.id}`;
+        // Берем значение из существующих параметров триггера (если есть)
+        const existingParam = trigger.parameters?.find(p => p.id === param.id);
+        const defaultValue = existingParam?.value ?? (param.category === 'duration' ? '00:00:00' : 0);
+        
+        const control = new FormControl<string | number | null>(defaultValue);
+        control.valueChanges.subscribe(() => {
+          this._updateSelectedElementParameters();
+        });
+        this._triggerParameterControls.set(key, control as FormControl<string | number>);
+      });
+    });
+
+  }
+
+  private _initializeElementVisibleParams(trigger: RescueStorySceneTriggerVm): void {
+    // Очищаем старые контролы
+    this._triggerVisibleParamControls.clear();
+
+    const parameters = this._availableParameters();
+
+    // Создаем FormControl только для параметров, которые есть в visibleParams
+    if (trigger.visibleParams && trigger.visibleParams.length > 0) {
+      trigger.visibleParams.forEach(visibleParam => {
+        const param = parameters.find(p => p.id === visibleParam.id);
+        if (param) {
+          const defaultValue = visibleParam.value ?? (param.category === 'duration' ? '00:00:00' : 0);
+          const control = new FormControl<string | number | null>(defaultValue);
+          control.valueChanges.subscribe(() => {
+            this._updateSelectedElementVisibleParams();
+          });
+          this._triggerVisibleParamControls.set(param.id, control as FormControl<string | number>);
+        }
+      });
+    }
+  }
+
+  private _getTableItems(rescueLibraryItemId: string, allItems: RescueLibraryItemVm[]): RescueLibraryItemVm[] {
+    const item = allItems.find(i => i.id === rescueLibraryItemId);
+    if (!item) {
+      return [];
+    }
+
+    // Если это папка, получаем все вложенные элементы (кроме папок и триггеров)
+    if (item.type === 'folder') {
+      return this._getNestedItems(item.id, allItems, []);
+    }
+
+    // Если не папка, возвращаем сам элемент
+    return [item];
+  }
+
+  private _getNestedItems(folderId: string, allItems: RescueLibraryItemVm[], result: RescueLibraryItemVm[]): RescueLibraryItemVm[] {
+    const children = allItems.filter(i => i.parentId === folderId);
+    
+    children.forEach(child => {
+      if (child.type === 'folder') {
+        // Рекурсивно получаем элементы из вложенных папок
+        this._getNestedItems(child.id, allItems, result);
+      }
+      else if (child.type !== 'trigger') {
+        // Добавляем элемент, если это не триггер
+        result.push(child);
+      }
+    });
+
+    return result;
+  }
+
+  private _updateSelectedElementParameters(): void {
+    const selected = this._selectedElement();
+    if (!selected) {
+      return;
+    }
+
+    const parameters: RescueStorySceneTriggerParamVm[] = [];
+    const libraryItems = this._store.selectSignal(RescueLibraryState.getAllRescueLibraryItems)();
+    const triggerItem = libraryItems.find(i => i.id === selected.triggerId) as RescueLibraryTriggerVm | undefined;
+
+    if (!triggerItem || triggerItem.type !== 'trigger' || !triggerItem.data?.rescueLibraryItemId) {
+      return;
+    }
+
+    const tableItems = this._getTableItems(triggerItem.data.rescueLibraryItemId, libraryItems);
+    const availableParams = this._availableParameters();
+
+    // Собираем все значения параметров из формы
+    // Для каждого параметра берем значение из первой строки (первого элемента)
+    availableParams.forEach(param => {
+      if (tableItems.length > 0) {
+        const firstItem = tableItems[0];
+        const key = `${firstItem.id}_${param.id}`;
+        const control = this._triggerParameterControls.get(key);
+        if (control && control.value !== null && control.value !== undefined) {
+          parameters.push({
+            id: param.id,
+            value: control.value
+          });
+        }
+      }
+    });
+
+    // Обновляем элемент с новыми параметрами
+    const currentScene = this.storyData().scene;
+    const updatedTriggers = currentScene.items.map(t =>
+      t.triggerId === selected.triggerId 
+        ? { ...selected, parameters, visibleParams: selected.visibleParams || [] }
+        : t
+    );
+
+    this._updateScene({ ...currentScene, items: updatedTriggers });
+    this._selectedElement.set({ ...selected, parameters, visibleParams: selected.visibleParams || [] });
+  }
+
+  private _updateSelectedElementVisibleParams(): void {
+    const selected = this._selectedElement();
+    if (!selected) {
+      return;
+    }
+
+    const visibleParams: RescueStorySceneTriggerParamVm[] = [];
+    const availableParams = this._availableParameters();
+
+    // Собираем все значения visibleParams из формы
+    availableParams.forEach(param => {
+      const control = this._triggerVisibleParamControls.get(param.id);
+      if (control && control.value !== null && control.value !== undefined) {
+        visibleParams.push({
+          id: param.id,
+          value: control.value
+        });
+      }
+    });
+
+    // Обновляем элемент с новыми visibleParams
+    const currentScene = this.storyData().scene;
+    const updatedTriggers = currentScene.items.map(t =>
+      t.triggerId === selected.triggerId 
+        ? { 
+            ...selected, 
+            visibleParams, 
+            parameters: selected.parameters || [] 
+          }
+        : t
+    );
+
+    this._updateScene({ ...currentScene, items: updatedTriggers });
+    this._selectedElement.set({ 
+      ...selected, 
+      visibleParams, 
+      parameters: selected.parameters || [] 
+    });
+  }
+
+  // Computed для проверки, является ли выбранный элемент триггером
+  protected readonly _isSelectedTrigger = computed(() => {
+    const selected = this._selectedElement();
+    if (!selected) {
+      return false;
+    }
+    const libraryItems = this._store.selectSignal(RescueLibraryState.getAllRescueLibraryItems)();
+    const item = libraryItems.find(i => i.id === selected.triggerId);
+    return item?.type === 'trigger';
+  });
+
+  // Computed для получения элементов таблицы
+  protected readonly _triggerTableItems = computed(() => {
+    const selected = this._selectedElement();
+    if (!selected) {
+      return [];
+    }
+    const libraryItems = this._store.selectSignal(RescueLibraryState.getAllRescueLibraryItems)();
+    const triggerItem = libraryItems.find(i => i.id === selected.triggerId) as RescueLibraryTriggerVm | undefined;
+    
+    if (!triggerItem || triggerItem.type !== 'trigger' || !triggerItem.data?.rescueLibraryItemId) {
+      return [];
+    }
+
+    return this._getTableItems(triggerItem.data.rescueLibraryItemId, libraryItems);
+  });
+
+  // Получение FormControl для ячейки таблицы
+  protected _getTriggerParameterControl(itemId: string, parameterId: string): FormControl<string | number> | null {
+    const key = `${itemId}_${parameterId}`;
+    return this._triggerParameterControls.get(key) || null;
+  }
+
+  // Получение значения параметра для ячейки
+  protected _getTriggerParameterValue(itemId: string, parameterId: string): string | number {
+    const control = this._getTriggerParameterControl(itemId, parameterId);
+    if (control) {
+      return control.value ?? (this._getParameterCategory(parameterId) === 'duration' ? '00:00:00' : 0);
+    }
+    return this._getParameterCategory(parameterId) === 'duration' ? '00:00:00' : 0;
+  }
+
+  // Обновление значения параметра
+  protected _updateTriggerParameter(itemId: string, parameterId: string, value: string | number): void {
+    const key = `${itemId}_${parameterId}`;
+    let control = this._triggerParameterControls.get(key);
+
+    if (!control) {
+      const newControl = new FormControl<string | number | null>(value);
+      newControl.valueChanges.subscribe(() => {
+        this._updateSelectedElementParameters();
+      });
+      control = newControl as FormControl<string | number>;
+      this._triggerParameterControls.set(key, control);
+    }
+    else {
+      control.setValue(value, { emitEvent: true });
+    }
   }
 
   private _updateSelectedElement(): void {
@@ -443,7 +747,9 @@ export class RescueStoryItemFormComponent {
     const updatedTrigger: RescueStorySceneTriggerVm = {
       ...selected,
       position: { x: positionX!, y: positionY! },
-      size: { width: width!, height: height! }
+      size: { width: width!, height: height! },
+      parameters: selected.parameters || [],
+      visibleParams: selected.visibleParams || []
     };
 
     const currentScene = this.storyData().scene;
@@ -457,10 +763,17 @@ export class RescueStoryItemFormComponent {
 
   private _updateScene(scene: RescueStoryDataVm['scene']): void {
     const { name } = this._form.value;
+
+    // Получаем restrictions из формы
+    const restrictions = this._getRestrictionsFromControls();
+
     this.submitEvent.emit({
       name: name!,
       data: {
-        scene
+        scene: {
+          ...scene,
+          restritions: restrictions
+        }
       }
     });
   }
@@ -482,12 +795,16 @@ export class RescueStoryItemFormComponent {
       this.imageFileEvent.emit({ storyId, file: imageFile });
     }
 
+    // Получаем restrictions из формы
+    const restrictions = this._getRestrictionsFromControls();
+
     this.submitEvent.emit({
       name: name!,
       data: {
         scene: {
           ...this.storyData().scene,
-          backgroundImage
+          backgroundImage,
+          restritions: restrictions
         }
       }
     });
@@ -525,5 +842,135 @@ export class RescueStoryItemFormComponent {
       case 'trigger': return 'bolt';
       default: return 'file-contract';
     }
+  }
+
+  // Методы для работы с restrictions
+  protected _getParameterCategory(parameterId: string): 'number' | 'duration' {
+    const parameter = this._availableParameters().find(p => p.id === parameterId);
+    return parameter?.category || 'number';
+  }
+
+  protected _getParameterLabel(parameterId: string): string {
+    const parameter = this._availableParameters().find(p => p.id === parameterId);
+    return parameter?.label || parameterId;
+  }
+
+  protected _getRestrictionParamValue(parameterId: string): string | number {
+    const control = this._restrictionParamControls.get(parameterId);
+    if (control) {
+      return control.value ?? (this._getParameterCategory(parameterId) === 'duration' ? '00:00:00' : 0);
+    }
+    return this._getParameterCategory(parameterId) === 'duration' ? '00:00:00' : 0;
+  }
+
+  protected _getRestrictionParamControl(parameterId: string): FormControl<string | number> | null {
+    return this._restrictionParamControls.get(parameterId) || null;
+  }
+
+  protected _updateRestrictionParam(parameterId: string, value: string | number): void {
+    let control = this._restrictionParamControls.get(parameterId);
+
+    if (!control) {
+      // Создаем новый контрол
+      const newControl = new FormControl<string | number | null>(value, Validators.required);
+      newControl.valueChanges.subscribe(() => {
+        this._emitFormData();
+      });
+      control = newControl as FormControl<string | number>;
+      this._restrictionParamControls.set(parameterId, control);
+    }
+    else {
+      // Обновляем существующий контрол
+      control.setValue(value, { emitEvent: true });
+    }
+  }
+
+  protected _removeRestrictionParam(parameterId: string): void {
+    const control = this._restrictionParamControls.get(parameterId);
+    if (control) {
+      this._restrictionParamControls.delete(parameterId);
+      this._emitFormData();
+    }
+  }
+
+  protected _isParameterInRestrictions(parameterId: string): boolean {
+    return this._restrictionParamControls.has(parameterId);
+  }
+
+  protected _onRestrictionInputKeyDown(event: KeyboardEvent): void {
+    // Предотвращаем закрытие поля при нажатии минуса или других специальных клавиш
+    event.stopPropagation();
+    // Разрешаем ввод минуса для отрицательных чисел
+    if (event.key === '-' || event.key === 'Minus') {
+      event.stopImmediatePropagation();
+    }
+  }
+
+  // Получение колонок для таблицы
+  protected _getTableDisplayedColumns(): string[] {
+    const columns = ['itemName'];
+    const parameters = this._availableParameters();
+    parameters.forEach(param => {
+      columns.push('param_' + param.id);
+    });
+    return columns;
+  }
+
+  // Методы для работы с visibleParams
+  protected _getVisibleParamControl(parameterId: string): FormControl<string | number> | null {
+    return this._triggerVisibleParamControls.get(parameterId) || null;
+  }
+
+  protected _getVisibleParamValue(parameterId: string): string | number {
+    const control = this._triggerVisibleParamControls.get(parameterId);
+    if (control) {
+      return control.value ?? (this._getParameterCategory(parameterId) === 'duration' ? '00:00:00' : 0);
+    }
+    return this._getParameterCategory(parameterId) === 'duration' ? '00:00:00' : 0;
+  }
+
+  protected _updateVisibleParam(parameterId: string, value: string | number): void {
+    let control = this._triggerVisibleParamControls.get(parameterId);
+    
+    if (!control) {
+      const newControl = new FormControl<string | number | null>(value);
+      newControl.valueChanges.subscribe(() => {
+        this._updateSelectedElementVisibleParams();
+      });
+      control = newControl as FormControl<string | number>;
+      this._triggerVisibleParamControls.set(parameterId, control);
+    }
+    else {
+      control.setValue(value, { emitEvent: true });
+    }
+  }
+
+  protected _removeVisibleParam(parameterId: string): void {
+    const control = this._triggerVisibleParamControls.get(parameterId);
+    if (control) {
+      this._triggerVisibleParamControls.delete(parameterId);
+      this._updateSelectedElementVisibleParams();
+    }
+  }
+
+  protected _isParameterInVisibleParams(parameterId: string): boolean {
+    return this._triggerVisibleParamControls.has(parameterId);
+  }
+
+  private _getRestrictionsFromControls(): RescueStorySceneRestrictionsVm[] {
+    const restrictions: RescueStorySceneRestrictionsVm[] = [];
+    const restrictionParams: RescueStorySceneRestrictionParamVm[] = [];
+    this._restrictionParamControls.forEach((control, parameterId) => {
+      if (control.valid && control.value !== null && control.value !== undefined) {
+        restrictionParams.push({
+          id: parameterId,
+          value: control.value
+        });
+      }
+    });
+    if (restrictionParams.length > 0) {
+      restrictions.push({ params: restrictionParams });
+    }
+    return restrictions;
   }
 }

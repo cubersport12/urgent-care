@@ -170,11 +170,30 @@ export type RescueStoryDataVm = {
 
 export type RescueStorySceneVm = {
   backgroundImage: string;
+  // элементы сцены перенесенные из библиотеки
   items: RescueStorySceneTriggerVm[];
+  // ограничения, по которым сцена будет меняться на следующую
+  restritions: RescueStorySceneRestrictionsVm[];
+};
+
+export type RescueStorySceneRestrictionsVm = {
+  params: RescueStorySceneRestrictionParamVm[];
+};
+
+export type RescueStorySceneRestrictionParamVm = {
+  id: AppRescueItemParameterVm['id'];
+  value: AppRescueItemParameterVm['value'];
 };
 
 export type RescueStorySceneTriggerVm = {
   triggerId: string;
   position: Record<'x' | 'y', number>;
   size: Record<'width' | 'height', number>;
+  parameters: RescueStorySceneTriggerParamVm[];
+  visibleParams: RescueStorySceneTriggerParamVm[];
+};
+
+export type RescueStorySceneTriggerParamVm = {
+  id: AppRescueItemParameterVm['id'];
+  value: AppRescueItemParameterVm['value'];
 };
