@@ -110,6 +110,13 @@ export type AppRescueItemParameterVm = {
   label: string;
   value: string | number;
   category: 'number' | 'duration';
+  discriminatorByTimer?: AppRescueItemParameterDiscriminatorByTimerVm;
+};
+
+export type AppRescueItemParameterDiscriminatorByTimerVm = {
+  type: 'value' | 'range';
+  min: number;
+  max: number;
 };
 
 // Модель элемента справочника из режима спасения

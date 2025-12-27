@@ -120,13 +120,13 @@
             </div>
           </form>
 
-          @if (_isSelectedTrigger()) {
-            <mat-expansion-panel [expanded]="false" class="mt-2">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <h4 class="text-md font-medium m-0">Влияющие параметры</h4>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
+          <mat-expansion-panel [expanded]="false" class="mt-2">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <h4 class="text-md font-medium m-0">Влияющие параметры</h4>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            @if (_isSelectedTrigger()) {
               <div class="pt-2 overflow-auto">
                 @if (_triggerTableItems().length > 0 && _availableParameters().length > 0) {
                   <table mat-table [dataSource]="_triggerTableItems()" class="w-full">
@@ -178,8 +178,67 @@
                   </div>
                 }
               </div>
-            </mat-expansion-panel>
-          }
+            } @else {
+              <div class="pt-2">
+                <div class="flex flex-col gap-2">
+                  @if (_isTestOrQuestion()) {
+                    <div class="mb-2 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                      <strong>Подсказка:</strong> Для теста и вопроса будет применяться коэффициент 1 или -1 в зависимости от успешности прохождения теста.
+                    </div>
+                  }
+                  @for (parameter of _availableParameters(); track parameter.id) {
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm min-w-32 w-32 flex-1">{{ parameter.label }}</span>
+                      @if (_isParameterInElementParameters(parameter.id)) {
+                        @if (parameter.category === 'duration') {
+                          @if (_getElementParameterControl(parameter.id); as control) {
+                            <mat-form-field appearance="fill" class="grow">
+                              <mat-label>Значение (HH:mm:ss)</mat-label>
+                              <input
+                                matInput
+                                type="time"
+                                step="1"
+                                [formControl]="control"
+                                (keydown)="_onRestrictionInputKeyDown($event)"
+                                (keyup)="$event.stopPropagation()"
+                                placeholder="00:00:00">
+                            </mat-form-field>
+                          }
+                        } @else {
+                          @if (_getElementParameterControl(parameter.id); as control) {
+                            <mat-form-field appearance="fill" class="grow">
+                              <mat-label>Значение</mat-label>
+                              <input
+                                matInput
+                                type="number"
+                                [formControl]="control"
+                                (keydown)="_onRestrictionInputKeyDown($event)"
+                                (keyup)="$event.stopPropagation()"
+                                placeholder="Введите значение">
+                            </mat-form-field>
+                          }
+                        }
+                        <button
+                          type="button"
+                          mat-icon-button
+                          color="warn"
+                          (click)="_removeElementParameter(parameter.id)">
+                          <mat-icon [svgIcon]="'trash'"></mat-icon>
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          mat-stroked-button
+                          (click)="_updateElementParameter(parameter.id, parameter.category === 'duration' ? '00:00:00' : 0)">
+                          Установить
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </mat-expansion-panel>
 
           <mat-expansion-panel [expanded]="false" class="mt-2">
             <mat-expansion-panel-header>
@@ -191,7 +250,7 @@
               <div class="flex flex-col gap-2">
                 @for (parameter of _availableParameters(); track parameter.id) {
                   <div class="flex items-center gap-2">
-                    <span class="text-sm flex-1">{{ parameter.label }}</span>
+                    <span class="text-sm flex-1 min-w-32 w-32">{{ parameter.label }}</span>
                     @if (_isParameterInVisibleParams(parameter.id)) {
                       @if (parameter.category === 'duration') {
                         @if (_getVisibleParamControl(parameter.id); as control) {

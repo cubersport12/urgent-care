@@ -67,18 +67,26 @@ export const testSchema = z.object({
   })).nullable()
 });
 
+export const appRescueItemParameterDiscriminatorByTimerSchema = z.object({
+  type: z.enum(['value', 'range']),
+  min: z.number(),
+  max: z.number()
+}).optional();
+
 export const appRescueItemParameterSchema = z.discriminatedUnion('category', [
   z.object({
     id: z.string(),
     label: z.string(),
     value: z.number(),
-    category: z.literal('number')
+    category: z.literal('number'),
+    discriminatorByTimer: appRescueItemParameterDiscriminatorByTimerSchema
   }),
   z.object({
     id: z.string(),
     label: z.string(),
     value: z.string().regex(/^\d{2}:\d{2}:\d{2}$/), // Формат HH:mm:ss
-    category: z.literal('duration')
+    category: z.literal('duration'),
+    discriminatorByTimer: appRescueItemParameterDiscriminatorByTimerSchema
   })
 ]);
 

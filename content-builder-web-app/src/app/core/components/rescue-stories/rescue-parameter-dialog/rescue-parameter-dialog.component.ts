@@ -5,7 +5,8 @@ import { MatButton } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { AppRescueItemParameterVm } from '@/core/utils';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { AppRescueItemParameterVm, AppRescueItemParameterDiscriminatorByTimerVm } from '@/core/utils';
 import { CommonModule } from '@angular/common';
 
 export interface RescueParameterDialogData {
@@ -20,6 +21,7 @@ export interface RescueParameterDialogData {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatCheckboxModule,
     MatButton,
     MatDialogModule
   ],
@@ -69,6 +71,80 @@ export interface RescueParameterDialogData {
             }
           </mat-form-field>
         }
+
+        <mat-checkbox [formControl]="_form.controls.hasDiscriminator">
+          Использовать таймер для уменьшения значения
+        </mat-checkbox>
+
+        @if (_form.value.hasDiscriminator) {
+          <div class="flex flex-col gap-2 p-3 border border-gray-300 rounded">
+            <mat-form-field appearance="fill">
+              <mat-label>Тип дискриминатора</mat-label>
+              <mat-select [formControl]="_form.controls.discriminatorType">
+                <mat-option value="value">Значение</mat-option>
+                <mat-option value="range">Диапазон</mat-option>
+              </mat-select>
+              @if (_form.controls.discriminatorType.hasError('required')) {
+                <mat-error>Тип обязателен</mat-error>
+              }
+            </mat-form-field>
+
+            @if (_isDiscriminatorValue) {
+              <mat-form-field appearance="fill">
+                <mat-label>Значение</mat-label>
+                <input 
+                  matInput 
+                  type="number" 
+                  [formControl]="_form.controls.discriminatorValue" 
+                  min="0"
+                  placeholder="0">
+                @if (_form.controls.discriminatorValue.hasError('required')) {
+                  <mat-error>Значение обязательно</mat-error>
+                }
+                @if (_form.controls.discriminatorValue.hasError('min')) {
+                  <mat-error>Значение должно быть >= 0</mat-error>
+                }
+              </mat-form-field>
+            } @else {
+              <div class="flex gap-2">
+                <mat-form-field appearance="fill" class="grow">
+                  <mat-label>Минимум</mat-label>
+                  <input 
+                    matInput 
+                    type="number" 
+                    [formControl]="_form.controls.discriminatorMin" 
+                    min="0"
+                    placeholder="0">
+                  @if (_form.controls.discriminatorMin.hasError('required')) {
+                    <mat-error>Минимум обязателен</mat-error>
+                  }
+                  @if (_form.controls.discriminatorMin.hasError('min')) {
+                    <mat-error>Минимум должен быть >= 0</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="grow">
+                  <mat-label>Максимум</mat-label>
+                  <input 
+                    matInput 
+                    type="number" 
+                    [formControl]="_form.controls.discriminatorMax" 
+                    min="0"
+                    placeholder="0">
+                  @if (_form.controls.discriminatorMax.hasError('required')) {
+                    <mat-error>Максимум обязателен</mat-error>
+                  }
+                  @if (_form.controls.discriminatorMax.hasError('min')) {
+                    <mat-error>Максимум должен быть >= 0</mat-error>
+                  }
+                  @if (_form.controls.discriminatorMax.hasError('minGreaterThanMax')) {
+                    <mat-error>Максимум должен быть >= минимума</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            }
+          </div>
+        }
       </form>
 
       <div class="flex justify-end gap-2">
@@ -93,11 +169,20 @@ export class RescueParameterDialogComponent {
     label: new FormControl<string>('', Validators.required),
     value: new FormControl<number>(0, [Validators.required]),
     category: new FormControl<'number' | 'duration'>('number', Validators.required),
-    timeValue: new FormControl<string>('00:00:00', Validators.required)
+    timeValue: new FormControl<string>('00:00:00', Validators.required),
+    hasDiscriminator: new FormControl<boolean>(false),
+    discriminatorType: new FormControl<'value' | 'range'>('value', Validators.required),
+    discriminatorValue: new FormControl<number>(0, [Validators.required, Validators.min(0)]),
+    discriminatorMin: new FormControl<number>(0, [Validators.required, Validators.min(0)]),
+    discriminatorMax: new FormControl<number>(0, [Validators.required, Validators.min(0)])
   });
 
   protected get _isDuration() {
     return this._form.value.category === 'duration';
+  }
+
+  protected get _isDiscriminatorValue() {
+    return this._form.value.discriminatorType === 'value';
   }
 
   constructor() {
@@ -123,13 +208,60 @@ export class RescueParameterDialogComponent {
           : 0;
       }
 
+      const discriminator = this.data.parameter.discriminatorByTimer;
+      const discriminatorType = discriminator?.type || 'value';
+      // Если тип "value", используем min (или max, они должны быть равны) как значение
+      const discriminatorValue = discriminatorType === 'value' 
+        ? (discriminator?.min ?? discriminator?.max ?? 0)
+        : 0;
+      
       this._form.patchValue({
         label: this.data.parameter.label,
         value: numericValue,
         category: category,
-        timeValue: timeValue
+        timeValue: timeValue,
+        hasDiscriminator: !!discriminator,
+        discriminatorType: discriminatorType,
+        discriminatorValue: discriminatorValue,
+        discriminatorMin: discriminator?.min ?? 0,
+        discriminatorMax: discriminator?.max ?? 0
       });
     }
+
+    // Включаем/выключаем валидацию для полей discriminator
+    this._form.controls.hasDiscriminator.valueChanges.subscribe(hasDiscriminator => {
+      this._updateDiscriminatorValidators();
+    });
+
+    // Обновляем валидацию при изменении типа discriminator
+    this._form.controls.discriminatorType.valueChanges.subscribe(() => {
+      this._updateDiscriminatorValidators();
+      // При переключении на "value", синхронизируем значение
+      if (this._form.value.discriminatorType === 'value') {
+        const currentValue = this._form.controls.discriminatorValue.value ?? 0;
+        this._form.patchValue({
+          discriminatorMin: currentValue,
+          discriminatorMax: currentValue
+        }, { emitEvent: false });
+      }
+    });
+
+    // Синхронизируем discriminatorValue с min/max для типа "value"
+    this._form.controls.discriminatorValue.valueChanges.subscribe(value => {
+      if (this._form.value.discriminatorType === 'value' && value !== null) {
+        this._form.patchValue({
+          discriminatorMin: value,
+          discriminatorMax: value
+        }, { emitEvent: false });
+      }
+    });
+
+    // Валидация max >= min при изменении min (только для типа "range")
+    this._form.controls.discriminatorMin.valueChanges.subscribe(() => {
+      if (this._form.value.discriminatorType === 'range') {
+        this._form.controls.discriminatorMax.updateValueAndValidity({ emitEvent: false });
+      }
+    });
 
     // Синхронизируем timeValue с value при изменении категории
     this._form.controls.category.valueChanges.subscribe((category) => {
@@ -148,6 +280,49 @@ export class RescueParameterDialogComponent {
         }, { emitEvent: false });
       }
     });
+  }
+
+  private _updateDiscriminatorValidators(): void {
+    const hasDiscriminator = this._form.value.hasDiscriminator;
+    const discriminatorType = this._form.value.discriminatorType;
+
+    if (hasDiscriminator) {
+      this._form.controls.discriminatorType.setValidators([Validators.required]);
+      
+      if (discriminatorType === 'value') {
+        // Для типа "value" валидируем только discriminatorValue
+        this._form.controls.discriminatorValue.setValidators([Validators.required, Validators.min(0)]);
+        this._form.controls.discriminatorMin.clearValidators();
+        this._form.controls.discriminatorMax.clearValidators();
+      }
+      else {
+        // Для типа "range" валидируем min и max
+        this._form.controls.discriminatorValue.clearValidators();
+        this._form.controls.discriminatorMin.setValidators([Validators.required, Validators.min(0)]);
+        this._form.controls.discriminatorMax.setValidators([
+          Validators.required, 
+          Validators.min(0),
+          (control) => {
+            const min = this._form.controls.discriminatorMin.value;
+            if (min !== null && control.value !== null && control.value < min) {
+              return { minGreaterThanMax: true };
+            }
+            return null;
+          }
+        ]);
+      }
+    }
+    else {
+      this._form.controls.discriminatorType.clearValidators();
+      this._form.controls.discriminatorValue.clearValidators();
+      this._form.controls.discriminatorMin.clearValidators();
+      this._form.controls.discriminatorMax.clearValidators();
+    }
+
+    this._form.controls.discriminatorType.updateValueAndValidity({ emitEvent: false });
+    this._form.controls.discriminatorValue.updateValueAndValidity({ emitEvent: false });
+    this._form.controls.discriminatorMin.updateValueAndValidity({ emitEvent: false });
+    this._form.controls.discriminatorMax.updateValueAndValidity({ emitEvent: false });
   }
 
   private _minutesToTime(minutes: number): string {
@@ -171,11 +346,38 @@ export class RescueParameterDialogComponent {
         finalValue = this._form.value.value!;
       }
 
+      // Формируем discriminatorByTimer, если включен
+      let discriminatorByTimer: AppRescueItemParameterDiscriminatorByTimerVm | undefined;
+      if (this._form.value.hasDiscriminator) {
+        const discriminatorType = this._form.value.discriminatorType!;
+        let min: number;
+        let max: number;
+
+        if (discriminatorType === 'value') {
+          // Для типа "value" min = max = значение из discriminatorValue
+          const value = this._form.value.discriminatorValue ?? 0;
+          min = value;
+          max = value;
+        }
+        else {
+          // Для типа "range" используем отдельные min и max
+          min = this._form.value.discriminatorMin ?? 0;
+          max = this._form.value.discriminatorMax ?? 0;
+        }
+
+        discriminatorByTimer = {
+          type: discriminatorType,
+          min: min,
+          max: max
+        };
+      }
+
       const result: AppRescueItemParameterVm = {
         id: this.data.parameter?.id || '',
         label: this._form.value.label!,
         value: finalValue,
-        category: this._form.value.category!
+        category: this._form.value.category!,
+        discriminatorByTimer
       };
       this._dialogRef.close(result);
     }

@@ -164,6 +164,7 @@ export class RescueStoryItemFormComponent {
 
   // Форма для visibleParams триггера (Map: parameterId -> FormControl)
   protected readonly _triggerVisibleParamControls = new Map<string, FormControl<string | number>>();
+  protected readonly _elementParameterControls = new Map<string, FormControl<string | number>>();
 
   // Получаем параметры из rescue item
   protected readonly _availableParameters = computed(() => {
@@ -501,6 +502,11 @@ export class RescueStoryItemFormComponent {
 
     // Инициализируем visibleParams для всех элементов
     this._initializeElementVisibleParams(trigger);
+    
+    // Инициализируем parameters для не-триггеров
+    if (!this._isSelectedTrigger()) {
+      this._initializeElementParameters(trigger);
+    }
   }
 
   private _initializeTriggerParameters(trigger: RescueStorySceneTriggerVm): void {
@@ -555,6 +561,28 @@ export class RescueStoryItemFormComponent {
             this._updateSelectedElementVisibleParams();
           });
           this._triggerVisibleParamControls.set(param.id, control as FormControl<string | number>);
+        }
+      });
+    }
+  }
+
+  private _initializeElementParameters(trigger: RescueStorySceneTriggerVm): void {
+    // Очищаем старые контролы
+    this._elementParameterControls.clear();
+
+    const parameters = this._availableParameters();
+
+    // Создаем FormControl только для параметров, которые есть в parameters
+    if (trigger.parameters && trigger.parameters.length > 0) {
+      trigger.parameters.forEach(param => {
+        const availableParam = parameters.find(p => p.id === param.id);
+        if (availableParam) {
+          const defaultValue = param.value ?? (availableParam.category === 'duration' ? '00:00:00' : 0);
+          const control = new FormControl<string | number | null>(defaultValue);
+          control.valueChanges.subscribe(() => {
+            this._updateElementParameters();
+          });
+          this._elementParameterControls.set(availableParam.id, control as FormControl<string | number>);
         }
       });
     }
@@ -844,6 +872,21 @@ export class RescueStoryItemFormComponent {
     }
   }
 
+  protected _getSelectedElementType(): string | null {
+    const selected = this._selectedElement();
+    if (!selected) {
+      return null;
+    }
+    const items = this._store.selectSignal(RescueLibraryState.getAllRescueLibraryItems)();
+    const item = items.find(i => i.id === selected.triggerId);
+    return item?.type || null;
+  }
+
+  protected _isTestOrQuestion(): boolean {
+    const type = this._getSelectedElementType();
+    return type === 'test' || type === 'question';
+  }
+
   // Методы для работы с restrictions
   protected _getParameterCategory(parameterId: string): 'number' | 'duration' {
     const parameter = this._availableParameters().find(p => p.id === parameterId);
@@ -955,6 +998,87 @@ export class RescueStoryItemFormComponent {
 
   protected _isParameterInVisibleParams(parameterId: string): boolean {
     return this._triggerVisibleParamControls.has(parameterId);
+  }
+
+  // Методы для работы с parameters (для не-триггеров)
+  protected _getElementParameterControl(parameterId: string): FormControl<string | number> | null {
+    return this._elementParameterControls.get(parameterId) || null;
+  }
+
+  protected _getElementParameterValue(parameterId: string): string | number {
+    const control = this._elementParameterControls.get(parameterId);
+    if (control) {
+      return control.value ?? (this._getParameterCategory(parameterId) === 'duration' ? '00:00:00' : 0);
+    }
+    return this._getParameterCategory(parameterId) === 'duration' ? '00:00:00' : 0;
+  }
+
+  protected _updateElementParameter(parameterId: string, value: string | number): void {
+    let control = this._elementParameterControls.get(parameterId);
+    
+    if (!control) {
+      const newControl = new FormControl<string | number | null>(value);
+      newControl.valueChanges.subscribe(() => {
+        this._updateElementParameters();
+      });
+      control = newControl as FormControl<string | number>;
+      this._elementParameterControls.set(parameterId, control);
+    }
+    else {
+      control.setValue(value, { emitEvent: true });
+    }
+  }
+
+  protected _removeElementParameter(parameterId: string): void {
+    const control = this._elementParameterControls.get(parameterId);
+    if (control) {
+      this._elementParameterControls.delete(parameterId);
+      this._updateElementParameters();
+    }
+  }
+
+  protected _isParameterInElementParameters(parameterId: string): boolean {
+    return this._elementParameterControls.has(parameterId);
+  }
+
+  private _updateElementParameters(): void {
+    const selected = this._selectedElement();
+    if (!selected) {
+      return;
+    }
+
+    const parameters: RescueStorySceneTriggerParamVm[] = [];
+    const availableParams = this._availableParameters();
+
+    // Собираем все значения parameters из формы
+    availableParams.forEach(param => {
+      const control = this._elementParameterControls.get(param.id);
+      if (control && control.value !== null && control.value !== undefined) {
+        parameters.push({
+          id: param.id,
+          value: control.value
+        });
+      }
+    });
+
+    // Обновляем элемент с новыми parameters
+    const currentScene = this.storyData().scene;
+    const updatedTriggers = currentScene.items.map(t =>
+      t.triggerId === selected.triggerId 
+        ? { 
+            ...selected, 
+            parameters, 
+            visibleParams: selected.visibleParams || [] 
+          }
+        : t
+    );
+
+    this._updateScene({ ...currentScene, items: updatedTriggers });
+    this._selectedElement.set({ 
+      ...selected, 
+      parameters, 
+      visibleParams: selected.visibleParams || [] 
+    });
   }
 
   private _getRestrictionsFromControls(): RescueStorySceneRestrictionsVm[] {
