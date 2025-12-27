@@ -67,6 +67,21 @@ export const testSchema = z.object({
   })).nullable()
 });
 
+export const appRescueItemParameterSchema = z.discriminatedUnion('category', [
+  z.object({
+    id: z.string(),
+    label: z.string(),
+    value: z.number(),
+    category: z.literal('number')
+  }),
+  z.object({
+    id: z.string(),
+    label: z.string(),
+    value: z.string().regex(/^\d{2}:\d{2}:\d{2}$/), // Формат HH:mm:ss
+    category: z.literal('duration')
+  })
+]);
+
 export const rescueItemSchema = z.object({
   id: z.string(),
   order: z.number().nullable().optional(),
@@ -75,8 +90,8 @@ export const rescueItemSchema = z.object({
   createdAt: z.string(),
   description: z.string(),
   data: z.object({
-    maxDurationMin: z.number()
-  })
+    parameters: z.array(appRescueItemParameterSchema).optional()
+  }).optional()
 });
 
 export const rescueLibraryItemSchema = z.discriminatedUnion('type', [
@@ -156,12 +171,10 @@ export const rescueStorySceneTriggerSchema = z.object({
 
 export const rescueStorySceneSchema = z.object({
   backgroundImage: z.string(),
-  triggers: z.array(rescueStorySceneTriggerSchema)
+  items: z.array(rescueStorySceneTriggerSchema)
 });
 
 export const rescueStoryDataSchema = z.object({
-  startAt: z.string(),
-  endAt: z.string(),
   scene: rescueStorySceneSchema
 });
 

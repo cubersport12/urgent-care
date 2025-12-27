@@ -102,7 +102,14 @@ export type AppRescueItemVm = {
 } & AppBaseVm;
 
 export type AppRescueItemDataVm = {
-  maxDurationMin: number;
+  parameters?: AppRescueItemParameterVm[];
+};
+
+export type AppRescueItemParameterVm = {
+  id: string;
+  label: string;
+  value: string | number;
+  category: 'number' | 'duration';
 };
 
 // Модель элемента справочника из режима спасения
@@ -158,14 +165,12 @@ export type RescueStoryVm = {
 } & Omit<AppBaseVm, 'parentId'>;
 
 export type RescueStoryDataVm = {
-  startAt: string;
-  endAt: string;
   scene: RescueStorySceneVm;
 };
 
 export type RescueStorySceneVm = {
   backgroundImage: string;
-  triggers: RescueStorySceneTriggerVm[];
+  items: RescueStorySceneTriggerVm[];
 };
 
 export type RescueStorySceneTriggerVm = {

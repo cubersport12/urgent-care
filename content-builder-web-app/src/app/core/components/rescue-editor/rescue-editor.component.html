@@ -9,10 +9,27 @@
         <mat-label>Описание</mat-label>
         <input matInput [formControl]="_form.controls.description" />
       </mat-form-field>
-      <mat-form-field appearance="fill" class="grow">
-        <mat-label>Максимальная длительность (минуты)</mat-label>
-        <input matInput type="number" [formControl]="_form.controls.data.controls.maxDurationMin" min="1">
-      </mat-form-field>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap mt-2">
+      <span class="text-sm font-medium">Параметры сцен:</span>
+      @for (parameter of _parameters(); track parameter.id) {
+        <mat-chip (click)="_openEditParameterDialog(parameter)">
+          {{ parameter.label }} ({{ _formatParameterValue(parameter) }})
+          <button 
+            matChipRemove
+            type="button"
+            (click)="_deleteParameter(parameter.id); $event.stopPropagation()">
+            <mat-icon [svgIcon]="'trash'"></mat-icon>
+          </button>
+        </mat-chip>
+      }
+      <button 
+        type="button"
+        mat-mini-fab
+        color="primary"
+        (click)="_openAddParameterDialog()">
+        <mat-icon [svgIcon]="'plus'"></mat-icon>
+      </button>
     </div>
   </form>
   @if (_form.dirty) {
@@ -26,8 +43,7 @@
   <mat-tab-group class="grow overflow-hidden">
     <mat-tab label="Сюжет">
       <app-rescue-stories-builder 
-        [rescueId]="_dialogData.id"
-        [maxDurationMinutes]="_form.value.data?.maxDurationMin ?? 0" />
+        [rescueId]="_dialogData.id" />
     </mat-tab>
     <mat-tab label="Библиотека">
       <div class="w-full h-full overflow-hidden">

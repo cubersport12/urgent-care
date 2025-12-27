@@ -65,20 +65,29 @@ import { AppFilesStorageService } from '@/core/api';
     }
     .scene-element {
       position: absolute;
-      border: 2px solid #2196f3;
-      background: rgba(33, 150, 243, 0.1);
+      background: var(--mat-sys-surface-container);
+      opacity: 0.7;
+      border-radius: 5px;
+      padding: 5px;
       cursor: move;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 40px;
-      min-height: 40px;
       user-select: none;
       touch-action: none;
+      overflow: hidden;
+    }
+    .scene-element span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
     }
     .scene-element.selected {
-      border-color: #ff9800;
-      background: rgba(255, 152, 0, 0.2);
+      opacity: 1;
+      background: var(--mat-sys-primary-container);
+      // background: rgba(255, 152, 0, 0.2);
       z-index: 10;
     }
     .scene-element.dragging {
@@ -104,19 +113,14 @@ export class RescueStoryItemFormComponent {
   storyData = input.required<RescueStoryDataVm>();
   storyName = input.required<string>();
   storyId = input<string>('');
-  startAtDisabled = input<boolean>(false);
-  maxDurationMinutes = input<number>(0);
-  totalDurationMinutes = input<number>(0);
   submitEvent = output<{ name: string; data: RescueStoryDataVm }>();
   imageFileEvent = output<{ storyId: string; file: File }>();
 
   protected readonly _form = new FormGroup({
-    name: new FormControl<string>('', Validators.required),
-    startAt: new FormControl<string>('', Validators.required),
-    endAt: new FormControl<string>('', Validators.required)
+    name: new FormControl<string>('', Validators.required)
   });
 
-  private readonly _formValues = signal<{ name: string; startAt: string; endAt: string }>({ name: '', startAt: '', endAt: '' });
+  private readonly _formValues = signal<{ name: string }>({ name: '' });
 
   // Scene editor state
   protected readonly _imageFile = signal<File | null>(null);
@@ -136,30 +140,12 @@ export class RescueStoryItemFormComponent {
     height: new FormControl<number>(10, [Validators.required, Validators.min(1), Validators.max(100)])
   });
 
-  protected readonly _duration = computed(() => {
-    const { startAt, endAt } = this._formValues();
-    if (!startAt || !endAt) {
-      return 0;
-    }
-    const start = this._parseTimeToMinutes(startAt);
-    const end = this._parseTimeToMinutes(endAt);
-    return end - start;
-  });
-
-  protected readonly _isValidDuration = computed(() => {
-    const duration = this._duration();
-    const maxDuration = this.maxDurationMinutes();
-    const totalDuration = this.totalDurationMinutes();
-    return duration > 0 && (totalDuration + duration - this._getCurrentStoryDuration()) <= maxDuration;
-  });
 
   constructor() {
     // Отслеживаем изменения формы
     this._form.valueChanges.subscribe(() => {
       this._formValues.set({
-        name: this._form.value.name ?? '',
-        startAt: this._form.value.startAt ?? '',
-        endAt: this._form.value.endAt ?? ''
+        name: this._form.value.name ?? ''
       });
     });
 
@@ -169,13 +155,11 @@ export class RescueStoryItemFormComponent {
         debounceTime(300),
         distinctUntilChanged((prev, curr) =>
           prev.name === curr.name
-          && prev.startAt === curr.startAt
-          && prev.endAt === curr.endAt
         )
       )
       .subscribe(() => {
         // Эмитим изменения при валидной форме
-        if (this._form.valid && this._isValidDuration()) {
+        if (this._form.valid) {
           this._emitFormData();
         }
       });
@@ -210,70 +194,14 @@ export class RescueStoryItemFormComponent {
       const data = this.storyData();
       const name = this.storyName();
       if (data) {
-        const startAtFormatted = this._formatTime(data.startAt);
-        const endAtFormatted = this._formatTime(data.endAt);
-
-        // Обновляем только если значения изменились, чтобы не сбрасывать форму при вводе
-        if (this._form.value.startAt !== startAtFormatted
-          || this._form.value.endAt !== endAtFormatted
-          || this._form.value.name !== name) {
+        // Обновляем только если значение изменилось, чтобы не сбрасывать форму при вводе
+        if (this._form.value.name !== name) {
           this._form.patchValue({
-            name: name,
-            startAt: startAtFormatted,
-            endAt: endAtFormatted
+            name: name
           }, { emitEvent: true });
         }
       }
     });
-
-    effect(() => {
-      const disabled = this.startAtDisabled();
-      if (disabled) {
-        this._form.controls.startAt.disable({ emitEvent: false });
-      }
-      else {
-        this._form.controls.startAt.enable({ emitEvent: false });
-      }
-    });
-  }
-
-  private _formatTime(minutes: string): string {
-    // Преобразуем минуты (строку) в "HH:mm:ss"
-    const totalSeconds = parseInt(minutes, 10) * 60 || 0;
-    const hours = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  }
-
-  private _parseTime(timeString: string): string {
-    // Преобразуем "HH:mm:ss" в минуты (строку)
-    const parts = timeString.split(':');
-    const hours = parseInt(parts[0] || '0', 10);
-    const minutes = parseInt(parts[1] || '0', 10);
-    const seconds = parseInt(parts[2] || '0', 10);
-    const totalMinutes = hours * 60 + minutes + Math.round(seconds / 60);
-    return String(totalMinutes);
-  }
-
-  private _parseTimeToMinutes(timeString: string): number {
-    // Преобразуем "HH:mm:ss" в минуты (число)
-    const parts = timeString.split(':');
-    const hours = parseInt(parts[0] || '0', 10);
-    const minutes = parseInt(parts[1] || '0', 10);
-    const seconds = parseInt(parts[2] || '0', 10);
-    return hours * 60 + minutes + Math.round(seconds / 60);
-  }
-
-  private _getCurrentStoryDuration(): number {
-    const data = this.storyData();
-    if (!data) {
-      return 0;
-    }
-    // data.startAt и data.endAt уже в формате минут (строка)
-    const start = parseInt(data.startAt, 10) || 0;
-    const end = parseInt(data.endAt, 10) || 0;
-    return end - start;
   }
 
   // Scene editor methods
@@ -285,6 +213,7 @@ export class RescueStoryItemFormComponent {
       const reader = new FileReader();
       reader.onload = (e) => {
         this._imagePreviewUrl.set(e.target?.result as string);
+        this._emitFormData();
       };
       reader.readAsDataURL(file);
     }
@@ -308,14 +237,29 @@ export class RescueStoryItemFormComponent {
   }
 
   protected _onImageContainerDragOver(event: DragEvent): void {
+    // Запрещаем drop, если изображение не загружено
+    if (!this._imagePreviewUrl()) {
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'none';
+      }
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'copy';
+      // Если перетаскивается существующий элемент, используем 'move', иначе 'copy'
+      const draggedElement = this._draggedElement();
+      event.dataTransfer.dropEffect = draggedElement ? 'move' : 'copy';
     }
   }
 
   protected _onImageContainerDrop(event: DragEvent): void {
+    // Запрещаем drop, если изображение не загружено
+    if (!this._imagePreviewUrl()) {
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
 
@@ -325,37 +269,45 @@ export class RescueStoryItemFormComponent {
       const container = this._imageContainer()!.nativeElement;
       const rect = container.getBoundingClientRect();
       const offset = this._dragOffset();
-      
-      let x = ((event.clientX - rect.left) / rect.width) * 100;
-      let y = ((event.clientY - rect.top) / rect.height) * 100;
-      
+
+      // Вычисляем новую позицию относительно контейнера
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+
+      // Преобразуем в проценты
+      let x = (mouseX / rect.width) * 100;
+      let y = (mouseY / rect.height) * 100;
+
+      // Корректируем позицию с учетом смещения от точки клика (если есть)
       if (offset) {
         x -= (offset.x / rect.width) * 100;
         y -= (offset.y / rect.height) * 100;
       }
 
+      // Ограничиваем значения в пределах 0-100%
+      x = Math.max(0, Math.min(100, x));
+      y = Math.max(0, Math.min(100, y));
+
       const updatedTrigger: RescueStorySceneTriggerVm = {
         ...draggedElement,
-        position: { 
-          x: Math.max(0, Math.min(100, x)), 
-          y: Math.max(0, Math.min(100, y)) 
-        }
+        position: { x, y }
       };
 
       const currentScene = this.storyData().scene;
-      const updatedTriggers = currentScene.triggers.map(t => 
+      const updatedTriggers = currentScene.items.map(t =>
         t.triggerId === draggedElement.triggerId ? updatedTrigger : t
       );
 
-      this._updateScene({ ...currentScene, triggers: updatedTriggers });
+      this._updateScene({ ...currentScene, items: updatedTriggers });
       this._selectedElement.set(updatedTrigger);
       this._updateElementParamsForm(updatedTrigger);
-      this._onElementDragEnd(event);
+      this._onElementDragEnd();
       return;
     }
 
+    // Если перетаскивается новый элемент из дерева
     let draggedItem = this._draggedItem();
-    
+
     // Если элемент не установлен через событие, пытаемся получить из dataTransfer
     if (!draggedItem && event.dataTransfer) {
       try {
@@ -365,7 +317,8 @@ export class RescueStoryItemFormComponent {
           // Получаем полный элемент из store
           const items = this._store.selectSignal(RescueLibraryState.getAllRescueLibraryItems)();
           draggedItem = items.find(i => i.id === itemData.id) || null;
-        } else {
+        }
+        else {
           // Fallback: получаем ID из text/plain
           const itemId = event.dataTransfer.getData('text/plain');
           if (itemId) {
@@ -373,7 +326,8 @@ export class RescueStoryItemFormComponent {
             draggedItem = items.find(i => i.id === itemId) || null;
           }
         }
-      } catch (e) {
+      }
+      catch (e) {
         console.error('Ошибка при получении данных из drag event:', e);
       }
     }
@@ -391,13 +345,13 @@ export class RescueStoryItemFormComponent {
     const newTrigger: RescueStorySceneTriggerVm = {
       triggerId: draggedItem.id,
       position: { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) },
-      size: { width: 10, height: 10 }
+      size: { width: 20, height: 10 }
     };
 
     const currentScene = this.storyData().scene;
-    const updatedTriggers = [...currentScene.triggers, newTrigger];
+    const updatedTriggers = [...currentScene.items, newTrigger];
 
-    this._updateScene({ ...currentScene, triggers: updatedTriggers });
+    this._updateScene({ ...currentScene, items: updatedTriggers });
     this._selectedElement.set(newTrigger);
     this._updateElementParamsForm(newTrigger);
 
@@ -411,9 +365,15 @@ export class RescueStoryItemFormComponent {
   }
 
   protected _onElementDragStart(event: DragEvent, trigger: RescueStorySceneTriggerVm): void {
+    // Запрещаем перетаскивание, если изображение не загружено
+    if (!this._imagePreviewUrl()) {
+      event.preventDefault();
+      return;
+    }
+
     event.stopPropagation();
     this._draggedElement.set(trigger);
-    
+
     if (!this._imageContainer()) {
       return;
     }
@@ -422,71 +382,20 @@ export class RescueStoryItemFormComponent {
     const rect = container.getBoundingClientRect();
     const elementX = (trigger.position.x / 100) * rect.width;
     const elementY = (trigger.position.y / 100) * rect.height;
-    
+
     // Вычисляем смещение от начала элемента до точки клика
     const offsetX = event.clientX - rect.left - elementX;
     const offsetY = event.clientY - rect.top - elementY;
-    
+
     this._dragOffset.set({ x: offsetX, y: offsetY });
-    
+
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('text/plain', trigger.triggerId);
     }
   }
 
-  protected _onElementDragOver(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move';
-    }
-  }
-
-  protected _onElementDrop(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const draggedElement = this._draggedElement();
-    if (!draggedElement || !this._imageContainer()) {
-      this._onElementDragEnd(event);
-      return;
-    }
-
-    const container = this._imageContainer()!.nativeElement;
-    const rect = container.getBoundingClientRect();
-    const offset = this._dragOffset();
-    
-    // Вычисляем новую позицию с учетом смещения
-    let x = ((event.clientX - rect.left) / rect.width) * 100;
-    let y = ((event.clientY - rect.top) / rect.height) * 100;
-    
-    if (offset) {
-      // Корректируем позицию с учетом смещения от точки клика
-      x -= (offset.x / rect.width) * 100;
-      y -= (offset.y / rect.height) * 100;
-    }
-
-    const updatedTrigger: RescueStorySceneTriggerVm = {
-      ...draggedElement,
-      position: { 
-        x: Math.max(0, Math.min(100, x)), 
-        y: Math.max(0, Math.min(100, y)) 
-      }
-    };
-
-    const currentScene = this.storyData().scene;
-    const updatedTriggers = currentScene.triggers.map(t => 
-      t.triggerId === draggedElement.triggerId ? updatedTrigger : t
-    );
-
-    this._updateScene({ ...currentScene, triggers: updatedTriggers });
-    this._selectedElement.set(updatedTrigger);
-    this._updateElementParamsForm(updatedTrigger);
-    this._onElementDragEnd(event);
-  }
-
-  protected _onElementDragEnd(event: DragEvent): void {
+  protected _onElementDragEnd(): void {
     this._draggedElement.set(null);
     this._dragOffset.set(null);
   }
@@ -494,7 +403,7 @@ export class RescueStoryItemFormComponent {
   protected _onImageContainerClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
     const container = this._imageContainer()?.nativeElement;
-    
+
     // Проверяем, что клик был именно по контейнеру или по изображению, но не по элементу
     if (container && (target === container || target.classList.contains('scene-image'))) {
       this._selectedElement.set(null);
@@ -509,8 +418,8 @@ export class RescueStoryItemFormComponent {
     }
 
     const currentScene = this.storyData().scene;
-    const updatedTriggers = currentScene.triggers.filter(t => t.triggerId !== selected.triggerId);
-    this._updateScene({ ...currentScene, triggers: updatedTriggers });
+    const updatedTriggers = currentScene.items.filter(t => t.triggerId !== selected.triggerId);
+    this._updateScene({ ...currentScene, items: updatedTriggers });
     this._selectedElement.set(null);
     this._elementParamsForm.reset();
   }
@@ -538,34 +447,32 @@ export class RescueStoryItemFormComponent {
     };
 
     const currentScene = this.storyData().scene;
-    const updatedTriggers = currentScene.triggers.map(t =>
+    const updatedTriggers = currentScene.items.map(t =>
       t.triggerId === selected.triggerId ? updatedTrigger : t
     );
 
-    this._updateScene({ ...currentScene, triggers: updatedTriggers });
+    this._updateScene({ ...currentScene, items: updatedTriggers });
     this._selectedElement.set(updatedTrigger);
   }
 
   private _updateScene(scene: RescueStoryDataVm['scene']): void {
-    const { name, startAt, endAt } = this._form.value;
+    const { name } = this._form.value;
     this.submitEvent.emit({
       name: name!,
       data: {
-        startAt: this._parseTime(startAt!),
-        endAt: this._parseTime(endAt!),
         scene
       }
     });
   }
 
   private _emitFormData(): void {
-    const { name, startAt, endAt } = this._form.value;
+    const { name } = this._form.value;
     const imageFile = this._imageFile();
 
     // Если есть новое изображение, эмитим событие для загрузки в родительском компоненте
     // Пока используем временный путь для preview
     const backgroundImage = imageFile
-      ? `pending_${generateGUID()}_${imageFile.name}`
+      ? imageFile.name
       : this.storyData().scene.backgroundImage;
 
     // Эмитим файл изображения отдельно для загрузки при сохранении
@@ -578,8 +485,6 @@ export class RescueStoryItemFormComponent {
     this.submitEvent.emit({
       name: name!,
       data: {
-        startAt: this._parseTime(startAt!),
-        endAt: this._parseTime(endAt!),
         scene: {
           ...this.storyData().scene,
           backgroundImage

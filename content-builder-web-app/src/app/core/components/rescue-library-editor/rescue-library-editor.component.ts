@@ -68,7 +68,7 @@ export class RescueLibraryEditorComponent {
     effect(() => {
       const items = this._store.selectSignal(RescueLibraryState.getAllRescueLibraryItems)();
       const pendingId = this._pendingSelectionId();
-      
+
       if (pendingId) {
         const createdItem = items.find(x => x.id === pendingId);
         if (createdItem) {
@@ -109,7 +109,6 @@ export class RescueLibraryEditorComponent {
   protected _isTrigger(item: RescueLibraryItemVm): item is RescueLibraryTriggerVm {
     return item.type === 'trigger';
   }
-
 
   protected _handleSubmit(payload: Partial<RescueLibraryItemVm>): void {
     const selected = this._selectedItem();

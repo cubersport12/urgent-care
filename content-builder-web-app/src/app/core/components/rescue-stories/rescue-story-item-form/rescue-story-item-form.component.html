@@ -1,38 +1,4 @@
 <form class="flex flex-col gap-4" [formGroup]="_form">
-  <div class="flex gap-2">
-    <mat-form-field appearance="fill" class="flex-1">
-      <mat-label>Название сюжета</mat-label>
-      <input 
-        matInput 
-        [formControl]="_form.controls.name"
-        placeholder="Введите название сюжета">
-    </mat-form-field>
-    <mat-form-field appearance="fill" class="flex-1">
-      <mat-label>Время начала (HH:mm:ss)</mat-label>
-      <input 
-        matInput 
-        type="time"
-        step="1"
-        [formControl]="_form.controls.startAt"
-        [disabled]="startAtDisabled()"
-        placeholder="00:00:00">
-    </mat-form-field>
-    <mat-form-field appearance="fill" class="flex-1">
-      <mat-label>Время окончания (HH:mm:ss)</mat-label>
-      <input 
-        matInput 
-        type="time"
-        step="1"
-        [formControl]="_form.controls.endAt"
-        placeholder="00:00:00">
-    </mat-form-field>
-  </div>
-  <div class="text-sm text-gray-600">
-    Длительность: {{ _duration() }} минут
-    @if (!_isValidDuration()) {
-      <span class="text-red-500"> (превышена максимальная длительность)</span>
-    }
-  </div>
 
   <!-- Scene Editor -->
   <div class="scene-editor">
@@ -74,7 +40,7 @@
           </div>
         }
         
-        @for (trigger of storyData().scene.triggers; track trigger.triggerId) {
+        @for (trigger of storyData().scene.items; track trigger.triggerId) {
           <div 
             class="scene-element"
             [class.selected]="_isElementSelected(trigger)"
@@ -82,11 +48,9 @@
             draggable="true"
             (click)="_onElementClick(trigger, $event)"
             (dragstart)="_onElementDragStart($event, trigger)"
-            (dragover)="_onElementDragOver($event)"
-            (drop)="_onElementDrop($event)"
-            (dragend)="_onElementDragEnd($event)">
+            (dragend)="_onElementDragEnd()">
             <mat-icon [svgIcon]="_getItemIcon(trigger.triggerId)"></mat-icon>
-            <span class="ml-1 text-xs">{{ _getItemName(trigger.triggerId) }}</span>
+            <!-- <span class="ml-1 text-xs">{{ _getItemName(trigger.triggerId) }}</span> -->
           </div>
         }
       </div>
@@ -95,7 +59,7 @@
     <!-- Params Panel (Right) -->
     <div class="params-panel">
       @if (_selectedElement()) {
-        <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1">
           <div class="flex justify-between items-center">
             <h3 class="text-lg font-medium">Параметры элемента</h3>
             <button 
@@ -110,51 +74,65 @@
             {{ _getItemName(_selectedElement()!.triggerId) }}
           </div>
           
-          <form [formGroup]="_elementParamsForm" class="flex flex-col gap-4">
-            <mat-form-field appearance="fill">
-              <mat-label>Позиция X (%)</mat-label>
-              <input 
-                matInput 
-                type="number"
-                [formControl]="_elementParamsForm.controls.positionX"
-                min="0"
-                max="100">
-            </mat-form-field>
+          <form [formGroup]="_elementParamsForm" class="flex flex-col gap-1">
+            <div class="flex gap-1">
+              <mat-form-field appearance="fill" class="grow">
+                <mat-label>Позиция X (%)</mat-label>
+                <input 
+                  matInput 
+                  type="number"
+                  [formControl]="_elementParamsForm.controls.positionX"
+                  min="0"
+                  max="100">
+              </mat-form-field>
+              
+              <mat-form-field appearance="fill" class="grow">
+                <mat-label>Позиция Y (%)</mat-label>
+                <input 
+                  matInput 
+                  type="number"
+                  [formControl]="_elementParamsForm.controls.positionY"
+                  min="0"
+                  max="100">
+              </mat-form-field>
+            </div>
             
-            <mat-form-field appearance="fill">
-              <mat-label>Позиция Y (%)</mat-label>
-              <input 
-                matInput 
-                type="number"
-                [formControl]="_elementParamsForm.controls.positionY"
-                min="0"
-                max="100">
-            </mat-form-field>
-            
-            <mat-form-field appearance="fill">
-              <mat-label>Ширина (%)</mat-label>
-              <input 
-                matInput 
-                type="number"
-                [formControl]="_elementParamsForm.controls.width"
-                min="1"
-                max="100">
-            </mat-form-field>
-            
-            <mat-form-field appearance="fill">
-              <mat-label>Высота (%)</mat-label>
-              <input 
-                matInput 
-                type="number"
-                [formControl]="_elementParamsForm.controls.height"
-                min="1"
-                max="100">
-            </mat-form-field>
+            <div class="flex gap-1">
+              <mat-form-field appearance="fill" class="grow">
+                <mat-label>Ширина (%)</mat-label>
+                <input 
+                  matInput 
+                  type="number"
+                  [formControl]="_elementParamsForm.controls.width"
+                  min="1"
+                  max="100">
+              </mat-form-field>
+              
+              <mat-form-field appearance="fill" class="grow">
+                <mat-label>Высота (%)</mat-label>
+                <input 
+                  matInput 
+                  type="number"
+                  [formControl]="_elementParamsForm.controls.height"
+                  min="1"
+                  max="100">
+              </mat-form-field>
+            </div>
           </form>
         </div>
       } @else {
-        <div class="text-gray-400 text-center">
-          Выберите элемент на изображении для редактирования параметров
+        <div class="flex flex-col gap-1">
+          <h3 class="text-lg font-medium mb-2">Параметры сцены</h3>
+          
+          <form [formGroup]="_form" class="flex flex-col gap-1">
+            <mat-form-field appearance="fill">
+              <mat-label>Название сюжета</mat-label>
+              <input 
+                matInput 
+                [formControl]="_form.controls.name"
+                placeholder="Введите название сюжета">
+            </mat-form-field>
+          </form>
         </div>
       }
     </div>

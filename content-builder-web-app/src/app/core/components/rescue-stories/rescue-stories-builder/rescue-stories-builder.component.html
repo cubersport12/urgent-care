@@ -1,11 +1,5 @@
-<div class="flex flex-col gap-4 p-1">
+<div class="flex flex-col gap-1 p-1">
   <div class="flex justify-between items-center">
-    <div class="text-sm text-gray-600">
-      Общая длительность: {{ _totalDuration() }} / {{ maxDurationMinutes() }} минут
-      @if (_totalDuration() > maxDurationMinutes()) {
-        <span class="text-red-500"> (превышена максимальная длительность)</span>
-      }
-    </div>
     <div class="flex gap-2">
       <button 
         type="button" 
@@ -13,7 +7,7 @@
         color="primary"
         (click)="_addStory()">
         <mat-icon [svgIcon]="'circle-plus'"></mat-icon>
-        Создать сюжет
+        Добавить сюжет
       </button>
       <button 
         type="button" 
@@ -37,13 +31,6 @@
           <div class="story-header">
             <div class="story-info">
               <span class="font-medium">{{ story.name }}</span>
-              <span class="text-sm text-gray-600">
-                {{ _formatTimeFromMinutes(_parseTimeToMinutes(story.data.startAt)) }} - 
-                {{ _formatTimeFromMinutes(_parseTimeToMinutes(story.data.endAt)) }}
-              </span>
-              <span class="text-xs text-gray-500">
-                ({{ _getStoryDuration(i) }} мин)
-              </span>
             </div>
             <button 
             class="mr-1"
@@ -61,9 +48,6 @@
             [storyData]="story.data"
             [storyName]="story.name"
             [storyId]="story.id"
-            [startAtDisabled]="_isStartAtDisabled(i)"
-            [maxDurationMinutes]="maxDurationMinutes()"
-            [totalDurationMinutes]="_getTotalDurationUpTo(i) - _getStoryDuration(i)"
             (submitEvent)="_onStoryChange(i, $event)"
             (imageFileEvent)="_onImageFileEvent(i, $event)" />
         </div>

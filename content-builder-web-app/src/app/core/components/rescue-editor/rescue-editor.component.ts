@@ -1,6 +1,6 @@
-import { AppLoading, RescueActions } from '@/core/store';
-import { AppRescueItemVm, generateGUID, NullableValue } from '@/core/utils';
-import { Component, computed, effect, inject, Injectable } from '@angular/core';
+import { AppLoading, RescueActions, RescueState } from '@/core/store';
+import { AppRescueItemVm, generateGUID, NullableValue, AppRescueItemParameterVm } from '@/core/utils';
+import { Component, computed, effect, inject, Injectable, signal, ViewContainerRef } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -8,9 +8,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatChipsModule } from '@angular/material/chips';
 import { Store } from '@ngxs/store';
 import { RescueLibraryEditorComponent } from '../rescue-library-editor';
 import { RescueStoriesBuilderComponent } from '../rescue-stories';
+import { RescueParameterDialogComponent } from '../rescue-stories/rescue-parameter-dialog';
 
 @Injectable({
   providedIn: 'root'
@@ -40,6 +42,7 @@ export class RescueEditorService {
     MatFormFieldModule,
     MatInputModule,
     MatTabsModule,
+    MatChipsModule,
     RescueLibraryEditorComponent,
     RescueStoriesBuilderComponent
   ],
@@ -51,6 +54,8 @@ export class RescueEditorComponent {
   private readonly _ref = inject(MatDialogRef);
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
+  private readonly _dialog = inject(MatDialog);
+  private readonly _viewContainerRef = inject(ViewContainerRef);
 
   protected readonly _isPending = computed(() =>
     this._dispatched.isDispatched(RescueActions.CreateRescueItem)()
@@ -61,9 +66,7 @@ export class RescueEditorComponent {
     name: new FormControl<string>('', Validators.required),
     description: new FormControl<string>('', Validators.required),
     createdAt: new FormControl<string>('', Validators.required),
-    data: new FormGroup({
-      maxDurationMin: new FormControl<number>(0, [Validators.required, Validators.min(1)])
-    })
+    data: new FormGroup({})
   });
 
   constructor() {
@@ -93,10 +96,41 @@ export class RescueEditorComponent {
       name: name ?? '',
       description: description ?? '',
       createdAt: formatDateForInput(createdAt),
-      data: {
-        maxDurationMin: data?.maxDurationMin ?? 0
-      }
+      data: {}
     });
+    // Инициализируем локальные параметры из данных
+    this._localParameters.set(data?.parameters || []);
+  }
+
+  protected readonly _rescueItem = computed(() => {
+    const rescueId = this._dialogData?.id;
+    if (!rescueId) {
+      return this._dialogData;
+    }
+    const items = this._store.selectSignal(RescueState.getAllRescueItems)();
+    return items.find(item => item.id === rescueId) || this._dialogData;
+  });
+
+  // Локальное хранилище параметров (изменения не сохраняются до нажатия "Сохранить")
+  private readonly _localParameters = signal<AppRescueItemParameterVm[] | null>(null);
+
+  protected readonly _parameters = computed(() => {
+    // Всегда используем локальные параметры, если они были инициализированы
+    const localParams = this._localParameters();
+    if (localParams !== null) {
+      return localParams;
+    }
+    // Иначе используем параметры из store (при первой загрузке)
+    return this._rescueItem()?.data?.parameters || [];
+  });
+
+  protected _formatParameterValue(parameter: AppRescueItemParameterVm): string {
+    if (parameter.category === 'duration') {
+      // Для duration value уже строка в формате HH:mm:ss
+      return typeof parameter.value === 'string' ? parameter.value : String(parameter.value);
+    }
+    // Для number value - число
+    return String(parameter.value);
   }
 
   private _getRescueVm(): AppRescueItemVm {
@@ -108,13 +142,14 @@ export class RescueEditorComponent {
       }
       return new Date(dateTimeLocal).toISOString();
     };
+    const rescueItem = this._rescueItem();
     const result: AppRescueItemVm = {
-      ...(this._dialogData ?? {}),
+      ...(rescueItem ?? {}),
       name: name!,
       description: description!,
       createdAt: formatDateToISO(createdAt!),
       data: {
-        maxDurationMin: data!.maxDurationMin!
+        parameters: this._localParameters() || []
       }
     };
     if ('type' in result) {
@@ -154,5 +189,63 @@ export class RescueEditorComponent {
 
   protected _handleClose(): void {
     this._ref.close();
+  }
+
+  protected _openAddParameterDialog(): void {
+    const dialogRef = this._dialog.open(RescueParameterDialogComponent, {
+      viewContainerRef: this._viewContainerRef,
+      data: {}
+    });
+
+    dialogRef.afterClosed().subscribe((result?: AppRescueItemParameterVm) => {
+      if (result) {
+        this._addParameter(result);
+      }
+    });
+  }
+
+  protected _openEditParameterDialog(parameter: AppRescueItemParameterVm): void {
+    const dialogRef = this._dialog.open(RescueParameterDialogComponent, {
+      viewContainerRef: this._viewContainerRef,
+      data: { parameter }
+    });
+
+    dialogRef.afterClosed().subscribe((result?: AppRescueItemParameterVm) => {
+      if (result) {
+        this._updateParameter(result);
+      }
+    });
+  }
+
+  protected _deleteParameter(parameterId: string): void {
+    const currentParameters = this._localParameters() || [];
+    const updatedParameters = currentParameters.filter(p => p.id !== parameterId);
+    this._localParameters.set(updatedParameters);
+    // Помечаем форму как измененную
+    this._form.markAsDirty();
+  }
+
+  private _addParameter(parameter: AppRescueItemParameterVm): void {
+    const newParameter: AppRescueItemParameterVm = {
+      ...parameter,
+      id: generateGUID(),
+      category: parameter.category || 'number'
+    };
+
+    const currentParameters = this._localParameters() || [];
+    const updatedParameters = [...currentParameters, newParameter];
+    this._localParameters.set(updatedParameters);
+    // Помечаем форму как измененную
+    this._form.markAsDirty();
+  }
+
+  private _updateParameter(parameter: AppRescueItemParameterVm): void {
+    const currentParameters = this._localParameters() || [];
+    const updatedParameters = currentParameters.map(p => 
+      p.id === parameter.id ? parameter : p
+    );
+    this._localParameters.set(updatedParameters);
+    // Помечаем форму как измененную
+    this._form.markAsDirty();
   }
 }

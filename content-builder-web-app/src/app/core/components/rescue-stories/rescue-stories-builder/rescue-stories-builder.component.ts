@@ -9,6 +9,7 @@ import { RescueStoriesActions, RescueStoriesState, AppLoading } from '@/core/sto
 import { forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { AppFilesStorageService } from '@/core/api';
+import { MatChipsModule } from '@angular/material/chips';
 
 @Component({
   selector: 'app-rescue-stories-builder',
@@ -16,6 +17,7 @@ import { AppFilesStorageService } from '@/core/api';
     MatIcon,
     MatButton,
     MatExpansionModule,
+    MatChipsModule,
     RescueStoryItemFormComponent
   ],
   templateUrl: './rescue-stories-builder.component.html',
@@ -42,11 +44,11 @@ export class RescueStoriesBuilderComponent {
   private readonly _filesStorage = inject(AppFilesStorageService);
 
   rescueId = input<NullableValue<string>>(null);
-  maxDurationMinutes = input.required<number>();
 
   protected readonly _expandedIndex = signal<number | null>(null);
   protected readonly _storiesArray = signal<RescueStoryVm[]>([]);
   private readonly _pendingImageFiles = signal<Map<string, File>>(new Map());
+  private readonly _newStoryIds = signal<Set<string>>(new Set());
 
   protected readonly _stories = computed(() => {
     const rescueId = this.rescueId();
@@ -58,14 +60,6 @@ export class RescueStoriesBuilderComponent {
     || this._dispatched.isDispatched(RescueStoriesActions.UpdateRescueStory)()
     || this._dispatched.isDispatched(RescueStoriesActions.DeleteRescueStory)()
   );
-
-  protected readonly _totalDuration = computed(() => {
-    return this._storiesArray().reduce((total, story) => {
-      const start = this._parseTimeToMinutes(story.data.startAt);
-      const end = this._parseTimeToMinutes(story.data.endAt);
-      return total + (end - start);
-    }, 0);
-  });
 
   constructor() {
     effect(() => {
@@ -97,33 +91,32 @@ export class RescueStoriesBuilderComponent {
   private _initializeStories(): void {
     const stories = this._stories();
     this._storiesArray.set([...stories]);
+    // Очищаем список новых сцен при инициализации (загруженные сцены уже сохранены)
+    this._newStoryIds.set(new Set());
     // FormArray больше не нужен, так как форма находится в дочернем компоненте
   }
 
   protected _addStory(): void {
-    const nextStartTime = this._getNextStartTime();
     const rescueId = this.rescueId();
-    const isFirstStory = true;
 
-    // Для первого сюжета устанавливаем длительность 5 минут
-    const endTime = isFirstStory
-      ? String(parseInt(nextStartTime, 10) + 5)
-      : nextStartTime;
-
+    const newStoryId = generateGUID();
     const newStory: RescueStoryVm = {
-      id: generateGUID(),
+      id: newStoryId,
       name: `Сюжет ${this._storiesArray().length + 1}`,
       order: this._storiesArray().length,
       rescueId: rescueId!,
       data: {
-        startAt: nextStartTime,
-        endAt: endTime,
         scene: {
           backgroundImage: '',
-          triggers: []
+          items: []
         }
       }
     };
+
+    // Помечаем сцену как новую
+    const newIds = new Set(this._newStoryIds());
+    newIds.add(newStoryId);
+    this._newStoryIds.set(newIds);
 
     const updatedStories = [...this._storiesArray(), newStory];
     this._storiesArray.set(updatedStories);
@@ -140,8 +133,18 @@ export class RescueStoriesBuilderComponent {
       return;
     }
 
-    // Если история уже сохранена (есть id), удаляем через store
-    if (story.id) {
+    // Проверяем, является ли сцена новой
+    const isNew = this._newStoryIds().has(story.id);
+
+    // Удаляем из списка новых сцен, если она там была
+    if (isNew) {
+      const newIds = new Set(this._newStoryIds());
+      newIds.delete(story.id);
+      this._newStoryIds.set(newIds);
+    }
+
+    // Если история уже сохранена (не новая), удаляем через store
+    if (!isNew && story.id) {
       this._store.dispatch(new RescueStoriesActions.DeleteRescueStory(story.id));
     }
 
@@ -154,15 +157,6 @@ export class RescueStoriesBuilderComponent {
     else if (this._expandedIndex() !== null && this._expandedIndex()! > index) {
       this._expandedIndex.set(this._expandedIndex()! - 1);
     }
-
-    // Обновляем время начала следующего сюжета
-    if (index < updatedStories.length) {
-      const prevStory = updatedStories[index - 1];
-      if (prevStory) {
-        updatedStories[index].data.startAt = prevStory.data.endAt;
-        this._updateStory(index, updatedStories[index]);
-      }
-    }
   }
 
   protected _onPanelOpened(index: number): void {
@@ -171,22 +165,6 @@ export class RescueStoriesBuilderComponent {
 
   protected _onPanelClosed(): void {
     this._expandedIndex.set(null);
-  }
-
-  protected _isStartAtDisabled(index: number): boolean {
-    return index > 0;
-  }
-
-  protected _getStoryStartTime(index: number): string {
-    const story = this._storiesArray()[index];
-    if (!story) {
-      return '00:00';
-    }
-    if (index === 0) {
-      return this._formatTimeFromMinutes(this._parseTimeToMinutes(story.data.startAt));
-    }
-    const prevStory = this._storiesArray()[index - 1];
-    return this._formatTimeFromMinutes(this._parseTimeToMinutes(prevStory?.data.endAt ?? '0'));
   }
 
   protected _onStoryChange(index: number, payload: { name: string; data: RescueStoryDataVm }): void {
@@ -202,21 +180,6 @@ export class RescueStoriesBuilderComponent {
     };
 
     this._updateStory(index, updatedStory);
-
-    // Обновляем время начала следующего сюжета
-    if (index < this._storiesArray().length - 1) {
-      const nextStory = this._storiesArray()[index + 1];
-      if (nextStory) {
-        const updatedNextStory: RescueStoryVm = {
-          ...nextStory,
-          data: {
-            ...nextStory.data,
-            startAt: payload.data.endAt
-          }
-        };
-        this._updateStory(index + 1, updatedNextStory);
-      }
-    }
   }
 
   private _updateStory(index: number, story: RescueStoryVm): void {
@@ -242,7 +205,7 @@ export class RescueStoriesBuilderComponent {
 
     // Загружаем все изображения перед сохранением историй
     const imageUploads = Array.from(pendingFiles.entries()).map(([storyId, file]) => {
-      const fileName = `rescue-story-${storyId}-${Date.now()}-${file.name}`;
+      const fileName = file.name;
       return this._filesStorage.uploadFile(fileName, file).pipe(
         map(imagePath => ({ storyId, imagePath }))
       );
@@ -250,25 +213,9 @@ export class RescueStoriesBuilderComponent {
 
     if (imageUploads.length > 0) {
       forkJoin(imageUploads).subscribe({
-        next: (uploadResults) => {
+        next: () => {
           // Обновляем пути к изображениям в историях
-          const imagePathMap = new Map(uploadResults.map(r => [r.storyId, r.imagePath]));
-          const updatedStories = stories.map((story) => {
-            const imagePath = imagePathMap.get(story.id);
-            if (imagePath) {
-              return {
-                ...story,
-                data: {
-                  ...story.data,
-                  scene: {
-                    ...story.data.scene,
-                    backgroundImage: imagePath
-                  }
-                }
-              };
-            }
-            return story;
-          });
+          const updatedStories = [...stories];
 
           // Сохраняем истории
           this._saveStories(updatedStories, rescueId);
@@ -287,6 +234,8 @@ export class RescueStoriesBuilderComponent {
   }
 
   private _saveStories(stories: RescueStoryVm[], rescueId: string): void {
+    const newIds = this._newStoryIds();
+
     stories.forEach((story) => {
       // Убеждаемся, что rescueId установлен
       const storyToSave: RescueStoryVm = {
@@ -294,62 +243,20 @@ export class RescueStoriesBuilderComponent {
         rescueId: rescueId
       };
 
-      if (story.id && story.id.length > 0) {
-        // Обновляем существующую историю
-        this._store.dispatch(new RescueStoriesActions.UpdateRescueStory(story.id, storyToSave));
-      }
-      else {
+      // Проверяем, является ли сцена новой
+      const isNew = newIds.has(story.id);
+
+      if (isNew) {
         // Создаем новую историю
         this._store.dispatch(new RescueStoriesActions.CreateRescueStory(storyToSave));
       }
+      else {
+        // Обновляем существующую историю
+        this._store.dispatch(new RescueStoriesActions.UpdateRescueStory(story.id, storyToSave));
+      }
     });
-  }
 
-  private _getNextStartTime(): string {
-    const stories = this._storiesArray();
-    if (stories.length === 0) {
-      return '0';
-    }
-    const lastStory = stories[stories.length - 1];
-    return lastStory.data.endAt;
-  }
-
-  protected _parseTimeToMinutes(timeString: string): number {
-    // Если это уже число в строковом формате (минуты), возвращаем как число
-    if (!timeString.includes(':')) {
-      return parseInt(timeString, 10) || 0;
-    }
-    // Преобразуем "HH:mm:ss" в минуты
-    const parts = timeString.split(':');
-    const hours = parseInt(parts[0] || '0', 10);
-    const minutes = parseInt(parts[1] || '0', 10);
-    const seconds = parseInt(parts[2] || '0', 10);
-    return hours * 60 + minutes + Math.round(seconds / 60);
-  }
-
-  protected _formatTimeFromMinutes(minutes: number): string {
-    const totalSeconds = minutes * 60;
-    const hours = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  }
-
-  protected _getStoryDuration(index: number): number {
-    const story = this._storiesArray()[index];
-    if (!story) {
-      return 0;
-    }
-    const start = this._parseTimeToMinutes(story.data.startAt);
-    const end = this._parseTimeToMinutes(story.data.endAt);
-    return end - start;
-  }
-
-  protected _getTotalDurationUpTo(index: number): number {
-    let total = 0;
-    for (let i = 0; i <= index; i++) {
-      total += this._getStoryDuration(i);
-    }
-    return total;
+    // Очищаем список новых сцен после сохранения
+    this._newStoryIds.set(new Set());
   }
 }
