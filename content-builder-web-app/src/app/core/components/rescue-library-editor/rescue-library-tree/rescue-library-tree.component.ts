@@ -143,6 +143,10 @@ export class RescueLibraryTreeComponent {
         return 'kit-medical';
       case 'trigger':
         return 'bolt';
+      case 'params-state':
+        return 'chart-line';
+      case 'folder-container':
+        return 'layer-group';
       default:
         return 'file-contract';
     }

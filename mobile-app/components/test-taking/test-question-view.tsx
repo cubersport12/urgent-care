@@ -287,7 +287,7 @@ export function TestQuestionView({
                     }}
                   >
                     {index + 1}
-                  </ThemedText>
+        </ThemedText>
                 </Pressable>
               );
             })}
@@ -410,9 +410,9 @@ export function TestQuestionView({
 
                 return (
                   <ThemedView key={index} style={[containerStyles, { position: 'relative' }]}>
-                    <Pressable
-                      onPress={() => onAnswerToggle(index)}
-                      disabled={showResult}
+                  <Pressable
+                    onPress={() => onAnswerToggle(index)}
+                    disabled={showResult}
                       style={styles.answerButtonContent}
                     >
                       <ThemedText style={styles.answerText} numberOfLines={0}>
@@ -421,7 +421,7 @@ export function TestQuestionView({
                     </Pressable>
                     {shouldShowBadge && answerLabel && (
                       <ThemedView
-                        style={[
+                          style={[
                           styles.answerBadge,
                           answerLabelType === 'selected-correct' && {
                             backgroundColor: successColor,
@@ -440,10 +440,10 @@ export function TestQuestionView({
                             {
                               color: '#fff',
                             },
-                          ]}
-                        >
+                        ]}
+                      >
                           {answerLabel}
-                        </ThemedText>
+                      </ThemedText>
                       </ThemedView>
                     )}
                   </ThemedView>
@@ -529,27 +529,27 @@ export function TestQuestionView({
                 </Pressable>
               </>
             ) : (
-              <Pressable
-                onPress={onNext}
-                disabled={!showResult && selectedAnswers.length === 0}
-                style={({ pressed }) => [
-                  styles.nextButton,
-                  {
+          <Pressable
+            onPress={onNext}
+            disabled={!showResult && selectedAnswers.length === 0}
+            style={({ pressed }) => [
+              styles.nextButton,
+              {
                     flex: 1,
-                    backgroundColor:
-                      !showResult && selectedAnswers.length === 0
+                backgroundColor:
+                  !showResult && selectedAnswers.length === 0
                         ? disabledBackground
-                        : pressed
-                        ? buttonColor + 'CC'
-                        : buttonColor,
-                    opacity: (!showResult && selectedAnswers.length === 0) || pressed ? 0.8 : 1,
-                  },
-                ]}
-              >
-                <ThemedText style={styles.nextButtonText}>
+                    : pressed
+                    ? buttonColor + 'CC'
+                    : buttonColor,
+                opacity: (!showResult && selectedAnswers.length === 0) || pressed ? 0.8 : 1,
+              },
+            ]}
+          >
+            <ThemedText style={styles.nextButtonText}>
                   {showResult ? (isTestCompleted ? 'Завершить' : 'Далее') : 'Далее'}
-                </ThemedText>
-              </Pressable>
+            </ThemedText>
+          </Pressable>
             )}
           </ThemedView>
           {shouldShowSkipButton && (

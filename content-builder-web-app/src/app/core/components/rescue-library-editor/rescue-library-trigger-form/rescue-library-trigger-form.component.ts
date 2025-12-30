@@ -71,6 +71,10 @@ export class RescueLibraryTriggerFormComponent {
         return 'Лекарство';
       case 'trigger':
         return 'Триггер';
+      case 'params-state':
+        return 'Панель состояния параметров';
+      case 'folder-container':
+        return 'Контейнер папки';
       default:
         return 'Неизвестно';
     }
@@ -88,6 +92,10 @@ export class RescueLibraryTriggerFormComponent {
         return 'kit-medical';
       case 'trigger':
         return 'bolt';
+      case 'params-state':
+        return 'chart-line';
+      case 'folder-container':
+        return 'layer-group';
       default:
         return 'file-contract';
     }

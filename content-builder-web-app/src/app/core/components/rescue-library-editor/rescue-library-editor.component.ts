@@ -1,5 +1,5 @@
 import { AppLoading, RescueLibraryActions, RescueLibraryState } from '@/core/store';
-import { RescueLibraryItemVm, RescueLibraryFolderVm, RescueLibraryTestVm, RescueLibraryQuestionVm, RescueLibraryMedicineVm, RescueLibraryTriggerVm, generateGUID, NullableValue } from '@/core/utils';
+import { RescueLibraryItemVm, RescueLibraryFolderVm, RescueLibraryTestVm, RescueLibraryQuestionVm, RescueLibraryMedicineVm, RescueLibraryTriggerVm, RescueLibraryParamsStateVm, RescueLibraryFolderContainerVm, generateGUID, NullableValue } from '@/core/utils';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -13,6 +13,8 @@ import { RescueLibraryQuestionFormComponent } from './rescue-library-question-fo
 import { RescueLibraryMedicineFormComponent } from './rescue-library-medicine-form';
 import { RescueLibraryTreeComponent } from './rescue-library-tree';
 import { RescueLibraryTriggerFormComponent } from './rescue-library-trigger-form';
+import { RescueLibraryParamsStateFormComponent } from './rescue-library-params-state-form';
+import { RescueLibraryFolderContainerFormComponent } from './rescue-library-folder-container-form';
 
 @Component({
   selector: 'app-rescue-library-editor',
@@ -26,7 +28,9 @@ import { RescueLibraryTriggerFormComponent } from './rescue-library-trigger-form
     RescueLibraryTestFormComponent,
     RescueLibraryQuestionFormComponent,
     RescueLibraryMedicineFormComponent,
-    RescueLibraryTriggerFormComponent
+    RescueLibraryTriggerFormComponent,
+    RescueLibraryParamsStateFormComponent,
+    RescueLibraryFolderContainerFormComponent
   ],
   templateUrl: './rescue-library-editor.component.html',
   styles: `
@@ -110,6 +114,14 @@ export class RescueLibraryEditorComponent {
     return item.type === 'trigger';
   }
 
+  protected _isParamsState(item: RescueLibraryItemVm): item is RescueLibraryParamsStateVm {
+    return item.type === 'params-state';
+  }
+
+  protected _isFolderContainer(item: RescueLibraryItemVm): item is RescueLibraryFolderContainerVm {
+    return item.type === 'folder-container';
+  }
+
   protected _handleSubmit(payload: Partial<RescueLibraryItemVm>): void {
     const selected = this._selectedItem();
     if (!selected) {
@@ -139,7 +151,7 @@ export class RescueLibraryEditorComponent {
     return selected.type === 'folder';
   }
 
-  protected _handleCreate(type: 'folder' | 'test' | 'question' | 'medicine' | 'trigger'): void {
+  protected _handleCreate(type: 'folder' | 'test' | 'question' | 'medicine' | 'trigger' | 'params-state' | 'folder-container'): void {
     const selected = this._selectedItem();
     const newId = generateGUID();
 
@@ -155,7 +167,9 @@ export class RescueLibraryEditorComponent {
       test: 'Новый тест',
       question: 'Новый вопрос',
       medicine: 'Новый медикамент',
-      trigger: 'Новый триггер'
+      trigger: 'Новый триггер',
+      'params-state': 'Панель состояния параметров',
+      'folder-container': 'Контейнер папки'
     };
 
     let newItem: RescueLibraryItemVm;
@@ -205,6 +219,24 @@ export class RescueLibraryEditorComponent {
           parentId,
           order: 0
         } as RescueLibraryTriggerVm;
+        break;
+      case 'params-state':
+        newItem = {
+          id: newId,
+          name: defaultNames['params-state'],
+          type: 'params-state',
+          parentId,
+          order: 0
+        } as RescueLibraryParamsStateVm;
+        break;
+      case 'folder-container':
+        newItem = {
+          id: newId,
+          name: defaultNames['folder-container'],
+          type: 'folder-container',
+          parentId,
+          order: 0
+        } as RescueLibraryFolderContainerVm;
         break;
     }
 

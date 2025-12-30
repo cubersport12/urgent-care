@@ -108,3 +108,127 @@ export type AppTestStatsVm = {
   passed?: NullableValue<boolean>;
   data?: NullableValue<any>;
 }
+
+// Режим спаасения
+export type AppRescueItemVm = {
+  createdAt: string;
+  description: string;
+  data: AppRescueItemDataVm;
+} & AppBaseVm;
+
+export type AppRescueItemDataVm = {
+  parameters?: AppRescueItemParameterVm[];
+};
+
+export type AppRescueItemParameterVm = {
+  id: string;
+  label: string;
+  value: string | number;
+  category: 'number' | 'duration';
+  discriminatorByTimer?: AppRescueItemParameterDiscriminatorByTimerVm;
+};
+
+export type AppRescueItemParameterDiscriminatorByTimerVm = {
+  type: 'value' | 'range';
+  min: number;
+  max: number;
+};
+
+// Модель элемента справочника из режима спасения
+// Это может быть как папка так и действие
+export type RescueLibraryItemVm = (RescueLibraryFolderVm | RescueLibraryTestVm | RescueLibraryQuestionVm | RescueLibraryMedicineVm | RescueLibraryTriggerVm | RescueLibraryParamsStateVm
+  | RescueLibraryFolderContainerVm) | RescueLibraryUnknownVm;
+
+export type RescueLibraryFolderVm = {
+  type: 'folder';
+  description?: string;
+} & AppBaseVm;
+
+export type RescueLibraryTestVm = {
+  type: 'test';
+  data?: {
+    testId: string;
+  };
+  description?: string;
+} & AppBaseVm;
+
+export type RescueLibraryQuestionVm = {
+  type: 'question';
+  data?: {
+    question?: AppTestQuestionVm;
+  };
+  description?: string;
+} & AppBaseVm;
+
+export type RescueLibraryMedicineVm = {
+  type: 'medicine';
+  description?: string;
+} & AppBaseVm;
+
+export type RescueLibraryTriggerVm = {
+  type: 'trigger';
+  description?: string;
+  data?: {
+    buttonType: 'button' | 'toggle';
+    onSvg?: string;
+    offSvg?: string;
+    rescueLibraryItemId?: string;
+  };
+} & AppBaseVm;
+
+export type RescueLibraryUnknownVm = {
+  type: 'unknown';
+} & AppBaseVm;
+
+export type RescueStoryVm = {
+  rescueId: string;
+  description?: string;
+  createAt?: string;
+  data: RescueStoryDataVm;
+} & Omit<AppBaseVm, 'parentId'>;
+
+export type RescueStoryDataVm = {
+  scene: RescueStorySceneVm;
+};
+
+export type RescueStorySceneVm = {
+  backgroundImage: string;
+  // элементы сцены перенесенные из библиотеки
+  items: RescueStorySceneTriggerVm[];
+  // ограничения, по которым сцена будет меняться на следующую
+  restritions: RescueStorySceneRestrictionsVm[];
+};
+
+export type RescueStorySceneRestrictionsVm = {
+  params: RescueStorySceneRestrictionParamVm[];
+};
+
+export type RescueStorySceneRestrictionParamVm = {
+  id: AppRescueItemParameterVm['id'];
+  value: AppRescueItemParameterVm['value'];
+};
+
+export type RescueStorySceneTriggerVm = {
+  triggerId: string;
+  position: Record<'x' | 'y', number>;
+  size: Record<'width' | 'height', number>;
+  parameters: RescueStorySceneTriggerParamVm[];
+  visibleParams: RescueStorySceneTriggerParamVm[];
+};
+
+export type RescueStorySceneTriggerParamVm = {
+  id: AppRescueItemParameterVm['id'];
+  value: AppRescueItemParameterVm['value'];
+};
+
+// панель отображения состояния параметров
+export type RescueLibraryParamsStateVm = {
+  type: 'params-state';
+  description?: string;
+} & AppBaseVm;
+
+// панель для отображения элементов выбранной папки на сцене
+export type RescueLibraryFolderContainerVm = {
+  type: 'folder-container';
+  description?: string;
+} & AppBaseVm;

@@ -11,13 +11,16 @@ type FolderMenuProps = {
     foldersCount: number;
     articlesCount: number;
     testsCount: number;
+    rescueCount: number;
   };
   showFolders: boolean;
   showArticles: boolean;
   showTests: boolean;
+  showRescue: boolean;
   onToggleFolders: () => void;
   onToggleArticles: () => void;
   onToggleTests: () => void;
+  onToggleRescue: () => void;
 };
 
 export function FolderMenu({
@@ -27,11 +30,13 @@ export function FolderMenu({
   showFolders,
   showArticles,
   showTests,
+  showRescue,
   onToggleFolders,
   onToggleArticles,
   onToggleTests,
+  onToggleRescue,
 }: FolderMenuProps) {
-  const { layout2, neutralSoft: descriptionColor, neutral: iconColor, border: borderColor, primaryContainer: filterButtonActiveBackground, onPrimary: whiteColor } = useAppTheme();
+  const { layout2, neutralSoft: descriptionColor, neutral: iconColor, primaryContainer: filterButtonActiveBackground, onPrimary: whiteColor } = useAppTheme();
 
   return (
     <Modal
@@ -66,14 +71,17 @@ export function FolderMenu({
                     showFolders && { backgroundColor: filterButtonActiveBackground },
                   ]}
                 >
-                  <ThemedText 
-                    style={[
-                      styles.menuFilterButtonText, 
-                      showFolders ? { color: whiteColor } : { color: descriptionColor }
-                    ]}
-                  >
-                    📁 {folderStats.foldersCount}
-                  </ThemedText>
+                  <ThemedView style={styles.menuFilterButtonContent}>
+                    <IconSymbol name="folder.fill" size={16} color={showFolders ? whiteColor : descriptionColor} />
+                    <ThemedText 
+                      style={[
+                        styles.menuFilterButtonText, 
+                        showFolders ? { color: whiteColor } : { color: descriptionColor }
+                      ]}
+                    >
+                      {folderStats.foldersCount}
+                    </ThemedText>
+                  </ThemedView>
                 </Pressable>
               )}
               {folderStats.articlesCount > 0 && (
@@ -85,14 +93,17 @@ export function FolderMenu({
                     showArticles && { backgroundColor: filterButtonActiveBackground },
                   ]}
                 >
-                  <ThemedText 
-                    style={[
-                      styles.menuFilterButtonText, 
-                      showArticles ? { color: whiteColor } : { color: descriptionColor }
-                    ]}
-                  >
-                    📄 {folderStats.articlesCount}
-                  </ThemedText>
+                  <ThemedView style={styles.menuFilterButtonContent}>
+                    <IconSymbol name="doc.fill" size={16} color={showArticles ? whiteColor : descriptionColor} />
+                    <ThemedText 
+                      style={[
+                        styles.menuFilterButtonText, 
+                        showArticles ? { color: whiteColor } : { color: descriptionColor }
+                      ]}
+                    >
+                      {folderStats.articlesCount}
+                    </ThemedText>
+                  </ThemedView>
                 </Pressable>
               )}
               {folderStats.testsCount > 0 && (
@@ -104,14 +115,39 @@ export function FolderMenu({
                     showTests && { backgroundColor: filterButtonActiveBackground },
                   ]}
                 >
-                  <ThemedText 
-                    style={[
-                      styles.menuFilterButtonText, 
-                      showTests ? { color: whiteColor } : { color: descriptionColor }
-                    ]}
-                  >
-                    📝 {folderStats.testsCount}
-                  </ThemedText>
+                  <ThemedView style={styles.menuFilterButtonContent}>
+                    <IconSymbol name="list.bullet.clipboard.fill" size={16} color={showTests ? whiteColor : descriptionColor} />
+                    <ThemedText 
+                      style={[
+                        styles.menuFilterButtonText, 
+                        showTests ? { color: whiteColor } : { color: descriptionColor }
+                      ]}
+                    >
+                      {folderStats.testsCount}
+                    </ThemedText>
+                  </ThemedView>
+                </Pressable>
+              )}
+              {folderStats.rescueCount > 0 && (
+                <Pressable
+                  onPress={onToggleRescue}
+                  style={({ pressed }) => [
+                    styles.menuFilterButton,
+                    showRescue && styles.menuFilterButtonActive,
+                    showRescue && { backgroundColor: filterButtonActiveBackground },
+                  ]}
+                >
+                  <ThemedView style={styles.menuFilterButtonContent}>
+                    <IconSymbol name="cross.fill" size={16} color={showRescue ? whiteColor : descriptionColor} />
+                    <ThemedText 
+                      style={[
+                        styles.menuFilterButtonText, 
+                        showRescue ? { color: whiteColor } : { color: descriptionColor }
+                      ]}
+                    >
+                      {folderStats.rescueCount}
+                    </ThemedText>
+                  </ThemedView>
                 </Pressable>
               )}
             </View>
@@ -167,6 +203,11 @@ const styles = StyleSheet.create({
     minHeight: 28,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  menuFilterButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   menuFilterButtonActive: {
     opacity: 1,

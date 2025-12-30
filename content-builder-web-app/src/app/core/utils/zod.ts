@@ -146,6 +146,22 @@ export const rescueLibraryItemSchema = z.discriminatedUnion('type', [
     order: z.number().nullable().optional(),
     name: z.string(),
     parentId: z.string().nullable().optional(),
+    type: z.literal('params-state'),
+    description: z.string().nullable().optional()
+  }),
+  z.object({
+    id: z.string(),
+    order: z.number().nullable().optional(),
+    name: z.string(),
+    parentId: z.string().nullable().optional(),
+    type: z.literal('folder-container'),
+    description: z.string().nullable().optional()
+  }),
+  z.object({
+    id: z.string(),
+    order: z.number().nullable().optional(),
+    name: z.string(),
+    parentId: z.string().nullable().optional(),
     type: z.literal('unknown'),
     description: z.string().nullable().optional()
   }),

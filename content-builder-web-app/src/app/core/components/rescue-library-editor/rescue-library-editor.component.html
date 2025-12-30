@@ -25,6 +25,14 @@
         <mat-icon svgIcon="bolt" />
         <span>Триггер</span>
       </button>
+      <button mat-menu-item (click)="_handleCreate('params-state')">
+        <mat-icon svgIcon="chart-line" />
+        <span>Панель состояния параметров</span>
+      </button>
+      <button mat-menu-item (click)="_handleCreate('folder-container')">
+        <mat-icon svgIcon="layer-group" />
+        <span>Контейнер папки</span>
+      </button>
     </mat-menu>
     <button mat-flat-button color="warn" (click)="_handleDelete()" [disabled]="_isPending() || !_selectedItem()">
       <mat-icon svgIcon="trash" />
@@ -64,6 +72,16 @@
           }
           @if (_isTrigger(item)) {
             <app-rescue-library-trigger-form 
+                [selectedItem]="item"
+                (submitEvent)="_handleSubmit($event)" />
+          }
+          @if (_isParamsState(item)) {
+            <app-rescue-library-params-state-form 
+                [selectedItem]="item"
+                (submitEvent)="_handleSubmit($event)" />
+          }
+          @if (_isFolderContainer(item)) {
+            <app-rescue-library-folder-container-form 
                 [selectedItem]="item"
                 (submitEvent)="_handleSubmit($event)" />
           }

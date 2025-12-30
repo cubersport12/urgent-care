@@ -121,7 +121,13 @@ export type AppRescueItemParameterDiscriminatorByTimerVm = {
 
 // Модель элемента справочника из режима спасения
 // Это может быть как папка так и действие
-export type RescueLibraryItemVm = (RescueLibraryFolderVm | RescueLibraryTestVm | RescueLibraryQuestionVm | RescueLibraryMedicineVm | RescueLibraryTriggerVm) | RescueLibraryUnknownVm;
+export type RescueLibraryItemVm = (RescueLibraryFolderVm
+  | RescueLibraryTestVm
+  | RescueLibraryQuestionVm
+  | RescueLibraryMedicineVm
+  | RescueLibraryTriggerVm
+  | RescueLibraryParamsStateVm
+  | RescueLibraryFolderContainerVm) | RescueLibraryUnknownVm;
 
 export type RescueLibraryFolderVm = {
   type: 'folder';
@@ -146,6 +152,18 @@ export type RescueLibraryQuestionVm = {
 
 export type RescueLibraryMedicineVm = {
   type: 'medicine';
+  description?: string;
+} & AppBaseVm;
+
+// панель отображения состояния параметров
+export type RescueLibraryParamsStateVm = {
+  type: 'params-state';
+  description?: string;
+} & AppBaseVm;
+
+// панель для отображения элементов выбранной папки на сцене
+export type RescueLibraryFolderContainerVm = {
+  type: 'folder-container';
   description?: string;
 } & AppBaseVm;
 

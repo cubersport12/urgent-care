@@ -92,11 +92,10 @@ export interface RescueParameterDialogData {
             @if (_isDiscriminatorValue) {
               <mat-form-field appearance="fill">
                 <mat-label>Значение</mat-label>
-                <input 
-                  matInput 
-                  type="number" 
-                  [formControl]="_form.controls.discriminatorValue" 
-                  min="0"
+                <input
+                  matInput
+                  type="number"
+                  [formControl]="_form.controls.discriminatorValue"
                   placeholder="0">
                 @if (_form.controls.discriminatorValue.hasError('required')) {
                   <mat-error>Значение обязательно</mat-error>
@@ -109,11 +108,10 @@ export interface RescueParameterDialogData {
               <div class="flex gap-2">
                 <mat-form-field appearance="fill" class="grow">
                   <mat-label>Минимум</mat-label>
-                  <input 
-                    matInput 
-                    type="number" 
-                    [formControl]="_form.controls.discriminatorMin" 
-                    min="0"
+                  <input
+                    matInput
+                    type="number"
+                    [formControl]="_form.controls.discriminatorMin"
                     placeholder="0">
                   @if (_form.controls.discriminatorMin.hasError('required')) {
                     <mat-error>Минимум обязателен</mat-error>
@@ -125,11 +123,10 @@ export interface RescueParameterDialogData {
 
                 <mat-form-field appearance="fill" class="grow">
                   <mat-label>Максимум</mat-label>
-                  <input 
-                    matInput 
-                    type="number" 
-                    [formControl]="_form.controls.discriminatorMax" 
-                    min="0"
+                  <input
+                    matInput
+                    type="number"
+                    [formControl]="_form.controls.discriminatorMax"
                     placeholder="0">
                   @if (_form.controls.discriminatorMax.hasError('required')) {
                     <mat-error>Максимум обязателен</mat-error>
@@ -172,9 +169,9 @@ export class RescueParameterDialogComponent {
     timeValue: new FormControl<string>('00:00:00', Validators.required),
     hasDiscriminator: new FormControl<boolean>(false),
     discriminatorType: new FormControl<'value' | 'range'>('value', Validators.required),
-    discriminatorValue: new FormControl<number>(0, [Validators.required, Validators.min(0)]),
-    discriminatorMin: new FormControl<number>(0, [Validators.required, Validators.min(0)]),
-    discriminatorMax: new FormControl<number>(0, [Validators.required, Validators.min(0)])
+    discriminatorValue: new FormControl<number>(0, [Validators.required]),
+    discriminatorMin: new FormControl<number>(0, [Validators.required]),
+    discriminatorMax: new FormControl<number>(0, [Validators.required])
   });
 
   protected get _isDuration() {
@@ -198,23 +195,23 @@ export class RescueParameterDialogComponent {
         }
         else {
           // Если value число (старый формат), преобразуем в строку времени
-          timeValue = this._minutesToTime(this.data.parameter.value as number);
+          timeValue = this._minutesToTime(this.data.parameter.value);
         }
       }
       else {
         // Для number категории value должно быть числом
-        numericValue = typeof this.data.parameter.value === 'number' 
-          ? this.data.parameter.value 
+        numericValue = typeof this.data.parameter.value === 'number'
+          ? this.data.parameter.value
           : 0;
       }
 
       const discriminator = this.data.parameter.discriminatorByTimer;
       const discriminatorType = discriminator?.type || 'value';
       // Если тип "value", используем min (или max, они должны быть равны) как значение
-      const discriminatorValue = discriminatorType === 'value' 
+      const discriminatorValue = discriminatorType === 'value'
         ? (discriminator?.min ?? discriminator?.max ?? 0)
         : 0;
-      
+
       this._form.patchValue({
         label: this.data.parameter.label,
         value: numericValue,
@@ -229,7 +226,7 @@ export class RescueParameterDialogComponent {
     }
 
     // Включаем/выключаем валидацию для полей discriminator
-    this._form.controls.hasDiscriminator.valueChanges.subscribe(hasDiscriminator => {
+    this._form.controls.hasDiscriminator.valueChanges.subscribe((hasDiscriminator) => {
       this._updateDiscriminatorValidators();
     });
 
@@ -247,7 +244,7 @@ export class RescueParameterDialogComponent {
     });
 
     // Синхронизируем discriminatorValue с min/max для типа "value"
-    this._form.controls.discriminatorValue.valueChanges.subscribe(value => {
+    this._form.controls.discriminatorValue.valueChanges.subscribe((value) => {
       if (this._form.value.discriminatorType === 'value' && value !== null) {
         this._form.patchValue({
           discriminatorMin: value,
@@ -288,7 +285,7 @@ export class RescueParameterDialogComponent {
 
     if (hasDiscriminator) {
       this._form.controls.discriminatorType.setValidators([Validators.required]);
-      
+
       if (discriminatorType === 'value') {
         // Для типа "value" валидируем только discriminatorValue
         this._form.controls.discriminatorValue.setValidators([Validators.required, Validators.min(0)]);
@@ -300,7 +297,7 @@ export class RescueParameterDialogComponent {
         this._form.controls.discriminatorValue.clearValidators();
         this._form.controls.discriminatorMin.setValidators([Validators.required, Validators.min(0)]);
         this._form.controls.discriminatorMax.setValidators([
-          Validators.required, 
+          Validators.required,
           Validators.min(0),
           (control) => {
             const min = this._form.controls.discriminatorMin.value;

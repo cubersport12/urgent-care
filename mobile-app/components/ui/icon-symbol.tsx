@@ -30,6 +30,11 @@ const MAPPING = {
   'plus.app.fill': '1k-plus',
   'cross.fill': 'local-hospital',
   'plus.circle.fill': 'local-hospital',
+  'folder.fill': 'folder',
+  'doc.fill': 'description',
+  'doc.text.fill': 'description',
+  'list.bullet.clipboard.fill': 'assignment',
+  'bolt.fill': 'bolt',
 } as IconMapping;
 
 /**

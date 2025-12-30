@@ -868,6 +868,8 @@ export class RescueStoryItemFormComponent {
       case 'question': return 'file-contract';
       case 'medicine': return 'kit-medical';
       case 'trigger': return 'bolt';
+      case 'params-state': return 'chart-line';
+      case 'folder-container': return 'layer-group';
       default: return 'file-contract';
     }
   }

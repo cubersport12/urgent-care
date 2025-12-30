@@ -1,8 +1,8 @@
-import { Colors } from '@/constants/theme';
 import { useTest } from '@/contexts/test-context';
-import { AppArticleVm, AppTestStatsVm, AppTestVm } from '@/hooks/api/types';
+import { AppArticleVm, AppRescueItemVm, AppTestStatsVm, AppTestVm } from '@/hooks/api/types';
 import { fetchArticle, useArticles, useArticlesStats } from '@/hooks/api/useArticles';
 import { useFolders } from '@/hooks/api/useFolders';
+import { useRescueItems } from '@/hooks/api/useRescueItems';
 import { useTests } from '@/hooks/api/useTests';
 import { useAddOrUpdateTestStats, useTestsStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
@@ -15,15 +15,22 @@ import { BackButton } from './explorer/back-button';
 import { ExplorerItemComponent } from './explorer/explorer-item';
 import { FolderMenu } from './explorer/folder-menu';
 import { BreadcrumbItem, ExplorerItem } from './explorer/types';
+import { RescueComplete } from './rescue/rescue-complete';
+import { RescueStart } from './rescue/rescue-start';
+import { RescueView } from './rescue/rescue-view';
 import { TestTakingView } from './test-taking-view';
 import { TestView } from './test-view';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
+import { IconSymbol } from './ui/icon-symbol';
 
 export function Explorer() {
   const [currentFolderId, setCurrentFolderId] = useState<string | undefined>(undefined);
   const [selectedArticle, setSelectedArticle] = useState<AppArticleVm | null>(null);
   const [selectedTest, setSelectedTest] = useState<AppTestVm | null>(null);
+  const [selectedRescueItem, setSelectedRescueItem] = useState<AppRescueItemVm | null>(null);
+  const [isRescueStarted, setIsRescueStarted] = useState(false);
+  const [isRescueCompleted, setIsRescueCompleted] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
   // История навигации по статьям для определения hasPrevious
@@ -32,17 +39,19 @@ export function Explorer() {
   const [showFolders, setShowFolders] = useState(true);
   const [showArticles, setShowArticles] = useState(true);
   const [showTests, setShowTests] = useState(true);
+  const [showRescue, setShowRescue] = useState(true);
   // Состояние для меню папки
   const [isFolderMenuOpen, setIsFolderMenuOpen] = useState(false);
   const previousFolderIdRef = useRef<string | undefined>(undefined);
   const opacity = useSharedValue(1);
   const { isTestStarted, startTest, resetTest } = useTest();
 
-  const { primary: tintColor, border: borderColor, layout1: currentFolderButtonBackground, neutralSoft: descriptionColor } = useAppTheme();
+  const { primary: tintColor, border: borderColor, layout1: currentFolderButtonBackground, neutralSoft: descriptionColor, warning: warningColor } = useAppTheme();
   const { deviceId } = useDeviceId();
   const foldersResponse = useFolders(currentFolderId);
   const articlesResponse = useArticles(currentFolderId);
   const testsResponse = useTests(currentFolderId);
+  const rescueItemsResponse = useRescueItems(currentFolderId);
   
   // Получаем статистику для статей
   const articlesIds = useMemo(() => {
@@ -106,10 +115,10 @@ export function Explorer() {
 
   // Определяем состояние загрузки
   const isLoading = useMemo(() => {
-    const isDataLoading = foldersResponse.isLoading || articlesResponse.isLoading || testsResponse.isLoading;
+    const isDataLoading = foldersResponse.isLoading || articlesResponse.isLoading || testsResponse.isLoading || rescueItemsResponse.isLoading;
     
     return isDataLoading || isNavigating;
-  }, [foldersResponse.isLoading, articlesResponse.isLoading, testsResponse.isLoading, isNavigating]);
+  }, [foldersResponse.isLoading, articlesResponse.isLoading, testsResponse.isLoading, rescueItemsResponse.isLoading, isNavigating]);
 
   // Формируем breadcrumb
   const displayBreadcrumb = useMemo(() => {
@@ -146,29 +155,34 @@ export function Explorer() {
     const foldersCount = foldersResponse.data?.length || 0;
     const articlesCount = articlesResponse.data?.length || 0;
     const testsCount = testsResponse.data?.length || 0;
-    return { foldersCount, articlesCount, testsCount };
-  }, [foldersResponse.data, articlesResponse.data, testsResponse.data]);
+    const rescueCount = rescueItemsResponse.data?.length || 0;
+    return { foldersCount, articlesCount, testsCount, rescueCount };
+  }, [foldersResponse.data, articlesResponse.data, testsResponse.data, rescueItemsResponse.data]);
 
   // Вычисляем количество скрытых элементов
   const hiddenStats = useMemo(() => {
     const hiddenFolders = !showFolders ? folderStats.foldersCount : 0;
     const hiddenArticles = !showArticles ? folderStats.articlesCount : 0;
     const hiddenTests = !showTests ? folderStats.testsCount : 0;
-    const totalHidden = hiddenFolders + hiddenArticles + hiddenTests;
-    return { hiddenFolders, hiddenArticles, hiddenTests, totalHidden };
-  }, [showFolders, showArticles, showTests, folderStats]);
+    const hiddenRescue = !showRescue ? folderStats.rescueCount : 0;
+    const totalHidden = hiddenFolders + hiddenArticles + hiddenTests + hiddenRescue;
+    return { hiddenFolders, hiddenArticles, hiddenTests, hiddenRescue, totalHidden };
+  }, [showFolders, showArticles, showTests, showRescue, folderStats]);
 
   // Формируем текст о скрытых элементах
   const hiddenText = useMemo(() => {
     const parts: string[] = [];
     if (hiddenStats.hiddenFolders > 0) {
-      parts.push(`📁 ${hiddenStats.hiddenFolders}`);
+      parts.push(`Папки: ${hiddenStats.hiddenFolders}`);
     }
     if (hiddenStats.hiddenArticles > 0) {
-      parts.push(`📄 ${hiddenStats.hiddenArticles}`);
+      parts.push(`Статьи: ${hiddenStats.hiddenArticles}`);
     }
     if (hiddenStats.hiddenTests > 0) {
-      parts.push(`📝 ${hiddenStats.hiddenTests}`);
+      parts.push(`Тесты: ${hiddenStats.hiddenTests}`);
+    }
+    if (hiddenStats.hiddenRescue > 0) {
+      parts.push(`Спасение: ${hiddenStats.hiddenRescue}`);
     }
     if (parts.length > 0) {
       return `Скрыто: ${parts.join(', ')}`;
@@ -181,6 +195,7 @@ export function Explorer() {
     setShowFolders(true);
     setShowArticles(true);
     setShowTests(true);
+    setShowRescue(true);
   };
 
   const items = useMemo(() => {
@@ -207,13 +222,20 @@ export function Explorer() {
       });
     }
 
+    // Добавляем rescue элементы
+    if (rescueItemsResponse.data) {
+      rescueItemsResponse.data.forEach((rescueItem) => {
+        explorerItems.push({ type: 'rescue', data: rescueItem });
+      });
+    }
+
     // Сортируем по order
     return explorerItems.sort((a, b) => {
       const orderA = a.data.order ?? 0;
       const orderB = b.data.order ?? 0;
       return orderA - orderB;
     });
-  }, [foldersResponse.data, articlesResponse.data, testsResponse.data]);
+  }, [foldersResponse.data, articlesResponse.data, testsResponse.data, rescueItemsResponse.data]);
 
   // Функция для проверки, должен ли элемент быть скрыт
   const isItemHidden = useCallback((item: ExplorerItem, itemIndex: number): boolean => {
@@ -312,6 +334,12 @@ export function Explorer() {
       setSelectedTest(item.data as AppTestVm);
       setBreadcrumb(prev => [...prev, { id: item.data.id, name: item.data.name, type: 'test' }]);
       setSelectedArticle(null);
+    } else if (item.type === 'rescue') {
+      opacity.value = withTiming(0, { duration: 200 });
+      setSelectedRescueItem(item.data as AppRescueItemVm);
+      setBreadcrumb(prev => [...prev, { id: item.data.id, name: item.data.name, type: 'rescue' }]);
+      setSelectedArticle(null);
+      setSelectedTest(null);
     }
   };
 
@@ -328,9 +356,12 @@ export function Explorer() {
     }
     setSelectedArticle(null);
     setSelectedTest(null);
+    setSelectedRescueItem(null);
+    setIsRescueStarted(false);
+    setIsRescueCompleted(false);
     resetTest();
-    // Удаляем все элементы article из breadcrumb
-    setBreadcrumb(prev => prev.filter(b => b.type !== 'article' && b.type !== 'test'));
+    // Удаляем все элементы article, test и rescue из breadcrumb
+    setBreadcrumb(prev => prev.filter(b => b.type !== 'article' && b.type !== 'test' && b.type !== 'rescue'));
     // Анимация появления списка
     opacity.value = withTiming(1, { duration: 300 });
   };
@@ -428,6 +459,7 @@ export function Explorer() {
     setCurrentFolderId(lastFolder?.id);
     setSelectedArticle(null);
     setSelectedTest(null);
+    setSelectedRescueItem(null);
   };
 
   // Обработчик перехода к следующему документу
@@ -483,6 +515,37 @@ export function Explorer() {
     return <TestView test={selectedTest} onBack={handleBackFromItem} onStart={handleStartTest} />;
   }
 
+  // Если выбран rescue элемент и он завершен, показываем экран завершения
+  if (selectedRescueItem && isRescueCompleted) {
+    return <RescueComplete onBack={() => {
+      setIsRescueCompleted(false);
+      setIsRescueStarted(false);
+      handleBackFromItem();
+    }} />;
+  }
+
+  // Если выбран rescue элемент и он начат, показываем RescueView
+  if (selectedRescueItem && isRescueStarted) {
+    return <RescueView 
+      rescueItem={selectedRescueItem} 
+      onBack={() => {
+        setIsRescueStarted(false);
+        handleBackFromItem();
+      }}
+      onComplete={() => {
+        setIsRescueCompleted(true);
+        setIsRescueStarted(false);
+      }}
+    />;
+  }
+
+  // Если выбран rescue элемент, показываем RescueStart
+  if (selectedRescueItem) {
+    return <RescueStart rescueItem={selectedRescueItem} onBack={handleBackFromItem} onStart={() => {
+      setIsRescueStarted(true);
+    }} />;
+  }
+
   // Показываем список элементов
   return (
     <ThemedView style={styles.container}>
@@ -498,9 +561,7 @@ export function Explorer() {
                   onPress={() => setIsFolderMenuOpen(true)}
                   style={[styles.currentFolderButton, { flexGrow: 1, backgroundColor: currentFolderButtonBackground }]}
                 >
-                  <ThemedText>
-                    📁
-                  </ThemedText>
+                  <IconSymbol name="folder.fill" size={20} color={warningColor} />
                   <ThemedText 
                     style={styles.currentFolderName}
                     numberOfLines={1}
@@ -516,9 +577,11 @@ export function Explorer() {
                   showFolders={showFolders}
                   showArticles={showArticles}
                   showTests={showTests}
+                  showRescue={showRescue}
                   onToggleFolders={() => setShowFolders(!showFolders)}
                   onToggleArticles={() => setShowArticles(!showArticles)}
                   onToggleTests={() => setShowTests(!showTests)}
+                  onToggleRescue={() => setShowRescue(!showRescue)}
             />
               </>
             )}
@@ -541,6 +604,7 @@ export function Explorer() {
                 if (item.type === 'folder' && !showFolders) return false;
                 if (item.type === 'article' && !showArticles) return false;
                 if (item.type === 'test' && !showTests) return false;
+                if (item.type === 'rescue' && !showRescue) return false;
                 return !isItemHidden(item, index);
               });
 
@@ -677,9 +741,6 @@ const styles = StyleSheet.create({
   filterButtonText: {
     fontSize: 11,
     fontWeight: '500',
-  },
-  filterButtonTextActive: {
-    color: Colors.light.white,
   },
   scrollViewContainer: {
     flex: 1,

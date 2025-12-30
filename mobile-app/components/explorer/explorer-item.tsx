@@ -19,7 +19,7 @@ type ExplorerItemComponentProps = {
 };
 
 export function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = false, testStats, description }: ExplorerItemComponentProps) {
-  const { layout1: itemBackground, layout2: pressedBackgroundColor, success: successColor, error: errorColor, neutralSoft, neutral: iconColor, onLayout1 } = useAppTheme();
+  const { layout1: itemBackground, layout2: pressedBackgroundColor, success: successColor, error: errorColor, neutralSoft, onLayout1, warning: warningColor, text: textColor } = useAppTheme();
   const disabledOpacityValue = useThemeValue('disabledOpacity');
   
   // Определяем, какую иконку показывать для теста
@@ -43,9 +43,15 @@ export function ExplorerItemComponent({ item, onPress, isRead = false, isDisable
     >
       <ThemedView style={styles.itemContent}>
         <ThemedView style={styles.itemIconContainer}>
-          <ThemedText style={styles.itemIcon}>
-            {item.type === 'folder' ? '📁' : item.type === 'article' ? '📄' : '📝'}
-          </ThemedText>
+          {item.type === 'folder' ? (
+            <IconSymbol name="folder.fill" size={38} color={warningColor} />
+          ) : item.type === 'article' ? (
+            <IconSymbol name="doc.fill" size={38} color={textColor} />
+          ) : item.type === 'test' ? (
+            <IconSymbol name="list.bullet.clipboard.fill" size={38} color={textColor} />
+          ) : item.type === 'rescue' ? (
+            <IconSymbol name="cross.fill" size={38} color={textColor} />
+          ) : null}
           {item.type === 'article' && isRead && !isDisabled && (
             <IconSymbol name="checkmark.circle.fill" size={12} color={successColor} style={styles.itemCheckmark} />
           )}
@@ -77,7 +83,7 @@ export function ExplorerItemComponent({ item, onPress, isRead = false, isDisable
           )}
         </ThemedView>
         {item.type === 'folder' && (
-          <IconSymbol name="chevron.right" size={20} color={iconColor} />
+          <IconSymbol name="chevron.right" size={20} color={textColor} />
         )}
       </ThemedView>
     </Pressable>
@@ -100,10 +106,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     marginRight: 12,
     backgroundColor: 'none'
-  },
-  itemIcon: {
-    fontSize: 38,
-    lineHeight: -1
   },
   itemTextContainer: {
     flex: 1,
