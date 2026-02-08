@@ -1,0 +1,23 @@
+<h2 mat-dialog-title>{{ _dialogData.parameter ? 'Редактировать параметр' : 'Новый параметр' }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="_form" class="flex flex-col gap-4 min-w-[320px] pt-2">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Наименование</mat-label>
+      <input matInput formControlName="name">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Изменять на</mat-label>
+      <input matInput type="number" formControlName="delta">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Стартовое значение</mat-label>
+      <input matInput type="number" formControlName="startValue">
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="_cancel()">Отмена</button>
+  <button mat-flat-button color="primary" (click)="_submit()" [disabled]="_form.invalid">
+    {{ _dialogData.parameter ? 'Сохранить' : 'Добавить' }}
+  </button>
+</mat-dialog-actions>

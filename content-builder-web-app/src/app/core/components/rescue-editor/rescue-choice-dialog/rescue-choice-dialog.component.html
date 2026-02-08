@@ -1,0 +1,52 @@
+<h2 mat-dialog-title>{{ _dialogData.choice ? 'Редактировать выбор' : 'Новый выбор' }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="_form" class="flex flex-col gap-4 min-w-[360px] pt-2 max-h-[70vh] overflow-auto">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Текст выбора</mat-label>
+      <input matInput formControlName="text">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Следующая сцена</mat-label>
+      <mat-select formControlName="nextSceneId">
+        <mat-option [value]="null">— Конец / нет перехода</mat-option>
+        @for (opt of _nextSceneOptions; track opt.id) {
+          <mat-option [value]="opt.id">{{ opt.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <div>
+      <div class="text-sm font-medium mb-2">Изменения параметров при выборе</div>
+      <div formArrayName="parameterChanges" class="flex flex-col gap-2">
+        @for (pc of _parameterChanges.controls; track pc.value.parameterId + pc.value.value; let pci = $index) {
+          <div class="flex items-center gap-2" [formGroupName]="pci">
+            <mat-form-field appearance="fill" class="flex-1 min-w-[120px]">
+              <mat-label>Параметр</mat-label>
+              <mat-select formControlName="parameterId">
+                @for (param of _parameterOptionsList; track param.id) {
+                  <mat-option [value]="param.id">{{ param.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="fill" class="w-24">
+              <mat-label>Значение</mat-label>
+              <input matInput type="number" formControlName="value">
+            </mat-form-field>
+            <button type="button" mat-icon-button (click)="_removeParameterChange(pci)">
+              <mat-icon svgIcon="trash" />
+            </button>
+          </div>
+        }
+        <button type="button" mat-button (click)="_addParameterChange()">
+          <mat-icon svgIcon="plus" />
+          Добавить изменение параметра
+        </button>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="_cancel()">Отмена</button>
+  <button mat-flat-button color="primary" (click)="_submit()" [disabled]="_form.invalid">
+    {{ _dialogData.choice ? 'Сохранить' : 'Добавить' }}
+  </button>
+</mat-dialog-actions>

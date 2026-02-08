@@ -21,9 +21,9 @@ import { RescueEditorService } from '../rescue-editor';
 })
 export class AppNavbarComponent extends BaseRoutedClass {
   private readonly _store = inject(Store);
+  private readonly _rescueEditor = inject(RescueEditorService);
   private readonly _testsEditor = inject(TestsEditorService);
   private readonly _articlesEditor = inject(ArticleEditorService);
-  private readonly _rescueEditor = inject(RescueEditorService);
   private readonly _explorer = inject(FoldersExplorerService);
   private readonly _dispatched = inject(AppLoading);
   private readonly _service = inject(AppFoldersStorageService);

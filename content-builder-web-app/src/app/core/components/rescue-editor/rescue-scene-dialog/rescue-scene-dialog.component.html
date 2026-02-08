@@ -1,0 +1,62 @@
+<h2 mat-dialog-title>{{ _dialogData.scene ? 'Редактировать сцену' : 'Новая сцена' }}</h2>
+<mat-dialog-content class="min-h-[400px] flex flex-col gap-4">
+  <form [formGroup]="_form" class="flex flex-col gap-4">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Фон (изображение или URL)</mat-label>
+      <input matInput formControlName="background" readonly>
+    </mat-form-field>
+    <button mat-flat-button type="button" color="primary" (click)="_openFile()">
+      <mat-icon svgIcon="file-contract" />
+      Выбрать изображение {{ _form.value.background ? '(' + _form.value.background + ')' : '' }}
+    </button>
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Текст сцены</mat-label>
+      <textarea matInput formControlName="text" rows="4"></textarea>
+    </mat-form-field>
+  </form>
+  <section class="border border-gray-200 dark:border-gray-700 rounded p-3 flex flex-col gap-2">
+    <div class="flex justify-between items-center">
+      <span class="font-medium">Варианты выбора</span>
+      <button type="button" mat-flat-button color="primary" (click)="_addChoice()">
+        <mat-icon svgIcon="plus" />
+        Создать
+      </button>
+    </div>
+    <div class="overflow-auto">
+      <table mat-table [dataSource]="_choicesList()" class="mat-elevation-z8 w-full">
+        <ng-container matColumnDef="text">
+          <th mat-header-cell *matHeaderCellDef>Текст выбора</th>
+          <td mat-cell *matCellDef="let row">{{ row.text }}</td>
+        </ng-container>
+        <ng-container matColumnDef="nextScene">
+          <th mat-header-cell *matHeaderCellDef>Следующая сцена</th>
+          <td mat-cell *matCellDef="let row">{{ _getSceneNameById(row.nextSceneId) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row; let ci = index">
+            <div class="flex gap-1">
+              <button mat-icon-button type="button" (click)="_editChoice(ci)" title="Редактировать">
+                <mat-icon svgIcon="pen-to-square" />
+              </button>
+              <button mat-icon-button color="warn" type="button" (click)="_removeChoice(ci)" title="Удалить">
+                <mat-icon svgIcon="trash" />
+              </button>
+            </div>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="_choicesDisplayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: _choicesDisplayedColumns"></tr>
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" [attr.colspan]="_choicesDisplayedColumns.length">Нет вариантов выбора</td>
+        </tr>
+      </table>
+    </div>
+  </section>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="_cancel()">Отмена</button>
+  <button mat-flat-button color="primary" (click)="_submit()" [disabled]="_form.invalid">
+    {{ _dialogData.scene ? 'Сохранить' : 'Добавить' }}
+  </button>
+</mat-dialog-actions>
