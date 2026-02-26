@@ -29,7 +29,7 @@ export const questionSchema = z.object({
       score: z.number().nullable().optional(),
       isCorrect: z.boolean().nullable().optional()
     }),
-    relationQuestionId: z.string()
+    relationQuestionId: z.string().nullable()
   }).nullable().optional(),
   answers: z.array(z.object({
     answerText: z.string(),
@@ -67,28 +67,41 @@ export const testSchema = z.object({
   })).nullable()
 });
 
-export const appRescueItemParameterDiscriminatorByTimerSchema = z.object({
-  type: z.enum(['value', 'range']),
-  min: z.number(),
-  max: z.number()
-}).optional();
+/** Схема параметра по таймеру (id, name, delta, startValue) */
+export const rescueTimerParameterSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  delta: z.number(),
+  startValue: z.number()
+});
 
-export const appRescueItemParameterSchema = z.discriminatedUnion('category', [
-  z.object({
-    id: z.string(),
-    label: z.string(),
-    value: z.number(),
-    category: z.literal('number'),
-    discriminatorByTimer: appRescueItemParameterDiscriminatorByTimerSchema
-  }),
-  z.object({
-    id: z.string(),
-    label: z.string(),
-    value: z.string().regex(/^\d{2}:\d{2}:\d{2}$/), // Формат HH:mm:ss
-    category: z.literal('duration'),
-    discriminatorByTimer: appRescueItemParameterDiscriminatorByTimerSchema
-  })
-]);
+/** Изменение параметра при выборе */
+export const rescueChoiceParameterChangeSchema = z.object({
+  parameterId: z.string(),
+  value: z.number()
+});
+
+/** Вариант выбора в сцене */
+export const rescueSceneChoiceSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  parameterChanges: z.array(rescueChoiceParameterChangeSchema).optional(),
+  nextSceneId: z.string().nullable().optional()
+});
+
+/** Сцена визуальной новеллы */
+export const rescueSceneSchema = z.object({
+  id: z.string(),
+  order: z.number().nullable().optional(),
+  background: z.string(),
+  text: z.string(),
+  choices: z.array(rescueSceneChoiceSchema).optional()
+});
+
+export const rescueItemDataSchema = z.object({
+  parameters: z.array(rescueTimerParameterSchema).optional(),
+  scenes: z.array(rescueSceneSchema).optional()
+});
 
 export const rescueItemSchema = z.object({
   id: z.string(),
@@ -97,9 +110,7 @@ export const rescueItemSchema = z.object({
   parentId: z.string().nullable().optional(),
   createdAt: z.string(),
   description: z.string(),
-  data: z.object({
-    parameters: z.array(appRescueItemParameterSchema).optional()
-  }).optional()
+  data: rescueItemDataSchema.optional()
 });
 
 export const rescueLibraryItemSchema = z.discriminatedUnion('type', [
