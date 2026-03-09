@@ -95,7 +95,8 @@ export const rescueSceneSchema = z.object({
   order: z.number().nullable().optional(),
   background: z.string(),
   text: z.string(),
-  choices: z.array(rescueSceneChoiceSchema).optional()
+  choices: z.array(rescueSceneChoiceSchema).optional(),
+  hidden: z.boolean().nullable().optional()
 });
 
 export const rescueItemDataSchema = z.object({

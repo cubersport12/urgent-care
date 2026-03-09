@@ -90,6 +90,7 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
     order: new FormControl<NullableValue<number>>(s?.order ?? null),
     background: new FormControl<string>(s?.background ?? '', Validators.required),
     text: new FormControl<string>(s?.text ?? '', Validators.required),
+    hidden: new FormControl<boolean>(s?.hidden ?? false, { nonNullable: true }),
     choices: new FormArray(choices)
   });
 }
@@ -266,7 +267,8 @@ export class RescueEditorComponent {
             sceneControl.patchValue({
               id: result.id,
               background: result.background,
-              text: result.text
+              text: result.text,
+              hidden: result.hidden
             });
             const choicesArr = sceneControl.get('choices') as FormArray;
             choicesArr.clear();
@@ -309,6 +311,7 @@ export class RescueEditorComponent {
       order,
       background: (s['background'] as string) ?? '',
       text: (s['text'] as string) ?? '',
+      hidden: (s['hidden'] as boolean) ?? false,
       choices: ((s['choices'] ?? []) as Array<Record<string, unknown>>).map((ch: Record<string, unknown>) => ({
         id: ch['id'] as string,
         text: (ch['text'] as string) ?? '',
@@ -321,7 +324,6 @@ export class RescueEditorComponent {
     }));
     const base = this._dialogData ?? {};
     return {
-      ...base,
       id: base.id ?? generateGUID(),
       name: name!,
       description: description ?? '',

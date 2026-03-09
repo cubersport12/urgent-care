@@ -1,4 +1,4 @@
-import { AppRescueItemVm } from '@/hooks/api/types';
+import { AppRescueItemVm, RescueTimerParameterVm } from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
@@ -27,11 +27,7 @@ export function RescueStart({ rescueItem, onBack, onStart }: RescueStartProps) {
     };
   });
 
-  const { primary: tintColor, page: backgroundColor, border: borderColor, shadow: shadowColor, primary: primaryShadow } = useAppTheme();
-
-  // Находим параметр duration отдельно
-  const durationParameter = rescueItem.data?.parameters?.find(p => p.category === 'duration');
-  const otherParameters = rescueItem.data?.parameters?.filter(p => p.category !== 'duration') || [];
+  const { primary: tintColor, page: backgroundColor, border: borderColor, primary: primaryShadow } = useAppTheme();
 
   // Форматируем дату создания
   const formatDate = (dateString: string) => {
@@ -49,22 +45,13 @@ export function RescueStart({ rescueItem, onBack, onStart }: RescueStartProps) {
     }
   };
 
-  // Форматируем значение параметра
-  const formatParameterValue = (value: string | number, category: 'number' | 'duration') => {
-    if (category === 'duration') {
-      // Если это число, считаем его секундами
-      if (typeof value === 'number') {
-        const minutes = Math.floor(value / 60);
-        const seconds = value % 60;
-        if (minutes > 0) {
-          return `${minutes} мин ${seconds} сек`;
-        }
-        return `${seconds} сек`;
-      }
-      return value;
-    }
-    return String(value);
+  const formatTimerParameter = (param: RescueTimerParameterVm) => {
+    const start = param.startValue;
+    const delta = param.delta;
+    return `старт: ${start}, шаг: ${delta}`;
   };
+
+  console.info('------------->', rescueItem);
 
   return (
     <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
@@ -110,32 +97,19 @@ export function RescueStart({ rescueItem, onBack, onStart }: RescueStartProps) {
             </ThemedView>
           )}
 
-          {/* Duration - отдельно */}
-          {durationParameter && (
-            <ThemedView style={styles.infoCard}>
-              <ThemedView style={styles.infoRowHorizontal}>
-                <IconSymbol name="exclamationmark.triangle.fill" size={20} color={tintColor} />
-                <ThemedText style={styles.infoLabel}>Время на прохождение:</ThemedText>
-              </ThemedView>
-              <ThemedText style={styles.infoValue}>
-                {formatParameterValue(durationParameter.value, durationParameter.category)}
-              </ThemedText>
-            </ThemedView>
-          )}
-
-          {/* Остальные параметры */}
-          {otherParameters.length > 0 && (
+          {/* Параметры таймера */}
+          {(rescueItem.data?.parameters?.length ?? 0) > 0 && (
             <ThemedView style={styles.infoCard}>
               <ThemedView style={styles.infoRowHorizontal}>
                 <IconSymbol name="list.bullet.clipboard.fill" size={20} color={tintColor} />
-                <ThemedText style={styles.infoLabel}>Параметры:</ThemedText>
+                <ThemedText style={styles.infoLabel}>Параметры сцены:</ThemedText>
               </ThemedView>
               <ThemedView style={styles.parametersContainer}>
-                {otherParameters.map((param) => (
+                {rescueItem.data?.parameters?.map((param) => (
                   <ThemedView key={param.id} style={styles.parameterItem}>
-                    <ThemedText style={styles.parameterLabel}>{param.label}:</ThemedText>
+                    <ThemedText style={styles.parameterLabel}>{param.name}:</ThemedText>
                     <ThemedText style={styles.parameterValue}>
-                      {formatParameterValue(param.value, param.category)}
+                      {formatTimerParameter(param)}
                     </ThemedText>
                   </ThemedView>
                 ))}

@@ -12,6 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { openFile } from '@/core/utils';
 import { RescueChoiceDialogComponent, RescueChoiceDialogData, SceneOption } from '../rescue-choice-dialog/rescue-choice-dialog.component';
 import { take } from 'rxjs';
@@ -39,7 +40,8 @@ export type RescueSceneDialogData = {
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
-    MatTableModule
+    MatTableModule,
+    MatCheckboxModule
   ],
   templateUrl: './rescue-scene-dialog.component.html',
   styles: ``
@@ -69,6 +71,10 @@ export class RescueSceneDialogComponent {
     text: new FormControl<string>(
       this._dialogData.scene?.text ?? '',
       Validators.required
+    ),
+    hidden: new FormControl<boolean>(
+      this._dialogData.scene?.hidden ?? false,
+      { nonNullable: true }
     )
   });
 
@@ -156,7 +162,8 @@ export class RescueSceneDialogComponent {
       id: v.id!,
       background: v.background ?? '',
       text: v.text ?? '',
-      choices: this._choicesList()
+      choices: this._choicesList(),
+      hidden: v.hidden ?? false
     });
   }
 

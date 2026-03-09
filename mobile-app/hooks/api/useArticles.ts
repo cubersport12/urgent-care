@@ -115,7 +115,7 @@ export const useAddOrUpdateArticleStats = (stats: Omit<AppArticleStatsVm, 'creat
     } finally {
       setIsLoading(false);
     }
-  }, [stats.id, stats.clientId, stats.articleId, stats.readed]);
+  }, [stats.clientId, stats.articleId, stats.readed]);
 
   return {
     addOrUpdate,

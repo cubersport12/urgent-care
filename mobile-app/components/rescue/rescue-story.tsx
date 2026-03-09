@@ -1,293 +1,315 @@
-import { AppRescueItemParameterVm, RescueLibraryItemVm, RescueLibraryTriggerVm, RescueStorySceneTriggerVm } from '@/hooks/api/types';
+import { Fonts } from '@/constants/theme';
+import { RescueSceneChoiceVm, RescueTimerParameterVm } from '@/hooks/api/types';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { Image } from 'expo-image';
-import { useEffect } from 'react';
-import { Dimensions, Pressable, ScrollView, StyleSheet } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { SvgXml } from 'react-native-svg';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
-import { IconSymbol } from '../ui/icon-symbol';
+import { Button } from '../ui/button';
 
-type RescueStoryProps = {
-  backgroundImage: string;
-  items: RescueStorySceneTriggerVm[];
-  onItemPress?: (triggerId: string) => void;
-  onFolderItemPress?: (itemId: string, triggerId: string) => void;
-  libraryItemsMap: Map<string, RescueLibraryItemVm>;
-  triggerStates: Map<string, boolean>;
-  parameters?: Map<string, number>;
-  displayParameters?: AppRescueItemParameterVm[];
-  activeFolder?: { folderId: string; triggerId: string } | null;
-  folderChildren?: RescueLibraryItemVm[];
-};
+/** Проверяет, является ли строка data URI (base64) */
+function isDataUri(value: string): boolean {
+  return typeof value === 'string' && value.startsWith('data:');
+}
 
-export function RescueStory({ backgroundImage, items, onItemPress, onFolderItemPress, libraryItemsMap, triggerStates, parameters, displayParameters, activeFolder, folderChildren = [] }: RescueStoryProps) {
-  const { page: backgroundColor, primary: primaryColor, onPrimary: onPrimaryColor, layout1: cardBackground, border: borderColor } = useAppTheme();
-  const { response: imageDataUrl, isLoading: isLoadingImage } = useFileImage(backgroundImage);
-  const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
-  
-  // Анимация для folder-container - opacity зависит от activeFolder
-  const folderOpacity = useSharedValue(activeFolder ? 1 : 0);
-  
-  // Обновляем opacity при изменении activeFolder
+/** Компонент для отображения одного параметра с анимацией при изменении */
+function ParameterBadge({ param, value }: { param: RescueTimerParameterVm; value: number }) {
+  const scale = useSharedValue(1);
+  const backgroundColor = useSharedValue('rgba(0, 0, 0, 0.6)');
+  const prevValueRef = useRef(value);
+
   useEffect(() => {
-    if (activeFolder) {
-      folderOpacity.value = withTiming(1, { duration: 300 });
-    } else {
-      folderOpacity.value = withTiming(0, { duration: 300 });
+    if (prevValueRef.current !== value) {
+      const isPositive = value > prevValueRef.current;
+      prevValueRef.current = value;
+      
+      // Анимация увеличения
+      scale.value = withSequence(
+        withTiming(1.2, { duration: 150 }),
+        withTiming(1, { duration: 150 })
+      );
+      
+      // Анимация цвета (зеленый при увеличении, красный при уменьшении, возвращается к дефолтному)
+      const highlightColor = isPositive ? 'rgba(76, 175, 80, 0.8)' : 'rgba(244, 67, 54, 0.8)';
+      backgroundColor.value = withSequence(
+        withTiming(highlightColor, { duration: 150 }),
+        withTiming('rgba(0, 0, 0, 0.6)', { duration: 300 })
+      );
     }
-  }, [activeFolder, folderOpacity]);
-  
-  const folderAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: folderOpacity.value,
-  }));
-  
-  // Находим folder-container элемент
-  const folderContainerItem = items.find((item) => {
-    const libraryItem = libraryItemsMap.get(item.triggerId);
-    return libraryItem?.type === 'folder-container';
+  }, [value, scale, backgroundColor]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+      backgroundColor: backgroundColor.value,
+    };
   });
 
   return (
+    <Animated.View style={[styles.parameterBadge, animatedStyle]}>
+      <ThemedText style={styles.parameterText}>
+        {param.name}: {value}
+      </ThemedText>
+    </Animated.View>
+  );
+}
+
+type RescueSceneVisualNovelProps = {
+  backgroundImage: string;
+  /** Текст сцены, который печатается снизу */
+  text: string;
+  /** Варианты выбора в этой сцене */
+  choices: RescueSceneChoiceVm[];
+  /** Скорость печати, мс на символ */
+  typingSpeedMs?: number;
+  /** Список параметров для отображения на экране */
+  parametersList?: RescueTimerParameterVm[];
+  /** Текущие значения параметров */
+  parameterValues?: Record<string, number>;
+  /** Вызывается, когда пользователь завершил сцену и нажал "Далее" */
+  onNext: (selectedChoice: RescueSceneChoiceVm | null) => void;
+};
+
+export function RescueSceneVisualNovel({
+  backgroundImage,
+  text,
+  choices,
+  typingSpeedMs = 35,
+  parametersList = [],
+  parameterValues = {},
+  onNext,
+}: RescueSceneVisualNovelProps) {
+  const { height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const {
+    page: backgroundColor,
+    primary: primaryColor,
+  } = useAppTheme();
+
+  const textAreaMaxHeight = windowHeight / 3;
+
+  const isInlineDataUri = isDataUri(backgroundImage);
+  const { response: fetchedImageUrl, isLoading: isLoadingImage } = useFileImage(
+    isInlineDataUri ? '' : backgroundImage,
+  );
+  const imageDataUrl = isInlineDataUri ? backgroundImage : fetchedImageUrl;
+
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [hasShownChoices, setHasShownChoices] = useState(false);
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fullText = text ?? '';
+
+  const hasChoices = useMemo(() => choices && choices.length > 0, [choices]);
+
+  // Запускаем эффект печати при смене текста сцены
+  useEffect(() => {
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+
+    setDisplayedText('');
+    setIsTyping(true);
+    setHasShownChoices(false);
+
+    if (!fullText) {
+      setIsTyping(false);
+      return;
+    }
+
+    let index = 0;
+    typingIntervalRef.current = setInterval(() => {
+      index += 1;
+      setDisplayedText(fullText.slice(0, index));
+      if (index >= fullText.length) {
+        if (typingIntervalRef.current) {
+          clearInterval(typingIntervalRef.current);
+          typingIntervalRef.current = null;
+        }
+        setIsTyping(false);
+      }
+    }, Math.max(typingSpeedMs, 5));
+
+    return () => {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+      }
+    };
+  }, [fullText, typingSpeedMs]);
+
+  const handleNextPress = () => {
+    // Сначала завершить печать, если она еще идет
+    if (isTyping) {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+      }
+      setDisplayedText(fullText);
+      setIsTyping(false);
+      return;
+    }
+
+    // Затем показать вопрос (если есть) одним нажатием
+    if (hasChoices && !hasShownChoices) {
+      setHasShownChoices(true);
+      return;
+    }
+
+    // Если на экране варианты выбора — переход только по нажатию варианта, не по клику
+    if (hasChoices && hasShownChoices) {
+      return;
+    }
+
+    // Сцена завершена — переходим дальше
+    onNext(null);
+  };
+
+  const showNextButton = hasChoices ? !hasShownChoices : true;
+  const canAdvanceOnTap = isTyping || !hasChoices || !hasShownChoices;
+
+  const showImage = imageDataUrl && (isInlineDataUri || !isLoadingImage);
+
+  return (
     <ThemedView style={[styles.container, { backgroundColor }]}>
-      {isLoadingImage ? (
+      {!isInlineDataUri && isLoadingImage ? (
         <ThemedView style={styles.loadingContainer}>
           <ThemedText>Загрузка изображения...</ThemedText>
         </ThemedView>
-      ) : imageDataUrl ? (
-        <Image
-          source={{ uri: imageDataUrl }}
-          style={styles.backgroundImage}
-          contentFit="cover"
-          transition={200}
-        />
+      ) : showImage ? (
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={handleNextPress}
+        >
+          <Image
+            source={{ uri: imageDataUrl }}
+            style={styles.backgroundImage}
+            contentFit="cover"
+            transition={200}
+          />
+        </Pressable>
       ) : (
-        <ThemedView style={styles.placeholderContainer}>
+        <Pressable
+          style={[StyleSheet.absoluteFill, styles.placeholderContainer]}
+          onPress={handleNextPress}
+        >
           <ThemedText>[Изображение: {backgroundImage}]</ThemedText>
+        </Pressable>
+      )}
+
+      {/* Полупрозрачный оверлей для читаемости */}
+      {/* <ThemedView
+        style={[
+          styles.overlay,
+          { backgroundColor: overlayBackground ?? 'rgba(0,0,0,0.25)' },
+        ]}
+      /> */}
+
+      {/* Панель параметров */}
+      {parametersList.length > 0 && (
+        <ThemedView style={[styles.parametersContainer, { paddingTop: insets.top + 16 }]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.parametersScrollContent}
+          >
+            {parametersList.map((param) => (
+              <ParameterBadge
+                key={param.id}
+                param={param}
+                value={parameterValues[param.id] ?? param.startValue}
+              />
+            ))}
+          </ScrollView>
         </ThemedView>
       )}
-      
-      {/* Элементы на сцене */}
-      {items.map((item) => {
-        // Используем проценты напрямую
-        const left = `${item.position.x}%` as const;
-        const top = `${item.position.y}%` as const;
-        const width = `${item.size.width}%` as const;
-        const height = `${item.size.height}%` as const;
 
-        const libraryItem = libraryItemsMap.get(item.triggerId);
-        const isParamsState = libraryItem?.type === 'params-state';
-        const isTrigger = libraryItem?.type === 'trigger';
-        const triggerData = isTrigger ? (libraryItem as RescueLibraryTriggerVm).data : null;
-        const isToggle = triggerData?.buttonType === 'toggle';
-        const isActive = triggerStates.get(item.triggerId) || false;
-
-        // Если это элемент params-state, отображаем параметры
-        if (isParamsState && displayParameters && displayParameters.length > 0) {
-          return (
-            <ThemedView
-              key={item.triggerId}
-              style={[
-                styles.sceneItem,
-                {
-                  left,
-                  top,
-                  width,
-                  height,
-                  backgroundColor: 'transparent',
-                },
-              ]}
-            >
-              <ThemedView style={styles.paramsStateContent}>
-                {displayParameters.map((param) => {
-                  const currentValue = parameters?.get(param.id) ?? param.value;
-                  return (
-                    <ThemedView key={param.id} style={[styles.parameterBadge, { backgroundColor: cardBackground }]}>
-                      <ThemedText style={styles.parameterBadgeText}>
-                        {param.label}: {typeof currentValue === 'number' ? currentValue.toFixed(1) : currentValue}
-                      </ThemedText>
-                    </ThemedView>
-                  );
-                })}
-              </ThemedView>
-            </ThemedView>
-          );
-        }
-        
-        // Определяем какой SVG использовать
-        let svgToUse: string | undefined;
-        if (isTrigger && triggerData) {
-          if (isToggle) {
-            svgToUse = isActive ? triggerData.onSvg : triggerData.offSvg;
-          } else {
-            // Для button используем onSvg или offSvg (что есть)
-            svgToUse = triggerData.onSvg || triggerData.offSvg;
-          }
-        }
-
-        // Функция для извлечения SVG XML из data URL
-        const extractSvgFromDataUrl = (dataUrl: string): string | null => {
-          if (dataUrl.startsWith('data:image/svg+xml')) {
-            // Извлекаем base64 или URL-encoded часть
-            const base64Match = dataUrl.match(/data:image\/svg\+xml;base64,(.+)/);
-            const urlMatch = dataUrl.match(/data:image\/svg\+xml,(.+)/);
-            
-            if (base64Match) {
-              try {
-                return atob(base64Match[1]);
-              } catch (e) {
-                console.error('Error decoding base64 SVG:', e);
-                return null;
-              }
-            } else if (urlMatch) {
-              try {
-                return decodeURIComponent(urlMatch[1]);
-              } catch (e) {
-                console.error('Error decoding URL-encoded SVG:', e);
-                return null;
-              }
-            }
-          }
-          return null;
-        };
-
-        // Получаем чистый SVG XML
-        let svgXml: string | null = null;
-        if (svgToUse) {
-          if (svgToUse.startsWith('data:image/svg+xml')) {
-            svgXml = extractSvgFromDataUrl(svgToUse);
-          } else if (svgToUse.startsWith('<svg') || svgToUse.startsWith('<?xml')) {
-            // Уже чистый XML
-            svgXml = svgToUse;
-          } else if (svgToUse.startsWith('data:')) {
-            // Другие data URL - используем Image
-            svgXml = null;
-          }
-        }
-
-        return (
-          <Pressable
-            key={item.triggerId}
-            style={[
-              styles.sceneItem,
-              {
-                left,
-                top,
-                width,
-                height,
-                backgroundColor: svgToUse ? 'transparent' : primaryColor,
-                opacity: libraryItem?.type === 'folder-container' ? 0 : 1
-              },
-            ]}
-            onPress={() => onItemPress?.(item.triggerId)}
-          >
-            {svgToUse ? (
-              svgXml ? (
-                // Если есть SVG XML, используем SvgXml
-                <ThemedView style={styles.svgContainer}>
-                  <SvgXml
-                    xml={svgXml}
-                    width="100%"
-                    height="100%"
-                  />
-                </ThemedView>
-              ) : (
-                // Если SVG в формате data URL (не SVG), используем Image
-                <Image
-                  source={{ uri: svgToUse }}
-                  style={styles.svgImage}
-                  contentFit="contain"
-                />
-              )
-            ) : (
-              <ThemedView style={styles.sceneItemContent}>
-                {libraryItem ? (() => {
-                  // Вычисляем размер иконки как 60% от минимального размера элемента
-                  const iconSize = Math.min(
-                    (item.size.width / 100) * screenWidth,
-                    (item.size.height / 100) * screenHeight
-                  ) * 0.6;
-                  
-                  // Определяем иконку в зависимости от типа элемента
-                  return libraryItem.type === 'trigger' ? (
-                    <IconSymbol name="bolt.fill" size={iconSize} color={onPrimaryColor} />
-                  ) : libraryItem.type === 'test' ? (
-                    <IconSymbol name="list.bullet.clipboard.fill" size={iconSize} color={onPrimaryColor} />
-                  ) : libraryItem.type === 'question' ? (
-                    <IconSymbol name="questionmark.circle.fill" size={iconSize} color={onPrimaryColor} />
-                  ) : libraryItem.type === 'folder' ? (
-                    <IconSymbol name="folder.fill" size={iconSize} color={onPrimaryColor} />
-                  ) : (
-                    <ThemedText style={[styles.sceneItemText, { color: onPrimaryColor }]}>
-                      {libraryItem.name || item.triggerId}
-                    </ThemedText>
-                  );
-                })() : (
-                  <ThemedText style={[styles.sceneItemText, { color: onPrimaryColor }]}>
-                    {item.triggerId}
-                  </ThemedText>
-                )}
-              </ThemedView>
-            )}
-          </Pressable>
-        );
-      })}
-      
-      {/* Отображение folder-container с элементами папки */}
-      {folderContainerItem && (
-        <Animated.View
-          style={[
-            styles.sceneItem,
-            {
-              left: `${folderContainerItem.position.x}%` as const,
-              top: `${folderContainerItem.position.y}%` as const,
-              width: `${folderContainerItem.size.width}%` as const,
-              height: `${folderContainerItem.size.height}%` as const,
-              backgroundColor: cardBackground,
-              borderColor,
-              borderWidth: 1,
-            },
-            folderAnimatedStyle,
-          ]}
-        >
-          {activeFolder && folderChildren.length > 0 && (
-            <ThemedView style={styles.folderContainerContent}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.folderItemsScrollContent}
-              >
-                {folderChildren.map((childItem) => {
-                  return (
-                    <Pressable
-                      key={childItem.id}
-                      onPress={() => {
-                        if (activeFolder && onFolderItemPress) {
-                          onFolderItemPress(childItem.id, activeFolder.triggerId);
-                        }
-                      }}
-                    >
-                      <ThemedView style={[styles.folderItemBadge, { backgroundColor: primaryColor }]}>
-                        <ThemedText style={[styles.folderItemBadgeText, { color: onPrimaryColor }]}>
-                          {childItem.name}
-                        </ThemedText>
-                      </ThemedView>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </ThemedView>
-          )}
-        </Animated.View>
+      {/* Центральный блок вариантов ответа */}
+      {hasChoices && hasShownChoices && (
+        <ThemedView style={styles.centerChoicesContainer}>
+          <ThemedView style={styles.choicesRow}>
+            {choices.map((choice) => (
+              <Button
+                key={choice.id}
+                title={choice.text}
+                onPress={() => onNext(choice)}
+                variant="primary"
+                fullWidth
+                size="large"
+                style={styles.choiceButton}
+              />
+            ))}
+          </ThemedView>
+        </ThemedView>
       )}
+
+      {/* Нижняя панель: текст сцены (макс. 1/3 экрана, с прокруткой) и кнопки ниже */}
+      <ThemedView style={styles.bottomTextContainer}>
+        <ScrollView
+          style={[styles.textScrollView, { maxHeight: textAreaMaxHeight }]}
+          contentContainerStyle={styles.textScrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <ThemedText style={styles.sceneText}>
+            {displayedText}
+            {isTyping && <ThemedText style={styles.cursor}>▋</ThemedText>}
+          </ThemedText>
+        </ScrollView>
+
+        <ThemedView style={styles.actionsRow}>
+          {showNextButton ? (
+            <Pressable
+              onPress={handleNextPress}
+              style={styles.linkButton}
+            >
+              <ThemedText
+                style={[
+                  styles.linkButtonText,
+                  { color: canAdvanceOnTap ? primaryColor : 'rgba(255,255,255,0.5)' },
+                ]}
+              >
+                {isTyping ? 'Показать сразу' : hasChoices && !hasShownChoices ? 'Показать варианты' : 'Далее'}
+              </ThemedText>
+            </Pressable>
+          ) : null}
+        </ThemedView>
+      </ThemedView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  parametersContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 4,
+    backgroundColor: 'transparent',
+  },
+  parametersScrollContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  parameterBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  parameterText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
   container: {
     flex: 1,
     position: 'relative',
@@ -302,91 +324,100 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+  },
   backgroundImage: {
     width: '100%',
     height: '100%',
     position: 'absolute',
     top: 0,
     left: 0,
+    zIndex: 0,
   },
-  sceneItem: {
+  bottomTextContainer: {
     position: 'absolute',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+    paddingTop: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 2,
   },
-  svgContainer: {
-    width: '100%',
-    height: '100%',
+  textScrollView: {
+    flexGrow: 0,
   },
-  svgImage: {
-    width: '100%',
-    height: '100%',
+  textScrollContent: {
+    paddingRight: 8,
   },
-  sceneItemContent: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 4
+  sceneText: {
+    fontFamily: Fonts.sans,
+    fontSize: 24,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    lineHeight: 32,
+    letterSpacing: 0.5,
+    textAlign: 'justify',
+    textShadowColor: 'rgba(0, 0, 0, 0.9)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  sceneItemText: {
-    fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
+  cursor: {
+    fontFamily: Fonts.sans,
+    fontSize: 32,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    opacity: 0.9,
+    textShadowColor: 'rgba(0, 0, 0, 0.9)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  paramsStateContent: {
-    width: '100%',
-    height: '100%',
-    flexDirection: 'row',
-    gap: 6,
-    padding: 4,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    alignContent: 'center',
-  },
-  parameterBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  parameterBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  folderContainerContent: {
-    width: '100%',
-    height: '100%',
-    padding: 8,
-    justifyContent: 'center'
-  },
-  folderItemsScrollContent: {
-    alignItems: 'center',
+  actionsRow: {
+    marginTop: 12,
+    flexDirection: 'column',
+    alignItems: 'flex-end',
     gap: 8,
-    paddingHorizontal: 4
   },
-  folderItemBadge: {
-    paddingHorizontal: 12,
+  centerChoicesContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 3,
+    paddingHorizontal: 20,
+    paddingBottom: 150, // смещение немного вверх, чтобы не перекрывалось текстом
+  },
+  choicesRow: {
+    width: '100%',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 16,
+  },
+  choiceButton: {
+    width: '100%',
+  },
+  linkButton: {
     paddingVertical: 6,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
-  folderItemBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
+  linkButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
   },
-  folderEmpty: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  folderEmptyText: {
-    fontSize: 12,
-    opacity: 0.6,
+  linkButtonTextSelected: {
+    opacity: 0.9,
   },
 });
 

@@ -42,6 +42,7 @@ comment on column rescue.data is 'JSON: { parameters?: RescueTimerParameter[], s
       "order": "number | null",
       "background": "string (URL или id фона)",
       "text": "string",
+      "hidden": "boolean | null",
       "choices": [
         {
           "id": "string (uuid)",

@@ -96,17 +96,23 @@ export type AppTestAccessablityConditionArticle = {
 
 // Режим спасения (rescue) — визуальная новелла с параметрами по таймеру
 
-/** Общий параметр, изменяемый по таймеру (delta за тик, startValue — начальное значение) */
+/** Общий параметр, изменяемый по  таймеру */
 export type RescueTimerParameterVm = {
+  /* ИД */
   id: string;
+  /* Наименование параметра */
   name: string;
+  /* Насколько указанный параметр будет изменен */
   delta: number;
+  /* Стартовое значение параметра на старте */
   startValue: number;
 };
 
-/** Изменение параметра при выборе варианта в сцене */
+/** На какой параметр воздействовать после выбора ответа на вопрос */
 export type RescueChoiceParameterChangeVm = {
+  /* ИД параметра */
   parameterId: string;
+  /* Насколько изменить указанный параметр */
   value: number;
 };
 
@@ -127,6 +133,7 @@ export type RescueSceneVm = {
   background: string;
   text: string;
   choices: RescueSceneChoiceVm[];
+  hidden?: NullableValue<boolean>;
 };
 
 export type AppRescueItemDataVm = {
