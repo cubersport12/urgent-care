@@ -48,10 +48,8 @@ export function RescueStart({ rescueItem, onBack, onStart }: RescueStartProps) {
   const formatTimerParameter = (param: RescueTimerParameterVm) => {
     const start = param.startValue;
     const delta = param.delta;
-    return `старт: ${start}, шаг: ${delta}`;
+    return `${start}`;
   };
-
-  console.info('------------->', rescueItem);
 
   return (
     <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
