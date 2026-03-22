@@ -112,7 +112,8 @@ export const rescueSceneSchema = z.object({
   background: z.string(),
   text: z.string(),
   choices: z.array(rescueSceneChoiceSchema).optional(),
-  hidden: z.boolean().nullable().optional()
+  hidden: z.boolean().nullable().optional(),
+  isReviewed: z.boolean().nullable().optional()
 });
 
 /** Лист дерева: сравнение параметра с числом */

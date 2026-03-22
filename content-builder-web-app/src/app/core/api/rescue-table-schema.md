@@ -47,6 +47,7 @@ comment on column rescue.data is 'JSON: { parameters?, scenes?, defaultBackgroun
       "background": "string (URL или id фона)",
       "text": "string",
       "hidden": "boolean | null",
+      "isReviewed": "boolean | null (сцена проверена на ошибки)",
       "choices": [
         {
           "id": "string (uuid)",

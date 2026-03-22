@@ -113,6 +113,7 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
     background: new FormControl<string>(s?.background ?? ''),
     text: new FormControl<string>(s?.text ?? '', Validators.required),
     hidden: new FormControl<boolean>(s?.hidden ?? false, { nonNullable: true }),
+    isReviewed: new FormControl<boolean>(s?.isReviewed ?? false, { nonNullable: true }),
     choices: new FormArray(choices)
   });
 }
@@ -399,7 +400,8 @@ export class RescueEditorComponent {
               id: result.id,
               background: result.background,
               text: result.text,
-              hidden: result.hidden
+              hidden: result.hidden,
+              isReviewed: result.isReviewed
             });
             const choicesArr = sceneControl.get('choices') as FormArray;
             choicesArr.clear();
@@ -460,6 +462,7 @@ export class RescueEditorComponent {
       background: (s['background'] as string) ?? '',
       text: (s['text'] as string) ?? '',
       hidden: (s['hidden'] as boolean) ?? false,
+      isReviewed: (s['isReviewed'] as boolean) ?? false,
       choices: ((s['choices'] ?? []) as Array<Record<string, unknown>>).map((ch: Record<string, unknown>) => ({
         id: ch['id'] as string,
         text: (ch['text'] as string) ?? '',

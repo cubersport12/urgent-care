@@ -136,6 +136,8 @@ export type RescueSceneVm = {
   text: string;
   choices: RescueSceneChoiceVm[];
   hidden?: NullableValue<boolean>;
+  /** Была ли сцена проверена на наличие ошибок */
+  isReviewed?: NullableValue<boolean>;
 };
 
 // --- Условия завершения режима спасения (успех / неуспех) ---

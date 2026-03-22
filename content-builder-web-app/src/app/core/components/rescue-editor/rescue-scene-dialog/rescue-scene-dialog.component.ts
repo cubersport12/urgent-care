@@ -74,6 +74,10 @@ export class RescueSceneDialogComponent {
     hidden: new FormControl<boolean>(
       this._dialogData.scene?.hidden ?? false,
       { nonNullable: true }
+    ),
+    isReviewed: new FormControl<boolean>(
+      this._dialogData.scene?.isReviewed ?? false,
+      { nonNullable: true }
     )
   });
 
@@ -162,7 +166,8 @@ export class RescueSceneDialogComponent {
       background: v.background ?? '',
       text: v.text ?? '',
       choices: this._choicesList(),
-      hidden: v.hidden ?? false
+      hidden: v.hidden ?? false,
+      isReviewed: v.isReviewed ?? false
     });
   }
 
