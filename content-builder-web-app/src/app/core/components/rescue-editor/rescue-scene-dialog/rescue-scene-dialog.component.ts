@@ -65,8 +65,7 @@ export class RescueSceneDialogComponent {
       Validators.required
     ),
     background: new FormControl<string>(
-      this._dialogData.scene?.background ?? '',
-      Validators.required
+      this._dialogData.scene?.background ?? ''
     ),
     text: new FormControl<string>(
       this._dialogData.scene?.text ?? '',

@@ -110,7 +110,7 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
   return new FormGroup({
     id: new FormControl<string>(s?.id ?? generateGUID(), Validators.required),
     order: new FormControl<NullableValue<number>>(s?.order ?? null),
-    background: new FormControl<string>(s?.background ?? '', Validators.required),
+    background: new FormControl<string>(s?.background ?? ''),
     text: new FormControl<string>(s?.text ?? '', Validators.required),
     hidden: new FormControl<boolean>(s?.hidden ?? false, { nonNullable: true }),
     choices: new FormArray(choices)
@@ -291,7 +291,7 @@ export class RescueEditorComponent {
 
   /** Индекс строки = порядок сцены в `RescueSceneVm.order` */
   private _syncScenesOrderAndList(): void {
-    const controls = this._scenes.controls as FormGroup[];
+    const controls = this._scenes.controls;
     controls.forEach((c, i) => {
       c.get('order')?.setValue(i);
     });
@@ -305,7 +305,7 @@ export class RescueEditorComponent {
     const controls = [...this._parameters.controls];
     moveItemInArray(controls, event.previousIndex, event.currentIndex);
     this._form.setControl('parameters', new FormArray(controls));
-    this._parametersList.set(controls as FormGroup[]);
+    this._parametersList.set(controls);
     this._form.markAsDirty();
   }
 
@@ -473,8 +473,8 @@ export class RescueEditorComponent {
     const base = this._dialogData ?? {};
     const defaultBg = (defaultBackground ?? '').trim();
     const comp = this._completion();
-    const completionPayload =
-      comp != null && (comp.success != null || comp.failure != null)
+    const completionPayload
+      = comp != null && (comp.success != null || comp.failure != null)
         ? {
             completion: {
               ...(comp.success != null ? { success: comp.success } : {}),
