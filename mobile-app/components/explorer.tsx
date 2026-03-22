@@ -1,10 +1,12 @@
 import { useTest } from '@/contexts/test-context';
-import { AppArticleVm, AppRescueItemVm, AppTestStatsVm, AppTestVm } from '@/hooks/api/types';
+import { AppArticleVm, AppRescueItemVm, AppRescueStatsVm, AppTestStatsVm, AppTestVm } from '@/hooks/api/types';
 import { fetchArticle, useArticles, useArticlesStats } from '@/hooks/api/useArticles';
 import { useFolders } from '@/hooks/api/useFolders';
 import { useRescueItems } from '@/hooks/api/useRescueItems';
+import { useAddOrUpdateRescueStats, useRescuesStats } from '@/hooks/api/useRescueStats';
 import { useTests } from '@/hooks/api/useTests';
 import { useAddOrUpdateTestStats, useTestsStats } from '@/hooks/api/useTestStats';
+import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-completion';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -31,6 +33,7 @@ export function Explorer() {
   const [selectedRescueItem, setSelectedRescueItem] = useState<AppRescueItemVm | null>(null);
   const [isRescueStarted, setIsRescueStarted] = useState(false);
   const [isRescueCompleted, setIsRescueCompleted] = useState(false);
+  const [rescueFinalParameters, setRescueFinalParameters] = useState<Record<string, number>>({});
   const [isNavigating, setIsNavigating] = useState(false);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
   // История навигации по статьям для определения hasPrevious
@@ -66,7 +69,18 @@ export function Explorer() {
   }, [testsResponse.data]);
   
   const testsStatsResponse = useTestsStats(testsIds);
-  
+
+  const rescueIds = useMemo(() => {
+    return rescueItemsResponse.data?.map((r) => r.id) ?? [];
+  }, [rescueItemsResponse.data]);
+
+  const rescueStatsList = useRescuesStats(rescueIds);
+
+  const rescueStatsMutation = useAddOrUpdateRescueStats({
+    clientId: deviceId ?? '',
+    rescueId: selectedRescueItem?.id ?? '',
+  });
+
   // Создаем Map для быстрого поиска прочитанных статей
   const readArticlesMap = useMemo(() => {
     const map = new Map<string, boolean>();
@@ -91,6 +105,16 @@ export function Explorer() {
     }
     return map;
   }, [testsStatsResponse.data]);
+
+  const rescueStatsMap = useMemo(() => {
+    const map = new Map<string, AppRescueStatsVm>();
+    if (rescueStatsList.data) {
+      rescueStatsList.data.forEach((stat) => {
+        map.set(stat.rescueId, stat);
+      });
+    }
+    return map;
+  }, [rescueStatsList.data]);
 
   // Отслеживаем изменение currentFolderId для показа спиннера и анимации
   useEffect(() => {
@@ -337,6 +361,9 @@ export function Explorer() {
     } else if (item.type === 'rescue') {
       opacity.value = withTiming(0, { duration: 200 });
       setSelectedRescueItem(item.data as AppRescueItemVm);
+      setIsRescueStarted(false);
+      setIsRescueCompleted(false);
+      setRescueFinalParameters({});
       setBreadcrumb(prev => [...prev, { id: item.data.id, name: item.data.name, type: 'rescue' }]);
       setSelectedArticle(null);
       setSelectedTest(null);
@@ -359,6 +386,7 @@ export function Explorer() {
     setSelectedRescueItem(null);
     setIsRescueStarted(false);
     setIsRescueCompleted(false);
+    setRescueFinalParameters({});
     resetTest();
     // Удаляем все элементы article, test и rescue из breadcrumb
     setBreadcrumb(prev => prev.filter(b => b.type !== 'article' && b.type !== 'test' && b.type !== 'rescue'));
@@ -517,33 +545,73 @@ export function Explorer() {
 
   // Если выбран rescue элемент и он завершен, показываем экран завершения
   if (selectedRescueItem && isRescueCompleted) {
-    return <RescueComplete onBack={() => {
-      setIsRescueCompleted(false);
-      setIsRescueStarted(false);
-      handleBackFromItem();
-    }} />;
+    return (
+      <RescueComplete
+        rescueItem={selectedRescueItem}
+        parameterValues={rescueFinalParameters}
+        onBack={() => {
+          setIsRescueCompleted(false);
+          setIsRescueStarted(false);
+          setRescueFinalParameters({});
+          void rescueStatsList.fetchData();
+          handleBackFromItem();
+        }}
+      />
+    );
   }
 
   // Если выбран rescue элемент и он начат, показываем RescueView
   if (selectedRescueItem && isRescueStarted) {
-    return <RescueView 
-      rescueItem={selectedRescueItem} 
-      onBack={() => {
-        setIsRescueStarted(false);
-        handleBackFromItem();
-      }}
-      onComplete={() => {
-        setIsRescueCompleted(true);
-        setIsRescueStarted(false);
-      }}
-    />;
+    return (
+      <RescueView
+        rescueItem={selectedRescueItem}
+        onBack={async () => {
+          try {
+            await rescueStatsMutation.addOrUpdate({
+              completedAt: new Date().toISOString(),
+              passed: false,
+            });
+          } catch (e) {
+            console.error('rescue_stats exit:', e);
+          }
+          void rescueStatsList.fetchData();
+          setIsRescueStarted(false);
+          handleBackFromItem();
+        }}
+        onComplete={async (finalParameters) => {
+          const data = parseRescueItemDataVm(selectedRescueItem.data);
+          const outcome = resolveRescueOutcome(data.completion, finalParameters);
+          const passed = outcome === 'passed';
+          try {
+            await rescueStatsMutation.addOrUpdate({
+              completedAt: new Date().toISOString(),
+              passed,
+            });
+          } catch (e) {
+            console.error('rescue_stats complete:', e);
+          }
+          void rescueStatsList.fetchData();
+          setRescueFinalParameters(finalParameters);
+          setIsRescueCompleted(true);
+          setIsRescueStarted(false);
+        }}
+      />
+    );
   }
 
   // Если выбран rescue элемент, показываем RescueStart
   if (selectedRescueItem) {
-    return <RescueStart rescueItem={selectedRescueItem} onBack={handleBackFromItem} onStart={() => {
-      setIsRescueStarted(true);
-    }} />;
+    return (
+      <RescueStart
+        rescueItem={selectedRescueItem}
+        onBack={handleBackFromItem}
+        onRescueSessionStarted={() => void rescueStatsList.fetchData()}
+        onStart={() => {
+          setRescueFinalParameters({});
+          setIsRescueStarted(true);
+        }}
+      />
+    );
   }
 
   // Показываем список элементов
@@ -647,18 +715,24 @@ export function Explorer() {
                   
                   // Получаем статистику теста, если это тест
                   const testStats = item.type === 'test' ? testsStatsMap.get(item.data.id) : undefined;
-                  
-                  // Формируем описание для теста с датой
+                  const rescueStatsVm =
+                    item.type === 'rescue' ? rescueStatsMap.get(item.data.id) : undefined;
+
+                  // Формируем описание для теста / rescue с датой
                   let description: string | undefined;
                   if (item.type === 'test' && testStats) {
                     if (testStats.completedAt) {
-                      // Если есть время завершения, выводим только его
                       const completedDate = new Date(testStats.completedAt);
                       description = completedDate.toLocaleString();
                     } else if (testStats.startedAt) {
-                      // Если нет времени завершения, но есть время начала, выводим его
                       const startedDate = new Date(testStats.startedAt);
                       description = startedDate.toLocaleString();
+                    }
+                  } else if (item.type === 'rescue' && rescueStatsVm) {
+                    if (rescueStatsVm.completedAt) {
+                      description = new Date(rescueStatsVm.completedAt).toLocaleString();
+                    } else if (rescueStatsVm.startedAt) {
+                      description = new Date(rescueStatsVm.startedAt).toLocaleString();
                     }
                   }
 
@@ -674,6 +748,15 @@ export function Explorer() {
                         completedAt: testStats.completedAt,
                         startedAt: testStats.startedAt,
                       } : undefined}
+                      rescueStats={
+                        rescueStatsVm
+                          ? {
+                              passed: rescueStatsVm.passed,
+                              completedAt: rescueStatsVm.completedAt,
+                              startedAt: rescueStatsVm.startedAt,
+                            }
+                          : undefined
+                      }
                       description={description}
                   />
                 );

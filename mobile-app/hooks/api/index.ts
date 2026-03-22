@@ -5,6 +5,7 @@ export * from './useArticles';
 export * from './useFilePdf';
 export * from './useFolders';
 export * from './useRescueItems';
+export * from './useRescueStats';
 export * from './useSupabaseFetch';
 export * from './useTestResults';
 export * from './useTests';

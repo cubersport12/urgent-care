@@ -15,10 +15,23 @@ type ExplorerItemComponentProps = {
     completedAt?: string | null;
     startedAt?: string | null;
   };
+  rescueStats?: {
+    passed: boolean | null | undefined;
+    completedAt?: string | null;
+    startedAt?: string | null;
+  };
   description?: string;
 };
 
-export function ExplorerItemComponent({ item, onPress, isRead = false, isDisabled = false, testStats, description }: ExplorerItemComponentProps) {
+export function ExplorerItemComponent({
+  item,
+  onPress,
+  isRead = false,
+  isDisabled = false,
+  testStats,
+  rescueStats,
+  description,
+}: ExplorerItemComponentProps) {
   const { layout1: itemBackground, layout2: pressedBackgroundColor, success: successColor, error: errorColor, neutralSoft, onLayout1, warning: warningColor, text: textColor } = useAppTheme();
   const disabledOpacityValue = useThemeValue('disabledOpacity');
   
@@ -28,6 +41,31 @@ export function ExplorerItemComponent({ item, onPress, isRead = false, isDisable
       ? { name: 'checkmark.circle.fill' as const, color: successColor }
       : { name: 'xmark.circle.fill' as const, color: errorColor }
     : null;
+
+  /* Rescue: галочка только при успехе, крест при завершении без успеха (в т.ч. выход / не пройден) */
+  const rescueStatusIcon =
+    item.type === 'rescue' &&
+    rescueStats?.completedAt &&
+    !isDisabled
+      ? rescueStats.passed === true
+        ? { name: 'checkmark.circle.fill' as const, color: successColor }
+        : { name: 'xmark.circle.fill' as const, color: errorColor }
+      : null;
+
+  const descriptionPrefix =
+    item.type === 'test' && testStats
+      ? testStats.passed
+        ? 'Успешно пройден '
+        : 'Не пройден '
+      : item.type === 'rescue' && rescueStats
+        ? rescueStats.completedAt
+          ? rescueStats.passed === true
+            ? 'Успешно пройден '
+            : 'Не пройден '
+          : rescueStats.startedAt
+            ? 'Начат '
+            : ''
+        : '';
 
   return (
     <Pressable
@@ -58,12 +96,19 @@ export function ExplorerItemComponent({ item, onPress, isRead = false, isDisable
           {item.type === 'test' && testStatusIcon && !isDisabled && (
             <IconSymbol name={testStatusIcon.name} size={12} color={testStatusIcon.color} style={styles.itemCheckmark} />
           )}
+          {item.type === 'rescue' && rescueStatusIcon && (
+            <IconSymbol name={rescueStatusIcon.name} size={12} color={rescueStatusIcon.color} style={styles.itemCheckmark} />
+          )}
         </ThemedView>
         <ThemedView style={styles.itemTextContainer}>
           <ThemedText 
                    style={[
                      styles.itemName,
                      item.type === 'article' && isRead && !isDisabled && { color: successColor },
+                     item.type === 'rescue' &&
+                       rescueStats?.completedAt &&
+                       rescueStats.passed === true &&
+                       !isDisabled && { color: successColor },
                      isDisabled && { opacity: disabledOpacityValue, color: onLayout1 },
                    ]}
           >
@@ -77,7 +122,7 @@ export function ExplorerItemComponent({ item, onPress, isRead = false, isDisable
                 isDisabled && { opacity: disabledOpacityValue },
               ]}
             >
-              {testStats?.passed ? 'Успешно пройден ' : 'Не пройден '}
+              {descriptionPrefix}
               {description}
             </ThemedText>
           )}

@@ -1,11 +1,25 @@
 import { Fonts } from '@/constants/theme';
-import { RescueSceneChoiceVm, RescueTimerParameterVm } from '@/hooks/api/types';
+import {
+  type NullableValue,
+  RescueParameterSeverityEnum,
+  RescueParameterSeverityVm,
+  RescueSceneChoiceVm,
+  RescueTimerParameterVm,
+} from '@/hooks/api/types';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { Image } from 'expo-image';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, {
+  cancelAnimation,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
@@ -16,38 +30,172 @@ function isDataUri(value: string): boolean {
   return typeof value === 'string' && value.startsWith('data:');
 }
 
-/** Компонент для отображения одного параметра с анимацией при изменении */
-function ParameterBadge({ param, value }: { param: RescueTimerParameterVm; value: number }) {
-  const scale = useSharedValue(1);
-  const backgroundColor = useSharedValue('rgba(0, 0, 0, 0.6)');
-  const prevValueRef = useRef(value);
+/** Находит первый подходящий по min/max уровень серьёзности для значения */
+function findSeverityForValue(
+  v: number,
+  severities?: RescueParameterSeverityVm[],
+): RescueParameterSeverityVm | null {
+  if (!severities?.length) return null;
+  for (const s of severities) {
+    const min = s.min ?? -Infinity;
+    const max = s.max ?? Infinity;
+    if (v >= min && v <= max) return s;
+  }
+  return null;
+}
+
+function severityBandKey(s: RescueParameterSeverityVm | null): string {
+  if (!s) return '';
+  return `${s.min ?? ''}:${s.max ?? ''}:${s.severity ?? ''}`;
+}
+
+/** Базовый и «вспышечный» цвет по enum серьёзности */
+function colorsForSeverity(severity?: RescueParameterSeverityEnum): { base: string; flash: string } {
+  switch (severity) {
+    case RescueParameterSeverityEnum.Normal:
+      return { base: 'rgba(96, 125, 139, 0.88)', flash: 'rgba(178, 223, 219, 0.95)' };
+    case RescueParameterSeverityEnum.Low:
+      return { base: 'rgba(33, 150, 243, 0.88)', flash: 'rgba(144, 202, 249, 0.95)' };
+    case RescueParameterSeverityEnum.Medium:
+      return { base: 'rgba(255, 152, 0, 0.88)', flash: 'rgba(255, 204, 128, 0.95)' };
+    case RescueParameterSeverityEnum.High:
+      return { base: 'rgba(211, 47, 47, 0.88)', flash: 'rgba(255, 138, 128, 0.95)' };
+    default:
+      return { base: 'rgba(0, 0, 0, 0.65)', flash: 'rgba(120, 120, 120, 0.92)' };
+  }
+}
+
+function isHeartbeatSeverity(severity?: RescueParameterSeverityEnum): boolean {
+  return (
+    severity === RescueParameterSeverityEnum.Medium ||
+    severity === RescueParameterSeverityEnum.High
+  );
+}
+
+/** Toast описания уровня: появление сверху вниз */
+function SeverityDescriptionToast({
+  message,
+  onDismiss,
+}: {
+  message: string | null;
+  onDismiss: () => void;
+}) {
+  const translateY = useSharedValue(-120);
+  const opacity = useSharedValue(0);
 
   useEffect(() => {
-    if (prevValueRef.current !== value) {
-      const isPositive = value > prevValueRef.current;
-      prevValueRef.current = value;
-      
-      // Анимация увеличения
-      scale.value = withSequence(
-        withTiming(1.2, { duration: 150 }),
-        withTiming(1, { duration: 150 })
-      );
-      
-      // Анимация цвета (зеленый при увеличении, красный при уменьшении, возвращается к дефолтному)
-      const highlightColor = isPositive ? 'rgba(76, 175, 80, 0.8)' : 'rgba(244, 67, 54, 0.8)';
-      backgroundColor.value = withSequence(
-        withTiming(highlightColor, { duration: 150 }),
-        withTiming('rgba(0, 0, 0, 0.6)', { duration: 300 })
-      );
+    if (!message) {
+      translateY.value = -120;
+      opacity.value = 0;
+      return;
     }
-  }, [value, scale, backgroundColor]);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-      backgroundColor: backgroundColor.value,
+    translateY.value = -100;
+    opacity.value = 0;
+    translateY.value = withTiming(0, { duration: 280 });
+    opacity.value = withTiming(1, { duration: 280 });
+
+    const hideTimer = setTimeout(() => {
+      translateY.value = withTiming(-80, { duration: 240 }, (finished) => {
+        if (finished) runOnJS(onDismiss)();
+      });
+      opacity.value = withTiming(0, { duration: 240 });
+    }, 3200);
+
+    return () => clearTimeout(hideTimer);
+  }, [message, onDismiss, translateY, opacity]);
+
+  const toastStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
+
+  if (!message) return null;
+
+  return (
+    <Animated.View style={[styles.severityToast, toastStyle]} pointerEvents="none">
+      <ThemedText style={styles.severityToastText}>{message}</ThemedText>
+    </Animated.View>
+  );
+}
+
+/** Компонент для отображения одного параметра с анимацией при изменении (цвета из severities) */
+function ParameterBadge({
+  param,
+  value,
+  onSeverityDescription,
+}: {
+  param: RescueTimerParameterVm;
+  value: number;
+  onSeverityDescription?: (description: string) => void;
+}) {
+  const changeScale = useSharedValue(1);
+  const heartbeatScale = useSharedValue(1);
+  const backgroundColor = useSharedValue(
+    colorsForSeverity(findSeverityForValue(value, param.severities)?.severity).base,
+  );
+  const prevValueRef = useRef(value);
+  const prevBandKeyRef = useRef(severityBandKey(findSeverityForValue(value, param.severities)));
+
+  const currentSeverity = findSeverityForValue(value, param.severities)?.severity;
+
+  /** «Сердцебиение»: два удара + пауза, только для Medium / High */
+  useEffect(() => {
+    if (!isHeartbeatSeverity(currentSeverity)) {
+      cancelAnimation(heartbeatScale);
+      heartbeatScale.value = withTiming(1, { duration: 200 });
+      return;
+    }
+
+    const isHigh = currentSeverity === RescueParameterSeverityEnum.High;
+    const peak1 = isHigh ? 1.12 : 1.08;
+    const trough = isHigh ? 1.02 : 1.03;
+    const peak2 = isHigh ? 1.09 : 1.05;
+    const pauseMs = isHigh ? 320 : 420;
+
+    const beat = withSequence(
+      withTiming(peak1, { duration: 160 }),
+      withTiming(trough, { duration: 110 }),
+      withTiming(peak2, { duration: 130 }),
+      withTiming(1, { duration: 240 }),
+      withTiming(1, { duration: pauseMs }),
+    );
+    heartbeatScale.value = withRepeat(beat, -1, false);
+
+    return () => {
+      cancelAnimation(heartbeatScale);
+      heartbeatScale.value = 1;
     };
-  });
+  }, [currentSeverity, heartbeatScale]);
+
+  useEffect(() => {
+    if (prevValueRef.current === value) return;
+
+    prevValueRef.current = value;
+
+    const newBand = findSeverityForValue(value, param.severities);
+    const newKey = severityBandKey(newBand);
+    if (newBand?.description?.trim()) {
+      onSeverityDescription?.(newBand.description.trim());
+    }
+    prevBandKeyRef.current = newKey;
+
+    const { base: nextBase, flash } = colorsForSeverity(newBand?.severity);
+
+    changeScale.value = withSequence(
+      withTiming(1.15, { duration: 140 }),
+      withTiming(1, { duration: 160 }),
+    );
+    backgroundColor.value = withSequence(
+      withTiming(flash, { duration: 160 }),
+      withTiming(nextBase, { duration: 320 }),
+    );
+  }, [value, param.severities, changeScale, backgroundColor, onSeverityDescription]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: changeScale.value * heartbeatScale.value }],
+    backgroundColor: backgroundColor.value,
+  }));
 
   return (
     <Animated.View style={[styles.parameterBadge, animatedStyle]}>
@@ -59,7 +207,10 @@ function ParameterBadge({ param, value }: { param: RescueTimerParameterVm; value
 }
 
 type RescueSceneVisualNovelProps = {
-  backgroundImage: string;
+  /** Фон сцены (URL или id); пустой — берётся defaultBackground из {@link AppRescueItemDataVm} */
+  backgroundImage?: string;
+  /** Фон по умолчанию из AppRescueItemDataVm.defaultBackground, если у сцены нет своего */
+  defaultBackground?: string;
   /** Текст сцены, который печатается снизу */
   text: string;
   /** Варианты выбора в этой сцене */
@@ -70,17 +221,24 @@ type RescueSceneVisualNovelProps = {
   parametersList?: RescueTimerParameterVm[];
   /** Текущие значения параметров */
   parameterValues?: Record<string, number>;
+  /**
+   * Явно false — сцена не отмечена автором как проверенная: показываем красную рамку-предупреждение.
+   * null/undefined/true — без рамки.
+   */
+  isReviewed?: NullableValue<boolean>;
   /** Вызывается, когда пользователь завершил сцену и нажал "Далее" */
   onNext: (selectedChoice: RescueSceneChoiceVm | null) => void;
 };
 
 export function RescueSceneVisualNovel({
   backgroundImage,
+  defaultBackground,
   text,
   choices,
   typingSpeedMs = 35,
   parametersList = [],
   parameterValues = {},
+  isReviewed,
   onNext,
 }: RescueSceneVisualNovelProps) {
   const { height: windowHeight } = useWindowDimensions();
@@ -88,20 +246,34 @@ export function RescueSceneVisualNovel({
   const {
     page: backgroundColor,
     primary: primaryColor,
+    error: errorColor,
   } = useAppTheme();
+
+  const sceneNotReviewedByAuthor = isReviewed === false;
 
   const textAreaMaxHeight = windowHeight / 3;
 
-  const isInlineDataUri = isDataUri(backgroundImage);
+  const resolvedBackground = useMemo(() => {
+    const scene = (backgroundImage ?? '').trim();
+    if (scene.length > 0) return scene;
+    return (defaultBackground ?? '').trim();
+  }, [backgroundImage, defaultBackground]);
+
+  const isInlineDataUri = isDataUri(resolvedBackground);
   const { response: fetchedImageUrl, isLoading: isLoadingImage } = useFileImage(
-    isInlineDataUri ? '' : backgroundImage,
+    isInlineDataUri ? '' : resolvedBackground,
   );
-  const imageDataUrl = isInlineDataUri ? backgroundImage : fetchedImageUrl;
+  const imageDataUrl = isInlineDataUri ? resolvedBackground : fetchedImageUrl;
 
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [hasShownChoices, setHasShownChoices] = useState(false);
+  const [severityToastMessage, setSeverityToastMessage] = useState<string | null>(null);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const dismissSeverityToast = useCallback(() => {
+    setSeverityToastMessage(null);
+  }, []);
 
   const fullText = text ?? '';
 
@@ -177,7 +349,27 @@ export function RescueSceneVisualNovel({
   const showImage = imageDataUrl && (isInlineDataUri || !isLoadingImage);
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
+    <ThemedView
+      style={[
+        styles.container,
+        { backgroundColor },
+        sceneNotReviewedByAuthor && [
+          styles.unreviewedSceneFrame,
+          { borderColor: errorColor },
+        ],
+      ]}
+    >
+      {sceneNotReviewedByAuthor ? (
+        <ThemedView
+          style={[styles.unreviewedBanner, { backgroundColor: `${errorColor}E6` }]}
+          pointerEvents="none"
+        >
+          <ThemedText style={styles.unreviewedBannerText}>
+            Сцена не проверена автором на ошибки и корректность содержимого
+          </ThemedText>
+        </ThemedView>
+      ) : null}
+
       {!isInlineDataUri && isLoadingImage ? (
         <ThemedView style={styles.loadingContainer}>
           <ThemedText>Загрузка изображения...</ThemedText>
@@ -199,7 +391,9 @@ export function RescueSceneVisualNovel({
           style={[StyleSheet.absoluteFill, styles.placeholderContainer]}
           onPress={handleNextPress}
         >
-          <ThemedText>[Изображение: {backgroundImage}]</ThemedText>
+          <ThemedText>
+            [Изображение: {resolvedBackground || 'не задано'}]
+          </ThemedText>
         </Pressable>
       )}
 
@@ -213,7 +407,19 @@ export function RescueSceneVisualNovel({
 
       {/* Панель параметров */}
       {parametersList.length > 0 && (
-        <ThemedView style={[styles.parametersContainer, { paddingTop: insets.top + 16 }]}>
+        <ThemedView
+          style={[
+            styles.parametersContainer,
+            {
+              paddingTop: insets.top + 16 + (sceneNotReviewedByAuthor ? 42 : 0),
+            },
+          ]}
+        >
+          <SeverityDescriptionToast
+            key={severityToastMessage ?? 'empty'}
+            message={severityToastMessage}
+            onDismiss={dismissSeverityToast}
+          />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -224,6 +430,7 @@ export function RescueSceneVisualNovel({
                 key={param.id}
                 param={param}
                 value={parameterValues[param.id] ?? param.startValue}
+                onSeverityDescription={setSeverityToastMessage}
               />
             ))}
           </ScrollView>
@@ -297,6 +504,32 @@ const styles = StyleSheet.create({
   parametersScrollContent: {
     paddingHorizontal: 16,
     gap: 8,
+    paddingTop: 4,
+  },
+  severityToast: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    top: 0,
+    zIndex: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(28, 28, 30, 0.92)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  severityToastText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   parameterBadge: {
     paddingHorizontal: 12,
@@ -313,6 +546,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative',
+  },
+  unreviewedSceneFrame: {
+    borderWidth: 4,
+    borderStyle: 'solid',
+  },
+  unreviewedBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.2)',
+  },
+  unreviewedBannerText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 18,
   },
   loadingContainer: {
     flex: 1,

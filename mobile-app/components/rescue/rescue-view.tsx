@@ -9,8 +9,9 @@ import { RescueSceneVisualNovel } from './rescue-story';
 
 type RescueViewProps = {
   rescueItem: AppRescueItemVm;
-  onBack: () => void;
-  onComplete: () => void;
+  onBack: () => void | Promise<void>;
+  /** Финальные значения параметров после последнего шага (для расчёта completion) */
+  onComplete: (finalParameters: Record<string, number>) => void | Promise<void>;
   /** Скорость эффекта печати в миллисекундах на символ */
   typingSpeedMs?: number;
 };
@@ -52,17 +53,14 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
   const currentScene = orderedScenes[currentSceneIndex];
 
   const handleNextScene = (choice: RescueSceneChoiceVm | null) => {
-    // Применяем изменения параметров, если они есть
+    let nextParams = { ...parameters };
     if (choice?.parameterChanges && choice.parameterChanges.length > 0) {
-      setParameters((prev) => {
-        const nextParams = { ...prev };
-        choice.parameterChanges.forEach((change) => {
-          if (nextParams[change.parameterId] !== undefined) {
-            nextParams[change.parameterId] += change.value;
-          }
-        });
-        return nextParams;
+      choice.parameterChanges.forEach((change) => {
+        if (nextParams[change.parameterId] !== undefined) {
+          nextParams[change.parameterId] += change.value;
+        }
       });
+      setParameters(nextParams);
     }
 
     // Пытаемся перейти по nextSceneId из выбранного варианта, если он есть
@@ -83,7 +81,7 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
     if (nextIndex < orderedScenes.length) {
       setCurrentSceneIndex(nextIndex);
     } else {
-      onComplete();
+      onComplete(nextParams);
     }
   };
 
@@ -102,12 +100,14 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
       </ThemedView>
       <RescueSceneVisualNovel
         backgroundImage={currentScene.background}
+        defaultBackground={rescueItem.data?.defaultBackground}
         text={currentScene.text}
         choices={currentScene.choices ?? []}
         typingSpeedMs={typingSpeedMs}
         onNext={handleNextScene}
         parametersList={rescueItem.data?.parameters ?? []}
         parameterValues={parameters}
+        isReviewed={currentScene.isReviewed}
       />
     </ThemedView>
   );

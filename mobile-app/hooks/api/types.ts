@@ -32,6 +32,7 @@ export type AppTestVm = {
   showSkipButton?: NullableValue<boolean>;
   showNavigation?: NullableValue<boolean>;
   showBackButton?: NullableValue<boolean>;
+  hidden?: NullableValue<boolean>;
 } & AppBaseVm;
 
 export type AppTestQuestionVm = {
@@ -93,23 +94,21 @@ export type AppTestAccessablityConditionArticle = {
   isReaded?: NullableValue<boolean>;
 };
 
-export type AppArticleStatsVm = {
-  readed?: boolean;
-  clientId: string;
-  articleId: string;
-  createdAt: string;
-}
-
-export type AppTestStatsVm = {
-  clientId: string;
-  testId: string;
-  startedAt: string;
-  completedAt?: NullableValue<string>;
-  passed?: NullableValue<boolean>;
-  data?: NullableValue<any>;
-}
-
 // Режим спасения (rescue) — визуальная новелла с параметрами по таймеру
+
+export enum RescueParameterSeverityEnum {
+  Normal = 'normal',
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high'
+}
+
+export type RescueParameterSeverityVm = {
+  min?: number;
+  max?: number;
+  severity?: RescueParameterSeverityEnum;
+  description?: string;
+};
 
 /** Общий параметр, изменяемый по  таймеру */
 export type RescueTimerParameterVm = {
@@ -121,6 +120,8 @@ export type RescueTimerParameterVm = {
   delta: number;
   /* Стартовое значение параметра на старте */
   startValue: number;
+  /* Уровни серьезности параметра */
+  severities?: RescueParameterSeverityVm[];
 };
 
 /** На какой параметр воздействовать после выбора ответа на вопрос */
@@ -144,11 +145,67 @@ export type RescueSceneChoiceVm = {
 export type RescueSceneVm = {
   id: string;
   order?: number;
-  /** URL или id фона */
-  background: string;
+  /** URL или id фона; если не задан — в рантайме подставляется {@link AppRescueItemDataVm.defaultBackground} */
+  background?: string;
   text: string;
   choices: RescueSceneChoiceVm[];
   hidden?: NullableValue<boolean>;
+  /** Была ли сцена проверена на наличие ошибок */
+  isReviewed?: NullableValue<boolean>;
+};
+
+// --- Условия завершения режима спасения (успех / неуспех) ---
+
+/** Логическое объединение вложенных условий в группе */
+export enum RescueCompletionLogicalOperator {
+  And = 'and',
+  Or = 'or'
+}
+
+/** Операция сравнения текущего числового значения параметра с константой */
+export enum RescueCompletionCompareOperator {
+  Eq = 'eq',
+  Neq = 'neq',
+  Gt = 'gt',
+  Gte = 'gte',
+  Lt = 'lt',
+  Lte = 'lte'
+}
+
+/**
+ * Лист дерева условий: одно сравнение значения параметра (id из {@link RescueTimerParameterVm}).
+ * Пример: параметр «1» больше 5 — `{ type: 'compare', parameterId: '1', operator: Gt, value: 5 }`.
+ */
+export type RescueCompletionCompareVm = {
+  type: 'compare';
+  parameterId: string;
+  operator: RescueCompletionCompareOperator;
+  value: number;
+};
+
+/**
+ * Группа условий, объединённых по И/ИЛИ.
+ * Пример успеха: (пар.1 > 5 и пар.1 < 50) и (пар.2 < 100 и пар.2 > 50) и (пар.3 = 30)
+ * — корневая группа `And` с тремя дочерними элементами: две вложенные `And` по двум compare и один compare.
+ */
+export type RescueCompletionGroupVm = {
+  type: 'group';
+  logicalOperator: RescueCompletionLogicalOperator;
+  conditions: RescueCompletionConditionVm[];
+};
+
+/** Условие завершения: сравнение или вложенная логическая группа */
+export type RescueCompletionConditionVm = RescueCompletionCompareVm | RescueCompletionGroupVm;
+
+/**
+ * Модель завершения режима спасения: отдельные деревья условий для успешного и неуспешного исхода.
+ * Семантику приоритета (что проверять первым, могут ли совпасть оба) задаёт приложение / рантайм.
+ */
+export type AppRescueItemCompletionVm = {
+  /** Дерево условий успешного завершения */
+  success?: NullableValue<RescueCompletionConditionVm>;
+  /** Дерево условий неуспешного завершения (та же структура, что и у success) */
+  failure?: NullableValue<RescueCompletionConditionVm>;
 };
 
 export type AppRescueItemDataVm = {
@@ -156,6 +213,10 @@ export type AppRescueItemDataVm = {
   parameters?: RescueTimerParameterVm[];
   /** Сцены визуальной новеллы */
   scenes?: RescueSceneVm[];
+  /** URL или id фона по умолчанию */
+  defaultBackground?: string;
+  /** Условия успешного и неуспешного завершения режима */
+  completion?: AppRescueItemCompletionVm;
 };
 
 export type AppRescueItemVm = {
@@ -163,3 +224,30 @@ export type AppRescueItemVm = {
   description: string;
   data: AppRescueItemDataVm;
 } & AppBaseVm;
+
+export type AppArticleStatsVm = {
+  readed?: boolean;
+  clientId: string;
+  articleId: string;
+  createdAt: string;
+}
+
+export type AppTestStatsVm = {
+  clientId: string;
+  testId: string;
+  startedAt: string;
+  completedAt?: NullableValue<string>;
+  passed?: NullableValue<boolean>;
+  data?: NullableValue<any>;
+}
+
+/** Статистика прохождения режима спасения (таблица rescue_stats) */
+export type AppRescueStatsVm = {
+  id?: string;
+  clientId: string;
+  rescueId: string;
+  startedAt: string;
+  completedAt?: NullableValue<string>;
+  passed?: NullableValue<boolean>;
+  data?: NullableValue<any>;
+};

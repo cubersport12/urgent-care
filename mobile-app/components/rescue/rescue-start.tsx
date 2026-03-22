@@ -1,6 +1,8 @@
 import { AppRescueItemVm, RescueTimerParameterVm } from '@/hooks/api/types';
+import { useAddOrUpdateRescueStats } from '@/hooks/api/useRescueStats';
 import { useAppTheme } from '@/hooks/use-theme-color';
-import { useEffect } from 'react';
+import { useDeviceId } from '@/hooks/use-device-id';
+import { useCallback, useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ThemedText } from '../themed-text';
@@ -11,10 +13,31 @@ import { IconSymbol } from '../ui/icon-symbol';
 type RescueStartProps = {
   rescueItem: AppRescueItemVm;
   onBack: () => void;
-  onStart: () => void;
+  /** После перехода к сценам (статистика старта уже записана в rescue_stats) */
+  onStart: () => void | Promise<void>;
+  /** Вызывается после попытки записать время начала в статистику (например, обновить список в Explorer) */
+  onRescueSessionStarted?: () => void;
 };
 
-export function RescueStart({ rescueItem, onBack, onStart }: RescueStartProps) {
+export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarted }: RescueStartProps) {
+  const { deviceId } = useDeviceId();
+  const { addOrUpdate, isLoading: isRecordingStart } = useAddOrUpdateRescueStats({
+    clientId: deviceId ?? '',
+    rescueId: rescueItem.id,
+  });
+
+  const handleBegin = useCallback(async () => {
+    try {
+      await addOrUpdate({
+        startedAt: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.error('rescue_stats start:', e);
+    }
+    onRescueSessionStarted?.();
+    await onStart();
+  }, [addOrUpdate, onRescueSessionStarted, onStart]);
+
   const opacity = useSharedValue(0);
 
   useEffect(() => {
@@ -118,11 +141,12 @@ export function RescueStart({ rescueItem, onBack, onStart }: RescueStartProps) {
       </ScrollView>
       <ThemedView style={styles.startButtonContainer}>
         <Button
-          title="Старт"
-          onPress={onStart}
+          title="Начать"
+          onPress={() => void handleBegin()}
           variant="primary"
           size="large"
           fullWidth
+          disabled={isRecordingStart}
           style={[styles.startButton, { shadowColor: primaryShadow }]}
         />
       </ThemedView>
