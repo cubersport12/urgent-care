@@ -6,6 +6,7 @@ export * from './files';
 export * from './folders-explorer.service';
 export * from './guid';
 export * from './icons';
+export * from './rescue-completion-format';
 export * from './supabase';
 export * from './types';
 export * from './zod';

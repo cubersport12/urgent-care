@@ -1,0 +1,33 @@
+<h2 mat-dialog-title>Условия завершения спасения</h2>
+<mat-dialog-content class="flex flex-col gap-4 max-h-[min(85vh,720px)] overflow-auto min-w-[min(100%,420px)]">
+  <p class="text-sm text-gray-600 dark:text-gray-400 m-0">
+    Задайте деревья условий по параметрам таймера. Используйте группы «И» / «ИЛИ» для объединения сравнений.
+  </p>
+
+  <section class="flex flex-col gap-2">
+    <h3 class="text-base font-semibold m-0">Успешное завершение</h3>
+    <app-rescue-completion-condition-editor
+      [condition]="_success()"
+      (conditionChange)="_onSuccessChange($event)"
+      [parameterOptions]="_parameterOptions()" />
+  </section>
+
+  <mat-divider />
+
+  <section class="flex flex-col gap-2">
+    <h3 class="text-base font-semibold m-0">Неуспешное завершение</h3>
+    <app-rescue-completion-condition-editor
+      [condition]="_failure()"
+      (conditionChange)="_onFailureChange($event)"
+      [parameterOptions]="_parameterOptions()" />
+  </section>
+
+  @if (_error(); as err) {
+    <p class="text-sm text-red-600 dark:text-red-400 m-0 p-2 rounded bg-red-500/10">{{ err }}</p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end" class="flex flex-wrap gap-2">
+  <button type="button" mat-button (click)="_clearAll()">Сбросить всё</button>
+  <button type="button" mat-button (click)="_cancel()">Отмена</button>
+  <button type="button" mat-flat-button color="primary" (click)="_submit()">Сохранить</button>
+</mat-dialog-actions>

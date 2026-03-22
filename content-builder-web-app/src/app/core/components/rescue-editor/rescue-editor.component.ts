@@ -1,5 +1,7 @@
 import {
+  AppRescueItemCompletionVm,
   AppRescueItemVm,
+  formatRescueCompletionOutcomeLine,
   generateGUID,
   NullableValue,
   openFile,
@@ -33,6 +35,10 @@ import {
   ParameterOption
 } from './rescue-scene-dialog/rescue-scene-dialog.component';
 import { SceneOption } from './rescue-choice-dialog/rescue-choice-dialog.component';
+import {
+  RescueCompletionDialogComponent,
+  RescueCompletionDialogData
+} from './rescue-completion-dialog/rescue-completion-dialog.component';
 import { AppFilesStorageService } from '@/core/api';
 import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { signal } from '@angular/core';
@@ -159,6 +165,9 @@ export class RescueEditorComponent {
   /** Файлы фонов сцен и фона по умолчанию для загрузки при сохранении */
   private readonly _sceneBackgroundFiles = new Map<string, Blob>();
 
+  /** Условия завершения (успех / неуспех), вне reactive form */
+  protected readonly _completion = signal<AppRescueItemCompletionVm | null>(null);
+
   /** Копия списка контролов для mat-table (обновляется при добавлении/удалении/редактировании) */
   protected readonly _parametersList = signal<FormGroup[]>([]);
   protected readonly _scenesList = signal<FormGroup[]>([]);
@@ -230,6 +239,54 @@ export class RescueEditorComponent {
     this._form.setControl('scenes', new FormArray(scenes));
     this._parametersList.set([...this._parameters.controls] as FormGroup[]);
     this._syncScenesOrderAndList();
+    this._completion.set(
+      data.completion != null ? structuredClone(data.completion) : null
+    );
+  }
+
+  protected _parameterNameMap(): Map<string, string> {
+    return new Map(this._parameterOptions.map(o => [o.id, o.name]));
+  }
+
+  protected _completionSuccessSummary(): string {
+    return formatRescueCompletionOutcomeLine(
+      'success',
+      this._completion()?.success ?? null,
+      this._parameterNameMap()
+    );
+  }
+
+  protected _completionFailureSummary(): string {
+    return formatRescueCompletionOutcomeLine(
+      'failure',
+      this._completion()?.failure ?? null,
+      this._parameterNameMap()
+    );
+  }
+
+  protected _openCompletionDialog(): void {
+    this._dialog
+      .open(RescueCompletionDialogComponent, {
+        data: {
+          completion: this._completion(),
+          getParameterOptions: () => this._parameterOptions
+        } satisfies RescueCompletionDialogData,
+        width: '560px',
+        maxWidth: '95vw',
+        maxHeight: '90vh',
+        disableClose: false
+      })
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((result: AppRescueItemCompletionVm | null | undefined) => {
+        if (result === undefined) {
+          return;
+        }
+        this._completion.set(
+          result != null && (result.success != null || result.failure != null) ? result : null
+        );
+        this._form.markAsDirty();
+      });
   }
 
   /** Индекс строки = порядок сцены в `RescueSceneVm.order` */
@@ -415,6 +472,16 @@ export class RescueEditorComponent {
     }));
     const base = this._dialogData ?? {};
     const defaultBg = (defaultBackground ?? '').trim();
+    const comp = this._completion();
+    const completionPayload =
+      comp != null && (comp.success != null || comp.failure != null)
+        ? {
+            completion: {
+              ...(comp.success != null ? { success: comp.success } : {}),
+              ...(comp.failure != null ? { failure: comp.failure } : {})
+            } satisfies AppRescueItemCompletionVm
+          }
+        : {};
     return {
       id: base.id ?? generateGUID(),
       name: name!,
@@ -425,7 +492,8 @@ export class RescueEditorComponent {
       data: {
         parameters: parametersList,
         scenes: scenesList,
-        ...(defaultBg.length > 0 ? { defaultBackground: defaultBg } : {})
+        ...(defaultBg.length > 0 ? { defaultBackground: defaultBg } : {}),
+        ...completionPayload
       }
     } as AppRescueItemVm;
   }

@@ -115,7 +115,8 @@ export const rescueSceneSchema = z.object({
   hidden: z.boolean().nullable().optional()
 });
 
-const rescueCompletionComparePartSchema = z.object({
+/** Лист дерева: сравнение параметра с числом */
+export const rescueCompletionCompareSchema = z.object({
   type: z.literal('compare'),
   parameterId: z.string(),
   operator: z.nativeEnum(RescueCompletionCompareOperator),
@@ -125,7 +126,7 @@ const rescueCompletionComparePartSchema = z.object({
 /** Рекурсивное условие завершения спасения (compare | group) */
 export const rescueCompletionConditionSchema: z.ZodType<RescueCompletionConditionVm> = z.lazy(() =>
   z.discriminatedUnion('type', [
-    rescueCompletionComparePartSchema,
+    rescueCompletionCompareSchema,
     z.object({
       type: z.literal('group'),
       logicalOperator: z.nativeEnum(RescueCompletionLogicalOperator),
@@ -138,6 +139,11 @@ export const appRescueItemCompletionSchema = z.object({
   success: rescueCompletionConditionSchema.nullable().optional(),
   failure: rescueCompletionConditionSchema.nullable().optional()
 });
+
+/** Безопасный разбор `AppRescueItemCompletionVm` (например после редактирования в UI) */
+export function safeParseAppRescueItemCompletion(data: unknown) {
+  return appRescueItemCompletionSchema.safeParse(data);
+}
 
 export const rescueItemDataSchema = z.object({
   parameters: z.array(rescueTimerParameterSchema).optional(),

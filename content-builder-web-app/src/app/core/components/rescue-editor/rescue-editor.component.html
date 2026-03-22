@@ -20,6 +20,28 @@
     </div>
 
     <section class="border border-gray-300 dark:border-gray-600 rounded p-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
+        <div class="flex flex-col gap-2 grow min-w-0">
+          <h5 class="font-semibold m-0">Условия завершения</h5>
+          <ul class="text-sm text-gray-700 dark:text-gray-300 list-none pl-0 m-0 space-y-2">
+            <li class="pl-0">
+              <span class="font-medium text-gray-800 dark:text-gray-200">Успех:</span>
+              {{ _completionSuccessSummary() }}
+            </li>
+            <li class="pl-0">
+              <span class="font-medium text-gray-800 dark:text-gray-200">Неуспех:</span>
+              {{ _completionFailureSummary() }}
+            </li>
+          </ul>
+        </div>
+        <button type="button" mat-stroked-button color="primary" class="shrink-0" (click)="_openCompletionDialog()">
+          <mat-icon svgIcon="sliders" />
+          Настроить условия завершения
+        </button>
+      </div>
+    </section>
+
+    <section class="border border-gray-300 dark:border-gray-600 rounded p-4">
       <div class="flex justify-between items-center mb-2">
         <div>
           <h5 class="font-semibold">Общие параметры (по таймеру)</h5>
