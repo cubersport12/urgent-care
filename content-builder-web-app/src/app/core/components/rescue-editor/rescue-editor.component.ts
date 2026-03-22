@@ -2,7 +2,9 @@ import {
   AppRescueItemVm,
   generateGUID,
   NullableValue,
+  openFile,
   RescueChoiceParameterChangeVm,
+  RescueParameterSeverityVm,
   RescueSceneChoiceVm,
   RescueSceneVm,
   RescueTimerParameterVm
@@ -32,8 +34,21 @@ import {
 } from './rescue-scene-dialog/rescue-scene-dialog.component';
 import { SceneOption } from './rescue-choice-dialog/rescue-choice-dialog.component';
 import { AppFilesStorageService } from '@/core/api';
+import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { signal } from '@angular/core';
 import { forkJoin, take } from 'rxjs';
+
+/** Упорядочивание сцен при загрузке по сохранённому `order`, иначе — исходный порядок в массиве */
+function sortScenesByStoredOrder(scenes: RescueSceneVm[]): RescueSceneVm[] {
+  return [...scenes]
+    .map((s, originalIndex) => ({ s, originalIndex }))
+    .sort((a, b) => {
+      const ka = a.s.order ?? a.originalIndex;
+      const kb = b.s.order ?? b.originalIndex;
+      return ka - kb;
+    })
+    .map(x => x.s);
+}
 
 @Injectable({
   providedIn: 'root'
@@ -60,7 +75,8 @@ function parameterGroup(p: NullableValue<RescueTimerParameterVm> = null): FormGr
     id: new FormControl<string>(p?.id ?? generateGUID(), Validators.required),
     name: new FormControl<string>(p?.name ?? '', Validators.required),
     delta: new FormControl<number>(p?.delta ?? 0),
-    startValue: new FormControl<number>(p?.startValue ?? 0)
+    startValue: new FormControl<number>(p?.startValue ?? 0),
+    severities: new FormControl<RescueParameterSeverityVm[]>(p?.severities ?? [])
   });
 }
 
@@ -104,10 +120,33 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
     MatSelectModule,
     MatFormFieldModule,
     MatInputModule,
-    MatTableModule
+    MatTableModule,
+    CdkDropList,
+    CdkDrag
   ],
   templateUrl: './rescue-editor.component.html',
-  styles: ``
+  styles: `
+    .cdk-drag-preview {
+      box-sizing: border-box;
+      border-radius: 4px;
+      box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+        0 8px 10px 1px rgba(0, 0, 0, 0.14),
+        0 3px 14px 2px rgba(0, 0, 0, 0.12);
+      background-color: var(--mat-sys-surface, white);
+    }
+    .cdk-drag-placeholder {
+      opacity: 0;
+    }
+    .rescue-drag-handle {
+      cursor: move;
+    }
+    .cdk-drag-animating {
+      transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+    }
+    .cdk-drop-list-dragging tr:not(.cdk-drag-placeholder) {
+      transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+    }
+  `
 })
 export class RescueEditorComponent {
   protected readonly _dialogData = inject<AppRescueItemVm>(MAT_DIALOG_DATA);
@@ -117,15 +156,15 @@ export class RescueEditorComponent {
   private readonly _dialog = inject(MatDialog);
   private readonly _filesStorage = inject(AppFilesStorageService);
 
-  /** Файлы фонов сцен для загрузки при сохранении */
+  /** Файлы фонов сцен и фона по умолчанию для загрузки при сохранении */
   private readonly _sceneBackgroundFiles = new Map<string, Blob>();
 
   /** Копия списка контролов для mat-table (обновляется при добавлении/удалении/редактировании) */
   protected readonly _parametersList = signal<FormGroup[]>([]);
   protected readonly _scenesList = signal<FormGroup[]>([]);
 
-  protected readonly _parametersDisplayedColumns: string[] = ['name', 'delta', 'startValue', 'actions'];
-  protected readonly _scenesDisplayedColumns: string[] = ['text', 'actions'];
+  protected readonly _parametersDisplayedColumns: string[] = ['index', 'name', 'delta', 'startValue', 'actions'];
+  protected readonly _scenesDisplayedColumns: string[] = ['index', 'text', 'actions'];
 
   protected readonly _isPending = computed(
     () =>
@@ -136,6 +175,8 @@ export class RescueEditorComponent {
   protected readonly _form = new FormGroup({
     name: new FormControl<string>('', Validators.required),
     description: new FormControl<string>(''),
+    /** id/URL фона по умолчанию (как у сцены) */
+    defaultBackground: new FormControl<string>(''),
     parameters: new FormArray<FormGroup>([]),
     scenes: new FormArray<FormGroup>([])
   });
@@ -178,23 +219,56 @@ export class RescueEditorComponent {
     const d = this._dialogData;
     const data = d?.data ?? {};
     const parameters = (data.parameters ?? []).map(p => parameterGroup(p));
-    const scenesData = data.scenes ?? [];
+    const scenesData = sortScenesByStoredOrder(data.scenes ?? []);
     const scenes = scenesData.map(s => sceneGroup(s));
     this._form.reset({
       name: d?.name ?? '',
-      description: d?.description ?? ''
+      description: d?.description ?? '',
+      defaultBackground: data.defaultBackground ?? ''
     });
     this._form.setControl('parameters', new FormArray(parameters));
     this._form.setControl('scenes', new FormArray(scenes));
     this._parametersList.set([...this._parameters.controls] as FormGroup[]);
-    this._scenesList.set([...this._scenes.controls] as FormGroup[]);
+    this._syncScenesOrderAndList();
+  }
+
+  /** Индекс строки = порядок сцены в `RescueSceneVm.order` */
+  private _syncScenesOrderAndList(): void {
+    const controls = this._scenes.controls as FormGroup[];
+    controls.forEach((c, i) => {
+      c.get('order')?.setValue(i);
+    });
+    this._scenesList.set([...controls]);
+  }
+
+  protected _handleParameterDrop(event: CdkDragDrop<FormGroup[]>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const controls = [...this._parameters.controls];
+    moveItemInArray(controls, event.previousIndex, event.currentIndex);
+    this._form.setControl('parameters', new FormArray(controls));
+    this._parametersList.set(controls as FormGroup[]);
+    this._form.markAsDirty();
+  }
+
+  protected _handleSceneDrop(event: CdkDragDrop<FormGroup[]>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+    const controls = [...this._scenes.controls];
+    moveItemInArray(controls, event.previousIndex, event.currentIndex);
+    this._form.setControl('scenes', new FormArray(controls));
+    this._syncScenesOrderAndList();
+    this._form.markAsDirty();
   }
 
   protected _openParameterDialog(parameter: RescueTimerParameterVm | null): void {
     this._dialog
       .open(RescueParameterDialogComponent, {
         data: { parameter } satisfies RescueParameterDialogData,
-        width: '400px',
+        width: '520px',
+        maxWidth: '95vw',
         disableClose: false
       })
       .afterClosed()
@@ -275,7 +349,7 @@ export class RescueEditorComponent {
             (result.choices ?? []).forEach(ch => choicesArr.push(choiceGroup(ch)));
           }
         }
-        this._scenesList.set([...this._scenes.controls]);
+        this._syncScenesOrderAndList();
         this._form.markAsDirty();
       });
   }
@@ -293,22 +367,39 @@ export class RescueEditorComponent {
 
   protected _removeScene(index: number): void {
     this._scenes.removeAt(index);
-    this._scenesList.set([...this._scenes.controls]);
+    this._syncScenesOrderAndList();
     this._form.markAsDirty();
+  }
+
+  protected async _openDefaultBackgroundFile(): Promise<void> {
+    try {
+      const file = await openFile(['image/*']);
+      const fileId = file.name;
+      this._sceneBackgroundFiles.set(fileId, file);
+      this._form.patchValue({ defaultBackground: fileId });
+      this._form.markAsDirty();
+    }
+    catch {
+      // пользователь отменил выбор
+    }
   }
 
   private _getRescueVm(): AppRescueItemVm {
     const raw = this._form.getRawValue();
-    const { name, description, parameters, scenes } = raw;
-    const parametersList: RescueTimerParameterVm[] = (parameters ?? []).map((p: Record<string, unknown>) => ({
-      id: p['id'] as string,
-      name: p['name'] as string,
-      delta: (p['delta'] as number) ?? 0,
-      startValue: (p['startValue'] as number) ?? 0
-    }));
-    const scenesList: RescueSceneVm[] = (scenes ?? []).map((s: Record<string, unknown>, order: number) => ({
+    const { name, description, defaultBackground, parameters, scenes } = raw;
+    const parametersList: RescueTimerParameterVm[] = (parameters ?? []).map((p: Record<string, unknown>) => {
+      const severities = p['severities'] as RescueParameterSeverityVm[] | undefined;
+      return {
+        id: p['id'] as string,
+        name: p['name'] as string,
+        delta: (p['delta'] as number) ?? 0,
+        startValue: (p['startValue'] as number) ?? 0,
+        ...(severities != null && severities.length > 0 ? { severities } : {})
+      };
+    });
+    const scenesList: RescueSceneVm[] = (scenes ?? []).map((s: Record<string, unknown>, index: number) => ({
       id: s['id'] as string,
-      order,
+      order: (s['order'] as number) ?? index,
       background: (s['background'] as string) ?? '',
       text: (s['text'] as string) ?? '',
       hidden: (s['hidden'] as boolean) ?? false,
@@ -323,6 +414,7 @@ export class RescueEditorComponent {
       }))
     }));
     const base = this._dialogData ?? {};
+    const defaultBg = (defaultBackground ?? '').trim();
     return {
       id: base.id ?? generateGUID(),
       name: name!,
@@ -332,7 +424,8 @@ export class RescueEditorComponent {
       createdAt: base.createdAt ?? new Date().toISOString(),
       data: {
         parameters: parametersList,
-        scenes: scenesList
+        scenes: scenesList,
+        ...(defaultBg.length > 0 ? { defaultBackground: defaultBg } : {})
       }
     } as AppRescueItemVm;
   }

@@ -86,7 +86,9 @@ export class RescueChoiceDialogComponent {
       this._dialogData?.choice?.nextSceneId ?? null
     ),
     parameterChanges: new FormArray(
-      (this._dialogData?.choice?.parameterChanges ?? []).map(parameterChangeGroup)
+      this._dialogData?.choice?.id
+        ? (this._dialogData?.choice?.parameterChanges ?? []).map(parameterChangeGroup)
+        : (this._dialogData?.parameterOptions ?? []).map(param => parameterChangeGroup({ parameterId: param.id, value: 0 }))
     )
   });
 

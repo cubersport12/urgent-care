@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { AppTestAccessablityLogicalOperator, AppTestQuestionActivationConditionKind } from './types';
+import {
+  AppTestAccessablityLogicalOperator,
+  AppTestQuestionActivationConditionKind,
+  RescueCompletionCompareOperator,
+  RescueCompletionConditionVm,
+  RescueCompletionLogicalOperator,
+  RescueParameterSeverityEnum
+} from './types';
 
 export const folderSchema = z.object({ id: z.string(), order: z.number().nullable(), name: z.string(), parentId: z.string().nullable() });
 
@@ -67,12 +74,21 @@ export const testSchema = z.object({
   })).nullable()
 });
 
-/** Схема параметра по таймеру (id, name, delta, startValue) */
+/** Уровень серьёзности параметра (диапазон + метка) */
+export const rescueParameterSeveritySchema = z.object({
+  min: z.number().optional(),
+  max: z.number().optional(),
+  severity: z.nativeEnum(RescueParameterSeverityEnum).optional(),
+  description: z.string().optional()
+});
+
+/** Схема параметра по таймеру (id, name, delta, startValue, severities?) */
 export const rescueTimerParameterSchema = z.object({
   id: z.string(),
   name: z.string(),
   delta: z.number(),
-  startValue: z.number()
+  startValue: z.number(),
+  severities: z.array(rescueParameterSeveritySchema).optional()
 });
 
 /** Изменение параметра при выборе */
@@ -99,9 +115,36 @@ export const rescueSceneSchema = z.object({
   hidden: z.boolean().nullable().optional()
 });
 
+const rescueCompletionComparePartSchema = z.object({
+  type: z.literal('compare'),
+  parameterId: z.string(),
+  operator: z.nativeEnum(RescueCompletionCompareOperator),
+  value: z.number()
+});
+
+/** Рекурсивное условие завершения спасения (compare | group) */
+export const rescueCompletionConditionSchema: z.ZodType<RescueCompletionConditionVm> = z.lazy(() =>
+  z.discriminatedUnion('type', [
+    rescueCompletionComparePartSchema,
+    z.object({
+      type: z.literal('group'),
+      logicalOperator: z.nativeEnum(RescueCompletionLogicalOperator),
+      conditions: z.array(rescueCompletionConditionSchema)
+    })
+  ])
+);
+
+export const appRescueItemCompletionSchema = z.object({
+  success: rescueCompletionConditionSchema.nullable().optional(),
+  failure: rescueCompletionConditionSchema.nullable().optional()
+});
+
 export const rescueItemDataSchema = z.object({
   parameters: z.array(rescueTimerParameterSchema).optional(),
-  scenes: z.array(rescueSceneSchema).optional()
+  scenes: z.array(rescueSceneSchema).optional(),
+  /** URL или id фона по умолчанию (как у сцены) */
+  defaultBackground: z.string().optional(),
+  completion: appRescueItemCompletionSchema.optional()
 });
 
 export const rescueItemSchema = z.object({

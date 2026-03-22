@@ -11,6 +11,14 @@
       </mat-form-field>
     </div>
 
+    <div class="flex flex-col gap-2 border border-gray-300 dark:border-gray-600 rounded p-4">
+      <span class="font-semibold">Фон по умолчанию</span>
+      <button type="button" mat-flat-button color="primary" (click)="_openDefaultBackgroundFile()">
+        <mat-icon svgIcon="file-contract" />
+        Выбрать изображение {{ _form.value.defaultBackground ? '(' + _form.value.defaultBackground + ')' : '' }}
+      </button>
+    </div>
+
     <section class="border border-gray-300 dark:border-gray-600 rounded p-4">
       <div class="flex justify-between items-center mb-2">
         <div>
@@ -22,8 +30,22 @@
         </button>
       </div>
       <div class="overflow-auto">
-        <table mat-table [dataSource]="_parametersList()" class="mat-elevation-z8 w-full">
-
+        <table
+          mat-table
+          [dataSource]="_parametersList()"
+          class="mat-elevation-z8 w-full"
+          cdkDropList
+          (cdkDropListDropped)="_handleParameterDrop($event)"
+          [cdkDropListData]="_parametersList()">
+          <ng-container matColumnDef="index">
+            <th mat-header-cell *matHeaderCellDef>#</th>
+            <td mat-cell *matCellDef="let row; let pi = index">
+              <div class="flex items-center gap-2">
+                <mat-icon class="rescue-drag-handle" svgIcon="bars" />
+                <span>{{ pi + 1 }}</span>
+              </div>
+            </td>
+          </ng-container>
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Наименование</th>
             <td mat-cell *matCellDef="let row">{{ row.value.name }}</td>
@@ -50,7 +72,11 @@
             </td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="_parametersDisplayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: _parametersDisplayedColumns"></tr>
+          <tr
+            mat-row
+            cdkDrag
+            [cdkDragData]="row"
+            *matRowDef="let row; columns: _parametersDisplayedColumns"></tr>
           <tr class="mat-row" *matNoDataRow>
             <td class="mat-cell" [attr.colspan]="_parametersDisplayedColumns.length">Нет параметров</td>
           </tr>
@@ -70,8 +96,22 @@
         </button>
       </div>
       <div class="overflow-auto">
-        <table mat-table [dataSource]="_scenesList()" class="mat-elevation-z8 w-full">
-
+        <table
+          mat-table
+          [dataSource]="_scenesList()"
+          class="mat-elevation-z8 w-full"
+          cdkDropList
+          (cdkDropListDropped)="_handleSceneDrop($event)"
+          [cdkDropListData]="_scenesList()">
+          <ng-container matColumnDef="index">
+            <th mat-header-cell *matHeaderCellDef>#</th>
+            <td mat-cell *matCellDef="let row; let si = index">
+              <div class="flex items-center gap-2">
+                <mat-icon class="rescue-drag-handle" svgIcon="bars" />
+                <span>{{ si + 1 }}</span>
+              </div>
+            </td>
+          </ng-container>
           <ng-container matColumnDef="text">
             <th mat-header-cell *matHeaderCellDef>Текст сцены</th>
             <td mat-cell *matCellDef="let row">{{ (row.value.text || '').slice(0, 50) }}{{ (row.value.text || '').length > 50 ? '…' : '' }}</td>
@@ -90,7 +130,11 @@
             </td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="_scenesDisplayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: _scenesDisplayedColumns"></tr>
+          <tr
+            mat-row
+            cdkDrag
+            [cdkDragData]="row"
+            *matRowDef="let row; columns: _scenesDisplayedColumns"></tr>
           <tr class="mat-row" *matNoDataRow>
             <td class="mat-cell" [attr.colspan]="_scenesDisplayedColumns.length">Нет сцен. Варианты выбора редактируются в диалоге сцены.</td>
           </tr>

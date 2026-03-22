@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>{{ _dialogData.parameter ? 'Редактировать параметр' : 'Новый параметр' }}</h2>
-<mat-dialog-content>
-  <form [formGroup]="_form" class="flex flex-col gap-4 min-w-[320px] pt-2">
+<mat-dialog-content class="flex flex-col gap-4 min-w-[360px] max-h-[85vh] overflow-auto">
+  <form [formGroup]="_form" class="flex flex-col gap-4 pt-2">
     <mat-form-field appearance="fill" class="w-full">
       <mat-label>Наименование</mat-label>
       <input matInput formControlName="name">
@@ -14,6 +14,53 @@
       <input matInput type="number" formControlName="startValue">
     </mat-form-field>
   </form>
+  <section class="border border-gray-200 dark:border-gray-700 rounded p-3 flex flex-col gap-2">
+    <div class="flex justify-between items-center">
+      <span class="font-medium">Уровни серьёзности</span>
+      <button type="button" mat-flat-button color="primary" (click)="_addSeverity()">
+        <mat-icon svgIcon="plus" />
+        Создать
+      </button>
+    </div>
+    <div class="overflow-auto">
+      <table mat-table [dataSource]="_severitiesList()" class="mat-elevation-z8 w-full">
+        <ng-container matColumnDef="min">
+          <th mat-header-cell *matHeaderCellDef>Мин.</th>
+          <td mat-cell *matCellDef="let row">{{ _formatNumber(row.min) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="max">
+          <th mat-header-cell *matHeaderCellDef>Макс.</th>
+          <td mat-cell *matCellDef="let row">{{ _formatNumber(row.max) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="severity">
+          <th mat-header-cell *matHeaderCellDef>Серьёзность</th>
+          <td mat-cell *matCellDef="let row">{{ _severityLabel(row.severity) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="description">
+          <th mat-header-cell *matHeaderCellDef>Описание</th>
+          <td mat-cell *matCellDef="let row" [title]="row.description ?? ''">{{ _formatDescription(row) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row; let si = index">
+            <div class="flex gap-1">
+              <button mat-icon-button type="button" (click)="_editSeverity(si)" title="Редактировать">
+                <mat-icon svgIcon="pen-to-square" />
+              </button>
+              <button mat-icon-button color="warn" type="button" (click)="_removeSeverity(si)" title="Удалить">
+                <mat-icon svgIcon="trash" />
+              </button>
+            </div>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="_severitiesDisplayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: _severitiesDisplayedColumns"></tr>
+        <tr class="mat-row" *matNoDataRow>
+          <td class="mat-cell" [attr.colspan]="_severitiesDisplayedColumns.length">Нет уровней серьёзности</td>
+        </tr>
+      </table>
+    </div>
+  </section>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="_cancel()">Отмена</button>

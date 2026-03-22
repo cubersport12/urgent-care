@@ -1,0 +1,33 @@
+<h2 mat-dialog-title>{{ _dialogData.severity ? 'Редактировать уровень' : 'Новый уровень серьёзности' }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="_form" class="flex flex-col gap-4 min-w-[280px] pt-2">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Минимум</mat-label>
+      <input matInput type="number" formControlName="min">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Максимум</mat-label>
+      <input matInput type="number" formControlName="max">
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Серьёзность</mat-label>
+      <mat-select formControlName="severity">
+        <mat-option [value]="null">Не задано</mat-option>
+        <mat-option [value]="_severityEnum.Normal">Нормальная</mat-option>
+        <mat-option [value]="_severityEnum.Low">Низкая</mat-option>
+        <mat-option [value]="_severityEnum.Medium">Средняя</mat-option>
+        <mat-option [value]="_severityEnum.High">Высокая</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Описание</mat-label>
+      <textarea matInput formControlName="description" rows="3" placeholder="Необязательно"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="_cancel()">Отмена</button>
+  <button mat-flat-button color="primary" type="button" (click)="_submit()">
+    {{ _dialogData.severity ? 'Сохранить' : 'Добавить' }}
+  </button>
+</mat-dialog-actions>
