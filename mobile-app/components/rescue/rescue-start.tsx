@@ -1,4 +1,5 @@
 import { AppRescueItemVm, RescueTimerParameterVm } from '@/hooks/api/types';
+import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { useAddOrUpdateRescueStats } from '@/hooks/api/useRescueStats';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useDeviceId } from '@/hooks/use-device-id';
@@ -69,9 +70,10 @@ export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarte
   };
 
   const formatTimerParameter = (param: RescueTimerParameterVm) => {
-    const start = param.startValue;
-    const delta = param.delta;
-    return `${start}`;
+    if (param.type === 'timer') {
+      return formatSecondsAsHms(param.startValue);
+    }
+    return String(param.startValue);
   };
 
   return (

@@ -1,6 +1,12 @@
-import { AppRescueItemVm, RescueSceneChoiceVm, RescueSceneVm } from '@/hooks/api/types';
+import {
+  AppRescueItemVm,
+  type RescueScheneChoiceImplicationVm,
+  type RescueTimerParameterVm,
+  RescueSceneChoiceVm,
+  RescueSceneVm,
+} from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
@@ -10,8 +16,14 @@ import { RescueSceneVisualNovel } from './rescue-story';
 type RescueViewProps = {
   rescueItem: AppRescueItemVm;
   onBack: () => void | Promise<void>;
-  /** Финальные значения параметров после последнего шага (для расчёта completion) */
-  onComplete: (finalParameters: Record<string, number>) => void | Promise<void>;
+  /**
+   * Финальные значения параметров и все implications выбранных ответов
+   * (для расчёта completion и экрана завершения).
+   */
+  onComplete: (
+    finalParameters: Record<string, number>,
+    collectedImplications: RescueScheneChoiceImplicationVm[],
+  ) => void | Promise<void>;
   /** Скорость эффекта печати в миллисекундах на символ */
   typingSpeedMs?: number;
 };
@@ -42,6 +54,80 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
     return initial;
   });
 
+  const parametersRef = useRef(parameters);
+  parametersRef.current = parameters;
+
+  const collectedImplicationsRef = useRef<RescueScheneChoiceImplicationVm[]>([]);
+  const hasCompletedRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  const sceneParameters = useMemo(
+    () => rescueItem.data?.parameters ?? [],
+    [rescueItem],
+  );
+
+  const firstTimerParam = useMemo<RescueTimerParameterVm | undefined>(() => {
+    return sceneParameters.find((p) => p.type === 'timer');
+  }, [sceneParameters]);
+
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const timerParam = firstTimerParam;
+    if (!timerParam) {
+      return;
+    }
+    const timerId = timerParam.id;
+    // В контенте часто delta = 0; для таймера по умолчанию −1 с/с, чтобы «истекал» каждую секунду.
+    const rawTimerDelta = timerParam.delta ?? 0;
+    const timerDelta = rawTimerDelta === 0 ? -1 : rawTimerDelta;
+
+    timerIntervalRef.current = setInterval(() => {
+      setParameters((prev) => {
+        if (hasCompletedRef.current) return prev;
+
+        const next: Record<string, number> = { ...prev };
+
+        for (const p of sceneParameters) {
+          if (p.type === 'timer') continue;
+          const d = p.delta ?? 0;
+          if (d === 0) continue;
+          if (next[p.id] !== undefined) {
+            next[p.id] = next[p.id] + d;
+          }
+        }
+
+        const cur = next[timerId];
+        if (cur === undefined) return prev;
+
+        const afterTimer = cur + timerDelta;
+        if (afterTimer <= 0) {
+          hasCompletedRef.current = true;
+          if (timerIntervalRef.current != null) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+          }
+          next[timerId] = 0;
+          const snapshot = { ...next };
+          queueMicrotask(() => {
+            void onCompleteRef.current(snapshot, [...collectedImplicationsRef.current]);
+          });
+          return next;
+        }
+        next[timerId] = afterTimer;
+        return next;
+      });
+    }, 1000);
+
+    return () => {
+      if (timerIntervalRef.current != null) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [firstTimerParam, sceneParameters]);
+
   if (!orderedScenes.length) {
     return (
       <ThemedView style={[styles.container, { backgroundColor }]}>
@@ -53,7 +139,16 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
   const currentScene = orderedScenes[currentSceneIndex];
 
   const handleNextScene = (choice: RescueSceneChoiceVm | null) => {
-    let nextParams = { ...parameters };
+    if (hasCompletedRef.current) return;
+
+    if (choice) {
+      const next = choice.implications ?? [];
+      if (next.length > 0) {
+        collectedImplicationsRef.current = [...collectedImplicationsRef.current, ...next];
+      }
+    }
+
+    const nextParams = { ...parametersRef.current };
     if (choice?.parameterChanges && choice.parameterChanges.length > 0) {
       choice.parameterChanges.forEach((change) => {
         if (nextParams[change.parameterId] !== undefined) {
@@ -81,7 +176,12 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
     if (nextIndex < orderedScenes.length) {
       setCurrentSceneIndex(nextIndex);
     } else {
-      onComplete(nextParams);
+      hasCompletedRef.current = true;
+      if (timerIntervalRef.current != null) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      void onComplete(nextParams, [...collectedImplicationsRef.current]);
     }
   };
 

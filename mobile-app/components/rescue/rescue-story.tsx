@@ -6,6 +6,7 @@ import {
   RescueSceneChoiceVm,
   RescueTimerParameterVm,
 } from '@/hooks/api/types';
+import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { Image } from 'expo-image';
@@ -197,10 +198,12 @@ function ParameterBadge({
     backgroundColor: backgroundColor.value,
   }));
 
+  const valueLabel = param.type === 'timer' ? formatSecondsAsHms(value) : String(value);
+
   return (
     <Animated.View style={[styles.parameterBadge, animatedStyle]}>
       <ThemedText style={styles.parameterText}>
-        {param.name}: {value}
+        {param.name}: {valueLabel}
       </ThemedText>
     </Animated.View>
   );

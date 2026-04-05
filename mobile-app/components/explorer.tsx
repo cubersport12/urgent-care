@@ -1,5 +1,12 @@
 import { useTest } from '@/contexts/test-context';
-import { AppArticleVm, AppRescueItemVm, AppRescueStatsVm, AppTestStatsVm, AppTestVm } from '@/hooks/api/types';
+import {
+  AppArticleVm,
+  AppRescueItemVm,
+  AppRescueStatsVm,
+  type RescueScheneChoiceImplicationVm,
+  AppTestStatsVm,
+  AppTestVm,
+} from '@/hooks/api/types';
 import { fetchArticle, useArticles, useArticlesStats } from '@/hooks/api/useArticles';
 import { useFolders } from '@/hooks/api/useFolders';
 import { useRescueItems } from '@/hooks/api/useRescueItems';
@@ -34,6 +41,9 @@ export function Explorer() {
   const [isRescueStarted, setIsRescueStarted] = useState(false);
   const [isRescueCompleted, setIsRescueCompleted] = useState(false);
   const [rescueFinalParameters, setRescueFinalParameters] = useState<Record<string, number>>({});
+  const [rescueCollectedImplications, setRescueCollectedImplications] = useState<
+    RescueScheneChoiceImplicationVm[]
+  >([]);
   const [isNavigating, setIsNavigating] = useState(false);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
   // История навигации по статьям для определения hasPrevious
@@ -364,6 +374,7 @@ export function Explorer() {
       setIsRescueStarted(false);
       setIsRescueCompleted(false);
       setRescueFinalParameters({});
+      setRescueCollectedImplications([]);
       setBreadcrumb(prev => [...prev, { id: item.data.id, name: item.data.name, type: 'rescue' }]);
       setSelectedArticle(null);
       setSelectedTest(null);
@@ -387,6 +398,7 @@ export function Explorer() {
     setIsRescueStarted(false);
     setIsRescueCompleted(false);
     setRescueFinalParameters({});
+    setRescueCollectedImplications([]);
     resetTest();
     // Удаляем все элементы article, test и rescue из breadcrumb
     setBreadcrumb(prev => prev.filter(b => b.type !== 'article' && b.type !== 'test' && b.type !== 'rescue'));
@@ -488,6 +500,10 @@ export function Explorer() {
     setSelectedArticle(null);
     setSelectedTest(null);
     setSelectedRescueItem(null);
+    setIsRescueStarted(false);
+    setIsRescueCompleted(false);
+    setRescueFinalParameters({});
+    setRescueCollectedImplications([]);
   };
 
   // Обработчик перехода к следующему документу
@@ -549,10 +565,12 @@ export function Explorer() {
       <RescueComplete
         rescueItem={selectedRescueItem}
         parameterValues={rescueFinalParameters}
+        selectedImplications={rescueCollectedImplications}
         onBack={() => {
           setIsRescueCompleted(false);
           setIsRescueStarted(false);
           setRescueFinalParameters({});
+          setRescueCollectedImplications([]);
           void rescueStatsList.fetchData();
           handleBackFromItem();
         }}
@@ -578,7 +596,7 @@ export function Explorer() {
           setIsRescueStarted(false);
           handleBackFromItem();
         }}
-        onComplete={async (finalParameters) => {
+        onComplete={async (finalParameters, collectedImplications) => {
           const data = parseRescueItemDataVm(selectedRescueItem.data);
           const outcome = resolveRescueOutcome(data.completion, finalParameters);
           const passed = outcome === 'passed';
@@ -592,6 +610,7 @@ export function Explorer() {
           }
           void rescueStatsList.fetchData();
           setRescueFinalParameters(finalParameters);
+          setRescueCollectedImplications(collectedImplications);
           setIsRescueCompleted(true);
           setIsRescueStarted(false);
         }}
@@ -608,6 +627,7 @@ export function Explorer() {
         onRescueSessionStarted={() => void rescueStatsList.fetchData()}
         onStart={() => {
           setRescueFinalParameters({});
+          setRescueCollectedImplications([]);
           setIsRescueStarted(true);
         }}
       />

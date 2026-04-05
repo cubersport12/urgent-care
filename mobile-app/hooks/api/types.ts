@@ -122,6 +122,8 @@ export type RescueTimerParameterVm = {
   startValue: number;
   /* Уровни серьезности параметра */
   severities?: RescueParameterSeverityVm[];
+  /** `numeric` — число и delta; `timer` — старт в `startValue` как секунды суток, ввод через время */
+  type?: 'numeric' | 'timer';
 };
 
 /** На какой параметр воздействовать после выбора ответа на вопрос */
@@ -139,6 +141,13 @@ export type RescueSceneChoiceVm = {
   parameterChanges: RescueChoiceParameterChangeVm[];
   /** id сцены, на которую переход при выборе; null — конец/без перехода */
   nextSceneId: NullableValue<string>;
+  /** Последствия выбора (теги на экране завершения) */
+  implications?: NullableValue<RescueScheneChoiceImplicationVm[]>;
+};
+
+export type RescueScheneChoiceImplicationVm = {
+  description: string;
+  severity: RescueParameterSeverityEnum;
 };
 
 /** Сцена: фон, текст и варианты выбора (визуальная новелла) */
