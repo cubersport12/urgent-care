@@ -176,7 +176,8 @@ function ParameterBadge({
 
     const newBand = findSeverityForValue(value, param.severities);
     const newKey = severityBandKey(newBand);
-    if (newBand?.description?.trim()) {
+    // Toast только при входе в другую полосу min/max/severity, не при каждом тике таймера в той же полосе
+    if (newKey !== prevBandKeyRef.current && newBand?.description?.trim()) {
       onSeverityDescription?.(newBand.description.trim());
     }
     prevBandKeyRef.current = newKey;
