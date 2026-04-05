@@ -6,13 +6,28 @@
       <input matInput formControlName="name">
     </mat-form-field>
     <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Изменять на</mat-label>
-      <input matInput type="number" formControlName="delta">
+      <mat-label>Тип параметра</mat-label>
+      <mat-select formControlName="type">
+        <mat-option value="numeric">Числовой</mat-option>
+        <mat-option value="timer">Таймер (время)</mat-option>
+      </mat-select>
     </mat-form-field>
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Стартовое значение</mat-label>
-      <input matInput type="number" formControlName="startValue">
-    </mat-form-field>
+    @if (_isTimerType()) {
+      <mat-form-field appearance="fill" class="w-full max-w-xs">
+        <mat-label>Стартовое время</mat-label>
+        <input matInput type="time" step="1" formControlName="timerTime">
+        <mat-hint>Сохраняется как секунды в поле startValue</mat-hint>
+      </mat-form-field>
+    } @else {
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Изменять на</mat-label>
+        <input matInput type="number" formControlName="delta">
+      </mat-form-field>
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Стартовое значение</mat-label>
+        <input matInput type="number" formControlName="startValue">
+      </mat-form-field>
+    }
   </form>
   <section class="border border-gray-200 dark:border-gray-700 rounded p-3 flex flex-col gap-2">
     <div class="flex justify-between items-center">

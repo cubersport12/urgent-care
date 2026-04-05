@@ -82,12 +82,13 @@ export const rescueParameterSeveritySchema = z.object({
   description: z.string().optional()
 });
 
-/** Схема параметра по таймеру (id, name, delta, startValue, severities?) */
+/** Схема параметра по таймеру (id, name, delta, startValue, type?, severities?) */
 export const rescueTimerParameterSchema = z.object({
   id: z.string(),
   name: z.string(),
   delta: z.number(),
   startValue: z.number(),
+  type: z.enum(['numeric', 'timer']).optional(),
   severities: z.array(rescueParameterSeveritySchema).optional()
 });
 
@@ -97,12 +98,19 @@ export const rescueChoiceParameterChangeSchema = z.object({
   value: z.number()
 });
 
+/** Последствие выбора в сцене (описание + серьёзность) */
+export const rescueSceneChoiceImplicationSchema = z.object({
+  description: z.string(),
+  severity: z.nativeEnum(RescueParameterSeverityEnum)
+});
+
 /** Вариант выбора в сцене */
 export const rescueSceneChoiceSchema = z.object({
   id: z.string(),
   text: z.string(),
   parameterChanges: z.array(rescueChoiceParameterChangeSchema).optional(),
-  nextSceneId: z.string().nullable().optional()
+  nextSceneId: z.string().nullable().optional(),
+  implications: z.array(rescueSceneChoiceImplicationSchema).default([])
 });
 
 /** Сцена визуальной новеллы */

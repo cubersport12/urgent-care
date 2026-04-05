@@ -55,7 +55,10 @@ comment on column rescue.data is 'JSON: { parameters?, scenes?, defaultBackgroun
           "parameterChanges": [
             { "parameterId": "string", "value": "number" }
           ],
-          "nextSceneId": "string | null"
+          "nextSceneId": "string | null",
+          "implications": [
+            { "description": "string", "severity": "'normal' | 'low' | 'medium' | 'high'" }
+          ]
         }
       ]
     }
@@ -78,6 +81,6 @@ comment on column rescue.data is 'JSON: { parameters?, scenes?, defaultBackgroun
 - **defaultBackground** (опционально) — фон по умолчанию для режима спасения: строка URL или id файла, по смыслу как `scenes[].background`.
 - **parameters** — общие параметры, изменяемые по таймеру: `id`, `name`, `delta` (изменение за тик), `startValue`, опционально **severities** (уровни серьёзности: диапазон `min`–`max` и метка `severity`).
 - **scenes** — сцены: `background`, `text`, массив **choices**.
-- **choices** — каждый выбор: `text`, `parameterChanges` (какие параметры на какое значение менять), `nextSceneId` (id следующей сцены; при выборе А — сцена А, при выборе Б — сцена Б).
+- **choices** — каждый выбор: `text`, `parameterChanges`, `nextSceneId`, массив **implications** (описание + `severity` — уровень серьёзности последствия).
 
 Типы в коде: `@/core/utils/types.ts` (`RescueTimerParameterVm`, `RescueSceneVm`, `RescueSceneChoiceVm`, `RescueChoiceParameterChangeVm`, `AppRescueItemCompletionVm`, `RescueCompletionConditionVm`).

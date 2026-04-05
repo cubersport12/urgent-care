@@ -104,10 +104,12 @@ export type RescueTimerParameterVm = {
   name: string;
   /* Насколько указанный параметр будет изменен */
   delta: number;
-  /* Стартовое значение параметра на старте */
+  /* Стартовое значение параметра на старте. Либо число, либо время в секундах */
   startValue: number;
   /* Уровни серьезности параметра */
   severities?: RescueParameterSeverityVm[];
+  /** `numeric` — число и delta; `timer` — старт в `startValue` как секунды суток, ввод через время */
+  type?: 'numeric' | 'timer';
 };
 
 /** На какой параметр воздействовать после выбора ответа на вопрос */
@@ -125,6 +127,13 @@ export type RescueSceneChoiceVm = {
   parameterChanges: RescueChoiceParameterChangeVm[];
   /** id сцены, на которую переход при выборе; null — конец/без перехода */
   nextSceneId: NullableValue<string>;
+  /** Последствия выбора */
+  implications: RescueScheneChoiceImplicationVm[];
+};
+
+export type RescueScheneChoiceImplicationVm = {
+  description: string;
+  severity: RescueParameterSeverityEnum;
 };
 
 /** Сцена: фон, текст и варианты выбора (визуальная новелла) */

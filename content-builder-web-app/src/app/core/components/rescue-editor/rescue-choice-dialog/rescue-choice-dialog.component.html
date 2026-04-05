@@ -42,6 +42,45 @@
         </button>
       </div>
     </div>
+    <section class="border border-gray-200 dark:border-gray-700 rounded p-3 flex flex-col gap-2">
+      <div class="flex justify-between items-center">
+        <span class="font-medium">Последствия выбора</span>
+        <button type="button" mat-flat-button color="primary" (click)="_addImplication()">
+          <mat-icon svgIcon="plus" />
+          Создать
+        </button>
+      </div>
+      <div class="overflow-auto">
+        <table mat-table [dataSource]="_implicationsList()" class="mat-elevation-z8 w-full">
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Описание</th>
+            <td mat-cell *matCellDef="let row" [title]="row.description">{{ _formatImplicationDescription(row) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="severity">
+            <th mat-header-cell *matHeaderCellDef>Серьёзность</th>
+            <td mat-cell *matCellDef="let row">{{ _severityLabel(row.severity) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row; let ii = index">
+              <div class="flex gap-1">
+                <button mat-icon-button type="button" (click)="_editImplication(ii)" title="Редактировать">
+                  <mat-icon svgIcon="pen-to-square" />
+                </button>
+                <button mat-icon-button color="warn" type="button" (click)="_removeImplication(ii)" title="Удалить">
+                  <mat-icon svgIcon="trash" />
+                </button>
+              </div>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="_implicationsDisplayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: _implicationsDisplayedColumns"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell" [attr.colspan]="_implicationsDisplayedColumns.length">Нет последствий</td>
+          </tr>
+        </table>
+      </div>
+    </section>
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

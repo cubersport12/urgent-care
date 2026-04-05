@@ -2,6 +2,7 @@ import {
   AppRescueItemCompletionVm,
   AppRescueItemVm,
   formatRescueCompletionOutcomeLine,
+  formatSecondsAsHms,
   generateGUID,
   NullableValue,
   openFile,
@@ -9,6 +10,7 @@ import {
   RescueParameterSeverityVm,
   RescueSceneChoiceVm,
   RescueSceneVm,
+  RescueScheneChoiceImplicationVm,
   RescueTimerParameterVm
 } from '@/core/utils';
 import { Component, computed, effect, inject, Injectable } from '@angular/core';
@@ -26,6 +28,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Store } from '@ngxs/store';
 import { AppLoading, RescueActions } from '@/core/store';
 import { RescueParameterDialogComponent, RescueParameterDialogData } from './rescue-parameter-dialog/rescue-parameter-dialog.component';
@@ -77,9 +80,11 @@ export class RescueEditorService {
 }
 
 function parameterGroup(p: NullableValue<RescueTimerParameterVm> = null): FormGroup {
+  const typ = p?.type === 'timer' ? 'timer' : 'numeric';
   return new FormGroup({
     id: new FormControl<string>(p?.id ?? generateGUID(), Validators.required),
     name: new FormControl<string>(p?.name ?? '', Validators.required),
+    type: new FormControl<'numeric' | 'timer'>(typ, { nonNullable: true }),
     delta: new FormControl<number>(p?.delta ?? 0),
     startValue: new FormControl<number>(p?.startValue ?? 0),
     severities: new FormControl<RescueParameterSeverityVm[]>(p?.severities ?? [])
@@ -101,7 +106,8 @@ function choiceGroup(c: NullableValue<RescueSceneChoiceVm> = null): FormGroup {
     nextSceneId: new FormControl<NullableValue<string>>(nextId),
     parameterChanges: new FormArray(
       (c?.parameterChanges ?? []).map(parameterChangeGroup)
-    )
+    ),
+    implications: new FormControl<RescueScheneChoiceImplicationVm[]>(c?.implications ?? [])
   });
 }
 
@@ -128,6 +134,7 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
     MatFormFieldModule,
     MatInputModule,
     MatTableModule,
+    MatCheckboxModule,
     CdkDropList,
     CdkDrag
   ],
@@ -156,6 +163,8 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
   `
 })
 export class RescueEditorComponent {
+  protected readonly _formatSecondsAsHms = formatSecondsAsHms;
+
   protected readonly _dialogData = inject<AppRescueItemVm>(MAT_DIALOG_DATA);
   private readonly _ref = inject(MatDialogRef<RescueEditorComponent>);
   private readonly _store = inject(Store);
@@ -174,7 +183,7 @@ export class RescueEditorComponent {
   protected readonly _scenesList = signal<FormGroup[]>([]);
 
   protected readonly _parametersDisplayedColumns: string[] = ['index', 'name', 'delta', 'startValue', 'actions'];
-  protected readonly _scenesDisplayedColumns: string[] = ['index', 'text', 'actions'];
+  protected readonly _scenesDisplayedColumns: string[] = ['index', 'text', 'isReviewed', 'actions'];
 
   protected readonly _isPending = computed(
     () =>
@@ -447,14 +456,19 @@ export class RescueEditorComponent {
     const raw = this._form.getRawValue();
     const { name, description, defaultBackground, parameters, scenes } = raw;
     const parametersList: RescueTimerParameterVm[] = (parameters ?? []).map((p: Record<string, unknown>) => {
+      const type = (p['type'] as 'numeric' | 'timer' | undefined) ?? 'numeric';
       const severities = p['severities'] as RescueParameterSeverityVm[] | undefined;
-      return {
+      const base: RescueTimerParameterVm = {
         id: p['id'] as string,
         name: p['name'] as string,
-        delta: (p['delta'] as number) ?? 0,
-        startValue: (p['startValue'] as number) ?? 0,
-        ...(severities != null && severities.length > 0 ? { severities } : {})
+        type,
+        delta: type === 'timer' ? 0 : (p['delta'] as number) ?? 0,
+        startValue: (p['startValue'] as number) ?? 0
       };
+      if (type === 'numeric' && severities != null && severities.length > 0) {
+        return { ...base, severities };
+      }
+      return base;
     });
     const scenesList: RescueSceneVm[] = (scenes ?? []).map((s: Record<string, unknown>, index: number) => ({
       id: s['id'] as string,
@@ -470,7 +484,8 @@ export class RescueEditorComponent {
         parameterChanges: ((ch['parameterChanges'] ?? []) as Array<Record<string, unknown>>).map((pc: Record<string, unknown>) => ({
           parameterId: pc['parameterId'] as string,
           value: (pc['value'] as number) ?? 0
-        }))
+        })),
+        implications: ((ch['implications'] ?? []) as RescueScheneChoiceImplicationVm[])
       }))
     }));
     const base = this._dialogData ?? {};

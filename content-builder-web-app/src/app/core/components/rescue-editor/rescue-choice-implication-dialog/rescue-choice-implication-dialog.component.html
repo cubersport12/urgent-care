@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>{{ _dialogData.implication ? 'Редактировать последствие' : 'Новое последствие' }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="_form" class="flex flex-col gap-4 min-w-[320px] pt-2">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Описание</mat-label>
+      <textarea matInput formControlName="description" rows="3"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Серьёзность</mat-label>
+      <mat-select formControlName="severity">
+        <mat-option [value]="_severityEnum.Normal">Нормальная</mat-option>
+        <mat-option [value]="_severityEnum.Low">Низкая</mat-option>
+        <mat-option [value]="_severityEnum.Medium">Средняя</mat-option>
+        <mat-option [value]="_severityEnum.High">Высокая</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="_cancel()">Отмена</button>
+  <button mat-flat-button color="primary" type="button" (click)="_submit()" [disabled]="_form.invalid">
+    {{ _dialogData.implication ? 'Сохранить' : 'Добавить' }}
+  </button>
+</mat-dialog-actions>

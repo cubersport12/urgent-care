@@ -74,11 +74,19 @@
           </ng-container>
           <ng-container matColumnDef="delta">
             <th mat-header-cell *matHeaderCellDef>Изменять на</th>
-            <td mat-cell *matCellDef="let row">{{ row.value.delta }}</td>
+            <td mat-cell *matCellDef="let row">
+              {{ row.value.type === 'timer' ? '—' : row.value.delta }}
+            </td>
           </ng-container>
           <ng-container matColumnDef="startValue">
             <th mat-header-cell *matHeaderCellDef>Стартовое значение</th>
-            <td mat-cell *matCellDef="let row">{{ row.value.startValue }}</td>
+            <td mat-cell *matCellDef="let row">
+              {{
+                row.value.type === 'timer'
+                  ? _formatSecondsAsHms(row.value.startValue ?? 0)
+                  : row.value.startValue
+              }}
+            </td>
           </ng-container>
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef></th>
@@ -137,6 +145,12 @@
           <ng-container matColumnDef="text">
             <th mat-header-cell *matHeaderCellDef>Текст сцены</th>
             <td mat-cell *matCellDef="let row">{{ (row.value.text || '').slice(0, 50) }}{{ (row.value.text || '').length > 50 ? '…' : '' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="isReviewed">
+            <th mat-header-cell *matHeaderCellDef>Проверена</th>
+            <td mat-cell *matCellDef="let row">
+              <mat-checkbox [formControl]="row.get('isReviewed')!">Сцена проверена (без ошибок)</mat-checkbox>
+            </td>
           </ng-container>
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef></th>

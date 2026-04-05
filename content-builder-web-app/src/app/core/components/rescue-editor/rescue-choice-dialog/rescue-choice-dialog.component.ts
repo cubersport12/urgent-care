@@ -1,9 +1,12 @@
 import {
   generateGUID,
+  NullableValue,
   RescueChoiceParameterChangeVm,
-  RescueSceneChoiceVm
+  RescueParameterSeverityEnum,
+  RescueSceneChoiceVm,
+  RescueScheneChoiceImplicationVm
 } from '@/core/utils';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -12,12 +15,17 @@ import {
   Validators
 } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatOption, MatSelectModule } from '@angular/material/select';
-import { NullableValue } from '@/core/utils';
+import { MatTableModule } from '@angular/material/table';
+import {
+  RescueChoiceImplicationDialogComponent,
+  RescueChoiceImplicationDialogData
+} from '../rescue-choice-implication-dialog/rescue-choice-implication-dialog.component';
+import { take } from 'rxjs';
 
 export type SceneOption = { id: string; name: string };
 export type ParameterOption = { id: string; name: string };
@@ -29,6 +37,8 @@ export type RescueChoiceDialogData = {
   /** id сцены, в которой находится выбор (исключаем из списка «Следующая сцена») */
   currentSceneId: string;
 };
+
+type NullableSeverity = RescueParameterSeverityEnum | null | undefined;
 
 function parameterChangeGroup(p: NullableValue<RescueChoiceParameterChangeVm> = null): FormGroup {
   return new FormGroup({
@@ -48,7 +58,8 @@ function parameterChangeGroup(p: NullableValue<RescueChoiceParameterChangeVm> = 
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatOption
+    MatOption,
+    MatTableModule
   ],
   templateUrl: './rescue-choice-dialog.component.html',
   styles: ``
@@ -56,6 +67,13 @@ function parameterChangeGroup(p: NullableValue<RescueChoiceParameterChangeVm> = 
 export class RescueChoiceDialogComponent {
   protected readonly _dialogData = inject<RescueChoiceDialogData>(MAT_DIALOG_DATA);
   private readonly _ref = inject(MatDialogRef<RescueChoiceDialogComponent, RescueSceneChoiceVm>);
+  private readonly _dialog = inject(MatDialog);
+
+  protected readonly _implicationsList = signal<RescueScheneChoiceImplicationVm[]>(
+    [...(this._dialogData?.choice?.implications ?? [])]
+  );
+
+  protected readonly _implicationsDisplayedColumns: string[] = ['description', 'severity', 'actions'];
 
   /** Опции сцен и параметров с fallback на пустой массив (для надёжного отображения в mat-select) */
   protected get _sceneOptionsList(): SceneOption[] {
@@ -96,6 +114,77 @@ export class RescueChoiceDialogComponent {
     return this._form.get('parameterChanges') as FormArray;
   }
 
+  protected _severityLabel(s: NullableSeverity): string {
+    if (s == null) {
+      return '—';
+    }
+    switch (s) {
+      case RescueParameterSeverityEnum.Normal:
+        return 'Нормальная';
+      case RescueParameterSeverityEnum.Low:
+        return 'Низкая';
+      case RescueParameterSeverityEnum.Medium:
+        return 'Средняя';
+      case RescueParameterSeverityEnum.High:
+        return 'Высокая';
+      default:
+        return String(s);
+    }
+  }
+
+  protected _formatImplicationDescription(row: RescueScheneChoiceImplicationVm): string {
+    const d = row.description?.trim();
+    if (d == null || d.length === 0) {
+      return '—';
+    }
+    return d.length > 56 ? `${d.slice(0, 53)}…` : d;
+  }
+
+  protected _openImplicationDialog(implication: RescueScheneChoiceImplicationVm | null): void {
+    this._dialog
+      .open(RescueChoiceImplicationDialogComponent, {
+        data: { implication } satisfies RescueChoiceImplicationDialogData,
+        width: '440px',
+        maxWidth: '95vw',
+        disableClose: false
+      })
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((result: RescueScheneChoiceImplicationVm | undefined) => {
+        if (result == null) {
+          return;
+        }
+        const list = this._implicationsList();
+        if (implication == null) {
+          this._implicationsList.set([...list, result]);
+        }
+        else {
+          const idx = list.indexOf(implication);
+          if (idx !== -1) {
+            const next = [...list];
+            next[idx] = result;
+            this._implicationsList.set(next);
+          }
+        }
+      });
+  }
+
+  protected _addImplication(): void {
+    this._openImplicationDialog(null);
+  }
+
+  protected _editImplication(index: number): void {
+    const row = this._implicationsList()[index];
+    if (row != null) {
+      this._openImplicationDialog(row);
+    }
+  }
+
+  protected _removeImplication(index: number): void {
+    const list = this._implicationsList();
+    this._implicationsList.set(list.filter((_, i) => i !== index));
+  }
+
   protected _addParameterChange(): void {
     this._parameterChanges.push(parameterChangeGroup(null));
   }
@@ -117,7 +206,8 @@ export class RescueChoiceDialogComponent {
       parameterChanges: rawChanges.map(pc => ({
         parameterId: pc['parameterId'] as string,
         value: (pc['value'] as number) ?? 0
-      }))
+      })),
+      implications: this._implicationsList()
     });
   }
 
