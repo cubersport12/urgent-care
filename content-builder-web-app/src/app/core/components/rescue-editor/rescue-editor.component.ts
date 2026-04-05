@@ -465,7 +465,7 @@ export class RescueEditorComponent {
         delta: type === 'timer' ? 0 : (p['delta'] as number) ?? 0,
         startValue: (p['startValue'] as number) ?? 0
       };
-      if (type === 'numeric' && severities != null && severities.length > 0) {
+      if (severities != null && severities.length > 0) {
         return { ...base, severities };
       }
       return base;

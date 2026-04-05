@@ -94,7 +94,6 @@ export class RescueParameterDialogComponent {
         if (isTimer) {
           timerCtrl.setValidators(Validators.required);
           timerCtrl.setValue(secondsToTimeInputValue(Number(startCtrl.value) || 0));
-          this._severitiesList.set([]);
         }
         else {
           timerCtrl.clearValidators();
@@ -183,6 +182,7 @@ export class RescueParameterDialogComponent {
     }
     const v = this._form.getRawValue();
     const type = v.type === 'timer' ? 'timer' : 'numeric';
+    const severities = this._severitiesList();
     if (type === 'timer') {
       this._ref.close({
         id: v.id!,
@@ -190,11 +190,10 @@ export class RescueParameterDialogComponent {
         type: 'timer',
         delta: 0,
         startValue: timeInputValueToSeconds(v.timerTime ?? ''),
-        severities: []
+        severities
       });
       return;
     }
-    const severities = this._severitiesList();
     this._ref.close({
       id: v.id!,
       name: v.name!,
