@@ -5,6 +5,7 @@ import {
   type AppRescueItemDataVm,
   type RescueCompletionConditionVm,
 } from '@/hooks/api/types';
+import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 
 /** Итог режима спасения по деревьям success / failure */
 export type RescueOutcome = 'passed' | 'failed' | 'undetermined';
@@ -124,14 +125,59 @@ type ParsedCompare = {
   actual: number | undefined;
 };
 
+/**
+ * В completion часто хранят индекс параметра ("1", "2") или id, не совпадающий с {@link data.parameters},
+ * тогда как значения в рантайме лежат по фактическому id параметра сцены.
+ */
+function resolveCompletionParameterIdToSceneId(
+  rawId: string,
+  definitions: readonly { id: string; name?: string | null }[],
+  runtimeValues: Record<string, number>,
+): string {
+  const s = String(rawId).trim();
+  if (!s) return s;
+
+  if (definitions.some((p) => String(p.id) === s)) {
+    return s;
+  }
+  if (runtimeValues[s] !== undefined) {
+    return s;
+  }
+
+  const n = Number(s);
+  if (!Number.isFinite(n)) {
+    return definitions.length === 1 ? String(definitions[0]!.id) : s;
+  }
+
+  const intN = Math.trunc(n);
+  if (intN >= 1 && intN <= definitions.length) {
+    return String(definitions[intN - 1]!.id);
+  }
+  if (intN >= 0 && intN < definitions.length) {
+    return String(definitions[intN]!.id);
+  }
+
+  if (definitions.length === 1) {
+    return String(definitions[0]!.id);
+  }
+
+  return s;
+}
+
 function readCompareFields(
   n: Record<string, unknown>,
   parameters: Record<string, number>,
+  parameterDefinitions?: readonly { id: string; name?: string | null }[],
 ): ParsedCompare | null {
   const parameterIdRaw = n.parameterId ?? n.parameter_id ?? n.ParameterId;
+  const rawParameterId =
+    parameterIdRaw !== undefined && parameterIdRaw !== null ? String(parameterIdRaw).trim() : '';
+  if (!rawParameterId) return null;
+
   const parameterId =
-    parameterIdRaw !== undefined && parameterIdRaw !== null ? String(parameterIdRaw) : '';
-  if (!parameterId) return null;
+    parameterDefinitions != null && parameterDefinitions.length > 0
+      ? resolveCompletionParameterIdToSceneId(rawParameterId, parameterDefinitions, parameters)
+      : rawParameterId;
 
   const op = normalizeCompareOp(n.operator);
   if (op === null) return null;
@@ -214,6 +260,7 @@ function explainSubtree(
   node: RescueCompletionConditionVm | Record<string, unknown> | null | undefined,
   parameters: Record<string, number>,
   parameterNamesById: Record<string, string>,
+  parameterDefinitions?: readonly { id: string; name?: string | null }[],
 ): RescueSubtreeExplanation {
   if (node === null || node === undefined || typeof node !== 'object') {
     return { satisfied: false, reasonsIfTrue: [], reasonsIfFalse: [] };
@@ -223,11 +270,12 @@ function explainSubtree(
   const typeStr = conditionTypeKey(n);
 
   if (typeStr === 'compare') {
-    const parsed = readCompareFields(n, parameters);
+    const parsed = readCompareFields(n, parameters, parameterDefinitions);
     if (!parsed) {
       return { satisfied: false, reasonsIfTrue: [], reasonsIfFalse: ['не удалось разобрать условие сравнения'] };
     }
-    const displayName = parameterNamesById[parsed.parameterId] ?? parsed.parameterId;
+    const labels = mergeParameterDisplayLabels(parameterNamesById, parameterDefinitions ?? []);
+    const displayName = displayNameForParameterId(parsed.parameterId, labels, parameterDefinitions ?? []);
     return explainCompareLeaf(parsed, displayName);
   }
 
@@ -248,7 +296,9 @@ function explainSubtree(
       };
     }
 
-    const chunks = conditions.map((c) => explainSubtree(c, parameters, parameterNamesById));
+    const chunks = conditions.map((c) =>
+      explainSubtree(c, parameters, parameterNamesById, parameterDefinitions),
+    );
 
     if (logical === RescueCompletionLogicalOperator.And) {
       const satisfied = chunks.every((c) => c.satisfied);
@@ -289,6 +339,247 @@ function explainSubtree(
   return { satisfied: false, reasonsIfTrue: [], reasonsIfFalse: ['условие имеет неподдерживаемый формат'] };
 }
 
+type CompareLeafRow = {
+  parameterId: string;
+  displayName: string;
+  satisfied: boolean;
+  actual: number | undefined;
+};
+
+/** Имя параметра для UI: карта из контента + явный список определений (на случай расхождения id). */
+function mergeParameterDisplayLabels(
+  parameterNamesById: Record<string, string>,
+  parameterDefinitions: readonly { id: string; name?: string | null }[],
+): Record<string, string> {
+  const m: Record<string, string> = {};
+  for (const [k, v] of Object.entries(parameterNamesById)) {
+    const t = typeof v === 'string' ? v.trim() : '';
+    if (t) m[k] = t;
+  }
+  for (const p of parameterDefinitions) {
+    const nm = p.name?.trim();
+    if (nm) m[String(p.id)] = nm;
+  }
+  return m;
+}
+
+function displayNameForParameterId(
+  parameterId: string,
+  labels: Record<string, string>,
+  parameterDefinitions: readonly { id: string; name?: string | null }[],
+): string {
+  const fromMap = labels[parameterId]?.trim() ?? labels[String(parameterId)]?.trim();
+  if (fromMap) return fromMap;
+  const def = parameterDefinitions.find((p) => String(p.id) === String(parameterId));
+  const fromDef = def?.name?.trim();
+  if (fromDef) return fromDef;
+  return parameterId;
+}
+
+/** Листья compare с учётом И/ИЛИ: при ИЛИ и истине — только сработавшая ветка; при ИЛИ и ложи — объединение всех веток. */
+function gatherCompareLeaves(
+  node: RescueCompletionConditionVm | Record<string, unknown> | null | undefined,
+  parameters: Record<string, number>,
+  parameterLabels: Record<string, string>,
+  parameterDefinitions: readonly { id: string; name?: string | null }[],
+): CompareLeafRow[] {
+  if (node === null || node === undefined || typeof node !== 'object') {
+    return [];
+  }
+  const n = node as Record<string, unknown>;
+  const typeStr = conditionTypeKey(n);
+
+  if (typeStr === 'compare') {
+    const parsed = readCompareFields(n, parameters, parameterDefinitions);
+    if (!parsed) return [];
+    const displayName = displayNameForParameterId(parsed.parameterId, parameterLabels, parameterDefinitions);
+    const satisfied = applyCompare(parsed.actual, parsed.operator, parsed.expected);
+    return [{ parameterId: parsed.parameterId, displayName, satisfied, actual: parsed.actual }];
+  }
+
+  if (typeStr === 'group') {
+    const logical = normalizeLogicalOp(
+      n.logicalOperator ?? n.logical_operator ?? n.LogicalOperator,
+    );
+    if (logical === null) return [];
+    const conditions = Array.isArray(n.conditions) ? n.conditions : [];
+
+    if (logical === RescueCompletionLogicalOperator.And) {
+      return conditions.flatMap((c) =>
+        gatherCompareLeaves(c, parameters, parameterLabels, parameterDefinitions),
+      );
+    }
+
+    const anyChildSatisfied = conditions.some((c) =>
+      evaluateRescueCompletionCondition(c, parameters, parameterDefinitions),
+    );
+    if (anyChildSatisfied) {
+      const winner = conditions.find((c) =>
+        evaluateRescueCompletionCondition(c, parameters, parameterDefinitions),
+      );
+      return winner
+        ? gatherCompareLeaves(winner, parameters, parameterLabels, parameterDefinitions)
+        : [];
+    }
+    return conditions.flatMap((c) =>
+      gatherCompareLeaves(c, parameters, parameterLabels, parameterDefinitions),
+    );
+  }
+
+  return [];
+}
+
+/** Все листья compare в дереве (для поиска нарушенных условий при провале И). */
+function flattenAllCompareLeaves(
+  node: RescueCompletionConditionVm | Record<string, unknown> | null | undefined,
+  parameters: Record<string, number>,
+  parameterLabels: Record<string, string>,
+  parameterDefinitions: readonly { id: string; name?: string | null }[],
+): CompareLeafRow[] {
+  if (node === null || node === undefined || typeof node !== 'object') {
+    return [];
+  }
+  const n = node as Record<string, unknown>;
+  const typeStr = conditionTypeKey(n);
+
+  if (typeStr === 'compare') {
+    return gatherCompareLeaves(node, parameters, parameterLabels, parameterDefinitions);
+  }
+
+  if (typeStr === 'group') {
+    const conditions = Array.isArray(n.conditions) ? n.conditions : [];
+    return conditions.flatMap((c) =>
+      flattenAllCompareLeaves(c, parameters, parameterLabels, parameterDefinitions),
+    );
+  }
+
+  return [];
+}
+
+function uniqueByParameterId(rows: CompareLeafRow[]): CompareLeafRow[] {
+  const seen = new Set<string>();
+  const out: CompareLeafRow[] = [];
+  for (const r of rows) {
+    if (seen.has(r.parameterId)) continue;
+    seen.add(r.parameterId);
+    out.push(r);
+  }
+  return out;
+}
+
+function formatParameterDisplayValue(
+  parameterId: string,
+  actual: number | undefined,
+  parameterTypesById: Record<string, 'timer' | 'numeric' | undefined>,
+): string {
+  if (actual === undefined) return '—';
+  const typ =
+    parameterTypesById[parameterId] ??
+    parameterTypesById[String(parameterId)];
+  if (typ === 'timer') return formatSecondsAsHms(actual);
+  return formatExpectedNumber(actual);
+}
+
+function formatNameValueClause(
+  rows: { parameterId: string; actual: number | undefined }[],
+  parameterLabels: Record<string, string>,
+  parameterDefinitions: readonly { id: string; name?: string | null }[],
+  parameterTypesById: Record<string, 'timer' | 'numeric' | undefined>,
+): string {
+  return rows
+    .map((r) => {
+      const name = displayNameForParameterId(r.parameterId, parameterLabels, parameterDefinitions);
+      return `${name} (${formatParameterDisplayValue(r.parameterId, r.actual, parameterTypesById)})`;
+    })
+    .join(', ');
+}
+
+export type RescueCompletionUserCopy = {
+  title: string;
+  body: string;
+};
+
+/**
+ * Связный пользовательский текст для экрана завершения (без списков и таблиц).
+ */
+export function buildRescueCompletionDescription(
+  outcome: RescueOutcome,
+  completionRaw: unknown,
+  parameterValues: Record<string, number>,
+  parameterNamesById: Record<string, string>,
+  parameterTypesById: Record<string, 'timer' | 'numeric' | undefined>,
+  rescueName: string,
+  parameterDefinitions: readonly { id: string; name?: string | null }[] = [],
+): RescueCompletionUserCopy {
+  const parameterLabels = mergeParameterDisplayLabels(parameterNamesById, parameterDefinitions);
+
+  const c = unwrapCompletionRaw(completionRaw);
+  if (!c || (!c.success && !c.failure)) {
+    return {
+      title: 'Завершено',
+      body: `Вы завершили режим спасения «${rescueName}». Для автоматической оценки результата в контенте должны быть заданы условия завершения (успех и/или неуспех).`,
+    };
+  }
+
+  const successNode = isNullableEmpty(c.success) ? null : c.success;
+  const failureNode = isNullableEmpty(c.failure) ? null : c.failure;
+  const successMatches = successNode
+    ? evaluateRescueCompletionCondition(successNode, parameterValues, parameterDefinitions)
+    : null;
+  const failureMatches = failureNode
+    ? evaluateRescueCompletionCondition(failureNode, parameterValues, parameterDefinitions)
+    : null;
+
+  if (outcome === 'passed') {
+    const title = 'Успех';
+    let body = `Вы успешно завершили режим спасения «${rescueName}». `;
+    if (successNode && successMatches) {
+      const leaves = gatherCompareLeaves(successNode, parameterValues, parameterLabels, parameterDefinitions).filter(
+        (x) => x.satisfied,
+      );
+      const clause = formatNameValueClause(leaves, parameterLabels, parameterDefinitions, parameterTypesById);
+      body += clause
+        ? `Ключевые показатели укладывались в заданные условия: ${clause}.`
+        : 'Контролируемые показатели соответствовали заданным условиям.';
+    } else if (failureNode && failureMatches === false) {
+      body +=
+        'Критерии неблагоприятного исхода не сработали, поэтому по итогам сценария режим засчитан как успешный.';
+    } else {
+      body += 'По итогам сценария режим засчитан как успешный.';
+    }
+    return { title, body };
+  }
+
+  if (outcome === 'failed') {
+    const title = 'Не пройдено';
+    let body = `Вы не прошли режим спасения «${rescueName}»`;
+    if (successNode && successMatches === false) {
+      const all = flattenAllCompareLeaves(successNode, parameterValues, parameterLabels, parameterDefinitions);
+      const bad = uniqueByParameterId(all.filter((x) => !x.satisfied));
+      const clause = formatNameValueClause(bad, parameterLabels, parameterDefinitions, parameterTypesById);
+      body += clause
+        ? `, так как в ходе прохождения не удалось удержать на допустимом уровне ${clause}.`
+        : ', так как не все условия успеха были выполнены.';
+    } else if (failureNode && failureMatches) {
+      const leaves = gatherCompareLeaves(failureNode, parameterValues, parameterLabels, parameterDefinitions).filter(
+        (x) => x.satisfied,
+      );
+      const clause = formatNameValueClause(leaves, parameterLabels, parameterDefinitions, parameterTypesById);
+      body += clause
+        ? ` — сработали условия неблагоприятного исхода (${clause}).`
+        : ' — сработали условия неблагоприятного исхода.';
+    } else {
+      body += '.';
+    }
+    return { title, body };
+  }
+
+  return {
+    title: 'Завершено',
+    body: `Режим спасения «${rescueName}» завершён.`,
+  };
+}
+
 /**
  * Человекочитаемое объяснение итога (список фраз «потому что …»).
  */
@@ -297,6 +588,7 @@ export function getRescueOutcomeBecauseLines(
   completionRaw: unknown,
   parameters: Record<string, number>,
   parameterNamesById: Record<string, string>,
+  parameterDefinitions: readonly { id: string; name?: string | null }[] = [],
 ): string[] {
   const c = unwrapCompletionRaw(completionRaw);
   if (!c) {
@@ -310,25 +602,29 @@ export function getRescueOutcomeBecauseLines(
     return [];
   }
 
-  const successMatches = successNode ? evaluateRescueCompletionCondition(successNode, parameters) : null;
-  const failureMatches = failureNode ? evaluateRescueCompletionCondition(failureNode, parameters) : null;
+  const successMatches = successNode
+    ? evaluateRescueCompletionCondition(successNode, parameters, parameterDefinitions)
+    : null;
+  const failureMatches = failureNode
+    ? evaluateRescueCompletionCondition(failureNode, parameters, parameterDefinitions)
+    : null;
 
   if (outcome === 'passed') {
     if (successMatches && successNode) {
-      return explainSubtree(successNode, parameters, parameterNamesById).reasonsIfTrue;
+      return explainSubtree(successNode, parameters, parameterNamesById, parameterDefinitions).reasonsIfTrue;
     }
     if (failureNode && failureMatches === false) {
-      return explainSubtree(failureNode, parameters, parameterNamesById).reasonsIfFalse;
+      return explainSubtree(failureNode, parameters, parameterNamesById, parameterDefinitions).reasonsIfFalse;
     }
     return [];
   }
 
   if (outcome === 'failed') {
     if (failureMatches && failureNode) {
-      return explainSubtree(failureNode, parameters, parameterNamesById).reasonsIfTrue;
+      return explainSubtree(failureNode, parameters, parameterNamesById, parameterDefinitions).reasonsIfTrue;
     }
     if (successMatches === false && successNode) {
-      return explainSubtree(successNode, parameters, parameterNamesById).reasonsIfFalse;
+      return explainSubtree(successNode, parameters, parameterNamesById, parameterDefinitions).reasonsIfFalse;
     }
     return [];
   }
@@ -336,8 +632,8 @@ export function getRescueOutcomeBecauseLines(
   /* undetermined: оба дерева заданы, оба не совпали */
   const lines: string[] = [];
   if (successNode && failureNode) {
-    const sEx = explainSubtree(successNode, parameters, parameterNamesById);
-    const fEx = explainSubtree(failureNode, parameters, parameterNamesById);
+    const sEx = explainSubtree(successNode, parameters, parameterNamesById, parameterDefinitions);
+    const fEx = explainSubtree(failureNode, parameters, parameterNamesById, parameterDefinitions);
     if (sEx.reasonsIfFalse.length > 0) {
       lines.push(`условия успеха не выполнены: ${sEx.reasonsIfFalse.join('; ')}`);
     }
@@ -354,6 +650,7 @@ export function getRescueOutcomeBecauseLines(
 export function evaluateRescueCompletionCondition(
   node: RescueCompletionConditionVm | Record<string, unknown> | null | undefined,
   parameters: Record<string, number>,
+  parameterDefinitions?: readonly { id: string; name?: string | null }[],
 ): boolean {
   if (node === null || node === undefined || typeof node !== 'object') {
     return false;
@@ -363,7 +660,7 @@ export function evaluateRescueCompletionCondition(
   const typeStr = conditionTypeKey(n);
 
   if (typeStr === 'compare') {
-    const parsed = readCompareFields(n, parameters);
+    const parsed = readCompareFields(n, parameters, parameterDefinitions);
     if (!parsed) return false;
     return applyCompare(parsed.actual, parsed.operator, parsed.expected);
   }
@@ -378,9 +675,13 @@ export function evaluateRescueCompletionCondition(
       return logical === RescueCompletionLogicalOperator.And;
     }
     if (logical === RescueCompletionLogicalOperator.And) {
-      return conditions.every((c) => evaluateRescueCompletionCondition(c, parameters));
+      return conditions.every((c) =>
+        evaluateRescueCompletionCondition(c, parameters, parameterDefinitions),
+      );
     }
-    return conditions.some((c) => evaluateRescueCompletionCondition(c, parameters));
+    return conditions.some((c) =>
+      evaluateRescueCompletionCondition(c, parameters, parameterDefinitions),
+    );
   }
 
   return false;
@@ -389,7 +690,7 @@ export function evaluateRescueCompletionCondition(
 /**
  * Определяет итог прохождения по {@link AppRescueItemCompletionVm} и финальным значениям параметров.
  *
- * - Заданы оба дерева: сначала проверяется success; при несовпадении — failure; иначе итог неопределён.
+ * - Заданы оба дерева: пройдено только если success истинно; иначе не пройдено (failure не задаёт отдельный «третий» исход).
  * - Только success: пройдено, если дерево истинно.
  * - Только failure: не пройдено, если дерево истинно; иначе пройдено.
  * - Ни одного дерева: итог неопределён (нет правил).
@@ -397,6 +698,7 @@ export function evaluateRescueCompletionCondition(
 export function resolveRescueOutcome(
   completion: AppRescueItemCompletionVm | null | undefined,
   parameters: Record<string, number>,
+  parameterDefinitions: readonly { id: string; name?: string | null }[] = [],
 ): RescueOutcome {
   const completionObj = unwrapCompletionRaw(completion);
   if (!completionObj) {
@@ -410,13 +712,15 @@ export function resolveRescueOutcome(
     return 'undetermined';
   }
 
-  const successMatches = successNode ? evaluateRescueCompletionCondition(successNode, parameters) : null;
-  const failureMatches = failureNode ? evaluateRescueCompletionCondition(failureNode, parameters) : null;
+  const successMatches = successNode
+    ? evaluateRescueCompletionCondition(successNode, parameters, parameterDefinitions)
+    : null;
+  const failureMatches = failureNode
+    ? evaluateRescueCompletionCondition(failureNode, parameters, parameterDefinitions)
+    : null;
 
   if (successNode && failureNode) {
-    if (successMatches) return 'passed';
-    if (failureMatches) return 'failed';
-    return 'undetermined';
+    return successMatches ? 'passed' : 'failed';
   }
 
   if (successNode && !failureNode) {

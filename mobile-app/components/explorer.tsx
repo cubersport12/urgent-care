@@ -598,7 +598,7 @@ export function Explorer() {
         }}
         onComplete={async (finalParameters, collectedImplications) => {
           const data = parseRescueItemDataVm(selectedRescueItem.data);
-          const outcome = resolveRescueOutcome(data.completion, finalParameters);
+          const outcome = resolveRescueOutcome(data.completion, finalParameters, data.parameters ?? []);
           const passed = outcome === 'passed';
           try {
             await rescueStatsMutation.addOrUpdate({

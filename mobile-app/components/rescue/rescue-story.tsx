@@ -6,9 +6,9 @@ import {
   RescueSceneChoiceVm,
   RescueTimerParameterVm,
 } from '@/hooks/api/types';
-import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme } from '@/hooks/use-theme-color';
+import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
@@ -410,7 +410,7 @@ export function RescueSceneVisualNovel({
       /> */}
 
       {/* Панель параметров */}
-      {parametersList.length > 0 && (
+      {/* {parametersList.length > 0 && (
         <ThemedView
           style={[
             styles.parametersContainer,
@@ -439,7 +439,7 @@ export function RescueSceneVisualNovel({
             ))}
           </ScrollView>
         </ThemedView>
-      )}
+      )} */}
 
       {/* Центральный блок вариантов ответа */}
       {hasChoices && hasShownChoices && (

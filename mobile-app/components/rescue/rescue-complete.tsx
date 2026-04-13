@@ -5,13 +5,10 @@ import {
 } from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import {
-  getRescueOutcomeBecauseLines,
+  buildRescueCompletionDescription,
   parseRescueItemDataVm,
-  rescueCompletionHasConfiguredRules,
   resolveRescueOutcome,
-  type RescueOutcome,
 } from '@/lib/rescue-completion';
-import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '../themed-text';
@@ -57,88 +54,62 @@ function implicationTagBackground(severity?: RescueParameterSeverityEnum): strin
   }
 }
 
-function outcomeCopy(
-  outcome: RescueOutcome,
-  hasCompletionRules: boolean,
-): { title: string; description: string } {
-  switch (outcome) {
-    case 'passed':
-      return {
-        title: 'Успех',
-        description: 'Поздравляем! Вы успешно прошли этот режим спасения.',
-      };
-    case 'failed':
-      return {
-        title: 'Не пройдено',
-        description: 'К сожалению, по итогам сценария этот режим спасения не засчитан как успешный.',
-      };
-    default:
-      if (hasCompletionRules) {
-        return {
-          title: 'Завершено',
-          description:
-            'Режим спасения завершён. Итоговые значения параметров не совпали ни с условием успеха, ни с условием неуспеха — результат нельзя отнести к одному из этих исходов.',
-        };
-      }
-      return {
-        title: 'Завершено',
-        description:
-          'Режим спасения завершён. Для автоматической оценки результата в контенте должны быть заданы условия завершения (успех и/или неуспех).',
-      };
-  }
-}
-
 export function RescueComplete({
   rescueItem,
   parameterValues,
   selectedImplications = [],
   onBack,
 }: RescueCompleteProps) {
-  const { page: backgroundColor, border: borderColor, primary: primaryShadow, success, error } =
-    useAppTheme();
+  const { page: backgroundColor, primary: primaryShadow, success, error } = useAppTheme();
 
   const data = useMemo(() => parseRescueItemDataVm(rescueItem.data), [rescueItem.data]);
 
-  const hasCompletionRules = useMemo(
-    () => rescueCompletionHasConfiguredRules(data.completion),
-    [data.completion],
-  );
-
   const outcome = useMemo(
-    () => resolveRescueOutcome(data.completion, parameterValues),
-    [data.completion, parameterValues],
+    () => resolveRescueOutcome(data.completion, parameterValues, data.parameters ?? []),
+    [data.completion, parameterValues, data.parameters],
   );
 
   const parameterNamesById = useMemo(() => {
     const m: Record<string, string> = {};
     (data.parameters ?? []).forEach((p) => {
-      m[p.id] = p.name;
+      m[String(p.id)] = p.name;
     });
     return m;
   }, [data.parameters]);
 
-  const becauseLines = useMemo(
-    () => getRescueOutcomeBecauseLines(outcome, data.completion, parameterValues, parameterNamesById),
-    [outcome, data.completion, parameterValues, parameterNamesById],
-  );
+  const parameterTypesById = useMemo(() => {
+    const m: Record<string, 'timer' | 'numeric' | undefined> = {};
+    (data.parameters ?? []).forEach((p) => {
+      const t = p.type === 'timer' ? 'timer' : p.type === 'numeric' ? 'numeric' : undefined;
+      m[String(p.id)] = t;
+    });
+    return m;
+  }, [data.parameters]);
 
-  const { title, description } = outcomeCopy(outcome, hasCompletionRules);
+  const { title, body } = useMemo(
+    () =>
+      buildRescueCompletionDescription(
+        outcome,
+        data.completion,
+        parameterValues,
+        parameterNamesById,
+        parameterTypesById,
+        rescueItem.name,
+        data.parameters ?? [],
+      ),
+    [
+      outcome,
+      data.completion,
+      parameterValues,
+      parameterNamesById,
+      parameterTypesById,
+      rescueItem.name,
+      data.parameters,
+    ],
+  );
 
   const titleColor =
     outcome === 'passed' ? success : outcome === 'failed' ? error : undefined;
-
-  const parametersSummary = useMemo(() => {
-    const list = data.parameters ?? [];
-    if (list.length === 0) return null;
-    return list
-      .map((p) => {
-        const v = parameterValues[p.id];
-        if (v === undefined) return `${p.name}: —`;
-        const shown = p.type === 'timer' ? formatSecondsAsHms(v) : String(v);
-        return `${p.name}: ${shown}`;
-      })
-      .join('\n');
-  }, [data.parameters, parameterValues]);
 
   const implicationTags = useMemo(() => {
     return selectedImplications.filter((imp) => imp?.description?.trim());
@@ -158,17 +129,7 @@ export function RescueComplete({
           <ThemedText style={styles.subtitle} numberOfLines={2}>
             {rescueItem.name}
           </ThemedText>
-          <ThemedText style={styles.description}>{description}</ThemedText>
-          {becauseLines.length > 0 ? (
-            <ThemedView style={styles.becauseBlock}>
-              <ThemedText style={styles.becauseHeading}>Потому что:</ThemedText>
-              {becauseLines.map((line, i) => (
-                <ThemedText key={`${i}-${line.slice(0, 24)}`} style={styles.becauseLine}>
-                  • {line}
-                </ThemedText>
-              ))}
-            </ThemedView>
-          ) : null}
+          <ThemedText style={styles.description}>{body}</ThemedText>
           {implicationTags.length > 0 ? (
             <ThemedView style={styles.implicationsSection}>
               <ThemedText style={styles.implicationsHeading}>Последствия ваших ответов</ThemedText>
@@ -186,12 +147,6 @@ export function RescueComplete({
                   );
                 })}
               </View>
-            </ThemedView>
-          ) : null}
-          {parametersSummary ? (
-            <ThemedView style={[styles.paramsBox, { borderColor }]}>
-              <ThemedText style={styles.paramsLabel}>Итоговые параметры</ThemedText>
-              <ThemedText style={styles.paramsText}>{parametersSummary}</ThemedText>
             </ThemedView>
           ) : null}
           <Button
@@ -242,28 +197,11 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    marginBottom: 12,
-    textAlign: 'center',
-    opacity: 0.85,
-    lineHeight: 24,
-  },
-  becauseBlock: {
-    alignSelf: 'stretch',
     marginBottom: 20,
-    paddingHorizontal: 4,
-  },
-  becauseHeading: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 8,
+    textAlign: 'center',
     opacity: 0.9,
-  },
-  becauseLine: {
-    fontSize: 15,
-    lineHeight: 22,
-    opacity: 0.88,
-    marginBottom: 6,
-    textAlign: 'left',
+    lineHeight: 24,
+    alignSelf: 'stretch',
   },
   implicationsSection: {
     alignSelf: 'stretch',
@@ -294,24 +232,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 19,
     textAlign: 'center',
-  },
-  paramsBox: {
-    alignSelf: 'stretch',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 24,
-  },
-  paramsLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 8,
-    opacity: 0.8,
-  },
-  paramsText: {
-    fontSize: 15,
-    lineHeight: 22,
-    opacity: 0.9,
   },
   backButton: {
     marginTop: 16,
