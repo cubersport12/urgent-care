@@ -1,15 +1,28 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
-
 import { HapticTab } from '@/components/haptic-tab';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
+import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
+import { Redirect, Tabs } from 'expo-router';
+import React from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 export default function TabLayout() {
   const { theme } = useTheme();
+  const { session, initialized } = useAuth();
+
+  if (!initialized) {
+    return (
+      <View style={styles.loadingRoot}>
+        <ActivityIndicator size="large" color={Colors[theme].primary} />
+      </View>
+    );
+  }
+
+  if (!session) {
+    return <Redirect href="/(auth)/login" />;
+  }
 
   return (
     <Tabs
@@ -72,6 +85,11 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  loadingRoot: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerTitle: {
     flexDirection: 'row',
     alignItems: 'center',
