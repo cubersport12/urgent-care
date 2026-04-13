@@ -19,10 +19,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache-dependency-path: ./mobile-app/package-lock.json
           cache: 'npm' # замените на 'yarn' или 'pnpm' при необходимости
+          
 
       - name: Install dependencies
         run: npm ci
+        working-directory: ./mobile-app
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -42,9 +45,11 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
+        working-directory: ./mobile-app
 
       - name: Build Release APK
         run: cd android && ./gradlew assembleRelease
+        working-directory: ./mobile-app
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
