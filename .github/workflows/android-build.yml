@@ -44,12 +44,10 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew
-        working-directory: ./mobile-app
+        run: chmod +x ./mobile-app/android/gradlew
 
       - name: Build Release APK
-        run: cd android && ./gradlew assembleRelease
-        working-directory: ./mobile-app
+        run: cd ./mobile-app/android && ./gradlew assembleRelease
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
