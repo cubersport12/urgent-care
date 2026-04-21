@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "mobile-app",
-    "slug": "mobile-app",
+    "name": "TroubleDent",
+    "slug": "troubledent",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "mobileapp",
+    "icon": "./assets/images/logo.png",
+    "scheme": "troubledent",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -22,7 +22,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.mobileapp"
+      "package": "com.anonymous.troubledent"
     },
     "web": {
       "output": "static",
