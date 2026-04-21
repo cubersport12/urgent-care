@@ -10,6 +10,7 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
@@ -34,6 +35,7 @@ type NullableSeverity = RescueParameterSeverityEnum | null | undefined;
   imports: [
     ReactiveFormsModule,
     MatButton,
+    MatCheckboxModule,
     MatIcon,
     MatDialogModule,
     MatFormFieldModule,
@@ -71,6 +73,7 @@ export class RescueParameterDialogComponent {
       this._dialogData.parameter?.name ?? '',
       Validators.required
     ),
+    isHidden: new FormControl<boolean>(this._dialogData.parameter?.isHidden ?? false, { nonNullable: true }),
     type: new FormControl<'numeric' | 'timer'>(
       this._dialogData.parameter?.type === 'timer' ? 'timer' : 'numeric',
       { nonNullable: true }
@@ -187,6 +190,7 @@ export class RescueParameterDialogComponent {
       this._ref.close({
         id: v.id!,
         name: v.name!,
+        isHidden: v.isHidden ?? false,
         type: 'timer',
         delta: 0,
         startValue: timeInputValueToSeconds(v.timerTime ?? ''),
@@ -197,6 +201,7 @@ export class RescueParameterDialogComponent {
     this._ref.close({
       id: v.id!,
       name: v.name!,
+      isHidden: v.isHidden ?? false,
       type: 'numeric',
       delta: v.delta ?? 0,
       startValue: v.startValue ?? 0,

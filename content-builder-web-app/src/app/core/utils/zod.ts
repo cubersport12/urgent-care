@@ -89,7 +89,8 @@ export const rescueTimerParameterSchema = z.object({
   delta: z.number(),
   startValue: z.number(),
   type: z.enum(['numeric', 'timer']).optional(),
-  severities: z.array(rescueParameterSeveritySchema).optional()
+  severities: z.array(rescueParameterSeveritySchema).optional(),
+  isHidden: z.boolean().nullable().optional()
 });
 
 /** Изменение параметра при выборе */

@@ -10,14 +10,11 @@ import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { Image } from 'expo-image';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
-  cancelAnimation,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withRepeat,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
@@ -66,57 +63,18 @@ function colorsForSeverity(severity?: RescueParameterSeverityEnum): { base: stri
   }
 }
 
-function isHeartbeatSeverity(severity?: RescueParameterSeverityEnum): boolean {
-  return (
-    severity === RescueParameterSeverityEnum.Medium ||
-    severity === RescueParameterSeverityEnum.High
-  );
-}
-
 /** Toast описания уровня: появление сверху вниз */
 function SeverityDescriptionToast({
   message,
-  onDismiss,
 }: {
   message: string | null;
-  onDismiss: () => void;
 }) {
-  const translateY = useSharedValue(-120);
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    if (!message) {
-      translateY.value = -120;
-      opacity.value = 0;
-      return;
-    }
-
-    translateY.value = -100;
-    opacity.value = 0;
-    translateY.value = withTiming(0, { duration: 280 });
-    opacity.value = withTiming(1, { duration: 280 });
-
-    const hideTimer = setTimeout(() => {
-      translateY.value = withTiming(-80, { duration: 240 }, (finished) => {
-        if (finished) runOnJS(onDismiss)();
-      });
-      opacity.value = withTiming(0, { duration: 240 });
-    }, 3200);
-
-    return () => clearTimeout(hideTimer);
-  }, [message, onDismiss, translateY, opacity]);
-
-  const toastStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-    opacity: opacity.value,
-  }));
-
   if (!message) return null;
 
   return (
-    <Animated.View style={[styles.severityToast, toastStyle]} pointerEvents="none">
+    <ThemedView style={styles.severityToast} pointerEvents="none">
       <ThemedText style={styles.severityToastText}>{message}</ThemedText>
-    </Animated.View>
+    </ThemedView>
   );
 }
 
@@ -130,44 +88,11 @@ function ParameterBadge({
   value: number;
   onSeverityDescription?: (description: string) => void;
 }) {
-  const changeScale = useSharedValue(1);
-  const heartbeatScale = useSharedValue(1);
   const backgroundColor = useSharedValue(
     colorsForSeverity(findSeverityForValue(value, param.severities)?.severity).base,
   );
   const prevValueRef = useRef(value);
   const prevBandKeyRef = useRef(severityBandKey(findSeverityForValue(value, param.severities)));
-
-  const currentSeverity = findSeverityForValue(value, param.severities)?.severity;
-
-  /** «Сердцебиение»: два удара + пауза, только для Medium / High */
-  useEffect(() => {
-    if (!isHeartbeatSeverity(currentSeverity)) {
-      cancelAnimation(heartbeatScale);
-      heartbeatScale.value = withTiming(1, { duration: 200 });
-      return;
-    }
-
-    const isHigh = currentSeverity === RescueParameterSeverityEnum.High;
-    const peak1 = isHigh ? 1.12 : 1.08;
-    const trough = isHigh ? 1.02 : 1.03;
-    const peak2 = isHigh ? 1.09 : 1.05;
-    const pauseMs = isHigh ? 320 : 420;
-
-    const beat = withSequence(
-      withTiming(peak1, { duration: 160 }),
-      withTiming(trough, { duration: 110 }),
-      withTiming(peak2, { duration: 130 }),
-      withTiming(1, { duration: 240 }),
-      withTiming(1, { duration: pauseMs }),
-    );
-    heartbeatScale.value = withRepeat(beat, -1, false);
-
-    return () => {
-      cancelAnimation(heartbeatScale);
-      heartbeatScale.value = 1;
-    };
-  }, [currentSeverity, heartbeatScale]);
 
   useEffect(() => {
     if (prevValueRef.current === value) return;
@@ -184,18 +109,13 @@ function ParameterBadge({
 
     const { base: nextBase, flash } = colorsForSeverity(newBand?.severity);
 
-    changeScale.value = withSequence(
-      withTiming(1.15, { duration: 140 }),
-      withTiming(1, { duration: 160 }),
-    );
     backgroundColor.value = withSequence(
       withTiming(flash, { duration: 160 }),
       withTiming(nextBase, { duration: 320 }),
     );
-  }, [value, param.severities, changeScale, backgroundColor, onSeverityDescription]);
+  }, [value, param.severities, backgroundColor, onSeverityDescription]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: changeScale.value * heartbeatScale.value }],
     backgroundColor: backgroundColor.value,
   }));
 
@@ -274,10 +194,6 @@ export function RescueSceneVisualNovel({
   const [hasShownChoices, setHasShownChoices] = useState(false);
   const [severityToastMessage, setSeverityToastMessage] = useState<string | null>(null);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const dismissSeverityToast = useCallback(() => {
-    setSeverityToastMessage(null);
-  }, []);
 
   const fullText = text ?? '';
 
@@ -410,7 +326,7 @@ export function RescueSceneVisualNovel({
       /> */}
 
       {/* Панель параметров */}
-      {/* {parametersList.length > 0 && (
+      { parametersList.length > 0 && (
         <ThemedView
           style={[
             styles.parametersContainer,
@@ -422,7 +338,6 @@ export function RescueSceneVisualNovel({
           <SeverityDescriptionToast
             key={severityToastMessage ?? 'empty'}
             message={severityToastMessage}
-            onDismiss={dismissSeverityToast}
           />
           <ScrollView
             horizontal
@@ -439,7 +354,7 @@ export function RescueSceneVisualNovel({
             ))}
           </ScrollView>
         </ThemedView>
-      )} */}
+      )}
 
       {/* Центральный блок вариантов ответа */}
       {hasChoices && hasShownChoices && (
@@ -504,11 +419,15 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 4,
     backgroundColor: 'transparent',
+    alignItems: 'center',
   },
   parametersScrollContent: {
     paddingHorizontal: 16,
     gap: 8,
     paddingTop: 4,
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   severityToast: {
     position: 'absolute',

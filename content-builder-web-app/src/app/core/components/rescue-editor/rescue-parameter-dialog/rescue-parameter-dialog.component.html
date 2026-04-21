@@ -12,8 +12,9 @@
         <mat-option value="timer">Таймер (время)</mat-option>
       </mat-select>
     </mat-form-field>
+    <mat-checkbox formControlName="isHidden">Скрыть параметр</mat-checkbox>
     @if (_isTimerType()) {
-      <mat-form-field appearance="fill" class="w-full max-w-xs">
+      <mat-form-field appearance="fill" class="w-full">
         <mat-label>Стартовое время</mat-label>
         <input matInput type="time" step="1" formControlName="timerTime">
         <mat-hint>Сохраняется как секунды в поле startValue</mat-hint>

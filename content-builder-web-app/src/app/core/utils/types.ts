@@ -110,6 +110,8 @@ export type RescueTimerParameterVm = {
   severities?: RescueParameterSeverityVm[];
   /** `numeric` — число и delta; `timer` — старт в `startValue` как секунды суток, ввод через время */
   type?: 'numeric' | 'timer';
+  /** Скрыть параметр при отображении в сценариях */
+  isHidden?: NullableValue<boolean>;
 };
 
 /** На какой параметр воздействовать после выбора ответа на вопрос */

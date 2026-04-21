@@ -84,6 +84,7 @@ function parameterGroup(p: NullableValue<RescueTimerParameterVm> = null): FormGr
   return new FormGroup({
     id: new FormControl<string>(p?.id ?? generateGUID(), Validators.required),
     name: new FormControl<string>(p?.name ?? '', Validators.required),
+    isHidden: new FormControl<boolean>(p?.isHidden ?? false, { nonNullable: true }),
     type: new FormControl<'numeric' | 'timer'>(typ, { nonNullable: true }),
     delta: new FormControl<number>(p?.delta ?? 0),
     startValue: new FormControl<number>(p?.startValue ?? 0),
@@ -461,6 +462,7 @@ export class RescueEditorComponent {
       const base: RescueTimerParameterVm = {
         id: p['id'] as string,
         name: p['name'] as string,
+        isHidden: (p['isHidden'] as boolean) ?? false,
         type,
         delta: type === 'timer' ? 0 : (p['delta'] as number) ?? 0,
         startValue: (p['startValue'] as number) ?? 0

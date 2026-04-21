@@ -66,6 +66,10 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
     () => rescueItem.data?.parameters ?? [],
     [rescueItem],
   );
+  const visibleSceneParameters = useMemo(
+    () => sceneParameters.filter((p) => p.isHidden !== true),
+    [sceneParameters],
+  );
 
   const firstTimerParam = useMemo<RescueTimerParameterVm | undefined>(() => {
     return sceneParameters.find((p) => p.type === 'timer');
@@ -205,7 +209,7 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
         choices={currentScene.choices ?? []}
         typingSpeedMs={typingSpeedMs}
         onNext={handleNextScene}
-        parametersList={rescueItem.data?.parameters ?? []}
+        parametersList={visibleSceneParameters}
         parameterValues={parameters}
         isReviewed={currentScene.isReviewed}
       />
