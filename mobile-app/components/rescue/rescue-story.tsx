@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
   },
   sceneText: {
     fontFamily: Fonts.sans,
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '500',
     color: '#FFFFFF',
     lineHeight: 32,
