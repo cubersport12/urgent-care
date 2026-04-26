@@ -9,7 +9,7 @@ import Animated, {
 
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/contexts/theme-context';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/hooks/use-theme-color';
 
 const HEADER_HEIGHT = 250;
 
@@ -23,7 +23,7 @@ export default function ParallaxScrollView({
   headerImage,
   headerBackgroundColor,
 }: Props) {
-  const backgroundColor = useThemeColor({}, 'background');
+  const { page: pageColor } = useAppTheme();
   const { theme } = useTheme();
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollOffset(scrollRef);
@@ -47,7 +47,7 @@ export default function ParallaxScrollView({
   return (
     <Animated.ScrollView
       ref={scrollRef}
-      style={{ backgroundColor, flex: 1 }}
+      style={{ backgroundColor: pageColor, flex: 1 }}
       scrollEventThrottle={16}>
       <Animated.View
         style={[
@@ -57,7 +57,7 @@ export default function ParallaxScrollView({
         ]}>
         {headerImage}
       </Animated.View>
-      <ThemedView style={styles.content}>{children}</ThemedView>
+      <ThemedView style={[styles.content, { backgroundColor: pageColor }]}>{children}</ThemedView>
     </Animated.ScrollView>
   );
 }
@@ -75,5 +75,8 @@ const styles = StyleSheet.create({
     padding: 32,
     gap: 16,
     overflow: 'hidden',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    marginTop: -14,
   },
 });
