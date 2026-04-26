@@ -91,3 +91,19 @@ jobs:
             Версия приложения: ${{ steps.app_version.outputs.version }}.
           files: mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
           overwrite_files: true
+
+      - name: Send test email via Yandex SMTP
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.yandex.ru
+          server_port: 465
+          secure: true
+          username: ${{ secrets.YANDEX_SMTP_USER }}
+          password: ${{ secrets.YANDEX_SMTP_PASS }}
+          subject: TroubleDent APK test
+          to: cubersport1234@yandex.ru
+          from: ${{ secrets.YANDEX_SMTP_USER }}
+          body: |
+            Это тестовое письмо после Android сборки.
+            Релиз: Android v${{ steps.app_version.outputs.version }}
