@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
@@ -51,13 +54,40 @@ jobs:
         run: chmod +x android/gradlew
         working-directory: mobile-app
 
+      - name: Append build hash to app version
+        run: |
+          BUILD_HASH="$(git rev-parse --short HEAD)"
+          node -e "const fs=require('fs'); const path='./mobile-app/package.json'; const pkg=JSON.parse(fs.readFileSync(path,'utf8')); const base=String(pkg.version||'1.0.0').split('+')[0]; pkg.version=base+'+'+process.env.BUILD_HASH; fs.writeFileSync(path, JSON.stringify(pkg, null, 2)+'\n');"
+        env:
+          BUILD_HASH: ${{ github.sha }}
+
       - name: Build Release APK
         run: cd android && ./gradlew assembleRelease
         working-directory: mobile-app
+
+      - name: Prepare named APK artifact
+        run: cp mobile-app/android/app/build/outputs/apk/release/app-release.apk mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
-          path: mobile-app/android/app/build/outputs/apk/release/app-release.apk
+          path: mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
           retention-days: 5
+
+      - name: Read app version
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: app_version
+        run: echo "version=$(node -p \"require('./mobile-app/package.json').version\")" >> $GITHUB_OUTPUT
+
+      - name: Publish APK to GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v${{ steps.app_version.outputs.version }}
+          name: Android v${{ steps.app_version.outputs.version }}
+          body: |
+            Автоматически опубликованный APK из ветки main.
+            Версия приложения: ${{ steps.app_version.outputs.version }}.
+          files: mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
+          overwrite_files: true
