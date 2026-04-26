@@ -55,6 +55,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="stats"
+        options={{
+          title: 'Статистика',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.pie.fill" color={color} />,
+          headerTitle: () => (
+            <View style={styles.headerTitle}>
+              <IconSymbol size={24} name="chart.pie.fill" color={Colors[theme].primary} />
+              <ThemedText style={styles.headerTitleText}>Статистика</ThemedText>
+            </View>
+          ),
+        }}
+      />
+      {/* <Tabs.Screen
         name="rescue"
         options={{
           title: 'Спасение',
@@ -66,7 +79,7 @@ export default function TabLayout() {
             </View>
           ),
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="profile"
         options={{

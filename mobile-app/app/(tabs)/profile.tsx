@@ -59,7 +59,7 @@ export default function ProfileScreen() {
     }
 
     const message =
-      'Вы уверены, что хотите очистить всю статистику по документам и тестам? Это действие нельзя отменить.';
+      'Вы уверены, что хотите очистить всю статистику по документам, тестам и режимам спасения? Это действие нельзя отменить.';
 
     const performClear = async () => {
       setIsClearing(true);
@@ -76,7 +76,13 @@ export default function ProfileScreen() {
           throw testsError.error;
         }
 
-        const successMessage = 'Статистика по документам и тестам очищена';
+        const rescueError = await supabase.from('rescue_stats').delete().eq('clientId', deviceId);
+
+        if (rescueError.error) {
+          throw rescueError.error;
+        }
+
+        const successMessage = 'Статистика по документам, тестам и режимам спасения очищена';
         if (Platform.OS === 'web' && typeof window !== 'undefined') {
           window.alert(successMessage);
         } else {

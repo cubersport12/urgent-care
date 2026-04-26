@@ -34,6 +34,7 @@ const MAPPING = {
   'doc.fill': 'description',
   'doc.text.fill': 'description',
   'list.bullet.clipboard.fill': 'assignment',
+  'chart.pie.fill': 'pie-chart',
   'bolt.fill': 'bolt',
 } as IconMapping;
 
