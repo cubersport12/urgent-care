@@ -6,5 +6,5 @@ import { createClient } from '@supabase/supabase-js';
 })
 export class AppSupabase {
   // eslint-disable-next-line max-len
-  public client = createClient('https://jjqzkpedbpfytjotaank.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcXprcGVkYnBmeXRqb3RhYW5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNjI5MDMsImV4cCI6MjA3MDkzODkwM30.PKjoTccGMVYiuvWqvHoebCa0CPmlHd74a5s9P4mssJc');
+  public client = createClient('http://77.91.90.39:54321', 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz');
 }
