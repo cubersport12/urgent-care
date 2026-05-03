@@ -6,5 +6,5 @@ import { createClient } from '@supabase/supabase-js';
 })
 export class AppSupabase {
   // eslint-disable-next-line max-len
-  public client = createClient('http://77.91.90.39:54321', 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz');
+  public client = createClient('https://trouble-dent.ru', 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz');
 }

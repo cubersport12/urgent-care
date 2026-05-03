@@ -3,7 +3,7 @@ import { createClient, processLock } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
 import 'react-native-url-polyfill/auto';
 
-const supabaseUrl = 'http://77.91.90.39:54321';
+const supabaseUrl = 'https://trouble-dent.ru';
 const supabaseAnonKey = 'sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
