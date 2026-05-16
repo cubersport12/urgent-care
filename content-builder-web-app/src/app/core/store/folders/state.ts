@@ -67,6 +67,39 @@ export class FoldersState {
     return Object.values(model.folders).flat();
   }
 
+  @Action(FoldersActions.MoveFolder)
+  private _moveFolder(ctx: StateContext<FoldersStateModel>, action: FoldersActions.MoveFolder) {
+    const { folderId, parentId } = action;
+    const folders = { ...ctx.getState().folders ?? {} };
+    const targetPid = getNullableId(parentId);
+
+    const folder = Object.values(folders).flat().find(f => f.id === folderId);
+    if (folder == null) {
+      throw new Error('Folder not found');
+    }
+    const oldPid = getNullableId(folder.parentId);
+    const newFolder = {
+      ...folder,
+      parentId: parentId ?? null
+    } as AppFolderVm;
+    return this._foldersStorage.updateFolder(newFolder)
+      .pipe(tap(() => {
+        const newFolders = {
+          ...folders,
+          [targetPid]: [
+            ...folders[targetPid] ?? [],
+            newFolder
+          ]
+        };
+        if (oldPid != null) {
+          newFolders[oldPid] = folders[oldPid].filter(f => f.id !== folderId);
+        }
+        ctx.setState(patch({
+          folders: newFolders
+        }));
+      }));
+  }
+
   @Action(FoldersActions.UpdateFolder)
   private _updateFolder(ctx: StateContext<FoldersStateModel>, action: FoldersActions.UpdateFolder) {
     const state = ctx.getState();

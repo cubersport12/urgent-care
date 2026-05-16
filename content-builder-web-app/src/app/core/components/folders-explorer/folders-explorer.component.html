@@ -1,4 +1,11 @@
-<div class="flex gap-1 p-1 flex-wrap explorer" cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="_handleDrop($event)">
+<div
+  class="flex gap-1 p-1 flex-wrap explorer"
+  cdkDropList
+  cdkDropListOrientation="horizontal"
+  (cdkDropListDropped)="_handleDrop($event)"
+  (click)="_selectedId.set(null)"
+  (contextmenu)="$event.preventDefault()"
+>
   @if (_fetching()) {
     @for (item of _getRandomArray(); track item) {
       <ng-container [ngTemplateOutlet]="styledSkeleton"></ng-container>
@@ -10,22 +17,46 @@
       </div>
     </ng-template>
   } @else {
-    @for (item of _options(); track $index) {
-      <div class="flex flex-col w-24 gap-1 items-center relative" cdkDrag [cdkDragData]="item" [style.opacity]="_isHidden(item) ? 0.6 : 1">
+    @for (item of _options(); track item.id) {
+      <div
+        class="flex flex-col w-24 gap-1 items-center relative"
+        cdkDrag
+        [cdkDragData]="item"
+        [class.explorer-item-selected]="_selectedId() === item.id"
+        [style.opacity]="_isHidden(item) || _isCut(item) ? 0.5 : 1"
+        (click)="_select(item, $event)"
+      >
         @if (_isPending(item.id)()) {
           <ng-container [ngTemplateOutlet]="skeletonItem"></ng-container>
         } @else {
-          <button class="!absolute top-0 right-1 w-4 h-4" mat-ripple [matMenuTriggerFor]="menu">
+          <button type="button" class="!absolute top-0 right-1 w-4 h-4" mat-ripple [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
             <mat-icon class="!w-full !h-full" svgIcon="sliders" />
           </button>
           <mat-menu #menu>
+            @if (item.type !== 'folder') {
+              <button mat-menu-item (click)="_copy(item)">
+                <mat-icon class="!w-4 !h-4" svgIcon="copy" />
+                Копировать
+              </button>
+            }   
+            <button mat-menu-item (click)="_cut(item)">
+              <mat-icon class="!w-4 !h-4" svgIcon="scissors" />
+              Вырезать
+            </button>
+            @if (item.type === 'folder') {
+              <button mat-menu-item [disabled]="!_canPaste()" (click)="_paste(item.id)">
+                <mat-icon class="!w-4 !h-4" svgIcon="paste" />
+                Вставить
+              </button>
+            }
+
             <button mat-menu-item (click)="_delete(item)">
               <mat-icon class="!w-4 !h-4" svgIcon="trash" />
               Удалить
             </button>
           </mat-menu>
 
-          <button (click)="_open(item)" class="flex explorer-item p-1 flex-col hover:bg-gray-300 items-center justify-center" mat-ripple>
+          <button type="button" (click)="_open(item)" class="flex explorer-item p-1 flex-col hover:bg-gray-300 items-center justify-center" mat-ripple>
             <mat-icon class="!w-12 !h-12" [svgIcon]="_getSvgIcon(item)"></mat-icon>
           </button>
           <app-text-editable-value [editing]="_affectOptionId() === item.id" (beginRenaming)="_beginRename(item.id)" [value]="item.name" (valueChange)="_confirmRename(item, $event)" />
@@ -40,4 +71,3 @@
   <app-skeleton shape="circle" size="48px" />
   <app-skeleton height="20px" borderRadius="5px" width="96px" />
 </ng-template>
-
