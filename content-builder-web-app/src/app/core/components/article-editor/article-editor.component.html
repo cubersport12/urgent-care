@@ -26,18 +26,18 @@
       <mat-label>Запускать по окончанию</mat-label>
       <mat-select [formControl]="_form.controls.nextRunArticle">
         @for(article of _allArticles(); track $index) {
-          <mat-option [value]="article.id">
-            {{article.name}}
+          <mat-option [value]="article?.id">
+            {{article?.name ?? 'Не выбрано'}}
           </mat-option>
         }
       </mat-select>
     </mat-form-field>
-    <mat-form-field>
+    <!-- <mat-form-field>
       <mat-label>
         Время на прочтение, мин
       </mat-label>
       <input [formControl]="_form.controls.timeRead" matInput type="number">
-    </mat-form-field>
+    </mat-form-field> -->
     <mat-checkbox [formControl]="_form.controls.disableWhileNotPrevComplete">
       Блокировать, пока не прочитан пред.
     </mat-checkbox>
