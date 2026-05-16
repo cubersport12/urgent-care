@@ -4,19 +4,31 @@ import { AppLoading, ArticlesActions, ArticlesState, FoldersActions, FoldersStat
 import { MatIcon } from '@angular/material/icon';
 import { MatRipple } from '@angular/material/core';
 import { MatMenuModule } from '@angular/material/menu';
-import { AppArticleVm, AppFolderVm, AppRescueItemVm, AppTestVm, BaseRoutedClass, FoldersExplorerService, NullableValue } from '@/core/utils';
+import {
+  AppArticleVm,
+  AppFolderVm,
+  AppRescueItemVm,
+  AppTestQuestionVm,
+  AppTestVm,
+  BaseRoutedClass,
+  ExplorerClipboardEntry,
+  FoldersExplorerService,
+  generateGUID,
+  NullableValue,
+  RescueSceneVm
+} from '@/core/utils';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TextEditableValueComponent } from '../text-editable-value';
 import { SkeletonComponent } from '../skeleton';
 import { ArticleEditorService } from '../article-editor';
-import { Observable } from 'rxjs';
+import { catchError, forkJoin, map, mergeMap, Observable, of } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
-import { orderBy, random, range } from 'lodash';
+import { cloneDeep, orderBy, random, range } from 'lodash';
 import { CdkDropList, CdkDrag, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { TestsEditorService } from '../test-editor';
 import { RescueEditorService } from '../rescue-editor';
+import { AppFilesStorageService } from '@/core/api';
 
-// type OptionType = (AppFolderVm | AppArticleVm) & { type: 'folder' | 'article' };
 type FolderOptionType = AppFolderVm & { type?: 'folder' };
 type ArticleOptionType = AppArticleVm & { type?: 'article' };
 type TestOptionType = AppTestVm & { type?: 'test' };
@@ -48,8 +60,23 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
   private readonly _articlesEditor = inject(ArticleEditorService);
   private readonly _testsEditor = inject(TestsEditorService);
   private readonly _rescueEditor = inject(RescueEditorService);
+  private readonly _filesStorage = inject(AppFilesStorageService);
   protected readonly _getRandomArray = () => range(0, random(3, 10), 1);
   protected readonly _affectOptionId = signal<NullableValue<string>>(null);
+
+  protected readonly _clipboard = this._explorer.clipboard;
+  protected readonly _selectedId = this._explorer.selectedId;
+  protected readonly _canPaste = computed(() => {
+    const clip = this._clipboard();
+    if (clip == null) {
+      return false;
+    }
+    if (clip.type === 'folder' && clip.mode === 'cut') {
+      const targetParentId = this._folderId();
+      return clip.item.id !== targetParentId;
+    }
+    return true;
+  });
 
   protected readonly _isPending = (folderId: string) => computed(() => {
     const renaming = this._affectOptionId();
@@ -61,7 +88,13 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     const deletingArticle = this._dispatched.isDispatched(ArticlesActions.DeleteArticle)();
     const deletingTest = this._dispatched.isDispatched(TestsActions.DeleteTest)();
     const deletingRescue = this._dispatched.isDispatched(RescueActions.DeleteRescueItem)();
-    const dispatched = dispatchedFolder || dispatchedArticle || dispatchedTest || dispatchedRescue || deletingFolder || deletingArticle || deletingTest || deletingRescue;
+    const creatingFolder = this._dispatched.isDispatched(FoldersActions.CreateFolder)();
+    const creatingArticle = this._dispatched.isDispatched(ArticlesActions.CreateArticle)();
+    const creatingTest = this._dispatched.isDispatched(TestsActions.CreateTest)();
+    const creatingRescue = this._dispatched.isDispatched(RescueActions.CreateRescueItem)();
+    const dispatched = dispatchedFolder || dispatchedArticle || dispatchedTest || dispatchedRescue
+      || deletingFolder || deletingArticle || deletingTest || deletingRescue
+      || creatingFolder || creatingArticle || creatingTest || creatingRescue;
     return renaming === folderId && dispatched;
   });
 
@@ -129,6 +162,42 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
       const renaming = this._explorer.beginRename();
       if (renaming) {
         this._beginRename(renaming);
+      }
+    });
+  }
+
+  protected _select(option: OptionType, event: MouseEvent): void {
+    event.stopPropagation();
+    this._explorer.selectedId.set(option.id);
+  }
+
+  protected _isCut(item: OptionType): boolean {
+    const clip = this._clipboard();
+    return clip?.mode === 'cut' && clip.item.id === item.id;
+  }
+
+  protected _copy(option: OptionType): void {
+    this._explorer.selectedId.set(option.id);
+    this._explorer.clipboard.set(this._toClipboardEntry(option, 'copy'));
+  }
+
+  protected _cut(option: OptionType): void {
+    this._explorer.selectedId.set(option.id);
+    this._explorer.clipboard.set(this._toClipboardEntry(option, 'cut'));
+  }
+
+  protected _paste(targetTolderId: string): void {
+    const clip = this._clipboard();
+    if (clip == null || !this._canPaste()) {
+      return;
+    }
+    const order = this._getNextOrder();
+    const action$ = clip.mode === 'cut'
+      ? this._moveItem(clip, targetTolderId, order)
+      : this._duplicateItem(clip, targetTolderId, order);
+    action$.subscribe(() => {
+      if (clip.mode === 'cut') {
+        this._explorer.clipboard.set(null);
       }
     });
   }
@@ -208,6 +277,9 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
   }
 
   protected _delete(option: OptionType): void {
+    if (this._clipboard()?.item.id === option.id) {
+      this._explorer.clipboard.set(null);
+    }
     this._affectOptionId.set(option.id);
     let s: NullableValue<Observable<void>>;
     switch (option.type) {
@@ -257,5 +329,203 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
       }
     });
     this._store.dispatch(actions);
+  }
+
+  private _isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+    return target.closest('input, textarea, [contenteditable="true"]') != null;
+  }
+
+  private _getNextOrder(): number {
+    const options = this._options();
+    if (options.length === 0) {
+      return 0;
+    }
+    return Math.max(...options.map(x => x.order ?? 0)) + 1;
+  }
+
+  private _toClipboardEntry(option: OptionType, mode: 'copy' | 'cut'): ExplorerClipboardEntry {
+    switch (option.type) {
+      case 'folder':
+        return { type: 'folder', item: option, mode };
+      case 'article':
+        return { type: 'article', item: option, mode };
+      case 'test':
+        return { type: 'test', item: option, mode };
+      case 'rescue':
+        return { type: 'rescue', item: option, mode };
+      default:
+        throw new Error('Unknown option type');
+    }
+  }
+
+  private _moveItem(clip: ExplorerClipboardEntry, parentId: NullableValue<string>, order: number): Observable<void> {
+    const payload = { parentId: parentId ?? null, order };
+    switch (clip.type) {
+      case 'folder':
+        return this._store.dispatch(new FoldersActions.MoveFolder(clip.item.id, parentId));
+      case 'article':
+        return this._store.dispatch(new ArticlesActions.UpdateArticle(clip.item.id, payload));
+      case 'test':
+        return this._store.dispatch(new TestsActions.UpdateTest(clip.item.id, payload));
+      case 'rescue':
+        return this._store.dispatch(new RescueActions.UpdateRescueItem(clip.item.id, payload));
+      default:
+        throw new Error('Unknown option type');
+    }
+  }
+
+  private _duplicateItem(clip: ExplorerClipboardEntry, parentId: NullableValue<string>, order: number): Observable<void> {
+    const copyName = `${clip.item.name} (копия)`;
+    switch (clip.type) {
+      case 'folder':
+        return this._store.dispatch(new FoldersActions.CreateFolder(parentId, {
+          id: generateGUID(),
+          name: copyName,
+          order
+        }));
+      case 'article':
+        return this._duplicateArticle(clip.item as AppArticleVm, parentId, order, copyName);
+      case 'test':
+        return this._duplicateTest(clip.item as AppTestVm, parentId, order, copyName);
+      case 'rescue':
+        return this._duplicateRescue(clip.item as AppRescueItemVm, parentId, order, copyName);
+      default:
+        throw new Error('Unknown option type');
+    }
+  }
+
+  private _duplicateArticle(article: AppArticleVm, parentId: NullableValue<string>, order: number, name: string): Observable<void> {
+    const id = generateGUID();
+    const payload: AppArticleVm & { type?: string } = {
+      ...article,
+      id,
+      name,
+      parentId: parentId ?? null,
+      order
+    };
+    delete payload['type'];
+    return this._copyStorageFile(`${article.id}.pdf`, `${id}.pdf`).pipe(
+      mergeMap(() => this._store.dispatch(new ArticlesActions.CreateArticle(payload)))
+    );
+  }
+
+  private _duplicateTest(test: AppTestVm, parentId: NullableValue<string>, order: number, name: string): Observable<void> {
+    const id = generateGUID();
+    const imagePaths = this._collectTestImagePaths(test);
+    return this._copyStorageFiles(imagePaths).pipe(
+      mergeMap((pathMap) => {
+        const questions = (test.questions ?? []).map(q => this._remapTestQuestionImages(cloneDeep(q), pathMap));
+        const payload: AppTestVm & { type?: string } = {
+          ...test,
+          id,
+          name,
+          parentId: parentId ?? null,
+          order,
+          questions
+        };
+        delete payload['type'];
+        return this._store.dispatch(new TestsActions.CreateTest(payload));
+      })
+    );
+  }
+
+  private _duplicateRescue(rescue: AppRescueItemVm, parentId: NullableValue<string>, order: number, name: string): Observable<void> {
+    const id = generateGUID();
+    const data = cloneDeep(rescue.data);
+    const imagePaths = this._collectRescueImagePaths(data.scenes, data.defaultBackground);
+    return this._copyStorageFiles(imagePaths).pipe(
+      mergeMap((pathMap) => {
+        const scenes = (data.scenes ?? []).map(scene => ({
+          ...scene,
+          background: pathMap.get(scene.background) ?? scene.background
+        }));
+        const defaultBackground = data.defaultBackground
+          ? (pathMap.get(data.defaultBackground) ?? data.defaultBackground)
+          : data.defaultBackground;
+        const payload: AppRescueItemVm & { type?: string } = {
+          ...rescue,
+          id,
+          name,
+          parentId: parentId ?? null,
+          order,
+          createdAt: new Date().toISOString(),
+          data: {
+            ...data,
+            scenes,
+            defaultBackground
+          }
+        };
+        delete payload['type'];
+        return this._store.dispatch(new RescueActions.CreateRescueItem(payload));
+      })
+    );
+  }
+
+  private _copyStorageFile(from: string, to: string): Observable<void> {
+    return this._filesStorage.downloadFile(from).pipe(
+      catchError(() => of(null)),
+      mergeMap(blob => blob
+        ? this._filesStorage.uploadFile(to, blob).pipe(map(() => undefined))
+        : of(undefined))
+    );
+  }
+
+  private _copyStorageFiles(paths: string[]): Observable<Map<string, string>> {
+    const unique = [...new Set(paths.filter(p => p.length > 0))];
+    if (unique.length === 0) {
+      return of(new Map());
+    }
+    return forkJoin(unique.map(path => this._filesStorage.downloadFile(path).pipe(
+      catchError(() => of(null)),
+      mergeMap((blob) => {
+        if (blob == null) {
+          return of([path, path] as const);
+        }
+        const newPath = generateGUID();
+        return this._filesStorage.uploadFile(newPath, blob).pipe(map(() => [path, newPath] as const));
+      })
+    ))).pipe(map(entries => new Map(entries)));
+  }
+
+  private _collectTestImagePaths(test: AppTestVm): string[] {
+    const paths: string[] = [];
+    for (const question of test.questions ?? []) {
+      if (question.image) {
+        paths.push(question.image);
+      }
+      for (const answer of question.answers ?? []) {
+        if (answer.image) {
+          paths.push(answer.image);
+        }
+      }
+    }
+    return paths;
+  }
+
+  private _remapTestQuestionImages(question: AppTestQuestionVm, pathMap: Map<string, string>): AppTestQuestionVm {
+    return {
+      ...question,
+      image: question.image ? (pathMap.get(question.image) ?? question.image) : question.image,
+      answers: question.answers?.map(answer => ({
+        ...answer,
+        image: answer.image ? (pathMap.get(answer.image) ?? answer.image) : answer.image
+      }))
+    };
+  }
+
+  private _collectRescueImagePaths(scenes: NullableValue<RescueSceneVm[]>, defaultBackground?: NullableValue<string>): string[] {
+    const paths: string[] = [];
+    if (defaultBackground) {
+      paths.push(defaultBackground);
+    }
+    for (const scene of scenes ?? []) {
+      if (scene.background) {
+        paths.push(scene.background);
+      }
+    }
+    return paths;
   }
 }

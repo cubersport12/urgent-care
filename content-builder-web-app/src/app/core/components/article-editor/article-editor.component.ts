@@ -84,7 +84,10 @@ export class ArticleEditorComponent {
 
   protected readonly _allArticles = computed(() => {
     const result = this._store.selectSignal(ArticlesState.getAllArticles)();
-    return result;
+    return [
+      null,
+      ...result ?? []
+    ];
   });
 
   protected readonly _convertMessages = signal('');

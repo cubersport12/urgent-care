@@ -187,10 +187,10 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
     previousQuestion();
   };
 
-  // Если тест завершен (все вопросы посещены), показываем результаты
-  if (isTestCompleted || areAllQuestionsVisited()) {
+  // Показываем результаты только после явного завершения теста
+  if (isTestCompleted) {
     return <TestResultsView onBack={onBack} onFinish={onFinish} animatedStyle={animatedStyle} />;
-    }
+  }
     
   // Иначе показываем текущий вопрос
   // Проверяем, был ли текущий вопрос посещен до перехода к нему (т.е. перешли через навигацию)

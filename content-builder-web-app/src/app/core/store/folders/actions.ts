@@ -14,6 +14,12 @@ export namespace FoldersActions {
     constructor(public readonly folderId: string, public readonly payload: Partial<AppFolderVm>) {}
   }
 
+  export class MoveFolder {
+    static readonly type = '[Folders] Move Folder';
+
+    constructor(public readonly folderId: string, public readonly parentId: NullableValue<string>) {}
+  }
+
   export class DeleteFolder {
     static readonly type = '[Folders] Delete Folder';
 

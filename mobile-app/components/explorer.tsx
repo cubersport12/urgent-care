@@ -16,6 +16,7 @@ import { useAddOrUpdateTestStats, useTestsStats } from '@/hooks/api/useTestStats
 import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-completion';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
+import { useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -58,6 +59,7 @@ export function Explorer() {
   const previousFolderIdRef = useRef<string | undefined>(undefined);
   const opacity = useSharedValue(1);
   const { isTestStarted, startTest, resetTest } = useTest();
+  const navigation = useNavigation();
 
   const { primary: tintColor, border: borderColor, layout1: currentFolderButtonBackground, neutralSoft: descriptionColor, warning: warningColor } = useAppTheme();
   const { deviceId } = useDeviceId();
@@ -505,6 +507,31 @@ export function Explorer() {
     setRescueFinalParameters({});
     setRescueCollectedImplications([]);
   };
+
+  const resetToRoot = useCallback(() => {
+    setCurrentFolderId(undefined);
+    setSelectedArticle(null);
+    setSelectedTest(null);
+    setSelectedRescueItem(null);
+    setIsRescueStarted(false);
+    setIsRescueCompleted(false);
+    setRescueFinalParameters({});
+    setRescueCollectedImplications([]);
+    setIsNavigating(false);
+    setBreadcrumb([]);
+    setArticleNavigationHistory([]);
+    setIsFolderMenuOpen(false);
+    previousFolderIdRef.current = undefined;
+    resetTest();
+    opacity.value = withTiming(1, { duration: 300 });
+  }, [resetTest, opacity]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', () => {
+      resetToRoot();
+    });
+    return unsubscribe;
+  }, [navigation, resetToRoot]);
 
   // Обработчик перехода к следующему документу
   const handleNextArticle = useCallback(async (nextArticleId: string) => {
