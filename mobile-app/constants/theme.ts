@@ -8,9 +8,9 @@ import { Platform } from 'react-native';
 
 // Primary color palette
 const primaryLight = '#0a7ea4';
-const primaryDark = '#1a2d57';
+const primaryDark = '#3F51B5';
 const onPrimaryLight = '#FFFFFF';
-const onPrimaryDark = '#000000';
+const onPrimaryDark = '#fff';
 
 // Error color palette
 const errorLight = '#F44336';
