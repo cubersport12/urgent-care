@@ -52,11 +52,6 @@ export function TestProvider({ children }: { children: ReactNode }) {
     setStartedAt(new Date().toISOString()); // Сохраняем время начала теста
     setIsTestStarted(true);
     setIsTestCompleted(false);
-    
-    // Отмечаем первый вопрос как посещенный
-    if (testData.questions && testData.questions.length > 0) {
-      setVisitedQuestions(new Set([testData.questions[0].id]));
-    }
   };
 
   const submitAnswer = (questionId: string, answerIds: number[] | string[]) => {
@@ -198,12 +193,8 @@ export function TestProvider({ children }: { children: ReactNode }) {
       const nextUnansweredIndex = findNextUnansweredQuestion(currentQuestionIndex);
 
       if (nextUnansweredIndex !== null) {
-        // Найден следующий неотвеченный вопрос
+        // Найден следующий неотвеченный вопрос (не помечаем его посещённым до показа)
         setCurrentQuestionIndex(nextUnansweredIndex);
-        const nextQuestion = test.questions[nextUnansweredIndex];
-        if (nextQuestion) {
-          setVisitedQuestions(new Set([...updatedVisited, nextQuestion.id]));
-        }
       } else {
         // Если не найден следующий неотвеченный вопрос, проверяем, все ли вопросы посещены
         const allVisited = test.questions.every(q => updatedVisited.has(q.id));
@@ -217,7 +208,6 @@ export function TestProvider({ children }: { children: ReactNode }) {
           });
           if (unvisitedIndex >= 0) {
             setCurrentQuestionIndex(unvisitedIndex);
-            setVisitedQuestions(new Set([...updatedVisited, test.questions[unvisitedIndex].id]));
           } else {
             setIsTestCompleted(true);
           }
