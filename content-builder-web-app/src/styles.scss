@@ -4,12 +4,54 @@
 @tailwind utilities;
 
 html {
-  color-scheme: light;
   @include mat.theme((
     color: mat.$azure-palette,
     typography: Roboto,
     density: 0
   ));
+}
+
+html,
+body {
+  @apply bg-white text-slate-900;
+}
+
+html.dark,
+html.dark body {
+  @apply bg-slate-950 text-slate-100;
+}
+
+html.dark .tc-table .tc-header-cell {
+  background: rgb(30 41 59);
+  color: rgb(226 232 240);
+  border-bottom-color: rgb(51 65 85);
+}
+
+html.dark .tc-table .tc-cell {
+  border-bottom-color: rgb(51 65 85);
+}
+
+html.dark .tc-table .tc-row:not(.tc-row-selected):hover .tc-cell {
+  background: rgb(30 41 59);
+}
+
+html.dark .tc-table .tc-row-selected .tc-cell {
+  background: rgb(29 78 216);
+  color: white;
+  border-bottom-color: rgb(37 99 235);
+}
+
+html.dark .tc-table .tc-row-selected .tc-cell:first-child {
+  box-shadow: inset 3px 0 0 rgb(147 197 253);
+}
+
+html.dark .tc-table .tc-row-selected .tc-type-col,
+html.dark .tc-table .tc-row-selected .tc-row-name {
+  color: white;
+}
+
+html.dark .as-split-gutter {
+  background-color: rgb(71 85 105) !important;
 }
 
 html, body {

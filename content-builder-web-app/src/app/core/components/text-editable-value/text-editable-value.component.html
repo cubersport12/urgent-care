@@ -1,5 +1,5 @@
 @if (editing()) {
-  <input #input (keyup.enter)="_confirmRename()" (keyup.escape)="_cancelRename()" [ngModel]="value()" class="w-full  outline-none border-b-2 w-full overflow-hidden border-gray-500" />
+  <input #input (keyup.enter)="_confirmRename()" (keyup.escape)="_cancelRename()" (blur)="_confirmRename()" [ngModel]="value()" class="w-full outline-none border-b-2 overflow-hidden border-gray-500" />
 } @else {
   <button class="cursor-text w-full" (click)="_beginRename($event)">
     <span class="text-sm break-words w-full">

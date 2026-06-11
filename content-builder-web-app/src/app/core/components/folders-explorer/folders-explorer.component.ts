@@ -1,16 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, linkedSignal, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, linkedSignal, signal, viewChild } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions, ArticlesState, FoldersActions, FoldersState, RescueActions, RescueState, TestsActions, TestsState } from '@/core/store';
 import { MatIcon } from '@angular/material/icon';
-import { MatRipple } from '@angular/material/core';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatDivider } from '@angular/material/divider';
 import {
   AppArticleVm,
   AppFolderVm,
   AppRescueItemVm,
   AppTestQuestionVm,
   AppTestVm,
-  BaseRoutedClass,
   ExplorerClipboardEntry,
   FoldersExplorerService,
   generateGUID,
@@ -24,22 +26,26 @@ import { ArticleEditorService } from '../article-editor';
 import { catchError, forkJoin, map, mergeMap, Observable, of } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
 import { cloneDeep, orderBy, random, range } from 'lodash';
-import { CdkDropList, CdkDrag, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { CdkDropList, CdkDrag, CdkDragDrop, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
 import { TestsEditorService } from '../test-editor';
 import { RescueEditorService } from '../rescue-editor';
-import { AppFilesStorageService } from '@/core/api';
+import { AppFilesStorageService, AppFoldersStorageService } from '@/core/api';
+import { AngularSplitModule } from 'angular-split';
 
 type FolderOptionType = AppFolderVm & { type?: 'folder' };
 type ArticleOptionType = AppArticleVm & { type?: 'article' };
 type TestOptionType = AppTestVm & { type?: 'test' };
 type RescueOptionType = AppRescueItemVm & { type?: 'rescue' };
 type OptionType = FolderOptionType | ArticleOptionType | TestOptionType | RescueOptionType;
+type PanelSide = 'left' | 'right';
 
 @Component({
   selector: 'app-folders-explorer',
   imports: [
-    MatRipple,
     MatIcon,
+    MatIconButton,
+    MatTooltip,
+    MatDivider,
     FormsModule,
     ReactiveFormsModule,
     TextEditableValueComponent,
@@ -47,13 +53,22 @@ type OptionType = FolderOptionType | ArticleOptionType | TestOptionType | Rescue
     MatMenuModule,
     NgTemplateOutlet,
     CdkDropList,
-    CdkDrag
+    CdkDrag,
+    CdkDropListGroup,
+    AngularSplitModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './folders-explorer.component.html',
-  styleUrl: './folders-explorer.component.scss'
+  styleUrl: './folders-explorer.component.scss',
+  host: {
+    class: 'flex flex-col flex-1 min-h-0 overflow-hidden outline-none',
+    tabindex: '0'
+  }
 })
-export class FoldersExplorerComponent extends BaseRoutedClass {
+export class FoldersExplorerComponent {
+  private readonly _host = inject(ElementRef<HTMLElement>);
+  private readonly _document = inject(DOCUMENT);
+  private readonly _destroyRef = inject(DestroyRef);
   private readonly _explorer = inject(FoldersExplorerService);
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
@@ -61,25 +76,120 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
   private readonly _testsEditor = inject(TestsEditorService);
   private readonly _rescueEditor = inject(RescueEditorService);
   private readonly _filesStorage = inject(AppFilesStorageService);
-  protected readonly _getRandomArray = () => range(0, random(3, 10), 1);
+  private readonly _foldersService = inject(AppFoldersStorageService);
+  private readonly _getFolders = this._store.selectSignal(FoldersState.getFolders);
+  private readonly _getArticles = this._store.selectSignal(ArticlesState.getArticles);
+  private readonly _getTests = this._store.selectSignal(TestsState.getTests);
+  private readonly _getRescueItems = this._store.selectSignal(RescueState.getRescueItems);
+  private readonly _contextMenuTrigger = viewChild<MatMenuTrigger>('contextMenuTrigger');
+
+  protected readonly _getRandomArray = () => range(0, random(5, 12), 1);
   protected readonly _affectOptionId = signal<NullableValue<string>>(null);
+  protected readonly _affectOptionPanel = signal<NullableValue<PanelSide>>(null);
+
+  protected readonly _activePanel = signal<PanelSide>('left');
+  protected readonly _leftFolderId = signal<NullableValue<string>>(null);
+  protected readonly _rightFolderId = signal<NullableValue<string>>(null);
+  protected readonly _leftFetching = signal(false);
+  protected readonly _rightFetching = signal(false);
+  protected readonly _leftSelectedId = signal<NullableValue<string>>(null);
+  protected readonly _rightSelectedId = signal<NullableValue<string>>(null);
+  protected readonly _leftPath = signal<AppFolderVm[]>([]);
+  protected readonly _rightPath = signal<AppFolderVm[]>([]);
+  protected readonly _contextMenuItem = signal<NullableValue<OptionType>>(null);
+  protected readonly _contextMenuPanel = signal<PanelSide>('left');
 
   protected readonly _clipboard = this._explorer.clipboard;
-  protected readonly _selectedId = this._explorer.selectedId;
-  protected readonly _canPaste = computed(() => {
+
+  protected readonly _leftOptions = linkedSignal<OptionType[]>(() => this._computeOptions(this._leftFolderId()));
+  protected readonly _rightOptions = linkedSignal<OptionType[]>(() => this._computeOptions(this._rightFolderId()));
+
+  protected readonly _statusText = computed(() => {
+    const side = this._activePanel();
+    const path = this._getPanelPath(side);
+    const pathText = path.length === 0 ? 'Корневая папка' : path.map(f => f.name).join(' / ');
+    const count = this._getPanelOptions(side).length;
     const clip = this._clipboard();
-    if (clip == null) {
-      return false;
+    if (clip != null) {
+      const mode = clip.mode === 'copy' ? 'Копирование' : 'Перемещение';
+      return `${pathText} · ${count} эл. · ${mode}: ${clip.item.name}`;
     }
-    if (clip.type === 'folder' && clip.mode === 'cut') {
-      const targetParentId = this._folderId();
-      return clip.item.id !== targetParentId;
+    const selectedId = this._getSelectedId(side);
+    if (selectedId == null) {
+      return `${pathText} · ${count} эл.`;
     }
-    return true;
+    const item = this._getPanelOptions(side).find(x => x.id === selectedId);
+    return item
+      ? `${pathText} · ${count} эл. · ${this._getTypeLabel(item)}: ${item.name}`
+      : `${pathText} · ${count} эл.`;
   });
 
-  protected readonly _isPending = (folderId: string) => computed(() => {
+  protected readonly _hasSelection = computed(() => this._getActionPanel() != null);
+  protected readonly _isCreating = computed(() => this._dispatched.isDispatched(FoldersActions.CreateFolder)());
+
+  constructor() {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!this._shouldHandleKeyboard(event)) {
+        return;
+      }
+      this._onKeyDown(event);
+    };
+    this._document.addEventListener('keydown', onKeyDown, true);
+    this._destroyRef.onDestroy(() => this._document.removeEventListener('keydown', onKeyDown, true));
+
+    afterNextRender(() => this._focusHost());
+
+    effect(() => {
+      const folderId = this._leftFolderId();
+      this._fetchPanelData(folderId, 'left');
+      if (folderId != null) {
+        this._foldersService.fetchPath(folderId).subscribe(path => this._leftPath.set(path));
+      } else {
+        this._leftPath.set([]);
+      }
+    });
+
+    effect(() => {
+      const folderId = this._rightFolderId();
+      this._fetchPanelData(folderId, 'right');
+      if (folderId != null) {
+        this._foldersService.fetchPath(folderId).subscribe(path => this._rightPath.set(path));
+      } else {
+        this._rightPath.set([]);
+      }
+    });
+
+    effect(() => {
+      const renaming = this._explorer.beginRename();
+      if (renaming) {
+        this._beginRename(renaming, this._activePanel());
+      }
+    });
+  }
+
+  protected _getActionPanel(): NullableValue<PanelSide> {
+    const active = this._activePanel();
+    if (this._getSelectedId(active) != null) {
+      return active;
+    }
+    if (this._leftSelectedId() != null) {
+      return 'left';
+    }
+    if (this._rightSelectedId() != null) {
+      return 'right';
+    }
+    return null;
+  }
+
+  protected _isRenaming(side: PanelSide, itemId: string): boolean {
+    return this._affectOptionId() === itemId && this._affectOptionPanel() === side;
+  }
+
+  protected _isPending(side: PanelSide, itemId: string): boolean {
     const renaming = this._affectOptionId();
+    if (renaming !== itemId || this._affectOptionPanel() !== side) {
+      return false;
+    }
     const dispatchedFolder = this._dispatched.isDispatched(FoldersActions.UpdateFolder)();
     const dispatchedArticle = this._dispatched.isDispatched(ArticlesActions.UpdateArticle)();
     const dispatchedTest = this._dispatched.isDispatched(TestsActions.UpdateTest)();
@@ -95,80 +205,98 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     const dispatched = dispatchedFolder || dispatchedArticle || dispatchedTest || dispatchedRescue
       || deletingFolder || deletingArticle || deletingTest || deletingRescue
       || creatingFolder || creatingArticle || creatingTest || creatingRescue;
-    return renaming === folderId && dispatched;
-  });
-
-  protected readonly _fetching = computed(() =>
-    this._dispatched.isDispatched(FoldersActions.FetchFolders)()
-    || this._dispatched.isDispatched(ArticlesActions.FetchArticles)()
-    || this._dispatched.isDispatched(TestsActions.FetchTests)()
-    || this._dispatched.isDispatched(RescueActions.FetchRescueItems)()
-  );
-
-  protected readonly _options = linkedSignal<OptionType[]>(() => {
-    const folders = this._folders() ?? [];
-    const articles = this._articles() ?? [];
-    const tests = this._tests() ?? [];
-    const rescueItems = this._rescueItems() ?? [];
-    return orderBy([
-      ...folders.map(x => ({ ...x, type: 'folder' } satisfies OptionType)),
-      ...articles.map(x => ({ ...x, type: 'article' } satisfies OptionType)),
-      ...tests.map(x => ({ ...x, type: 'test' } satisfies OptionType)),
-      ...rescueItems.map(x => ({ ...x, type: 'rescue' } satisfies OptionType))
-    ], x => x.order);
-  });
-
-  protected readonly _folders = computed(() => {
-    const parentId = this._folderId();
-    const f = this._store.selectSignal(FoldersState.getFolders)()(parentId);
-    return f;
-  });
-
-  protected readonly _articles = computed(() => {
-    const parentId = this._folderId();
-    const f = this._store.selectSignal(ArticlesState.getArticles)()(parentId);
-    return f;
-  });
-
-  protected _isHidden(item: OptionType): boolean {
-    return item.type === 'test' && item.hidden === true;
+    return renaming === itemId && dispatched;
   }
 
-  protected readonly _tests = computed(() => {
-    const parentId = this._folderId();
-    const f = this._store.selectSignal(TestsState.getTests)()(parentId);
-    return f;
-  });
-
-  protected readonly _rescueItems = computed(() => {
-    const parentId = this._folderId();
-    const f = this._store.selectSignal(RescueState.getRescueItems)()(parentId);
-    return f;
-  });
-
-  constructor() {
-    super();
-    effect(() => {
-      const parentId = this._folderId();
-      this._store.dispatch([
-        new FoldersActions.FetchFolders(parentId),
-        new ArticlesActions.FetchArticles(parentId),
-        new TestsActions.FetchTests(parentId),
-        new RescueActions.FetchRescueItems(parentId)
-      ]);
-    });
-
-    effect(() => {
-      const renaming = this._explorer.beginRename();
-      if (renaming) {
-        this._beginRename(renaming);
-      }
-    });
+  protected _getPanelOptions(side: PanelSide): OptionType[] {
+    return side === 'left' ? this._leftOptions() : this._rightOptions();
   }
 
-  protected _select(option: OptionType, event: MouseEvent): void {
+  protected _getPanelPath(side: PanelSide): AppFolderVm[] {
+    return side === 'left' ? this._leftPath() : this._rightPath();
+  }
+
+  protected _getPanelFolderId(side: PanelSide): NullableValue<string> {
+    return side === 'left' ? this._leftFolderId() : this._rightFolderId();
+  }
+
+  protected _isPanelActive(side: PanelSide): boolean {
+    return this._activePanel() === side;
+  }
+
+  protected _getSelectedId(side: PanelSide): NullableValue<string> {
+    return side === 'left' ? this._leftSelectedId() : this._rightSelectedId();
+  }
+
+  protected _isSelected(side: PanelSide, item: OptionType): boolean {
+    return this._getSelectedId(side) === item.id;
+  }
+
+  protected _activatePanel(side: PanelSide): void {
+    this._activePanel.set(side);
+    this._focusHost();
+  }
+
+  protected _clearSelection(side: PanelSide): void {
+    if (side === 'left') {
+      this._leftSelectedId.set(null);
+      this._explorer.selectedId.set(null);
+    } else {
+      this._rightSelectedId.set(null);
+    }
+  }
+
+  protected _select(side: PanelSide, option: OptionType, event: MouseEvent): void {
     event.stopPropagation();
-    this._explorer.selectedId.set(option.id);
+    this._selectItem(side, option);
+  }
+
+  private _selectItem(side: PanelSide, option: OptionType): void {
+    this._activePanel.set(side);
+    this._leftSelectedId.set(side === 'left' ? option.id : null);
+    this._rightSelectedId.set(side === 'right' ? option.id : null);
+    if (side === 'left') {
+      this._explorer.selectedId.set(option.id);
+    }
+    this._focusHost();
+  }
+
+  protected _handleItemSelect(side: PanelSide, item: OptionType, event: MouseEvent): void {
+    if (this._isRenaming(side, item.id)) {
+      return;
+    }
+    this._select(side, item, event);
+  }
+
+  protected _handleItemOpen(side: PanelSide, item: OptionType, event: MouseEvent): void {
+    if (this._isRenaming(side, item.id)) {
+      return;
+    }
+    event.stopPropagation();
+    this._select(side, item, event);
+    this._open(side, item);
+  }
+
+  protected _renameSelected(): void {
+    const panel = this._getActionPanel();
+    if (panel == null) {
+      return;
+    }
+    const selectedId = this._getSelectedId(panel);
+    if (selectedId != null) {
+      this._beginRename(selectedId, panel);
+    }
+  }
+
+  protected _canPasteTo(targetFolderId: NullableValue<string>): boolean {
+    const clip = this._clipboard();
+    if (clip == null) {
+      return false;
+    }
+    if (clip.type === 'folder' && clip.mode === 'cut') {
+      return clip.item.id !== targetFolderId;
+    }
+    return true;
   }
 
   protected _isCut(item: OptionType): boolean {
@@ -176,25 +304,25 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     return clip?.mode === 'cut' && clip.item.id === item.id;
   }
 
-  protected _copy(option: OptionType): void {
-    this._explorer.selectedId.set(option.id);
+  protected _copy(option: OptionType, side: PanelSide): void {
+    this._select(side, option, new MouseEvent('click'));
     this._explorer.clipboard.set(this._toClipboardEntry(option, 'copy'));
   }
 
-  protected _cut(option: OptionType): void {
-    this._explorer.selectedId.set(option.id);
+  protected _cut(option: OptionType, side: PanelSide): void {
+    this._select(side, option, new MouseEvent('click'));
     this._explorer.clipboard.set(this._toClipboardEntry(option, 'cut'));
   }
 
-  protected _paste(targetTolderId: string): void {
+  protected _paste(targetFolderId: NullableValue<string>): void {
     const clip = this._clipboard();
-    if (clip == null || !this._canPaste()) {
+    if (clip == null || !this._canPasteTo(targetFolderId)) {
       return;
     }
-    const order = this._getNextOrder();
+    const order = this._getNextOrder(targetFolderId);
     const action$ = clip.mode === 'cut'
-      ? this._moveItem(clip, targetTolderId, order)
-      : this._duplicateItem(clip, targetTolderId, order);
+      ? this._moveItem(clip, targetFolderId, order)
+      : this._duplicateItem(clip, targetFolderId, order);
     action$.subscribe(() => {
       if (clip.mode === 'cut') {
         this._explorer.clipboard.set(null);
@@ -202,55 +330,149 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     });
   }
 
-  protected _open(f: OptionType): void {
-    switch (f.type) {
+  protected _pasteToActivePanel(): void {
+    const side = this._activePanel();
+    this._paste(this._getPanelFolderId(side));
+  }
+
+  protected _copySelected(): void {
+    const item = this._getSelectedItem();
+    if (item == null) {
+      return;
+    }
+    const panel = this._getActionPanel();
+    if (panel != null) {
+      this._explorer.clipboard.set(this._toClipboardEntry(item, 'copy'));
+    }
+  }
+
+  protected _cutSelected(): void {
+    const panel = this._getActionPanel();
+    const item = this._getSelectedItem();
+    if (panel == null || item == null) {
+      return;
+    }
+    this._explorer.clipboard.set(this._toClipboardEntry(item, 'cut'));
+  }
+
+  protected _getDropListId(side: PanelSide): string {
+    return side === 'left' ? 'drop-list-left' : 'drop-list-right';
+  }
+
+  protected _getConnectedDropLists(side: PanelSide): string[] {
+    return [this._getDropListId(side === 'left' ? 'right' : 'left')];
+  }
+
+  protected _deleteSelected(): void {
+    const side = this._getActionPanel();
+    if (side == null) {
+      return;
+    }
+    const selectedId = this._getSelectedId(side);
+    const item = this._getPanelOptions(side).find(x => x.id === selectedId);
+    if (item != null) {
+      this._delete(item, side);
+    }
+  }
+
+  protected _open(side: PanelSide, item: OptionType): void {
+    switch (item.type) {
       case 'folder':
-        void this._router.navigate([], {
-          relativeTo: this._activatedRoute,
-          queryParams: {
-            folderId: f.id
-          }
-        });
+        this._navigatePanel(side, item.id);
         break;
       case 'article':
-        this._articlesEditor.openArticle(f);
+        this._articlesEditor.openArticle(item);
         break;
       case 'test':
-        this._testsEditor.openTest(f);
+        this._testsEditor.openTest(item);
         break;
       case 'rescue':
-        this._rescueEditor.openRescue(f);
+        this._rescueEditor.openRescue(item);
         break;
       default:
         throw new Error('Unknown option type');
     }
   }
 
+  protected _navigatePanel(side: PanelSide, folderId: NullableValue<string>): void {
+    if (side === 'left') {
+      this._leftFolderId.set(folderId ?? null);
+    } else {
+      this._rightFolderId.set(folderId ?? null);
+    }
+  }
+
+  protected _canGoUp(side: PanelSide): boolean {
+    return this._getPanelFolderId(side) != null;
+  }
+
+  protected _handleGoUpClick(side: PanelSide, event: MouseEvent): void {
+    event.stopPropagation();
+    this._activatePanel(side);
+    this._goUp(side);
+  }
+
+  protected _goUp(side: PanelSide): void {
+    const path = this._getPanelPath(side);
+    if (path.length > 1) {
+      this._navigatePanel(side, path[path.length - 2].id);
+      return;
+    }
+    this._navigatePanel(side, null);
+  }
+
+  protected _createNewFolder(): void {
+    const parentId = this._getPanelFolderId(this._activePanel());
+    const id = generateGUID();
+    this._store.dispatch(new FoldersActions.CreateFolder(parentId, { name: 'New Folder', id }))
+      .subscribe(() => {
+        this._explorer.beginRename.set(id);
+      });
+  }
+
+  protected _createArticle(): void {
+    this._articlesEditor.openArticle({ parentId: this._getPanelFolderId(this._activePanel()) });
+  }
+
+  protected _createTest(): void {
+    this._testsEditor.openTest({ parentId: this._getPanelFolderId(this._activePanel()) });
+  }
+
+  protected _createRescue(): void {
+    this._rescueEditor.openRescue({ parentId: this._getPanelFolderId(this._activePanel()) });
+  }
+
+  protected _refreshActivePanel(): void {
+    const side = this._activePanel();
+    this._fetchPanelData(this._getPanelFolderId(side), side);
+  }
+
+  protected _onRowContextMenu(event: MouseEvent, side: PanelSide, item: OptionType): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this._contextMenuItem.set(item);
+    this._contextMenuPanel.set(side);
+    this._select(side, item, event);
+    this._contextMenuTrigger()?.openMenu();
+  }
+
   protected _confirmRename(option: OptionType, name: NullableValue<string>): void {
     switch (option.type) {
       case 'folder':
         this._store.dispatch(new FoldersActions.UpdateFolder(option.id, { name: name ?? '' }))
-          .subscribe(() => {
-            this._affectOptionId.set(null);
-          });
+          .subscribe(() => this._clearAffectOption());
         break;
       case 'article':
         this._store.dispatch(new ArticlesActions.UpdateArticle(option.id, { name: name ?? '' }))
-          .subscribe(() => {
-            this._affectOptionId.set(null);
-          });
+          .subscribe(() => this._clearAffectOption());
         break;
       case 'test':
         this._store.dispatch(new TestsActions.UpdateTest(option.id, { name: name ?? '' }))
-          .subscribe(() => {
-            this._affectOptionId.set(null);
-          });
+          .subscribe(() => this._clearAffectOption());
         break;
       case 'rescue':
         this._store.dispatch(new RescueActions.UpdateRescueItem(option.id, { name: name ?? '' }))
-          .subscribe(() => {
-            this._affectOptionId.set(null);
-          });
+          .subscribe(() => this._clearAffectOption());
         break;
       default:
         throw new Error('Unknown option type');
@@ -261,26 +483,43 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     if (option.type === 'folder') {
       return 'folder';
     }
-
     if (option.type === 'article') {
       return 'file-contract';
     }
-
     if (option.type === 'test') {
       return 'sliders';
     }
-
     if (option.type === 'rescue') {
       return 'kit-medical';
     }
     throw new Error('Unknown option type');
   }
 
-  protected _delete(option: OptionType): void {
+  protected _getTypeLabel(option: OptionType): string {
+    switch (option.type) {
+      case 'folder':
+        return 'Папка';
+      case 'article':
+        return 'Документ';
+      case 'test':
+        return 'Тест';
+      case 'rescue':
+        return 'Спасение';
+      default:
+        return '';
+    }
+  }
+
+  protected _isHidden(item: OptionType): boolean {
+    return item.type === 'test' && item.hidden === true;
+  }
+
+  protected _delete(option: OptionType, side: PanelSide): void {
     if (this._clipboard()?.item.id === option.id) {
       this._explorer.clipboard.set(null);
     }
     this._affectOptionId.set(option.id);
+    this._affectOptionPanel.set(side);
     let s: NullableValue<Observable<void>>;
     switch (option.type) {
       case 'folder':
@@ -298,18 +537,38 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
       default:
         throw new Error('Unknown option type');
     }
-    s?.subscribe(() => {
-      this._affectOptionId.set(null);
-    });
+    s?.subscribe(() => this._clearAffectOption());
   }
 
-  protected _beginRename(folderId: string): void {
-    this._affectOptionId.set(folderId);
+  protected _beginRename(itemId: string, side: PanelSide): void {
+    this._affectOptionId.set(itemId);
+    this._affectOptionPanel.set(side);
   }
 
-  protected _handleDrop(event: CdkDragDrop<OptionType[]>) {
-    const options = this._options();
+  private _clearAffectOption(): void {
+    this._affectOptionId.set(null);
+    this._affectOptionPanel.set(null);
+  }
+
+  protected _handleDrop(side: PanelSide, event: CdkDragDrop<OptionType[]>): void {
+    const draggedItem = event.item.data as OptionType;
+    if (event.previousContainer !== event.container) {
+      const targetFolderId = this._resolveDropTargetFolderId(side, event);
+      if (!this._canMoveItemTo(draggedItem, targetFolderId)) {
+        return;
+      }
+      const order = this._getNextOrder(targetFolderId);
+      this._moveItem(this._toClipboardEntry(draggedItem, 'cut'), targetFolderId, order).subscribe();
+      return;
+    }
+
+    const options = [...this._getPanelOptions(side)];
     moveItemInArray(options, event.previousIndex, event.currentIndex);
+    if (side === 'left') {
+      this._leftOptions.set(options);
+    } else {
+      this._rightOptions.set(options);
+    }
     const actions: Array<FoldersActions.UpdateFolder | ArticlesActions.UpdateArticle | TestsActions.UpdateTest | RescueActions.UpdateRescueItem> = [];
     options.forEach((option, index) => {
       const toUpdate = { ...option };
@@ -317,18 +576,167 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
       toUpdate.order = index;
       if (option.type === 'folder') {
         actions.push(new FoldersActions.UpdateFolder(option.id, toUpdate));
-      }
-      else if (option.type === 'article') {
+      } else if (option.type === 'article') {
         actions.push(new ArticlesActions.UpdateArticle(option.id, toUpdate));
-      }
-      else if (option.type === 'test') {
+      } else if (option.type === 'test') {
         actions.push(new TestsActions.UpdateTest(option.id, toUpdate));
-      }
-      else if (option.type === 'rescue') {
+      } else if (option.type === 'rescue') {
         actions.push(new RescueActions.UpdateRescueItem(option.id, toUpdate));
       }
     });
     this._store.dispatch(actions);
+  }
+
+  protected _onKeyDown(event: KeyboardEvent): void {
+    if (this._isEditableTarget(event.target)) {
+      return;
+    }
+    if (event.ctrlKey || event.metaKey) {
+      switch (event.code) {
+        case 'KeyC':
+          event.preventDefault();
+          this._copySelected();
+          return;
+        case 'KeyX':
+          event.preventDefault();
+          this._cutSelected();
+          return;
+        case 'KeyV':
+          event.preventDefault();
+          this._pasteToActivePanel();
+          return;
+      }
+    }
+    switch (event.key) {
+      case 'F5':
+        event.preventDefault();
+        this._copySelected();
+        break;
+      case 'F6':
+        event.preventDefault();
+        this._cutSelected();
+        break;
+      case 'F2':
+        event.preventDefault();
+        this._renameSelected();
+        break;
+      case 'Delete':
+        event.preventDefault();
+        this._deleteSelected();
+        break;
+      case 'Backspace':
+        event.preventDefault();
+        this._goUp(this._activePanel());
+        break;
+      case 'Enter': {
+        const side = this._activePanel();
+        const selectedId = this._getSelectedId(side);
+        const item = this._getPanelOptions(side).find(x => x.id === selectedId);
+        if (item != null) {
+          event.preventDefault();
+          this._open(side, item);
+        }
+        break;
+      }
+      case 'ArrowUp':
+        event.preventDefault();
+        this._navigateSelection(-1);
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        this._navigateSelection(1);
+        break;
+      case 'ArrowLeft':
+        event.preventDefault();
+        this._switchPanel('left');
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        this._switchPanel('right');
+        break;
+    }
+  }
+
+  private _navigateSelection(delta: -1 | 1): void {
+    const side = this._activePanel();
+    const options = this._getPanelOptions(side);
+    if (options.length === 0) {
+      return;
+    }
+    const currentId = this._getSelectedId(side);
+    let index = currentId != null ? options.findIndex(x => x.id === currentId) : -1;
+    if (index === -1) {
+      index = delta > 0 ? 0 : options.length - 1;
+    } else {
+      index = Math.max(0, Math.min(options.length - 1, index + delta));
+    }
+    const item = options[index];
+    this._selectItem(side, item);
+    this._scrollSelectedIntoView(side, item.id);
+  }
+
+  private _switchPanel(side: PanelSide): void {
+    this._activePanel.set(side);
+    const options = this._getPanelOptions(side);
+    if (this._getSelectedId(side) == null && options.length > 0) {
+      this._selectItem(side, options[0]);
+      this._scrollSelectedIntoView(side, options[0].id);
+      return;
+    }
+    this._focusHost();
+  }
+
+  private _scrollSelectedIntoView(side: PanelSide, itemId: string): void {
+    requestAnimationFrame(() => {
+      const row = this._host.nativeElement.querySelector(
+        `tr[data-tc-item-id="${itemId}"][data-tc-side="${side}"]`
+      );
+      row?.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  private _computeOptions(parentId: NullableValue<string>): OptionType[] {
+    const folders = this._getFolders()(parentId) ?? [];
+    const articles = this._getArticles()(parentId) ?? [];
+    const tests = this._getTests()(parentId) ?? [];
+    const rescueItems = this._getRescueItems()(parentId) ?? [];
+    return orderBy([
+      ...folders.map(x => ({ ...x, type: 'folder' } satisfies OptionType)),
+      ...articles.map(x => ({ ...x, type: 'article' } satisfies OptionType)),
+      ...tests.map(x => ({ ...x, type: 'test' } satisfies OptionType)),
+      ...rescueItems.map(x => ({ ...x, type: 'rescue' } satisfies OptionType))
+    ], x => x.order);
+  }
+
+  private _fetchPanelData(parentId: NullableValue<string>, side: PanelSide): void {
+    const fetching = side === 'left' ? this._leftFetching : this._rightFetching;
+    fetching.set(true);
+    this._store.dispatch([
+      new FoldersActions.FetchFolders(parentId),
+      new ArticlesActions.FetchArticles(parentId),
+      new TestsActions.FetchTests(parentId),
+      new RescueActions.FetchRescueItems(parentId)
+    ]).subscribe({
+      complete: () => fetching.set(false),
+      error: () => fetching.set(false)
+    });
+  }
+
+  private _focusHost(): void {
+    this._host.nativeElement.focus({ preventScroll: true });
+  }
+
+  private _shouldHandleKeyboard(event: KeyboardEvent): boolean {
+    if (this._isEditableTarget(event.target)) {
+      return false;
+    }
+    if (!(event.target instanceof HTMLElement)) {
+      return true;
+    }
+    if (event.target.closest('.mat-mdc-dialog-container, .mat-mdc-menu-panel')) {
+      return false;
+    }
+    return true;
   }
 
   private _isEditableTarget(target: EventTarget | null): boolean {
@@ -338,8 +746,38 @@ export class FoldersExplorerComponent extends BaseRoutedClass {
     return target.closest('input, textarea, [contenteditable="true"]') != null;
   }
 
-  private _getNextOrder(): number {
-    const options = this._options();
+  private _getSelectedItem(): NullableValue<OptionType> {
+    const panel = this._getActionPanel();
+    if (panel == null) {
+      return null;
+    }
+    const selectedId = this._getSelectedId(panel);
+    return this._getPanelOptions(panel).find(x => x.id === selectedId) ?? null;
+  }
+
+  private _resolveDropTargetFolderId(side: PanelSide, event: CdkDragDrop<OptionType[]>): NullableValue<string> {
+    const panelFolderId = this._getPanelFolderId(side);
+    const options = this._getPanelOptions(side);
+    const targetItem = options[event.currentIndex];
+    if (targetItem?.type === 'folder') {
+      return targetItem.id;
+    }
+    return panelFolderId;
+  }
+
+  private _canMoveItemTo(item: OptionType, targetFolderId: NullableValue<string>): boolean {
+    if (item.type === 'folder' && item.id === targetFolderId) {
+      return false;
+    }
+    const clip = this._toClipboardEntry(item, 'cut');
+    if (clip.type === 'folder' && clip.mode === 'cut' && clip.item.id === targetFolderId) {
+      return false;
+    }
+    return true;
+  }
+
+  private _getNextOrder(parentId: NullableValue<string>): number {
+    const options = this._computeOptions(parentId);
     if (options.length === 0) {
       return 0;
     }

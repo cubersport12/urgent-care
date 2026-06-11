@@ -22,17 +22,14 @@ export class ToggleLightDarkButtonComponent {
   constructor() {
     effect(() => {
       const mode = this._currentMode();
-      document.documentElement.style.colorScheme = mode;
+      const html = document.documentElement;
+      html.classList.toggle('dark', mode === DARK_MODE);
+      html.style.colorScheme = mode;
       localStorage.setItem(LS_KEY, mode);
     });
   }
 
   protected _handleToggle(): void {
-    const body = document.body;
-    body.classList.remove(LIGHT_MODE, DARK_MODE);
-    this._currentMode.update((currentMode) => {
-      const newMode = currentMode === LIGHT_MODE ? DARK_MODE : LIGHT_MODE;
-      return newMode;
-    });
+    this._currentMode.update(currentMode => currentMode === LIGHT_MODE ? DARK_MODE : LIGHT_MODE);
   }
 }

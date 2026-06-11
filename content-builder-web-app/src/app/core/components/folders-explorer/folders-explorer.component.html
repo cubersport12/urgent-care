@@ -1,73 +1,199 @@
-<div
-  class="flex gap-1 p-1 flex-wrap explorer"
-  cdkDropList
-  cdkDropListOrientation="horizontal"
-  (cdkDropListDropped)="_handleDrop($event)"
-  (click)="_selectedId.set(null)"
-  (contextmenu)="$event.preventDefault()"
->
-  @if (_fetching()) {
-    @for (item of _getRandomArray(); track item) {
-      <ng-container [ngTemplateOutlet]="styledSkeleton"></ng-container>
-    }
+<div class="flex flex-col flex-1 min-h-0 bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+  <div class="flex items-center gap-0.5 border-b border-slate-200 bg-white px-1 py-0.5 shrink-0 dark:border-slate-700 dark:bg-slate-800">
+    <div class="flex items-center">
+      <button type="button" mat-icon-button [disabled]="_isCreating()" (click)="_createNewFolder()" matTooltip="Создать папку">
+        <mat-icon [svgIcon]="_isCreating() ? 'spinner' : 'folder'" />
+      </button>
+      <button type="button" mat-icon-button [disabled]="_isCreating()" (click)="_createArticle()" matTooltip="Добавить текстовый документ">
+        <mat-icon svgIcon="file-contract" />
+      </button>
+      <button type="button" mat-icon-button (click)="_createTest()" matTooltip="Создать тест">
+        <mat-icon svgIcon="file-circle-check" />
+      </button>
+      <button type="button" mat-icon-button (click)="_createRescue()" matTooltip="Создать спасение">
+        <mat-icon svgIcon="kit-medical" />
+      </button>
+    </div>
 
-    <ng-template #styledSkeleton>
-      <div class="flex flex-col w-24 gap-1 items-center relative">
-        <ng-container [ngTemplateOutlet]="skeletonItem"></ng-container>
-      </div>
-    </ng-template>
-  } @else {
-    @for (item of _options(); track item.id) {
-      <div
-        class="flex flex-col w-24 gap-1 items-center relative"
-        cdkDrag
-        [cdkDragData]="item"
-        [class.explorer-item-selected]="_selectedId() === item.id"
-        [style.opacity]="_isHidden(item) || _isCut(item) ? 0.5 : 1"
-        (click)="_select(item, $event)"
-      >
-        @if (_isPending(item.id)()) {
-          <ng-container [ngTemplateOutlet]="skeletonItem"></ng-container>
-        } @else {
-          <button type="button" class="!absolute top-0 right-1 w-4 h-4" mat-ripple [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
-            <mat-icon class="!w-full !h-full" svgIcon="sliders" />
-          </button>
-          <mat-menu #menu>
-            @if (item.type !== 'folder') {
-              <button mat-menu-item (click)="_copy(item)">
-                <mat-icon class="!w-4 !h-4" svgIcon="copy" />
-                Копировать
-              </button>
-            }   
-            <button mat-menu-item (click)="_cut(item)">
-              <mat-icon class="!w-4 !h-4" svgIcon="scissors" />
-              Вырезать
-            </button>
-            @if (item.type === 'folder') {
-              <button mat-menu-item [disabled]="!_canPaste()" (click)="_paste(item.id)">
-                <mat-icon class="!w-4 !h-4" svgIcon="paste" />
-                Вставить
-              </button>
-            }
+    <mat-divider [vertical]="true" class="!h-7 mx-0.5" />
 
-            <button mat-menu-item (click)="_delete(item)">
-              <mat-icon class="!w-4 !h-4" svgIcon="trash" />
-              Удалить
-            </button>
-          </mat-menu>
+    <div class="flex items-center">
+      <button type="button" mat-icon-button (click)="_copySelected()" [disabled]="!_hasSelection()" matTooltip="Ctrl+C — копировать">
+        <mat-icon svgIcon="copy" />
+      </button>
+      <button type="button" mat-icon-button (click)="_cutSelected()" [disabled]="!_hasSelection()" matTooltip="Ctrl+X — вырезать">
+        <mat-icon svgIcon="scissors" />
+      </button>
+      <button type="button" mat-icon-button (click)="_pasteToActivePanel()" [disabled]="!_canPasteTo(_getPanelFolderId(_activePanel()))" matTooltip="Ctrl+V — вставить">
+        <mat-icon svgIcon="paste" />
+      </button>
+    </div>
 
-          <button type="button" (click)="_open(item)" class="flex explorer-item p-1 flex-col hover:bg-gray-300 items-center justify-center" mat-ripple>
-            <mat-icon class="!w-12 !h-12" [svgIcon]="_getSvgIcon(item)"></mat-icon>
-          </button>
-          <app-text-editable-value [editing]="_affectOptionId() === item.id" (beginRenaming)="_beginRename(item.id)" [value]="item.name" (valueChange)="_confirmRename(item, $event)" />
-        }
+    <mat-divider [vertical]="true" class="!h-7 mx-0.5" />
 
-      </div>
-    }
-  }
+    <div class="flex items-center">
+      <button type="button" mat-icon-button (click)="_renameSelected()" [disabled]="!_hasSelection()" matTooltip="F2 — переименовать">
+        <mat-icon svgIcon="pen-to-square" />
+      </button>
+      <button type="button" mat-icon-button color="warn" (click)="_deleteSelected()" [disabled]="!_hasSelection()" matTooltip="Delete — удалить">
+        <mat-icon svgIcon="trash" />
+      </button>
+    </div>
+
+    <mat-divider [vertical]="true" class="!h-7 mx-0.5" />
+
+    <div class="flex items-center">
+      <button type="button" mat-icon-button (click)="_refreshActivePanel()" matTooltip="Обновить">
+        <mat-icon svgIcon="rotate-right" />
+      </button>
+    </div>
+
+    <p class="ml-auto min-w-0 shrink px-2 text-[11px] leading-snug text-slate-400 truncate select-none dark:text-slate-500">
+      ↑↓ выбор · ←/→ панели · Ctrl+C копировать · Ctrl+X вырезать · Ctrl+V вставить · F2 переименовать · Delete удалить · Enter открыть · Backspace вверх · F5/F6 копировать/вырезать
+    </p>
+  </div>
+
+  <as-split direction="horizontal" unit="percent" class="flex-1 min-h-0">
+    <as-split-area [size]="50" [minSize]="25">
+      <ng-container *ngTemplateOutlet="panelTemplate; context: { side: 'left', fetching: _leftFetching() }" />
+    </as-split-area>
+    <as-split-area [size]="50" [minSize]="25">
+      <ng-container *ngTemplateOutlet="panelTemplate; context: { side: 'right', fetching: _rightFetching() }" />
+    </as-split-area>
+  </as-split>
+
+  <div class="border-t border-slate-200 bg-slate-100 px-2 py-1 text-xs text-slate-600 truncate shrink-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+    {{ _statusText() }}
+  </div>
 </div>
 
-<ng-template #skeletonItem>
-  <app-skeleton shape="circle" size="48px" />
-  <app-skeleton height="20px" borderRadius="5px" width="96px" />
+<button type="button" class="hidden" #contextMenuTrigger [matMenuTriggerFor]="contextMenu"></button>
+<mat-menu #contextMenu="matMenu">
+  @if (_contextMenuItem(); as item) {
+    <button mat-menu-item (click)="_open(_contextMenuPanel(), item)">
+      <mat-icon svgIcon="folder-open" />
+      Открыть
+    </button>
+    <button mat-menu-item (click)="_beginRename(item.id, _contextMenuPanel())">
+      <mat-icon svgIcon="pen-to-square" />
+      Переименовать
+    </button>
+    <button mat-menu-item (click)="_copy(item, _contextMenuPanel())">
+      <mat-icon svgIcon="copy" />
+      Копировать
+    </button>
+    <button mat-menu-item (click)="_cut(item, _contextMenuPanel())">
+      <mat-icon svgIcon="scissors" />
+      Вырезать
+    </button>
+    @if (_clipboard() && _canPasteTo(_getPanelFolderId(_contextMenuPanel()))) {
+      <button mat-menu-item (click)="_paste(_getPanelFolderId(_contextMenuPanel()))">
+        <mat-icon svgIcon="paste" />
+        Вставить сюда
+      </button>
+    }
+    @if (item.type === 'folder' && _clipboard() && _canPasteTo(item.id)) {
+      <button mat-menu-item (click)="_paste(item.id)">
+        <mat-icon svgIcon="paste" />
+        Вставить в папку
+      </button>
+    }
+    <button mat-menu-item (click)="_delete(item, _contextMenuPanel())">
+      <mat-icon svgIcon="trash" />
+      Удалить
+    </button>
+  }
+</mat-menu>
+
+<ng-template #panelTemplate let-side="side" let-fetching="fetching">
+  <section
+    class="flex flex-col h-full min-h-0 border-2 transition-colors bg-white dark:bg-slate-950"
+    [class.border-blue-500]="_isPanelActive(side)"
+    [class.border-transparent]="!_isPanelActive(side)"
+    (mousedown)="_activatePanel(side)"
+    (click)="_clearSelection(side)"
+  >
+    <div class="relative flex-1 min-h-0 overflow-auto" cdkDropListGroup (click)="$event.stopPropagation()">
+      @if (fetching) {
+        <div class="absolute inset-0 z-10 bg-white/50 dark:bg-slate-950/50"></div>
+      }
+
+      <table class="w-full tc-table text-left">
+        <thead>
+          <tr>
+            <th class="tc-header-cell">Имя</th>
+            <th class="tc-header-cell tc-type-col">Тип</th>
+          </tr>
+        </thead>
+        @if (_canGoUp(side)) {
+          <tbody>
+            <tr
+              class="tc-parent-row cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+              (dblclick)="_handleGoUpClick(side, $event)"
+            >
+              <td class="tc-cell" colspan="2">
+                <span class="font-bold text-lg leading-none tracking-widest text-slate-600 dark:text-slate-300">...</span>
+              </td>
+            </tr>
+          </tbody>
+        }
+
+        <tbody
+          cdkDropList
+          [id]="_getDropListId(side)"
+          [cdkDropListConnectedTo]="_getConnectedDropLists(side)"
+          cdkDropListOrientation="vertical"
+          [cdkDropListData]="_getPanelOptions(side)"
+          (cdkDropListDropped)="_handleDrop(side, $event)"
+        >
+          @for (item of _getPanelOptions(side); track item.id) {
+            <tr
+              class="tc-row cursor-pointer"
+              [class.tc-row-selected]="_isSelected(side, item)"
+              [attr.data-tc-item-id]="item.id"
+              [attr.data-tc-side]="side"
+              cdkDrag
+              [cdkDragData]="item"
+              [style.opacity]="_isHidden(item) || _isCut(item) ? 0.5 : 1"
+              (click)="_handleItemSelect(side, item, $event)"
+              (dblclick)="_handleItemOpen(side, item, $event)"
+              (contextmenu)="_onRowContextMenu($event, side, item)"
+            >
+              <td class="tc-cell">
+                @if (_isPending(side, item.id)) {
+                  <div class="flex items-center gap-2 py-0.5">
+                    <app-skeleton shape="circle" size="20px" />
+                    <app-skeleton height="16px" borderRadius="4px" width="70%" />
+                  </div>
+                } @else {
+                  <div class="flex items-center gap-2 min-w-0 py-0.5 text-left">
+                    <mat-icon class="!w-5 !h-5 shrink-0 text-amber-500" [svgIcon]="_getSvgIcon(item)" cdkDragHandle />
+                    @if (_isRenaming(side, item.id)) {
+                      <app-text-editable-value
+                        class="min-w-0 flex-1 text-left"
+                        [editing]="true"
+                        [value]="item.name"
+                        (valueChange)="_confirmRename(item, $event)"
+                      />
+                    } @else {
+                      <span class="tc-row-name min-w-0 flex-1 truncate text-left text-sm text-slate-900 dark:text-slate-100">{{ item.name }}</span>
+                    }
+                  </div>
+                }
+              </td>
+              <td class="tc-cell tc-type-col text-xs text-slate-500 dark:text-slate-400">
+                {{ _getTypeLabel(item) }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (_getPanelOptions(side).length === 0 && !_canGoUp(side)) {
+        <div class="flex h-full min-h-24 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
+          Папка пуста
+        </div>
+      }
+    </div>
+  </section>
 </ng-template>

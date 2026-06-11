@@ -41,23 +41,33 @@ export class TextEditableValueComponent extends BaseControlValueAccessor<string>
   }
 
   protected _confirmRename(): void {
+    if (!this.editing()) {
+      return;
+    }
     const input = this._target()?.nativeElement;
     this._valueChanged(input?.value ?? '');
-    this._endRename();
+    this._stopEditing();
   }
 
   protected _cancelRename(): void {
-    this._endRename();
+    this._stopEditing();
+  }
+
+  private _stopEditing(): void {
+    this.editing.set(false);
+    this.endRenaming.emit();
   }
 
   @HostListener('document:click', ['$event'])
-  public _endRename(event?: MouseEvent): void {
-    const input = this._target()?.nativeElement;
-    if (event?.target === input) {
+  public _onDocumentClick(event: MouseEvent): void {
+    if (!this.editing()) {
       return;
-    };
-    this.editing.set(false);
-    this.endRenaming.emit();
+    }
+    const input = this._target()?.nativeElement;
+    if (event.target === input || input?.contains(event.target as Node)) {
+      return;
+    }
+    this._confirmRename();
   }
 
   protected _beginRename(event: MouseEvent): void {

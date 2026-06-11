@@ -3,14 +3,12 @@ import { AppIconsRegistry, AppSupabase, NullableValue } from '@/core/utils';
 import { ToggleLightDarkButtonComponent } from '@/core/components';
 import { Store } from '@ngxs/store';
 import { FoldersActions, FoldersState } from '@/core/store';
-import { AppNavbarComponent } from '@/core/components';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   imports: [
     ToggleLightDarkButtonComponent,
-    AppNavbarComponent,
     RouterOutlet
   ],
   host: {
