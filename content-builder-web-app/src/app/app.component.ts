@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { AppIconsRegistry, AppSupabase, NullableValue } from '@/core/utils';
 import { ToggleLightDarkButtonComponent } from '@/core/components';
 import { Store } from '@ngxs/store';
@@ -17,6 +17,7 @@ import { RouterOutlet } from '@angular/router';
     class: 'block w-full h-full relative'
   },
   templateUrl: './app.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.component.scss'
 })
 export class AppComponent {

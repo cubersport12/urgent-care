@@ -26,7 +26,7 @@
       <mat-label>Запускать по окончанию</mat-label>
       <mat-select [formControl]="_form.controls.nextRunArticle">
         @for(article of _allArticles(); track $index) {
-          <mat-option [value]="article?.id">
+          <mat-option [value]="$safeNavigationMigration(article?.id)">
             {{article?.name ?? 'Не выбрано'}}
           </mat-option>
         }

@@ -1,6 +1,6 @@
 import { AppLoading, TestsActions } from '@/core/store';
 import { AppTestAccessablityCondition, AppTestQuestionVm, AppTestVm, generateGUID, NullableValue } from '@/core/utils';
-import { Component, computed, effect, inject, Injectable } from '@angular/core';
+import { Component, computed, effect, inject, Injectable, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -49,6 +49,7 @@ export class TestsEditorService {
     TestQuestionsBuilderComponent
   ],
   templateUrl: './test-editor.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``
 })
 export class TestEditorComponent {

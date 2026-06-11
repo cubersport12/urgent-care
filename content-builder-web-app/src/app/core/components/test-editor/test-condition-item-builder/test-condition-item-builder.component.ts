@@ -6,7 +6,7 @@ import {
   AppTestAccessablityConditionTestScore,
   AppTestAccessablityConditionTestSuccedded,
   AppTestAccessablityLogicalOperator } from '@/core/utils';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -33,6 +33,7 @@ type TestParamType = AppTestAccessablityConditionTestScore['type'] | AppTestAcce
     MatButton
   ],
   templateUrl: './test-condition-item-builder.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``
 })
 export class TestConditionItemBuilderComponent {

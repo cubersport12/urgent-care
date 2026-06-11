@@ -1,5 +1,5 @@
 import { BaseControlValueAccessor } from '@/core/utils';
-import { Component, effect, ElementRef, HostListener, model, output, viewChild } from '@angular/core';
+import { Component, effect, ElementRef, HostListener, model, output, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 @Component({
@@ -16,6 +16,7 @@ import { FormsModule, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/fo
       multi: true
     }
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   host: {
     class: 'w-full block'
   }

@@ -32,7 +32,7 @@
           }
         </mat-select>
       </mat-form-field>
-      @switch (_form.value.activationCondition?.kind) {
+      @switch ($safeNavigationMigration(_form.value.activationCondition?.kind)) {
         @case (AppTestQuestionActivationConditionKind.CompleteQuestion) {
           <mat-form-field class="grow">
             <mat-label>Вопрос</mat-label>

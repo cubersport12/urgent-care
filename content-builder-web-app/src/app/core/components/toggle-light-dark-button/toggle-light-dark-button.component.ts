@@ -1,4 +1,4 @@
-import { Component, effect, signal } from '@angular/core';
+import { Component, effect, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 
@@ -13,6 +13,7 @@ const LS_KEY = 'theme';
     MatIconButton
   ],
   templateUrl: './toggle-light-dark-button.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './toggle-light-dark-button.component.scss'
 })
 export class ToggleLightDarkButtonComponent {

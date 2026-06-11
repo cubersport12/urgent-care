@@ -1,6 +1,6 @@
 import { AppLoading, FoldersActions } from '@/core/store';
 import { AppFolderVm, BaseRoutedClass, FoldersExplorerService, generateGUID } from '@/core/utils';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { Store } from '@ngxs/store';
@@ -17,6 +17,7 @@ import { RescueEditorService } from '../rescue-editor';
     MatButton,
     AppBreadcrumbsComponent
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './app-navbar.component.html'
 })
 export class AppNavbarComponent extends BaseRoutedClass {

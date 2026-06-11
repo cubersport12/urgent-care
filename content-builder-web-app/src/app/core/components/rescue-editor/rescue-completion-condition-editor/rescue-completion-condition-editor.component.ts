@@ -5,7 +5,7 @@ import {
   RescueCompletionGroupVm,
   RescueCompletionLogicalOperator
 } from '@/core/utils';
-import { Component, forwardRef, input, output } from '@angular/core';
+import { Component, forwardRef, input, output, ChangeDetectionStrategy } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
@@ -27,6 +27,7 @@ export type RescueCompletionParameterOption = { id: string; name: string };
     forwardRef(() => RescueCompletionConditionEditorComponent)
   ],
   templateUrl: './rescue-completion-condition-editor.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: `
     :host {
       display: block;

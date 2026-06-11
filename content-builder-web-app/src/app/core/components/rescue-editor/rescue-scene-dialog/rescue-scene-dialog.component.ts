@@ -4,7 +4,7 @@ import {
   RescueSceneChoiceVm,
   RescueSceneVm
 } from '@/core/utils';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -44,6 +44,7 @@ export type RescueSceneDialogData = {
     MatCheckboxModule
   ],
   templateUrl: './rescue-scene-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``
 })
 export class RescueSceneDialogComponent {

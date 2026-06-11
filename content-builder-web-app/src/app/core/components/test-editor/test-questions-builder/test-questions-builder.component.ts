@@ -1,5 +1,5 @@
 import { AppTestQuestionVm, NullableValue } from '@/core/utils';
-import { Component, inject, Injector, input, signal, ViewContainerRef } from '@angular/core';
+import { Component, inject, Injector, input, signal, ViewContainerRef, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MatMiniFabButton, MatIconButton, MatButton } from '@angular/material/button';
 import { MatRipple } from '@angular/material/core';
@@ -59,6 +59,7 @@ type ControlValueType = AppTestQuestionVm[];
       multi: true
     }
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   host: {
     class: 'w-full block grow overflow-hidden'
   }

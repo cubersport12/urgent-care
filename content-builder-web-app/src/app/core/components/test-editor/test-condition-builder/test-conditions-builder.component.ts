@@ -1,5 +1,5 @@
 import { AppTestAccessablityCondition, AppTestAccessablityLogicalOperator, NullableValue } from '@/core/utils';
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MatIconButton, MatMiniFabButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -30,6 +30,7 @@ type ControlValueType = AppTestAccessablityCondition[];
       multi: true
     }
   ],
+  changeDetection: ChangeDetectionStrategy.Eager,
   host: {
     class: 'w-full block'
   }

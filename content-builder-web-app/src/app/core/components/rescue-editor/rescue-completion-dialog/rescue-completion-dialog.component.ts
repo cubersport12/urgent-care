@@ -1,7 +1,7 @@
 import { AppRescueItemCompletionVm, RescueCompletionConditionVm } from '@/core/utils';
 import { validateAppRescueItemCompletion } from '@/core/utils/rescue-completion-format';
 import { safeParseAppRescueItemCompletion } from '@/core/utils/zod';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatDivider } from '@angular/material/divider';
@@ -32,6 +32,7 @@ function cloneCondition(c: RescueCompletionConditionVm | null | undefined): Resc
     RescueCompletionConditionEditorComponent
   ],
   templateUrl: './rescue-completion-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: `
     :host {
       display: block;

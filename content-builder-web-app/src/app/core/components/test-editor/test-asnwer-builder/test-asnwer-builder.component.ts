@@ -1,5 +1,5 @@
 import { AppTestQuestionAnswerVm, NullableValue } from '@/core/utils';
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -23,6 +23,7 @@ import { CdkTableModule } from "@angular/cdk/table";
     CdkTableModule
 ],
   templateUrl: './test-asnwer-builder.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``
 })
 export class TestAsnwerBuilderComponent {

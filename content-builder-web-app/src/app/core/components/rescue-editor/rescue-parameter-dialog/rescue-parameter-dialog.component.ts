@@ -6,7 +6,7 @@ import {
   secondsToTimeInputValue,
   timeInputValueToSeconds
 } from '@/core/utils';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
@@ -45,6 +45,7 @@ type NullableSeverity = RescueParameterSeverityEnum | null | undefined;
     MatTableModule
   ],
   templateUrl: './rescue-parameter-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``
 })
 export class RescueParameterDialogComponent {

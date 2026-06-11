@@ -13,7 +13,7 @@ import {
   RescueScheneChoiceImplicationVm,
   RescueTimerParameterVm
 } from '@/core/utils';
-import { Component, computed, effect, inject, Injectable } from '@angular/core';
+import { Component, computed, effect, inject, Injectable, ChangeDetectionStrategy } from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -140,6 +140,7 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
     CdkDrag
   ],
   templateUrl: './rescue-editor.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: `
     .cdk-drag-preview {
       box-sizing: border-box;

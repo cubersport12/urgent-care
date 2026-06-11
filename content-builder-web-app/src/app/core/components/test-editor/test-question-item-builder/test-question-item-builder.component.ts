@@ -1,6 +1,6 @@
 import { AppTestQuestionActivationConditionKind, AppTestQuestionAnswerVm, AppTestQuestionVm, generateGUID, NullableValue, openFile } from '@/core/utils';
 import { NgClass } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -30,6 +30,7 @@ import { AppFilesStorageService } from '@/core/api';
     NgClass
   ],
   templateUrl: './test-question-item-builder.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``
 })
 export class TestQuestionItemBuilderComponent {

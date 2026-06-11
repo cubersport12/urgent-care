@@ -6,7 +6,7 @@ import {
   RescueSceneChoiceVm,
   RescueScheneChoiceImplicationVm
 } from '@/core/utils';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -62,6 +62,7 @@ function parameterChangeGroup(p: NullableValue<RescueChoiceParameterChangeVm> = 
     MatTableModule
   ],
   templateUrl: './rescue-choice-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``
 })
 export class RescueChoiceDialogComponent {

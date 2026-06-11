@@ -16,16 +16,16 @@
     }
   },
   "dependencies": {
-    "@angular/animations": "^21.2.17",
-    "@angular/cdk": "^21.2.14",
-    "@angular/common": "^21.2.17",
-    "@angular/compiler": "^21.2.17",
-    "@angular/core": "^21.2.17",
-    "@angular/forms": "^21.2.17",
-    "@angular/material": "^21.2.14",
-    "@angular/platform-browser": "^21.2.17",
-    "@angular/platform-browser-dynamic": "^21.2.17",
-    "@angular/router": "^21.2.17",
+    "@angular/animations": "^22.0.1",
+    "@angular/cdk": "^22.0.1",
+    "@angular/common": "^22.0.1",
+    "@angular/compiler": "^22.0.1",
+    "@angular/core": "^22.0.1",
+    "@angular/forms": "^22.0.1",
+    "@angular/material": "^22.0.1",
+    "@angular/platform-browser": "^22.0.1",
+    "@angular/platform-browser-dynamic": "^22.0.1",
+    "@angular/router": "^22.0.1",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@ngxs/store": "^20.1.0",
@@ -40,9 +40,9 @@
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular/build": "^21.2.14",
-    "@angular/cli": "^21.2.14",
-    "@angular/compiler-cli": "^21.2.17",
+    "@angular/build": "^22.0.1",
+    "@angular/cli": "^22.0.1",
+    "@angular/compiler-cli": "^22.0.1",
     "@eslint/js": "^9.17.0",
     "@stylistic/eslint-plugin": "^2.12.1",
     "@types/jasmine": "~5.1.0",
@@ -52,6 +52,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^9.17.0",
     "globals": "^15.14.0",
+    "istanbul-lib-instrument": "^6.0.3",
     "jasmine-core": "~5.4.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
@@ -61,7 +62,8 @@
     "less": "^4.2.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "typescript": "~5.9.2",
-    "typescript-eslint": "^8.18.2"
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.18.2",
+    "vitest": "^4.0.8"
   }
 }

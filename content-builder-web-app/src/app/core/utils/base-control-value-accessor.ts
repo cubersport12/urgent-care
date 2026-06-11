@@ -1,4 +1,4 @@
-import { Directive, model, output, signal } from '@angular/core';
+import { Directive, model, output, signal, input, linkedSignal } from '@angular/core';
 import { ControlValueAccessor } from '@angular/forms';
 import { NullableValue } from './types';
 
@@ -7,7 +7,8 @@ type ControlValueAccessorFn<T> = (value: T) => void;
 @Directive()
 export class BaseControlValueAccessor<T> implements ControlValueAccessor {
   private _fn: NullableValue<(value: T) => void>;
-  public readonly value = model<NullableValue<T>>(null);
+  public readonly valueInput = input<NullableValue<T>>(null, {alias: 'value'});
+  public readonly value = linkedSignal(this.valueInput);
   public readonly valueChange = output<NullableValue<T>>();
   public readonly disabled = model<boolean>();
 

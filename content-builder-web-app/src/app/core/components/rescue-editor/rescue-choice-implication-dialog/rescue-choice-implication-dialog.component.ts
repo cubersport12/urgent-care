@@ -2,7 +2,7 @@ import {
   RescueParameterSeverityEnum,
   RescueScheneChoiceImplicationVm
 } from '@/core/utils';
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -27,6 +27,7 @@ export type RescueChoiceImplicationDialogData = {
     MatOption
   ],
   templateUrl: './rescue-choice-implication-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``
 })
 export class RescueChoiceImplicationDialogComponent {
