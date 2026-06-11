@@ -31,7 +31,7 @@ jobs:
           node-version: '20' # Укажите нужную версию Node.js
       
       - name: Установка зависимостей Start Page
-        run: npm install
+        run: npm install --legacy-peer-deps
         working-directory: ./start-page
 
       - name: Сборка приложения Start Page
