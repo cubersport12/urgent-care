@@ -1,0 +1,39 @@
+<h2 mat-dialog-title>Генерация режима спасения</h2>
+<mat-dialog-content class="relative flex flex-col gap-4 min-w-[min(100%,480px)]">
+  <p class="text-sm text-slate-600 dark:text-slate-400 m-0">
+    Опишите сценарий: ситуацию, параметры, развилки и желаемый исход. ИИ сформирует черновик для редактирования.
+  </p>
+
+  <mat-form-field class="w-full" appearance="outline">
+    <mat-label>Промпт-сценарий</mat-label>
+    <textarea
+      matInput
+      rows="8"
+      [formControl]="_prompt"
+      placeholder="Например: ожог кипятком на кухне, параметры — боль и время до приезда скорой..."
+    ></textarea>
+  </mat-form-field>
+
+  @if (_error(); as err) {
+    <p class="text-sm text-red-600 dark:text-red-400 m-0 p-2 rounded bg-red-500/10">{{ err }}</p>
+  }
+
+  @if (_generating()) {
+    <div class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded bg-white/80 dark:bg-slate-900/80">
+      <mat-spinner diameter="40" />
+      <span class="text-sm text-slate-600 dark:text-slate-300">Генерация сценария…</span>
+    </div>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end" class="flex flex-wrap gap-2">
+  <button type="button" mat-button [disabled]="_generating()" (click)="_cancel()">Отмена</button>
+  <button
+    type="button"
+    mat-flat-button
+    color="primary"
+    [disabled]="_generating() || _prompt.invalid"
+    (click)="_generate()"
+  >
+    Сгенерировать
+  </button>
+</mat-dialog-actions>

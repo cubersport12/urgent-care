@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "prestart": "node scripts/write-environment.mjs",
     "start": "ng serve",
+    "prebuild": "node scripts/write-environment.mjs",
     "build": "ng build --base-href=/urgent-care/content-builder/ --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
@@ -37,6 +39,7 @@
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.25.2",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {

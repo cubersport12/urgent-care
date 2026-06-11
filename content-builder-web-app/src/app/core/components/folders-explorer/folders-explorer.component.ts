@@ -438,8 +438,12 @@ export class FoldersExplorerComponent {
     this._testsEditor.openTest({ parentId: this._getPanelFolderId(this._activePanel()) });
   }
 
-  protected _createRescue(): void {
-    this._rescueEditor.openRescue({ parentId: this._getPanelFolderId(this._activePanel()) });
+  protected _createRescueManual(): void {
+    this._rescueEditor.openRescueManual(this._getPanelFolderId(this._activePanel()));
+  }
+
+  protected _createRescueWithAi(): void {
+    this._rescueEditor.openRescueWithAi(this._getPanelFolderId(this._activePanel()));
   }
 
   protected _refreshActivePanel(): void {

@@ -40,3 +40,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Local / CI-generated DeepSeek token
+/src/environments/deepseek-token.ts

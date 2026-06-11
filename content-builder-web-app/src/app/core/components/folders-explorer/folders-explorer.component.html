@@ -10,9 +10,19 @@
       <button type="button" mat-icon-button (click)="_createTest()" matTooltip="Создать тест">
         <mat-icon svgIcon="file-circle-check" />
       </button>
-      <button type="button" mat-icon-button (click)="_createRescue()" matTooltip="Создать спасение">
+      <button type="button" mat-icon-button [matMenuTriggerFor]="rescueCreateMenu" matTooltip="Создать спасение">
         <mat-icon svgIcon="kit-medical" />
       </button>
+      <mat-menu #rescueCreateMenu="matMenu">
+        <button mat-menu-item (click)="_createRescueManual()">
+          <mat-icon svgIcon="pen-to-square" />
+          Добавить вручную
+        </button>
+        <button mat-menu-item (click)="_createRescueWithAi()">
+          <mat-icon svgIcon="bolt" />
+          Сгенерировать через ИИ
+        </button>
+      </mat-menu>
     </div>
 
     <mat-divider [vertical]="true" class="!h-7 mx-0.5" />

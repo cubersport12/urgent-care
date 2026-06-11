@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
   AppTestAccessablityLogicalOperator,
   AppTestQuestionActivationConditionKind,
@@ -84,53 +85,53 @@ export const rescueParameterSeveritySchema = z.object({
 
 /** Схема параметра по таймеру (id, name, delta, startValue, type?, severities?) */
 export const rescueTimerParameterSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  delta: z.number(),
-  startValue: z.number(),
-  type: z.enum(['numeric', 'timer']).optional(),
-  severities: z.array(rescueParameterSeveritySchema).optional(),
-  isHidden: z.boolean().nullable().optional()
+  id: z.string().describe('UUID параметра'),
+  name: z.string().describe('Отображаемое имя параметра'),
+  delta: z.number().describe('Изменение за тик таймера; для type=timer обычно 0'),
+  startValue: z.number().describe('Стартовое значение: число или секунды суток для timer'),
+  type: z.enum(['numeric', 'timer']).optional().describe('numeric — число; timer — время'),
+  severities: z.array(rescueParameterSeveritySchema).optional().describe('Диапазоны и уровни серьёзности'),
+  isHidden: z.boolean().nullable().optional().describe('Скрыть параметр в UI')
 });
 
 /** Изменение параметра при выборе */
 export const rescueChoiceParameterChangeSchema = z.object({
-  parameterId: z.string(),
-  value: z.number()
+  parameterId: z.string().describe('id параметра из data.parameters'),
+  value: z.number().describe('На сколько изменить параметр (может быть отрицательным)')
 });
 
 /** Последствие выбора в сцене (описание + серьёзность) */
 export const rescueSceneChoiceImplicationSchema = z.object({
-  description: z.string(),
-  severity: z.nativeEnum(RescueParameterSeverityEnum)
+  description: z.string().describe('Текст последствия выбора'),
+  severity: z.nativeEnum(RescueParameterSeverityEnum).describe('Уровень серьёзности: normal | low | medium | high')
 });
 
 /** Вариант выбора в сцене */
 export const rescueSceneChoiceSchema = z.object({
-  id: z.string(),
-  text: z.string(),
-  parameterChanges: z.array(rescueChoiceParameterChangeSchema).optional(),
-  nextSceneId: z.string().nullable().optional(),
-  implications: z.array(rescueSceneChoiceImplicationSchema).default([])
+  id: z.string().describe('UUID варианта выбора'),
+  text: z.string().describe('Текст кнопки / действия игрока'),
+  parameterChanges: z.array(rescueChoiceParameterChangeSchema).optional().describe('Изменения параметров после выбора'),
+  nextSceneId: z.string().nullable().optional().describe('id следующей сцены; null — конец ветки'),
+  implications: z.array(rescueSceneChoiceImplicationSchema).default([]).describe('Последствия выбора')
 });
 
 /** Сцена визуальной новеллы */
 export const rescueSceneSchema = z.object({
-  id: z.string(),
-  order: z.number().nullable().optional(),
-  background: z.string(),
-  text: z.string(),
-  choices: z.array(rescueSceneChoiceSchema).optional(),
-  hidden: z.boolean().nullable().optional(),
-  isReviewed: z.boolean().nullable().optional()
+  id: z.string().describe('UUID сцены'),
+  order: z.number().nullable().optional().describe('Порядок сцены в сценарии'),
+  background: z.string().describe('URL или id файла фона'),
+  text: z.string().describe('Текст сцены — описание ситуации'),
+  choices: z.array(rescueSceneChoiceSchema).optional().describe('Варианты действий; пустой массив — вводный слайд без выбора'),
+  hidden: z.boolean().nullable().optional().describe('Скрыть сцену'),
+  isReviewed: z.boolean().nullable().optional().describe('Сцена проверена редактором')
 });
 
 /** Лист дерева: сравнение параметра с числом */
 export const rescueCompletionCompareSchema = z.object({
   type: z.literal('compare'),
-  parameterId: z.string(),
-  operator: z.nativeEnum(RescueCompletionCompareOperator),
-  value: z.number()
+  parameterId: z.string().describe('id из parameters'),
+  operator: z.nativeEnum(RescueCompletionCompareOperator).describe('eq | neq | gt | gte | lt | lte'),
+  value: z.number().describe('Константа для сравнения')
 });
 
 /** Рекурсивное условие завершения спасения (compare | group) */
@@ -146,8 +147,8 @@ export const rescueCompletionConditionSchema: z.ZodType<RescueCompletionConditio
 );
 
 export const appRescueItemCompletionSchema = z.object({
-  success: rescueCompletionConditionSchema.nullable().optional(),
-  failure: rescueCompletionConditionSchema.nullable().optional()
+  success: rescueCompletionConditionSchema.nullable().optional().describe('Дерево условий успешного завершения'),
+  failure: rescueCompletionConditionSchema.nullable().optional().describe('Дерево условий неуспешного завершения')
 });
 
 /** Безопасный разбор `AppRescueItemCompletionVm` (например после редактирования в UI) */
@@ -156,12 +157,23 @@ export function safeParseAppRescueItemCompletion(data: unknown) {
 }
 
 export const rescueItemDataSchema = z.object({
-  parameters: z.array(rescueTimerParameterSchema).optional(),
-  scenes: z.array(rescueSceneSchema).optional(),
-  /** URL или id фона по умолчанию (как у сцены) */
-  defaultBackground: z.string().optional(),
-  completion: appRescueItemCompletionSchema.optional()
+  parameters: z.array(rescueTimerParameterSchema).optional().describe('Общие параметры, изменяемые по таймеру'),
+  scenes: z.array(rescueSceneSchema).optional().describe('Сцены визуальной новеллы'),
+  defaultBackground: z.string().optional().describe('URL или id фона по умолчанию'),
+  completion: appRescueItemCompletionSchema.optional().describe('Условия успеха и неуспеха')
 });
+
+/** JSON Schema AppRescueItemDataVm для вставки в промпт */
+export function formatRescueItemDataSchemaForPrompt(): string {
+  return JSON.stringify(
+    zodToJsonSchema(rescueItemDataSchema, {
+      name: 'AppRescueItemDataVm',
+      $refStrategy: 'none'
+    }),
+    null,
+    2
+  );
+}
 
 export const rescueItemSchema = z.object({
   id: z.string(),

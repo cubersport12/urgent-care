@@ -46,6 +46,11 @@ import { AppFilesStorageService } from '@/core/api';
 import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { signal } from '@angular/core';
 import { forkJoin, take } from 'rxjs';
+import {
+  RescueAiGenerateDialogComponent,
+  RescueAiGenerateDialogData,
+  RescueAiGenerateDialogResult
+} from './rescue-ai-generate-dialog/rescue-ai-generate-dialog.component';
 
 /** Упорядочивание сцен при загрузке по сохранённому `order`, иначе — исходный порядок в массиве */
 function sortScenesByStoredOrder(scenes: RescueSceneVm[]): RescueSceneVm[] {
@@ -76,6 +81,27 @@ export class RescueEditorService {
       disableClose: true,
       data: rescue
     });
+  }
+
+  openRescueManual(parentId: NullableValue<string>): void {
+    this.openRescue({ parentId });
+  }
+
+  openRescueWithAi(parentId: NullableValue<string>): void {
+    this._dialogs
+      .open(RescueAiGenerateDialogComponent, {
+        data: { parentId } satisfies RescueAiGenerateDialogData,
+        width: '560px',
+        maxWidth: '95vw',
+        disableClose: false
+      })
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((result: RescueAiGenerateDialogResult | undefined) => {
+        if (result != null) {
+          this.openRescue(result);
+        }
+      });
   }
 }
 

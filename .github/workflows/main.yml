@@ -45,6 +45,8 @@ jobs:
       - name: Сборка приложения Content Builder
         run: npm run build
         working-directory: ./content-builder-web-app
+        env:
+          DEEPSEEK_TOKEN: ${{ secrets.DEEPSEEK_TOKEN }}
 
       - name: Установка зависимостей mobile app
         run: npm install
