@@ -28,7 +28,7 @@ jobs:
       - name: Установка Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '20' # Укажите нужную версию Node.js
+          node-version: '22' # Укажите нужную версию Node.js
       
       - name: Установка зависимостей Start Page
         run: npm install --legacy-peer-deps
