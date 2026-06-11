@@ -51,7 +51,7 @@ export class TextEditableValueComponent extends BaseControlValueAccessor<string>
   }
 
   @HostListener('document:click', ['$event'])
-  private _endRename(event?: MouseEvent): void {
+  public _endRename(event?: MouseEvent): void {
     const input = this._target()?.nativeElement;
     if (event?.target === input) {
       return;

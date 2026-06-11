@@ -28,7 +28,7 @@
     "@angular/router": "^22.0.1",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
-    "@ngxs/store": "^20.1.0",
+    "@ngxs/store": "^21.0.0",
     "@supabase/supabase-js": "^2.39.7",
     "angular-split": "^20.0.0",
     "jszip": "^3.10.1",
