@@ -1,9 +1,12 @@
-import { useAppTheme, useThemeValue } from '@/hooks/use-theme-color';
+import { Radius } from '@/constants/theme';
+import { useAppTheme, useGlass, useThemeValue } from '@/hooks/use-theme-color';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Gradients } from '@/constants/theme';
 import { Platform, Pressable, StyleSheet, type PressableProps } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { IconSymbol } from './icon-symbol';
 
-export type ButtonVariant = 'primary' | 'success' | 'error' | 'default';
+export type ButtonVariant = 'primary' | 'success' | 'error' | 'default' | 'glass' | 'gradient' | 'ghost';
 export type ButtonSize = 'small' | 'medium' | 'large';
 
 export type ButtonProps = PressableProps & {
@@ -27,9 +30,22 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
-  const { primary: primaryColor, onPrimary: onPrimaryColor, success: successColor, onSuccess: onSuccessColor, error: errorColor, onError: onErrorColor, layout1, layout2, onLayout1 } = useAppTheme();
+  const theme = useAppTheme();
+  const glass = useGlass();
   const disabledOpacityValue = useThemeValue('disabledOpacity');
-  
+  const {
+    primary: primaryColor,
+    onPrimary: onPrimaryColor,
+    success: successColor,
+    onSuccess: onSuccessColor,
+    error: errorColor,
+    onError: onErrorColor,
+    layout1,
+    layout2,
+    onLayout1,
+    text,
+  } = theme;
+
   const getButtonColors = () => {
     switch (variant) {
       case 'primary':
@@ -50,105 +66,135 @@ export function Button({
           pressedBackgroundColor: errorColor + 'CC',
           textColor: onErrorColor,
         };
+      case 'glass':
+        return {
+          backgroundColor: glass.background,
+          pressedBackgroundColor: glass.backgroundHover,
+          textColor: text,
+          borderColor: glass.border,
+        };
+      case 'ghost':
+        return {
+          backgroundColor: 'transparent',
+          pressedBackgroundColor: glass.backgroundSubtle,
+          textColor: text,
+        };
+      case 'gradient':
+        return {
+          backgroundColor: 'transparent',
+          pressedBackgroundColor: 'transparent',
+          textColor: onPrimaryColor,
+        };
       case 'default':
+      default:
         return {
           backgroundColor: layout1,
           pressedBackgroundColor: layout2,
           textColor: onLayout1,
         };
-      default:
-        return {
-          backgroundColor: primaryColor,
-          pressedBackgroundColor: primaryColor + 'CC',
-          textColor: onPrimaryColor,
-        };
     }
   };
 
   const colors = getButtonColors();
-  const isDisabled = disabled || props.disabled;
+  const isDisabled = disabled;
 
   const getSizeStyles = () => {
     switch (size) {
       case 'small':
-        return {
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-          minHeight: 36,
-          fontSize: 14,
-        };
+        return { paddingHorizontal: 12, paddingVertical: 8, minHeight: 36, fontSize: 14 };
       case 'large':
-        return {
-          paddingHorizontal: 20,
-          paddingVertical: 16,
-          minHeight: 52,
-          fontSize: 18,
-        };
-      case 'medium':
+        return { paddingHorizontal: 20, paddingVertical: 16, minHeight: 52, fontSize: 18 };
       default:
-        return {
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-          minHeight: 44,
-          fontSize: 16,
-        };
+        return { paddingHorizontal: 16, paddingVertical: 12, minHeight: 44, fontSize: 16 };
     }
   };
 
   const sizeStyles = getSizeStyles();
 
+  const inner = (
+    <>
+      {icon && iconPosition === 'left' && (
+        <IconSymbol name={icon as never} size={sizeStyles.fontSize} color={isDisabled ? onLayout1 : colors.textColor} />
+      )}
+      <ThemedText
+        lightColor={isDisabled ? onLayout1 : colors.textColor}
+        darkColor={isDisabled ? onLayout1 : colors.textColor}
+        style={[styles.text, { fontSize: sizeStyles.fontSize }]}
+      >
+        {title}
+      </ThemedText>
+      {icon && iconPosition === 'right' && (
+        <IconSymbol name={icon as never} size={sizeStyles.fontSize} color={isDisabled ? onLayout1 : colors.textColor} />
+      )}
+    </>
+  );
+
+  if (variant === 'gradient') {
+    return (
+      <Pressable
+        {...props}
+        disabled={isDisabled}
+        style={(state) => {
+          const resolvedStyle = typeof style === 'function' ? style(state) : style;
+          return [
+            fullWidth ? { width: '100%' as const } : null,
+            {
+              opacity: isDisabled ? disabledOpacityValue : state.pressed ? 0.9 : 1,
+              transform: [{ scale: state.pressed && !isDisabled ? 0.98 : 1 }],
+            },
+            resolvedStyle,
+          ];
+        }}
+      >
+        <LinearGradient
+          colors={[...Gradients.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[
+            styles.button,
+            {
+              paddingHorizontal: sizeStyles.paddingHorizontal,
+              paddingVertical: sizeStyles.paddingVertical,
+              minHeight: sizeStyles.minHeight,
+            },
+          ]}
+        >
+          {inner}
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       {...props}
       disabled={isDisabled}
-      style={({ pressed }) => [
-        styles.button,
-        {
-          backgroundColor: isDisabled 
-            ? (variant === 'default' ? layout2 : layout2)
-            : pressed 
-            ? colors.pressedBackgroundColor 
-            : colors.backgroundColor,
-          paddingHorizontal: sizeStyles.paddingHorizontal,
-          paddingVertical: sizeStyles.paddingVertical,
-          minHeight: sizeStyles.minHeight,
-          opacity: isDisabled ? disabledOpacityValue : pressed ? 0.8 : 1,
-          width: fullWidth ? '100%' : 'auto',
-        },
-        style,
-      ]}
+      style={(state) => {
+        const resolvedStyle = typeof style === 'function' ? style(state) : style;
+        return [
+          styles.button,
+          {
+            backgroundColor: isDisabled
+              ? layout2
+              : state.pressed
+                ? colors.pressedBackgroundColor
+                : colors.backgroundColor,
+            paddingHorizontal: sizeStyles.paddingHorizontal,
+            paddingVertical: sizeStyles.paddingVertical,
+            minHeight: sizeStyles.minHeight,
+            opacity: isDisabled ? disabledOpacityValue : state.pressed ? 0.85 : 1,
+            width: fullWidth ? ('100%' as const) : ('auto' as const),
+            borderWidth: variant === 'glass' ? 1 : 0,
+            borderColor: 'borderColor' in colors ? colors.borderColor : undefined,
+          },
+          resolvedStyle,
+        ];
+      }}
       {...(Platform.OS === 'web' && {
         cursor: isDisabled ? 'not-allowed' : 'pointer',
       })}
     >
-      {({ pressed }) => (
-        <>
-          {icon && iconPosition === 'left' && (
-            <IconSymbol 
-              name={icon} 
-              size={sizeStyles.fontSize} 
-              color={isDisabled ? onLayout1 : colors.textColor} 
-            />
-          )}
-          <ThemedText
-            lightColor={isDisabled ? onLayout1 : colors.textColor}
-            darkColor={isDisabled ? onLayout1 : colors.textColor}
-            style={[
-              styles.text,
-              { fontSize: sizeStyles.fontSize },
-            ]}
-          >
-            {title}
-          </ThemedText>
-          {icon && iconPosition === 'right' && (
-            <IconSymbol 
-              name={icon} 
-              size={sizeStyles.fontSize} 
-              color={isDisabled ? onLayout1 : colors.textColor} 
-            />
-          )}
-        </>
-      )}
+      {inner}
     </Pressable>
   );
 }
@@ -159,10 +205,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 8,
+    borderRadius: Radius.lg,
   },
   text: {
     fontWeight: '500',
   },
 });
-

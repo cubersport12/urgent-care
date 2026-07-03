@@ -137,7 +137,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
                   questionAnswer={questionAnswer}
                   savedAnswerIndices={savedAnswerIndices}
                   testAnswers={finalAnswers}
-                  testQuestions={test.questions}
+                  testQuestions={test.questions ?? undefined}
                 />
               );
             })}

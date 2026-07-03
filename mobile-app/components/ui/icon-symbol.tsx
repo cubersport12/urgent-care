@@ -35,7 +35,20 @@ const MAPPING = {
   'doc.text.fill': 'description',
   'list.bullet.clipboard.fill': 'assignment',
   'chart.pie.fill': 'pie-chart',
+  'chart.bar.fill': 'bar-chart',
   'bolt.fill': 'bolt',
+  'circle': 'radio-button-unchecked',
+  'trophy.fill': 'emoji-events',
+  'lock.fill': 'lock',
+  'book.fill': 'menu-book',
+  'clock.fill': 'schedule',
+  'globe': 'language',
+  'bell.fill': 'notifications',
+  'moon.fill': 'dark-mode',
+  'info.circle.fill': 'info',
+  'rectangle.portrait.and.arrow.right': 'logout',
+  'shield.fill': 'shield',
+  'arrow.counterclockwise': 'refresh',
 } as IconMapping;
 
 /**

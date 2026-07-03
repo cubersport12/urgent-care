@@ -6,10 +6,13 @@ import { useDeviceId } from '@/hooks/use-device-id';
 import { useCallback, useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { BackButton } from '../explorer/back-button';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
-import { Button } from '../ui/button';
+import { GlassCard } from '../ui/glass-card';
+import { GradientButton } from '../ui/gradient-button';
 import { IconSymbol } from '../ui/icon-symbol';
+import { ScreenBackground } from '../ui/screen-background';
 
 type RescueStartProps = {
   rescueItem: AppRescueItemVm;
@@ -51,7 +54,7 @@ export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarte
     };
   });
 
-  const { primary: tintColor, page: backgroundColor, border: borderColor, primary: primaryShadow } = useAppTheme();
+  const { primary: tintColor } = useAppTheme();
 
   // Форматируем дату создания
   const formatDate = (dateString: string) => {
@@ -77,52 +80,39 @@ export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarte
   };
 
   return (
-    <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
-      <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
-        <Button
-          title="Назад"
-          onPress={onBack}
-          variant="default"
-          icon="chevron.left"
-          iconPosition="left"
-          size="medium"
-          style={styles.backButton}
-        />
-      </ThemedView>
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollViewContent, styles.scrollViewContentWithButton]}
-      >
-        <ThemedView style={styles.content}>
-          <ThemedText type="title" style={styles.title}>
+    <ScreenBackground style={styles.container}>
+      <Animated.View style={[styles.inner, animatedStyle]}>
+        <BackButton onPress={onBack} label="Назад" />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[styles.scrollViewContent, styles.scrollViewContentWithButton]}
+        >
+          <ThemedText type="h1" style={styles.title}>
             {rescueItem.name}
           </ThemedText>
-          
-          {/* Дата создания */}
+
           {rescueItem.createdAt && (
-            <ThemedView style={styles.infoCard}>
+            <GlassCard padding={16} borderRadius={12} style={styles.infoCard}>
               <ThemedView style={styles.infoRowHorizontal}>
-                <IconSymbol name="star.fill" size={20} color={tintColor} />
+                <IconSymbol name="clock.fill" size={20} color={tintColor} />
                 <ThemedText style={styles.infoLabel}>Создано:</ThemedText>
               </ThemedView>
               <ThemedText style={styles.infoValue}>{formatDate(rescueItem.createdAt)}</ThemedText>
-            </ThemedView>
+            </GlassCard>
           )}
 
-          {/* Описание */}
           {rescueItem.description && (
-            <ThemedView style={styles.infoCard}>
+            <GlassCard padding={16} borderRadius={12} style={styles.infoCard}>
               <ThemedView style={styles.infoRowHorizontal}>
                 <IconSymbol name="doc.fill" size={20} color={tintColor} />
                 <ThemedText style={styles.infoLabel}>Описание:</ThemedText>
               </ThemedView>
               <ThemedText style={styles.descriptionText}>{rescueItem.description}</ThemedText>
-            </ThemedView>
+            </GlassCard>
           )}
 
-          {/* Параметры таймера */}
           {(rescueItem.data?.parameters?.length ?? 0) > 0 && (
-            <ThemedView style={styles.infoCard}>
+            <GlassCard padding={16} borderRadius={12} style={styles.infoCard}>
               <ThemedView style={styles.infoRowHorizontal}>
                 <IconSymbol name="list.bullet.clipboard.fill" size={20} color={tintColor} />
                 <ThemedText style={styles.infoLabel}>Параметры сцены:</ThemedText>
@@ -131,51 +121,31 @@ export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarte
                 {rescueItem.data?.parameters?.map((param) => (
                   <ThemedView key={param.id} style={styles.parameterItem}>
                     <ThemedText style={styles.parameterLabel}>{param.name}:</ThemedText>
-                    <ThemedText style={styles.parameterValue}>
+                    <ThemedText type="mono" style={styles.parameterValue}>
                       {formatTimerParameter(param)}
                     </ThemedText>
                   </ThemedView>
                 ))}
               </ThemedView>
-            </ThemedView>
+            </GlassCard>
           )}
+        </ScrollView>
+        <ThemedView style={styles.startButtonContainer}>
+          <GradientButton
+            title={isRecordingStart ? 'Загрузка...' : 'Начать'}
+            onPress={() => void handleBegin()}
+            disabled={isRecordingStart}
+            fullWidth
+          />
         </ThemedView>
-      </ScrollView>
-      <ThemedView style={styles.startButtonContainer}>
-        <Button
-          title="Начать"
-          onPress={() => void handleBegin()}
-          variant="primary"
-          size="large"
-          fullWidth
-          disabled={isRecordingStart}
-          style={[styles.startButton, { shadowColor: primaryShadow }]}
-        />
-      </ThemedView>
-    </Animated.View>
+      </Animated.View>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    alignItems: 'flex-start',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    minHeight: 44,
-    justifyContent: 'flex-start',
-  },
+  container: { flex: 1 },
+  inner: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
   scrollView: {
     flex: 1,
   },

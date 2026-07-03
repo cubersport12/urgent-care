@@ -3,7 +3,7 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors, Shadows, ThemeValues } from '@/constants/theme';
+import { Colors, getGlass, getGlow, Glass, Glow, Shadows, ThemeValues } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme-context';
 
 export function useThemeColor(
@@ -48,7 +48,17 @@ export function useThemeValue<T extends keyof typeof ThemeValues>(
 /**
  * Hook to get shadow styles based on theme and elevation level
  */
-export function useThemeShadow(level: 'small' | 'medium' | 'large') {
+export function useThemeShadow(level: 'small' | 'medium' | 'large' | 'glass' | 'nav') {
   const { theme } = useTheme();
   return Shadows[theme][level];
+}
+
+export function useGlass() {
+  const { theme } = useTheme();
+  return getGlass(theme);
+}
+
+export function useGlow() {
+  const { theme } = useTheme();
+  return getGlow(theme);
 }

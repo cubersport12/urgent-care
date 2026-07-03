@@ -1,91 +1,31 @@
 import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { useIsFocused } from '@react-navigation/native';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedProps,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
-import Svg, { Circle } from 'react-native-svg';
+import Animated from 'react-native-reanimated';
 import { ThemedText } from '../themed-text';
-import { ThemedView } from '../themed-view';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const RADIUS = 42;
-const STROKE_WIDTH = 9;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const CIRCLE_SIZE = RADIUS * 2 + STROKE_WIDTH * 2;
-
-type StatCircleProps = {
-  label: string;
-  value: number;
-  color: string;
-  trackColor: string;
-};
-
-function StatCircle({ label, value, color, trackColor }: StatCircleProps) {
-  const isFocused = useIsFocused();
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    if (isFocused) {
-      progress.value = 0;
-      progress.value = withTiming(value / 100, {
-        duration: 900,
-        easing: Easing.out(Easing.cubic),
-      });
-    }
-  }, [isFocused, progress, value]);
-
-  const animatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: CIRCUMFERENCE * (1 - progress.value),
-  }));
-
-  return (
-    <ThemedView style={styles.circleItem}>
-      <View style={styles.circleWrap}>
-        <Svg width={CIRCLE_SIZE} height={CIRCLE_SIZE}>
-          <Circle
-            cx={CIRCLE_SIZE / 2}
-            cy={CIRCLE_SIZE / 2}
-            r={RADIUS}
-            stroke={trackColor}
-            strokeWidth={STROKE_WIDTH}
-            fill="none"
-          />
-          <AnimatedCircle
-            cx={CIRCLE_SIZE / 2}
-            cy={CIRCLE_SIZE / 2}
-            r={RADIUS}
-            stroke={color}
-            strokeWidth={STROKE_WIDTH}
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
-            animatedProps={animatedProps}
-            transform={`rotate(-90 ${CIRCLE_SIZE / 2} ${CIRCLE_SIZE / 2})`}
-          />
-        </Svg>
-        <View style={styles.circleCenter}>
-          <ThemedText type="defaultSemiBold" style={styles.circlePercent}>
-            {value}%
-          </ThemedText>
-        </View>
-      </View>
-      <ThemedText style={styles.circleLabel}>{label}</ThemedText>
-    </ThemedView>
-  );
-}
+import { GlassCard } from '../ui/glass-card';
+import { IconSymbol } from '../ui/icon-symbol';
+import { ParticleHelix } from '../ui/particle-helix';
+import { ProgressBar } from '../ui/progress-bar';
+import { StatusBadge } from '../ui/status-badge';
+import { staggerEnter } from '@/hooks/use-enter-animation';
 
 type AccountOverallStatsProps = {
   refreshKey?: number;
 };
 
+const METRIC_COLORS = {
+  articles: '#0084FF',
+  tests: '#F59E0B',
+  rescues: '#FF6B6B',
+  overall: '#4D8B31',
+};
+
 export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps) {
-  const { success, error, elevated2, text } = useAppTheme();
+  const { primary, text, neutralSoft } = useAppTheme();
+  const glass = useGlass();
   const { data, isLoading, error: statsError, fetchData } = useAccountOverallStats();
   const isFocused = useIsFocused();
 
@@ -95,199 +35,194 @@ export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps
     }
   }, [isFocused, fetchData, refreshKey]);
 
-  const circles = [
+  const metrics = [
     {
-      key: 'docs-read',
-      label: 'Документы прочитаны',
-      value: data.documentsReadPercent,
-      color: success,
+      icon: 'book.fill' as const,
+      label: 'Статьи',
+      value: `${data.documentsReadPercent}%`,
+      color: METRIC_COLORS.articles,
+      bg: 'rgba(0, 132, 255, 0.1)',
     },
     {
-      key: 'tests-success',
-      label: `Успешно ${data.counts.testsPassed}`,
-      value: data.testsPassedPercent,
-      color: success,
+      icon: 'list.bullet.clipboard.fill' as const,
+      label: 'Тесты',
+      value: `${data.testsPassedPercent}%`,
+      color: METRIC_COLORS.tests,
+      bg: 'rgba(245, 158, 11, 0.1)',
     },
     {
-      key: 'tests-failed',
-      label: `Неуспешно ${data.counts.testsFailed}`,
-      value: data.testsFailedPercent,
-      color: error,
+      icon: 'cross.fill' as const,
+      label: 'Режимы спасения',
+      value: `${data.rescuesPassedPercent}%`,
+      color: METRIC_COLORS.rescues,
+      bg: 'rgba(255, 107, 107, 0.1)',
     },
     {
-      key: 'rescues-success',
-      label: `Успешно ${data.counts.rescuesPassed}`,
-      value: data.rescuesPassedPercent,
-      color: success,
-    },
-    {
-      key: 'rescues-failed',
-      label: `Неуспешно ${data.counts.rescuesFailed}`,
-      value: data.rescuesFailedPercent,
-      color: error,
+      icon: 'chart.bar.fill' as const,
+      label: 'Общий прогресс',
+      value: `${Math.round(
+        ((data.counts.documentsRead + data.counts.testsPassed + data.counts.rescuesPassed) /
+          Math.max(1, data.totals.documents + data.totals.tests + data.totals.rescues)) *
+          100,
+      )}%`,
+      color: METRIC_COLORS.overall,
+      bg: 'rgba(77, 139, 49, 0.1)',
     },
   ];
 
+  if (isLoading) {
+    return (
+      <View style={styles.loadingWrap}>
+        <ActivityIndicator size="small" color={primary} />
+        <ThemedText style={{ color: neutralSoft }}>Загрузка статистики...</ThemedText>
+      </View>
+    );
+  }
+
+  if (statsError) {
+    return (
+      <ThemedText style={styles.errorText}>Не удалось загрузить статистику</ThemedText>
+    );
+  }
+
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="defaultSemiBold" style={styles.title}>
-        Общая статистика
-      </ThemedText>
-      <ThemedText style={styles.subtitle}>
-        Документы: {data.totals.documents} | Тесты: {data.totals.tests} | Спасение: {data.totals.rescues}
-      </ThemedText>
+    <View style={styles.container}>
+      <Animated.View entering={staggerEnter(1)} style={styles.helixWrap}>
+        <ParticleHelix />
+      </Animated.View>
 
-      {isLoading ? (
-        <ThemedView style={styles.loadingWrap}>
-          <ActivityIndicator size="small" color={text} />
-          <ThemedText style={styles.loadingText}>Загрузка статистики...</ThemedText>
-        </ThemedView>
-      ) : null}
+      <View style={styles.metricsGrid}>
+        {metrics.map((m, i) => (
+          <Animated.View key={m.label} entering={staggerEnter(2 + i)} style={styles.metricCell}>
+            <GlassCard padding={16} borderRadius={12}>
+              <View style={[styles.metricIcon, { backgroundColor: m.bg }]}>
+                <IconSymbol name={m.icon} size={20} color={m.color} />
+              </View>
+              <ThemedText style={styles.metricValue}>{m.value}</ThemedText>
+              <ThemedText type="caption" style={{ color: neutralSoft }}>
+                {m.label}
+              </ThemedText>
+            </GlassCard>
+          </Animated.View>
+        ))}
+      </View>
 
-      {!isLoading && statsError ? (
-        <ThemedView style={styles.loadingWrap}>
-          <ThemedText style={styles.errorText}>Не удалось загрузить общую статистику</ThemedText>
-        </ThemedView>
-      ) : null}
+      <Animated.View entering={staggerEnter(6)} style={styles.section}>
+        <ThemedText type="h2">Детальная статистика</ThemedText>
 
-      {!isLoading && !statsError ? (
-        <View style={styles.sectionsWrap}>
-          <ThemedView style={[styles.sectionCard, { borderColor: elevated2 }]}>
-            <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
-              Документы
+        <View style={styles.detailBlock}>
+          <View style={styles.detailHeader}>
+            <ThemedText style={styles.detailTitle}>Статьи</ThemedText>
+            <ThemedText type="caption" style={{ color: neutralSoft }}>
+              {data.counts.documentsRead}/{data.totals.documents}
             </ThemedText>
-            <View style={styles.circlesGrid}>
-              <StatCircle
-                key={circles[0].key}
-                label={circles[0].label}
-                value={circles[0].value}
-                color={circles[0].color}
-                trackColor={elevated2}
-              />
-            </View>
-          </ThemedView>
-
-          <ThemedView style={[styles.sectionCard, { borderColor: elevated2 }]}>
-            <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
-              Тесты
-            </ThemedText>
-            <ThemedText style={styles.sectionSummary}>
-              Всего {data.totals.tests}. Из них успешно пройдено {data.counts.testsPassed} и с ошибкой {data.counts.testsFailed}
-            </ThemedText>
-            <View style={styles.circlesGrid}>
-              {circles.slice(1, 3).map((circle) => (
-                <StatCircle
-                  key={circle.key}
-                  label={circle.label}
-                  value={circle.value}
-                  color={circle.color}
-                  trackColor={elevated2}
-                />
-              ))}
-            </View>
-          </ThemedView>
-
-          <ThemedView style={[styles.sectionCard, { borderColor: elevated2 }]}>
-            <ThemedText type="defaultSemiBold" style={styles.sectionTitle}>
-              Режим спасения
-            </ThemedText>
-            <ThemedText style={styles.sectionSummary}>
-              Всего {data.totals.rescues}. Из них успешно пройдено {data.counts.rescuesPassed} и с ошибкой {data.counts.rescuesFailed}
-            </ThemedText>
-            <View style={styles.circlesGrid}>
-              {circles.slice(3).map((circle) => (
-                <StatCircle
-                  key={circle.key}
-                  label={circle.label}
-                  value={circle.value}
-                  color={circle.color}
-                  trackColor={elevated2}
-                />
-              ))}
-            </View>
-          </ThemedView>
+          </View>
+          <ProgressBar current={data.counts.documentsRead} total={data.totals.documents || 1} />
         </View>
-      ) : null}
-    </ThemedView>
+
+        <View style={styles.detailBlock}>
+          <View style={styles.detailHeader}>
+            <ThemedText style={styles.detailTitle}>Тесты</ThemedText>
+            <ThemedText type="caption" style={{ color: neutralSoft }}>
+              {data.counts.testsPassed}/{data.totals.tests} пройдено
+            </ThemedText>
+          </View>
+          <ProgressBar current={data.counts.testsPassed} total={data.totals.tests || 1} />
+          <View style={[styles.summaryRow, { backgroundColor: glass.row }]}>
+            <ThemedText type="caption">Успешно: {data.counts.testsPassed}</ThemedText>
+            <StatusBadge status={data.counts.testsPassed > 0 ? 'success' : 'not-passed'} />
+          </View>
+          <View style={[styles.summaryRow, { backgroundColor: glass.row }]}>
+            <ThemedText type="caption">Неуспешно: {data.counts.testsFailed}</ThemedText>
+            <StatusBadge status={data.counts.testsFailed > 0 ? 'failure' : 'not-passed'} />
+          </View>
+        </View>
+
+        <View style={styles.detailBlock}>
+          <View style={styles.detailHeader}>
+            <ThemedText style={styles.detailTitle}>Режимы спасения</ThemedText>
+            <ThemedText type="caption" style={{ color: neutralSoft }}>
+              {data.counts.rescuesPassed}/{data.totals.rescues} пройдено
+            </ThemedText>
+          </View>
+          <ProgressBar current={data.counts.rescuesPassed} total={data.totals.rescues || 1} />
+          <View style={[styles.summaryRow, { backgroundColor: glass.row }]}>
+            <ThemedText type="caption">Успешно: {data.counts.rescuesPassed}</ThemedText>
+            <StatusBadge status={data.counts.rescuesPassed > 0 ? 'success' : 'not-passed'} />
+          </View>
+          <View style={[styles.summaryRow, { backgroundColor: glass.row }]}>
+            <ThemedText type="caption">Неуспешно: {data.counts.rescuesFailed}</ThemedText>
+            <StatusBadge status={data.counts.rescuesFailed > 0 ? 'failure' : 'not-passed'} />
+          </View>
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 24,
+    gap: 24,
+  },
+  helixWrap: {
     marginTop: 8,
-    paddingVertical: 8,
-    gap: 8,
   },
-  title: {
-    fontSize: 20,
-  },
-  subtitle: {
-    opacity: 0.72,
-    fontSize: 13,
-  },
-  circlesGrid: {
+  metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+  },
+  metricCell: {
+    width: '47%',
+    flexGrow: 1,
+  },
+  metricIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionsWrap: {
+  metricValue: {
+    fontSize: 32,
+    fontWeight: '300',
+    marginTop: 12,
+    letterSpacing: -0.5,
+  },
+  section: {
+    gap: 16,
+  },
+  detailBlock: {
+    gap: 8,
     marginTop: 8,
-    gap: 12,
   },
-  sectionCard: {
-    borderWidth: 1,
-    borderRadius: 14,
-    padding: 12,
-    gap: 10,
-  },
-  sectionTitle: {
-    fontSize: 16,
-  },
-  sectionSummary: {
-    fontSize: 13,
-    opacity: 0.78,
-    lineHeight: 18,
-  },
-  circleItem: {
-    width: '48%',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 14,
-  },
-  circleWrap: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    justifyContent: 'center',
+  detailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  circleCenter: {
-    position: 'absolute',
-    justifyContent: 'center',
+  detailTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  circlePercent: {
-    fontSize: 20,
-  },
-  circleLabel: {
-    marginTop: 8,
-    fontSize: 13,
-    textAlign: 'center',
-    opacity: 0.88,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 4,
   },
   loadingWrap: {
-    marginTop: 8,
+    marginTop: 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  loadingText: {
-    fontSize: 14,
-    opacity: 0.75,
-  },
   errorText: {
-    color: '#d32f2f',
-    fontSize: 14,
+    color: '#FF6B6B',
+    marginTop: 24,
   },
 });
-

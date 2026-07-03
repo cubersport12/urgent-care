@@ -1,21 +1,22 @@
 import { HapticTab } from '@/components/haptic-tab';
-import { ThemedText } from '@/components/themed-text';
+import { GlassTabBarBackground } from '@/components/ui/glass-tab-bar';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useTheme } from '@/contexts/theme-context';
 import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 export default function TabLayout() {
   const { theme } = useTheme();
   const { session, initialized } = useAuth();
+  const colors = Colors[theme];
 
   if (!initialized) {
     return (
-      <View style={styles.loadingRoot}>
-        <ActivityIndicator size="large" color={Colors[theme].primary} />
+      <View style={[styles.loadingRoot, { backgroundColor: colors.page }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -27,30 +28,36 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[theme].primary,
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarActiveTintColor: colors.white,
+        tabBarInactiveTintColor: colors.neutralSoft,
+        tabBarBackground: () => <GlassTabBarBackground />,
         tabBarStyle: {
-          backgroundColor: Colors[theme].page,
+          position: 'absolute',
+          backgroundColor: colors.page,
+          borderTopWidth: 0,
+          elevation: 8,
+          height: Platform.OS === 'ios' ? 64 : 60,
         },
-        headerStyle: {
-          backgroundColor: Colors[theme].page,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '500',
+          marginTop: 2,
         },
-        headerTintColor: Colors[theme].onLayout1,
-        headerTitleStyle: {
-          fontWeight: '600',
-        },
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Обучение',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-          headerTitle: () => (
-            <View style={styles.headerTitle}>
-              <IconSymbol size={24} name="house.fill" color={Colors[theme].primary} />
-              <ThemedText style={styles.headerTitleText}>Обучение</ThemedText>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol
+              size={24}
+              name="house.fill"
+              color={color}
+              style={focused ? styles.activeIcon : undefined}
+            />
           ),
         }}
       />
@@ -58,38 +65,27 @@ export default function TabLayout() {
         name="stats"
         options={{
           title: 'Статистика',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.pie.fill" color={color} />,
-          headerTitle: () => (
-            <View style={styles.headerTitle}>
-              <IconSymbol size={24} name="chart.pie.fill" color={Colors[theme].primary} />
-              <ThemedText style={styles.headerTitleText}>Статистика</ThemedText>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol
+              size={24}
+              name="chart.bar.fill"
+              color={color}
+              style={focused ? styles.activeIcon : undefined}
+            />
           ),
         }}
       />
-      {/* <Tabs.Screen
-        name="rescue"
-        options={{
-          title: 'Спасение',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="cross.fill" color={color} />,
-          headerTitle: () => (
-            <View style={styles.headerTitle}>
-              <IconSymbol size={24} name="cross.fill" color={Colors[theme].primary} />
-              <ThemedText style={styles.headerTitleText}>Спасение</ThemedText>
-            </View>
-          ),
-        }}
-      /> */}
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Профиль',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
-          headerTitle: () => (
-            <View style={styles.headerTitle}>
-              <IconSymbol size={24} name="person.fill" color={Colors[theme].primary} />
-              <ThemedText style={styles.headerTitleText}>Профиль</ThemedText>
-            </View>
+          tabBarIcon: ({ color, focused }) => (
+            <IconSymbol
+              size={24}
+              name="person.fill"
+              color={color}
+              style={focused ? styles.activeIcon : undefined}
+            />
           ),
         }}
       />
@@ -103,13 +99,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerTitleText: {
-    fontSize: 18,
-    fontWeight: '600',
+  activeIcon: {
+    shadowColor: 'rgba(0, 132, 255, 0.6)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 6,
   },
 });

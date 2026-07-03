@@ -1,12 +1,16 @@
 import { AppTestVm } from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
+import { staggerEnter } from '@/hooks/use-enter-animation';
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { BackButton } from './explorer/back-button';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
-import { Button } from './ui/button';
+import { GlassCard } from './ui/glass-card';
+import { GradientButton } from './ui/gradient-button';
 import { IconSymbol } from './ui/icon-symbol';
+import { ScreenBackground } from './ui/screen-background';
 
 type TestViewProps = {
   test: AppTestVm;
@@ -16,201 +20,82 @@ type TestViewProps = {
 
 export function TestView({ test, onBack, onStart }: TestViewProps) {
   const opacity = useSharedValue(0);
+  const { primary: tintColor } = useAppTheme();
 
   useEffect(() => {
     opacity.value = withTiming(1, { duration: 300 });
   }, [opacity]);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-    };
-  });
-
-  const { primary: tintColor, page: backgroundColor, border: borderColor, shadow: shadowColor, primary: primaryShadow, onPrimary: whiteColor } = useAppTheme();
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   return (
-    <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
-      <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
-        <Button
-          title="Назад"
-          onPress={onBack}
-          variant="default"
-          icon="chevron.left"
-          iconPosition="left"
-          size="medium"
-          style={styles.backButton}
-        />
-      </ThemedView>
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
-      >
-        <ThemedView style={styles.content}>
-          <ThemedText type="title" style={styles.title}>
-            {test.name}
-          </ThemedText>
-          <ThemedView style={styles.infoCard}>
-            <ThemedView style={styles.infoRow}>
-              {test.questions && test.questions.length > 0 && (
-                <ThemedView style={styles.infoItem}>
-                  <ThemedView style={styles.infoRowHorizontal}>
-                    <IconSymbol name="questionmark.circle.fill" size={28} color={tintColor} />
-                  <ThemedText style={styles.infoValue}>{test.questions.length}</ThemedText>
-                  </ThemedView>
-                  <ThemedText style={styles.infoLabel}>Вопросов</ThemedText>
-                </ThemedView>
-              )}
-              {test.minScore !== undefined && test.minScore !== null && (
-                <ThemedView style={styles.infoItem}>
-                  <ThemedView style={styles.infoRowHorizontal}>
-                    <IconSymbol name="star.fill" size={28} color={tintColor} />
-                  <ThemedText style={styles.infoValue}>{test.minScore}</ThemedText>
-                  </ThemedView>
-                  <ThemedText style={styles.infoLabel}>Мин. балл</ThemedText>
-                </ThemedView>
-              )}
-              {test.maxErrors !== undefined && test.maxErrors !== null && (
-                <ThemedView style={styles.infoItem}>
-                  <ThemedView style={styles.infoRowHorizontal}>
-                    <IconSymbol name="exclamationmark.triangle.fill" size={28} color={tintColor} />
-                  <ThemedText style={styles.infoValue}>{test.maxErrors}</ThemedText>
-                  </ThemedView>
-                  <ThemedText style={styles.infoLabel}>Макс. ошибок</ThemedText>
-                </ThemedView>
-              )}
-            </ThemedView>
-          </ThemedView>
+    <ScreenBackground style={styles.container}>
+      <Animated.View style={[styles.inner, animatedStyle]}>
+        <BackButton onPress={onBack} label="Назад" />
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Animated.View entering={staggerEnter(0)}>
+            <ThemedText type="h1" style={styles.title}>
+              {test.name}
+            </ThemedText>
+          </Animated.View>
+          <Animated.View entering={staggerEnter(1)}>
+            <GlassCard padding={24} borderRadius={16} style={styles.infoCard}>
+              <ThemedText type="caption" style={styles.infoHeading}>
+                Информация о тесте
+              </ThemedText>
+              <ThemedView style={styles.infoGrid}>
+                {test.questions && test.questions.length > 0 && (
+                  <InfoItem icon="questionmark.circle.fill" label="Вопросов" value={String(test.questions.length)} color={tintColor} />
+                )}
+                {test.minScore != null && (
+                  <InfoItem icon="star.fill" label="Мин. балл" value={String(test.minScore)} color={tintColor} />
+                )}
+                {test.maxErrors != null && (
+                  <InfoItem icon="exclamationmark.triangle.fill" label="Макс. ошибок" value={String(test.maxErrors)} color={tintColor} />
+                )}
+              </ThemedView>
+            </GlassCard>
+          </Animated.View>
           {onStart && (
-            <Button
-              title="Начать"
-              onPress={onStart}
-              variant="primary"
-              size="large"
-              fullWidth
-              style={[styles.startButton, { shadowColor: primaryShadow }]}
-            />
+            <Animated.View entering={staggerEnter(2)} style={styles.startWrap}>
+              <GradientButton title="Начать тест" onPress={onStart} fullWidth />
+            </Animated.View>
           )}
-        </ThemedView>
-      </ScrollView>
-    </Animated.View>
+        </ScrollView>
+      </Animated.View>
+    </ScreenBackground>
+  );
+}
+
+function InfoItem({
+  icon,
+  label,
+  value,
+  color,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  color: string;
+}) {
+  return (
+    <ThemedView style={styles.infoItem}>
+      <IconSymbol name={icon as never} size={24} color={color} />
+      <ThemedText style={styles.infoValue}>{value}</ThemedText>
+      <ThemedText type="caption">{label}</ThemedText>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    alignItems: 'flex-start',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    minHeight: 44,
-    justifyContent: 'flex-start',
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '400',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    padding: 20,
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 400,
-  },
-  title: {
-    marginBottom: 24,
-    fontSize: 28,
-    fontWeight: 'bold',
-    lineHeight: 36,
-    textAlign: 'center',
-  },
-  infoCard: {
-    padding: 16,
-    borderRadius: 16,
-    // backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    marginBottom: 24,
-    // shadowColor will be set dynamically
-    // shadowOffset: {
-    //   width: 0,
-    //   height: 2,
-    // },
-    // shadowOpacity: 0.08,
-    // shadowRadius: 8,
-    elevation: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 20,
-    flexWrap: 'wrap',
-  },
-  infoItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    minWidth: 70,
-  },
-  infoRowHorizontal: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoLabel: {
-    fontSize: 12,
-    opacity: 0.7,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  infoValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    lineHeight: 32,
-  },
-  startButton: {
-    marginTop: 0,
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 56,
-    width: '100%',
-    maxWidth: 300,
-    // shadowColor will be set dynamically
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  startButtonText: {
-    // color will be set dynamically
-    fontSize: 18,
-    fontWeight: '600',
-  },
+  container: { flex: 1 },
+  inner: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
+  scrollContent: { paddingBottom: 96, paddingTop: 8 },
+  title: { marginBottom: 16 },
+  infoCard: { marginTop: 8 },
+  infoHeading: { marginBottom: 16, opacity: 0.7 },
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 24 },
+  infoItem: { alignItems: 'center', minWidth: 80, gap: 4 },
+  infoValue: { fontSize: 24, fontWeight: '300' },
+  startWrap: { marginTop: 32 },
 });
-

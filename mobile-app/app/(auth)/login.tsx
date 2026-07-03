@@ -1,7 +1,8 @@
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/ui/button';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { GlassCard } from '@/components/ui/glass-card';
+import { GradientButton } from '@/components/ui/gradient-button';
+import { ScreenBackground } from '@/components/ui/screen-background';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -17,8 +18,8 @@ import {
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { page: backgroundColor, border: borderColor, primary: tintColor, onLayout1: textColor } =
-    useAppTheme();
+  const { primary: tintColor, text: textColor } = useAppTheme();
+  const glass = useGlass();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -43,71 +44,80 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.flex, { backgroundColor }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+    <ScreenBackground style={styles.flex}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ThemedView style={styles.inner}>
-          <ThemedText type="title" style={styles.title}>
-            Вход
-          </ThemedText>
-          <ThemedText style={styles.hint}>Введите почту и пароль учётной записи</ThemedText>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <GlassCard padding={24} borderRadius={16} style={styles.inner}>
+            <ThemedText type="h1" style={styles.title}>
+              Вход
+            </ThemedText>
+            <ThemedText style={styles.hint}>Введите почту и пароль учётной записи</ThemedText>
 
-          <ThemedText style={styles.label}>Почта</ThemedText>
-          <TextInput
-            style={[styles.input, { borderColor, color: textColor }]}
-            placeholder="email@example.com"
-            placeholderTextColor={`${textColor}99`}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-          />
+            <ThemedText style={styles.label}>Почта</ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  borderColor: glass.border,
+                  backgroundColor: glass.backgroundSubtle,
+                  color: textColor,
+                },
+              ]}
+              placeholder="email@example.com"
+              placeholderTextColor={glass.border}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+            />
 
-          <ThemedText style={styles.label}>Пароль</ThemedText>
-          <TextInput
-            style={[styles.input, { borderColor, color: textColor }]}
-            placeholder="••••••••"
-            placeholderTextColor={`${textColor}99`}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoComplete="password"
-            textContentType="password"
-          />
+            <ThemedText style={styles.label}>Пароль</ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  borderColor: glass.border,
+                  backgroundColor: glass.backgroundSubtle,
+                  color: textColor,
+                },
+              ]}
+              placeholder="••••••••"
+              placeholderTextColor={glass.border}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoComplete="password"
+            />
 
-          <Button
-            title="Войти"
-            variant="primary"
-            size="large"
-            fullWidth
-            disabled={submitting}
-            onPress={() => void handleLogin()}
-            style={styles.primaryBtn}
-          />
+            <GradientButton
+              title={submitting ? 'Вход...' : 'Войти'}
+              onPress={() => void handleLogin()}
+              disabled={submitting}
+              fullWidth
+            />
 
-          <Link href="/(auth)/register" asChild>
-            <Pressable style={styles.linkWrap}>
-              <ThemedText style={[styles.link, { color: tintColor }]}>Регистрация</ThemedText>
-            </Pressable>
-          </Link>
-        </ThemedView>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Link href="/(auth)/register" asChild>
+              <Pressable style={styles.linkWrap}>
+                <ThemedText style={[styles.link, { color: tintColor }]}>Регистрация</ThemedText>
+              </Pressable>
+            </Link>
+          </GlassCard>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
+  flex: { flex: 1 },
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
@@ -121,15 +131,17 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: 8,
     textAlign: 'center',
+    fontSize: 28,
   },
   hint: {
     opacity: 0.75,
     marginBottom: 24,
     textAlign: 'center',
+    fontSize: 14,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
     marginBottom: 6,
     opacity: 0.9,
   },
@@ -141,9 +153,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 16,
   },
-  primaryBtn: {
-    marginTop: 8,
-  },
   linkWrap: {
     marginTop: 20,
     paddingVertical: 12,
@@ -151,6 +160,6 @@ const styles = StyleSheet.create({
   },
   link: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
   },
 });

@@ -18,12 +18,12 @@ import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
 import { BackButton } from './explorer/back-button';
 import { ExplorerItemComponent } from './explorer/explorer-item';
-import { FolderMenu } from './explorer/folder-menu';
+import { StudyFolderCard } from './explorer/study-folder-card';
 import { BreadcrumbItem, ExplorerItem } from './explorer/types';
 import { RescueComplete } from './rescue/rescue-complete';
 import { RescueStart } from './rescue/rescue-start';
@@ -32,7 +32,13 @@ import { TestTakingView } from './test-taking-view';
 import { TestView } from './test-view';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
-import { IconSymbol } from './ui/icon-symbol';
+import { FilterPills, type FilterKey } from './ui/filter-pills';
+import { ProgressBar } from './ui/progress-bar';
+import { ScreenBackground } from './ui/screen-background';
+import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
+import { useGlow } from '@/hooks/use-theme-color';
+import { Spacing } from '@/constants/theme';
+import { staggerEnter } from '@/hooks/use-enter-animation';
 
 export function Explorer() {
   const [currentFolderId, setCurrentFolderId] = useState<string | undefined>(undefined);
@@ -54,14 +60,15 @@ export function Explorer() {
   const [showArticles, setShowArticles] = useState(true);
   const [showTests, setShowTests] = useState(true);
   const [showRescue, setShowRescue] = useState(true);
-  // Состояние для меню папки
-  const [isFolderMenuOpen, setIsFolderMenuOpen] = useState(false);
+  const [materialFilter, setMaterialFilter] = useState<FilterKey>('all');
   const previousFolderIdRef = useRef<string | undefined>(undefined);
   const opacity = useSharedValue(1);
   const { isTestStarted, startTest, resetTest } = useTest();
   const navigation = useNavigation();
 
-  const { primary: tintColor, border: borderColor, layout1: currentFolderButtonBackground, neutralSoft: descriptionColor, warning: warningColor } = useAppTheme();
+  const { primary: tintColor, border: borderColor, neutralSoft: descriptionColor } = useAppTheme();
+  const glow = useGlow();
+  const overallStats = useAccountOverallStats();
   const { deviceId } = useDeviceId();
   const foldersResponse = useFolders(currentFolderId);
   const articlesResponse = useArticles(currentFolderId);
@@ -520,13 +527,14 @@ export function Explorer() {
     setIsNavigating(false);
     setBreadcrumb([]);
     setArticleNavigationHistory([]);
-    setIsFolderMenuOpen(false);
+    setMaterialFilter('all');
     previousFolderIdRef.current = undefined;
     resetTest();
     opacity.value = withTiming(1, { duration: 300 });
   }, [resetTest, opacity]);
 
   useEffect(() => {
+    // @ts-expect-error tabPress is emitted by bottom tab navigator
     const unsubscribe = navigation.addListener('tabPress', () => {
       resetToRoot();
     });
@@ -662,60 +670,77 @@ export function Explorer() {
   }
 
   // Показываем список элементов
+  const isRootView = currentFolderId === undefined;
+  const folderOnlyItems = items.filter((i) => i.type === 'folder');
+  const overallTotal =
+    (overallStats.data?.totals.documents ?? 0) +
+    (overallStats.data?.totals.tests ?? 0) +
+    (overallStats.data?.totals.rescues ?? 0);
+  const overallCompleted =
+    (overallStats.data?.counts.documentsRead ?? 0) +
+    (overallStats.data?.counts.testsPassed ?? 0) +
+    (overallStats.data?.counts.rescuesPassed ?? 0);
+
   return (
-    <ThemedView style={styles.container}>
-      {(displayBreadcrumb.length > 0 || currentFolderId === undefined) && (
+    <ScreenBackground variant={isRootView ? 'study' : 'default'} style={styles.container}>
+      {currentFolderId !== undefined && (
         <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
           <ThemedView style={styles.headerContent}>
-            {currentFolderId !== undefined && (
-              <BackButton onPress={handleBackFromFolder} label={parentFolderName} />
-            )}
-            {currentFolderName && (
-              <>
-                <Pressable
-                  onPress={() => setIsFolderMenuOpen(true)}
-                  style={[styles.currentFolderButton, { flexGrow: 1, backgroundColor: currentFolderButtonBackground }]}
-                >
-                  <IconSymbol name="folder.fill" size={20} color={warningColor} />
-                  <ThemedText 
-                    style={styles.currentFolderName}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {currentFolderName}
-                  </ThemedText>
-                </Pressable>
-                <FolderMenu
-                  visible={isFolderMenuOpen}
-                  onClose={() => setIsFolderMenuOpen(false)}
-                  folderStats={folderStats}
-                  showFolders={showFolders}
-                  showArticles={showArticles}
-                  showTests={showTests}
-                  showRescue={showRescue}
-                  onToggleFolders={() => setShowFolders(!showFolders)}
-                  onToggleArticles={() => setShowArticles(!showArticles)}
-                  onToggleTests={() => setShowTests(!showTests)}
-                  onToggleRescue={() => setShowRescue(!showRescue)}
-            />
-              </>
-            )}
+            <BackButton onPress={handleBackFromFolder} label={parentFolderName} />
+            {currentFolderName ? (
+              <ThemedText style={styles.currentFolderName} numberOfLines={1}>
+                {currentFolderName}
+              </ThemedText>
+            ) : null}
           </ThemedView>
         </ThemedView>
       )}
       <Animated.View style={[styles.scrollViewContainer, animatedStyle]}>
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollViewContent,
+            { paddingBottom: Spacing.pageBottom },
+          ]}
+        >
+          {isRootView && (
+            <Animated.View entering={staggerEnter(0)}>
+              <ThemedText
+                type="h1"
+                style={[styles.pageTitle, { textShadowColor: glow.title, textShadowRadius: 20, textShadowOffset: { width: 0, height: 0 } }]}
+              >
+                Обучение
+              </ThemedText>
+              <ThemedText style={[styles.pageSubtitle, { color: descriptionColor }]}>
+                Выберите раздел для изучения
+              </ThemedText>
+            </Animated.View>
+          )}
+
+          {currentFolderId !== undefined && (
+            <View style={styles.filterRow}>
+              <FilterPills
+                value={materialFilter}
+                onChange={(key) => {
+                  setMaterialFilter(key);
+                  setShowFolders(key === 'all');
+                  setShowArticles(key === 'all' || key === 'article');
+                  setShowTests(key === 'all' || key === 'test');
+                  setShowRescue(key === 'all' || key === 'rescue');
+                }}
+              />
+            </View>
+          )}
+
           {isLoading ? (
             <ThemedView style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={tintColor} />
               <ThemedText style={styles.loadingText}>Загрузка...</ThemedText>
             </ThemedView>
           ) : (() => {
-            // Фильтруем элементы
             const filteredItems = items
               .map((item, index) => ({ item, index }))
               .filter(({ item, index }) => {
-                // Фильтрация по типу элемента в зависимости от состояния toggle-кнопок
                 if (item.type === 'folder' && !showFolders) return false;
                 if (item.type === 'article' && !showArticles) return false;
                 if (item.type === 'test' && !showTests) return false;
@@ -723,9 +748,70 @@ export function Explorer() {
                 return !isItemHidden(item, index);
               });
 
-            // Если нет элементов для отображения
+            if (isRootView && folderOnlyItems.length > 0) {
+              return (
+                <>
+                  <View style={styles.folderGrid}>
+                    {folderOnlyItems.map((folderItem, i) => {
+                      const count =
+                        folderStats.articlesCount +
+                        folderStats.testsCount +
+                        folderStats.rescueCount;
+                      return (
+                        <StudyFolderCard
+                          key={folderItem.data.id}
+                          name={folderItem.data.name}
+                          materialCount={count}
+                          progressPercent={0}
+                          index={i}
+                          onPress={() => handleItemPress(folderItem)}
+                        />
+                      );
+                    })}
+                  </View>
+                  {filteredItems.filter(({ item }) => item.type !== 'folder').length > 0 && (
+                    <View style={styles.rootMaterials}>
+                      {filteredItems
+                        .filter(({ item }) => item.type !== 'folder')
+                        .map(({ item, index }, listIndex) => (
+                          <ExplorerItemComponent
+                            key={`${item.type}-${item.data.id}`}
+                            item={item}
+                            index={listIndex}
+                            onPress={() => handleItemPress(item)}
+                            isRead={item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false}
+                            isDisabled={isItemDisabled(item, index)}
+                          />
+                        ))}
+                    </View>
+                  )}
+                  <Animated.View entering={staggerEnter(4)} style={styles.overallProgress}>
+                    <ThemedText type="h2">Общий прогресс</ThemedText>
+                    <View style={styles.overallBar}>
+                      <ProgressBar
+                        current={overallCompleted}
+                        total={overallTotal || 1}
+                        height={8}
+                        shimmer
+                      />
+                    </View>
+                    <View style={styles.statRow}>
+                      <ThemedText type="caption" style={{ color: descriptionColor }}>
+                        Статьи: {overallStats.data?.counts.documentsRead ?? 0}/{overallStats.data?.totals.documents ?? 0}
+                      </ThemedText>
+                      <ThemedText type="caption" style={{ color: descriptionColor }}>
+                        Тесты: {overallStats.data?.counts.testsPassed ?? 0}/{overallStats.data?.totals.tests ?? 0}
+                      </ThemedText>
+                      <ThemedText type="caption" style={{ color: descriptionColor }}>
+                        Режимы: {overallStats.data?.counts.rescuesPassed ?? 0}/{overallStats.data?.totals.rescues ?? 0}
+                      </ThemedText>
+                    </View>
+                  </Animated.View>
+                </>
+              );
+            }
+
             if (filteredItems.length === 0) {
-              // Если применены фильтры, показываем сначала "Ничего нет", потом надпись о скрытых элементах
               if (hiddenText) {
                 return (
                   <ThemedView style={styles.emptyContainer}>
@@ -738,7 +824,6 @@ export function Explorer() {
                   </ThemedView>
                 );
               }
-              // Если фильтры не применены, показываем только "Ничего нет"
               return (
                 <ThemedView style={styles.emptyContainer}>
                   <ThemedText style={styles.emptyText}>Ничего нет</ThemedText>
@@ -746,7 +831,6 @@ export function Explorer() {
               );
             }
 
-            // Если есть скрытые элементы, показываем надпись
             return (
               <>
                 {hiddenText && (
@@ -756,24 +840,19 @@ export function Explorer() {
                     </ThemedText>
                   </Pressable>
                 )}
-                {filteredItems.map(({ item, index }) => {
-                const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
-                const isDisabled = isItemDisabled(item, index);
-                  
-                  // Получаем статистику теста, если это тест
+                {filteredItems.map(({ item, index }, listIndex) => {
+                  const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
+                  const isDisabled = isItemDisabled(item, index);
                   const testStats = item.type === 'test' ? testsStatsMap.get(item.data.id) : undefined;
                   const rescueStatsVm =
                     item.type === 'rescue' ? rescueStatsMap.get(item.data.id) : undefined;
 
-                  // Формируем описание для теста / rescue с датой
                   let description: string | undefined;
                   if (item.type === 'test' && testStats) {
                     if (testStats.completedAt) {
-                      const completedDate = new Date(testStats.completedAt);
-                      description = completedDate.toLocaleString();
+                      description = new Date(testStats.completedAt).toLocaleString();
                     } else if (testStats.startedAt) {
-                      const startedDate = new Date(testStats.startedAt);
-                      description = startedDate.toLocaleString();
+                      description = new Date(testStats.startedAt).toLocaleString();
                     }
                   } else if (item.type === 'rescue' && rescueStatsVm) {
                     if (rescueStatsVm.completedAt) {
@@ -783,18 +862,23 @@ export function Explorer() {
                     }
                   }
 
-                return (
-                  <ExplorerItemComponent
-                    key={`${item.type}-${item.data.id}`}
-                    item={item}
-                    onPress={() => handleItemPress(item)}
-                    isRead={isRead}
-                    isDisabled={isDisabled}
-                      testStats={testStats ? {
-                        passed: testStats.passed,
-                        completedAt: testStats.completedAt,
-                        startedAt: testStats.startedAt,
-                      } : undefined}
+                  return (
+                    <ExplorerItemComponent
+                      key={`${item.type}-${item.data.id}`}
+                      item={item}
+                      index={listIndex}
+                      onPress={() => handleItemPress(item)}
+                      isRead={isRead}
+                      isDisabled={isDisabled}
+                      testStats={
+                        testStats
+                          ? {
+                              passed: testStats.passed,
+                              completedAt: testStats.completedAt,
+                              startedAt: testStats.startedAt,
+                            }
+                          : undefined
+                      }
                       rescueStats={
                         rescueStatsVm
                           ? {
@@ -805,15 +889,15 @@ export function Explorer() {
                           : undefined
                       }
                       description={description}
-                  />
-                );
+                    />
+                  );
                 })}
               </>
             );
           })()}
         </ScrollView>
       </Animated.View>
-    </ThemedView>
+    </ScreenBackground>
   );
 }
 
@@ -880,7 +964,37 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     paddingTop: 16,
-    paddingBottom: 16,
+    paddingHorizontal: Spacing.pageX,
+  },
+  pageTitle: {
+    marginTop: 8,
+  },
+  pageSubtitle: {
+    fontSize: 16,
+    marginTop: 8,
+  },
+  folderGrid: {
+    gap: 12,
+    marginTop: 24,
+  },
+  rootMaterials: {
+    marginTop: 16,
+  },
+  overallProgress: {
+    marginTop: 32,
+  },
+  overallBar: {
+    marginTop: 16,
+  },
+  statRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginTop: 12,
+  },
+  filterRow: {
+    marginTop: 8,
+    marginBottom: 8,
   },
   loadingContainer: {
     flex: 1,
