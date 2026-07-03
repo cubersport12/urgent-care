@@ -1,4 +1,5 @@
 import { useTest } from '@/contexts/test-context';
+import { supabase } from '@/supabase';
 import {
   AppArticleVm,
   AppRescueItemVm,
@@ -18,7 +19,7 @@ import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
 import { BackButton } from './explorer/back-button';
@@ -35,8 +36,12 @@ import { ThemedView } from './themed-view';
 import { FilterPills, type FilterKey } from './ui/filter-pills';
 import { ProgressBar } from './ui/progress-bar';
 import { ScreenBackground } from './ui/screen-background';
+import { GlassCard } from './ui/glass-card';
+import { IconSymbol } from './ui/icon-symbol';
 import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
-import { useGlow } from '@/hooks/use-theme-color';
+import { useGlow, useGlass } from '@/hooks/use-theme-color';
+import { useTheme } from '@/contexts/theme-context';
+import { BlurView } from 'expo-blur';
 import { Spacing } from '@/constants/theme';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 
@@ -66,7 +71,31 @@ export function Explorer() {
   const { isTestStarted, startTest, resetTest } = useTest();
   const navigation = useNavigation();
 
-  const { primary: tintColor, border: borderColor, neutralSoft: descriptionColor } = useAppTheme();
+  const [allArticles, setAllArticles] = useState<AppArticleVm[]>([]);
+  const [allTests, setAllTests] = useState<AppTestVm[]>([]);
+  const [allRescues, setAllRescues] = useState<AppRescueItemVm[]>([]);
+
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        const [articlesRes, testsRes, rescuesRes] = await Promise.all([
+          supabase.from('articles').select('*'),
+          supabase.from('tests').select('*'),
+          supabase.from('rescue').select('*'),
+        ]);
+        if (articlesRes.data) setAllArticles(articlesRes.data as AppArticleVm[]);
+        if (testsRes.data) setAllTests(testsRes.data as AppTestVm[]);
+        if (rescuesRes.data) setAllRescues(rescuesRes.data as AppRescueItemVm[]);
+      } catch (error) {
+        console.error('Error fetching all materials:', error);
+      }
+    };
+    void fetchAllData();
+  }, []);
+
+  const { primary: tintColor, border: borderColor, neutralSoft: descriptionColor, layout1 } = useAppTheme();
+  const { theme } = useTheme();
+  const glass = useGlass();
   const glow = useGlow();
   const overallStats = useAccountOverallStats();
   const { deviceId } = useDeviceId();
@@ -684,16 +713,27 @@ export function Explorer() {
   return (
     <ScreenBackground variant={isRootView ? 'study' : 'default'} style={styles.container}>
       {currentFolderId !== undefined && (
-        <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
-          <ThemedView style={styles.headerContent}>
-            <BackButton onPress={handleBackFromFolder} label={parentFolderName} />
+        <View
+          style={[
+            styles.header,
+            {
+              borderBottomColor: glass.border,
+              backgroundColor: theme === 'light' ? layout1 : glass.background,
+            },
+          ]}
+        >
+          {theme === 'dark' && Platform.OS !== 'web' ? (
+            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+          ) : null}
+          <View style={styles.headerContent}>
+            <BackButton onPress={handleBackFromFolder} />
             {currentFolderName ? (
               <ThemedText style={styles.currentFolderName} numberOfLines={1}>
                 {currentFolderName}
               </ThemedText>
             ) : null}
-          </ThemedView>
-        </ThemedView>
+          </View>
+        </View>
       )}
       <Animated.View style={[styles.scrollViewContainer, animatedStyle]}>
         <ScrollView
@@ -753,16 +793,29 @@ export function Explorer() {
                 <>
                   <View style={styles.folderGrid}>
                     {folderOnlyItems.map((folderItem, i) => {
-                      const count =
-                        folderStats.articlesCount +
-                        folderStats.testsCount +
-                        folderStats.rescueCount;
+                      const folderId = folderItem.data.id;
+                      
+                      // Filter materials belonging to this folder
+                      const folderArticles = allArticles.filter(a => a.parentId === folderId);
+                      const folderTests = allTests.filter(t => t.parentId === folderId);
+                      const folderRescues = allRescues.filter(r => r.parentId === folderId);
+                      
+                      const totalCount = folderArticles.length + folderTests.length + folderRescues.length;
+                      
+                      // Calculate completed materials
+                      const completedArticles = folderArticles.filter(a => readArticlesMap.get(a.id)).length;
+                      const completedTests = folderTests.filter(t => testsStatsMap.get(t.id)?.passed === true).length;
+                      const completedRescues = folderRescues.filter(r => rescueStatsMap.get(r.id)?.passed === true).length;
+                      
+                      const completedCount = completedArticles + completedTests + completedRescues;
+                      const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+                      
                       return (
                         <StudyFolderCard
-                          key={folderItem.data.id}
+                          key={folderId}
                           name={folderItem.data.name}
-                          materialCount={count}
-                          progressPercent={0}
+                          materialCount={totalCount || 0}
+                          progressPercent={progressPercent}
                           index={i}
                           onPress={() => handleItemPress(folderItem)}
                         />
@@ -786,48 +839,46 @@ export function Explorer() {
                     </View>
                   )}
                   <Animated.View entering={staggerEnter(4)} style={styles.overallProgress}>
-                    <ThemedText type="h2">Общий прогресс</ThemedText>
-                    <View style={styles.overallBar}>
-                      <ProgressBar
-                        current={overallCompleted}
-                        total={overallTotal || 1}
-                        height={8}
-                        shimmer
-                      />
-                    </View>
-                    <View style={styles.statRow}>
-                      <ThemedText type="caption" style={{ color: descriptionColor }}>
-                        Статьи: {overallStats.data?.counts.documentsRead ?? 0}/{overallStats.data?.totals.documents ?? 0}
-                      </ThemedText>
-                      <ThemedText type="caption" style={{ color: descriptionColor }}>
-                        Тесты: {overallStats.data?.counts.testsPassed ?? 0}/{overallStats.data?.totals.tests ?? 0}
-                      </ThemedText>
-                      <ThemedText type="caption" style={{ color: descriptionColor }}>
-                        Режимы: {overallStats.data?.counts.rescuesPassed ?? 0}/{overallStats.data?.totals.rescues ?? 0}
-                      </ThemedText>
-                    </View>
+                    <GlassCard padding={20} borderRadius={16}>
+                      <ThemedText type="h2">Общий прогресс</ThemedText>
+                      <View style={styles.overallBar}>
+                        <ProgressBar
+                          current={overallCompleted}
+                          total={overallTotal || 1}
+                          height={8}
+                          shimmer
+                        />
+                      </View>
+                      <View style={styles.statRow}>
+                        <ThemedText type="caption" style={{ color: descriptionColor }}>
+                          Статьи: {overallStats.data?.counts.documentsRead ?? 0}/{overallStats.data?.totals.documents ?? 0}
+                        </ThemedText>
+                        <ThemedText type="caption" style={{ color: descriptionColor }}>
+                          Тесты: {overallStats.data?.counts.testsPassed ?? 0}/{overallStats.data?.totals.tests ?? 0}
+                        </ThemedText>
+                        <ThemedText type="caption" style={{ color: descriptionColor }}>
+                          Режимы: {overallStats.data?.counts.rescuesPassed ?? 0}/{overallStats.data?.totals.rescues ?? 0}
+                        </ThemedText>
+                      </View>
+                    </GlassCard>
                   </Animated.View>
                 </>
               );
             }
 
             if (filteredItems.length === 0) {
-              if (hiddenText) {
-                return (
-                  <ThemedView style={styles.emptyContainer}>
-                    <ThemedText style={styles.emptyText}>Ничего нет</ThemedText>
+              return (
+                <GlassCard padding={32} borderRadius={16} style={styles.emptyCard}>
+                  <IconSymbol name="info.circle.fill" size={48} color={descriptionColor} style={styles.emptyIcon} />
+                  <ThemedText style={styles.emptyText}>В этом разделе пока нет материалов</ThemedText>
+                  {hiddenText && (
                     <Pressable onPress={handleResetFilters} style={styles.hiddenItemsContainer}>
-                      <ThemedText style={[styles.hiddenItemsText, { color: descriptionColor }]}>
-                        {hiddenText}
+                      <ThemedText style={[styles.hiddenItemsText, { color: tintColor }]}>
+                        Показать скрытые ({hiddenText})
                       </ThemedText>
                     </Pressable>
-                  </ThemedView>
-                );
-              }
-              return (
-                <ThemedView style={styles.emptyContainer}>
-                  <ThemedText style={styles.emptyText}>Ничего нет</ThemedText>
-                </ThemedView>
+                  )}
+                </GlassCard>
               );
             }
 
@@ -910,15 +961,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
   },
   headerContent: {
     flexDirection: 'row',
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
     minHeight: 44,
-    overflow: 'hidden'
-    // flexWrap: 'wrap',
+    overflow: 'hidden',
+    zIndex: 2,
   },
   currentFolderButton: {
     flexDirection: 'row',
@@ -930,9 +983,8 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   currentFolderName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    marginRight: 8,
     flexShrink: 1,
   },
   filterButtons: {
@@ -974,6 +1026,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   folderGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
     marginTop: 24,
   },
@@ -1007,16 +1061,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     opacity: 0.7,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  emptyCard: {
     alignItems: 'center',
-    padding: 32,
+    justifyContent: 'center',
+    marginTop: 24,
     gap: 16,
   },
+  emptyIcon: {
+    opacity: 0.6,
+  },
   emptyText: {
-    fontSize: 16,
+    fontSize: 15,
     opacity: 0.7,
+    textAlign: 'center',
   },
   hiddenItemsContainer: {
     alignItems: 'center',

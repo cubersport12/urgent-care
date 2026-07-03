@@ -2,13 +2,13 @@ import { AppTestVm } from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 import { useEffect } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { BackButton } from './explorer/back-button';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 import { GlassCard } from './ui/glass-card';
-import { GradientButton } from './ui/gradient-button';
+import { Button } from './ui/button';
 import { IconSymbol } from './ui/icon-symbol';
 import { ScreenBackground } from './ui/screen-background';
 
@@ -28,40 +28,70 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
 
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
+  const questionCount = test.questions?.length ?? 0;
+  const infoLine =
+    questionCount > 0 && test.minScore != null
+      ? `${questionCount} вопросов | минимум ${test.minScore}%`
+      : questionCount > 0
+        ? `${questionCount} вопросов`
+        : test.minScore != null
+          ? `минимум ${test.minScore}%`
+          : null;
+
   return (
     <ScreenBackground style={styles.container}>
       <Animated.View style={[styles.inner, animatedStyle]}>
-        <BackButton onPress={onBack} label="Назад" />
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Animated.View entering={staggerEnter(0)}>
+        <View style={styles.header}>
+          <BackButton onPress={onBack} />
+        </View>
+
+        <View style={styles.centered}>
+          <Animated.View entering={staggerEnter(0)} style={styles.titleBlock}>
             <ThemedText type="h1" style={styles.title}>
               {test.name}
             </ThemedText>
+            {infoLine ? (
+              <ThemedText type="caption" style={styles.subtitle}>
+                {infoLine}
+              </ThemedText>
+            ) : null}
           </Animated.View>
-          <Animated.View entering={staggerEnter(1)}>
-            <GlassCard padding={24} borderRadius={16} style={styles.infoCard}>
+
+          <Animated.View entering={staggerEnter(1)} style={styles.cardWrap}>
+            <GlassCard padding={24} borderRadius={16}>
               <ThemedText type="caption" style={styles.infoHeading}>
                 Информация о тесте
               </ThemedText>
               <ThemedView style={styles.infoGrid}>
-                {test.questions && test.questions.length > 0 && (
-                  <InfoItem icon="questionmark.circle.fill" label="Вопросов" value={String(test.questions.length)} color={tintColor} />
+                {questionCount > 0 && (
+                  <InfoItem
+                    icon="questionmark.circle.fill"
+                    label="Вопросов"
+                    value={String(questionCount)}
+                    color={tintColor}
+                  />
                 )}
                 {test.minScore != null && (
                   <InfoItem icon="star.fill" label="Мин. балл" value={String(test.minScore)} color={tintColor} />
                 )}
                 {test.maxErrors != null && (
-                  <InfoItem icon="exclamationmark.triangle.fill" label="Макс. ошибок" value={String(test.maxErrors)} color={tintColor} />
+                  <InfoItem
+                    icon="exclamationmark.triangle.fill"
+                    label="Макс. ошибок"
+                    value={String(test.maxErrors)}
+                    color={tintColor}
+                  />
                 )}
               </ThemedView>
             </GlassCard>
           </Animated.View>
-          {onStart && (
+
+          {onStart ? (
             <Animated.View entering={staggerEnter(2)} style={styles.startWrap}>
-              <GradientButton title="Начать тест" onPress={onStart} fullWidth />
+              <Button title="Начать тест" onPress={onStart} fullWidth size="large" />
             </Animated.View>
-          )}
-        </ScrollView>
+          ) : null}
+        </View>
       </Animated.View>
     </ScreenBackground>
   );
@@ -89,13 +119,24 @@ function InfoItem({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  inner: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
-  scrollContent: { paddingBottom: 96, paddingTop: 8 },
-  title: { marginBottom: 16 },
-  infoCard: { marginTop: 8 },
+  inner: { flex: 1, paddingHorizontal: 16 },
+  header: { paddingTop: 12, paddingBottom: 8 },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingBottom: 48,
+    gap: 24,
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  titleBlock: { alignItems: 'center', gap: 8 },
+  title: { textAlign: 'center' },
+  subtitle: { textAlign: 'center', opacity: 0.7 },
+  cardWrap: { width: '100%' },
   infoHeading: { marginBottom: 16, opacity: 0.7 },
-  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 24 },
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 24 },
   infoItem: { alignItems: 'center', minWidth: 80, gap: 4 },
   infoValue: { fontSize: 24, fontWeight: '300' },
-  startWrap: { marginTop: 32 },
+  startWrap: { width: '100%' },
 });

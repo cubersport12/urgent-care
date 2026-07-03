@@ -3,14 +3,19 @@ import { useFileImage } from '@/hooks/api/useFileImage';
 import { saveTestResult } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
+import { Gradients } from '@/constants/theme';
 import { Image } from 'expo-image';
-import { Alert, Platform, Pressable, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Alert, Platform, Pressable, ScrollView, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { BackButton } from '../explorer/back-button';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
-import { styles } from './styles';
+import { GlassCard } from '../ui/glass-card';
+import { Button } from '../ui/button';
+import { ScreenBackground } from '../ui/screen-background';
+import { useTestTakingStyles } from './styles';
 import { getAnswerStatus } from './utils';
 
 type TestQuestionViewProps = {
@@ -65,7 +70,20 @@ export function TestQuestionView({
   });
 
   const question = getCurrentQuestion();
-  const { page: backgroundColor, border: borderColor, success: successColor, error: errorColor, warning: warningColor, primary: buttonColor, successContainer, errorContainer, warningContainer, layout2: disabledBackground } = useAppTheme();
+  const {
+    success: successColor,
+    error: errorColor,
+    warning: warningColor,
+    primary: buttonColor,
+    neutralSoft,
+    onPrimary,
+    primaryContainer,
+    successContainer,
+    errorContainer,
+    warningContainer,
+  } = useAppTheme();
+  const glass = useGlass();
+  const styles = useTestTakingStyles();
   
   // Create alpha colors from containers
   const successAlpha10 = successContainer + '1A'; // ~10% opacity
@@ -210,388 +228,376 @@ export function TestQuestionView({
     handleFinishWithConfirmation();
   };
 
+  const progressPercent =
+    totalQuestions > 0 ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0;
+  const nextLabel = showResult
+    ? isTestCompleted
+      ? 'Завершить'
+      : 'Далее'
+    : isLastQuestion
+      ? 'Завершить'
+      : 'Далее';
+  const canProceed = showResult || selectedAnswers.length > 0;
+
   return (
-    <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
-      <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
-        <ThemedView style={styles.headerContent}>
-          <BackButton onPress={handleBackToFolder} label="Назад" />
-        {/* <ThemedText style={styles.progressText}>
-          Вопрос {currentQuestionIndex + 1} из {totalQuestions}
-        </ThemedText> */}
-        </ThemedView>
-        {/* Навигация по вопросам - показывается если showNavigation !== false и нет ни одного activationCondition в тесте */}
-        {test.showNavigation !== false && 
-         test.questions && test.questions.length > 0 && 
-         !test.questions.some(q => q.activationCondition) && (
-          <ThemedView style={styles.questionsNavigation}>
-            {test.questions.map((q, index) => {
-              const isVisited = visitedQuestions.has(q.id);
-              const isCurrent = index === currentQuestionIndex;
-              const questionAnswer = answers.find(a => a.questionId === q.id);
-              const isCorrect = questionAnswer?.isCorrect;
-              const isSkipped = isVisited && !questionAnswer; // Посещен, но не отвечен
-              
-              // Определяем стиль в зависимости от состояния
-              let navStyle: any = {
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                borderWidth: 2,
-                borderColor: borderColor,
-                backgroundColor: isCurrent ? buttonColor : 'transparent',
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginHorizontal: 4,
-              };
+    <ScreenBackground style={styles.container}>
+      <Animated.View style={[styles.container, animatedStyle]}>
+        <View style={[styles.topProgressTrack, { backgroundColor: glass.progressTrack }]}>
+          <LinearGradient
+            colors={[...Gradients.primary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.topProgressFill, { width: `${progressPercent}%` }]}
+          />
+        </View>
 
-              // Активный вопрос всегда primary цвет
-              if (isCurrent) {
-                navStyle.backgroundColor = buttonColor;
-                navStyle.borderColor = buttonColor;
-              } else {
-                // Если showCorrectAnswer = true, показываем правильные/неправильные для неактивных
-                if (test.showCorrectAnswer && isVisited && questionAnswer) {
-                  if (isCorrect) {
-                    navStyle.borderColor = successColor;
-                    navStyle.backgroundColor = successAlpha10;
-                  } else {
-                    navStyle.borderColor = errorColor;
-                    navStyle.backgroundColor = errorAlpha10;
-                  }
-                } else if (test.showCorrectAnswer === false && questionAnswer) {
-                  // Если showCorrectAnswer = false и вопрос отвечен, обводим primary рамкой
-                  navStyle.borderColor = buttonColor;
-                }
-              }
-
-              // Пропущенные вопросы (посещены, но не отвечены) - пунктирная рамка
-              if (isSkipped && !isCurrent) {
-                navStyle.borderStyle = 'dashed';
-              }
-
-              return (
-                <Pressable
-                  key={q.id}
-                  onPress={() => isVisited && goToQuestion(q.id)}
-                  disabled={!isVisited}
-                  style={[
-                    navStyle,
-                    !isVisited && { opacity: 0.5 },
-                  ]}
-                >
-                  <ThemedText
-                    style={{
-                      fontSize: 12,
-                      fontWeight: isCurrent ? 'bold' : 'normal',
-                      color: isCurrent ? '#fff' : undefined,
-                    }}
-                  >
-                    {index + 1}
-        </ThemedText>
-                </Pressable>
-              );
-            })}
+        <ThemedView style={[styles.header, { borderBottomColor: glass.border }]}>
+          <ThemedView style={styles.headerContent}>
+            <BackButton onPress={handleBackToFolder} />
           </ThemedView>
-        )}
-      </ThemedView>
-      <ScrollView style={styles.scrollView}>
-        <ThemedView style={styles.content}>
-          <ThemedView style={styles.questionContainer}>
-          {question.image && (
-            <ThemedView style={styles.imageContainer}>
-                {isLoadingImage ? (
-                  <ThemedText style={styles.imagePlaceholder}>Загрузка изображения...</ThemedText>
-                ) : imageDataUrl ? (
-                  <Image
-                    source={{ uri: imageDataUrl }}
-                    style={styles.questionImage}
-                    contentFit="contain"
-                    transition={200}
-                  />
-                ) : (
-              <ThemedText style={styles.imagePlaceholder}>
-                [Изображение: {question.image}]
-              </ThemedText>
-                )}
-            </ThemedView>
-          )}
-            <ThemedText 
-              type="subtitle" 
-              style={[
-                styles.questionTitle,
-                !question.image && styles.questionTitleWithoutImage
-              ]}
-            >
-              {question.questionText}
-            </ThemedText>
-          </ThemedView>
-          <ThemedView style={styles.divider} />
-          {question.answers && question.answers.length > 0 && (
-            <ThemedView style={styles.answersContainer}>
-              {question.answers.map((answer, index) => {
-                const status = getAnswerStatus(
-                  index,
-                  shouldShowResults,
-                  question,
-                  answers,
-                  question.id
-                );
-                const isSelected = selectedAnswers.includes(index);
-                const isAnswerCorrect = answer.isCorrect || false;
+          {test.showNavigation !== false &&
+            test.questions &&
+            test.questions.length > 0 &&
+            !test.questions.some((q) => q.activationCondition) && (
+              <ThemedView style={styles.questionsNavigation}>
+                {test.questions.map((q, index) => {
+                  const isVisited = visitedQuestions.has(q.id);
+                  const isCurrent = index === currentQuestionIndex;
+                  const questionAnswer = answers.find((a) => a.questionId === q.id);
+                  const isCorrect = questionAnswer?.isCorrect;
+                  const isSkipped = isVisited && !questionAnswer;
 
-                // Определяем, был ли ответ выбран (используем сохраненные ответы при показе результатов)
-                const wasSelected = shouldShowResults && currentAnswer
-                  ? currentAnswer.answerIds.map(id => parseInt(id, 10)).includes(index)
-                  : isSelected;
+                  let navBorderColor = glass.borderSubtle;
+                  let navBackgroundColor = 'transparent';
+                  let navTextColor = neutralSoft;
+                  let navBorderStyle: 'solid' | 'dashed' = 'solid';
+                  let navBorderWidth = 1;
 
-                // Определяем подпись для ответа (только когда показываются результаты)
-                let answerLabel = '';
-                let answerLabelType: 'selected-correct' | 'selected-incorrect' | 'not-selected-correct' | null = null;
-                let shouldShowBadge = false;
-                
-                if (shouldShowResults && currentAnswer) {
-                  // Когда показываются результаты:
-                  if (wasSelected) {
-                    // Пользователь выбрал ответ
-                    if (isAnswerCorrect) {
-                      // Выбрал верный ответ
-                      answerLabel = 'Выбрано';
-                      answerLabelType = 'selected-correct';
-                      shouldShowBadge = true;
+                  if (isCurrent) {
+                    navBackgroundColor = buttonColor;
+                    navBorderColor = buttonColor;
+                    navTextColor = onPrimary;
+                    navBorderWidth = 2;
+                  } else if (questionAnswer) {
+                    navBorderWidth = 2;
+                    if (isCorrect) {
+                      navBorderColor = successColor;
+                      navBackgroundColor = successAlpha10;
+                      navTextColor = successColor;
                     } else {
-                      // Выбрал неверный ответ
-                      answerLabel = 'Выбрано';
-                      answerLabelType = 'selected-incorrect';
-                      shouldShowBadge = true;
+                      navBorderColor = errorColor;
+                      navBackgroundColor = errorAlpha10;
+                      navTextColor = errorColor;
                     }
-                  } else if (isAnswerCorrect) {
-                    // Пользователь не выбрал ответ, но ответ верный
-                    answerLabel = 'Не выбрано';
-                    answerLabelType = 'not-selected-correct';
-                    shouldShowBadge = true;
+                  } else if (isSkipped) {
+                    navBorderStyle = 'dashed';
+                    navBorderColor = warningColor;
+                    navBackgroundColor = warningAlpha10;
+                    navTextColor = warningColor;
+                    navBorderWidth = 2;
                   }
-                  // Если пользователь не выбрал неправильный ответ - не показываем badge
-                }
 
-                // Определяем стили для контейнера кнопки в зависимости от состояния
-                const containerStyles: any[] = [styles.answerButtonContainer];
-                
-                if (shouldShowResults && currentAnswer) {
-                  if (wasSelected) {
-                    // Пользователь выбрал ответ
-                    if (isAnswerCorrect) {
-                      // Выбрал верный ответ - зеленый фон
-                      containerStyles.push({
-                        borderColor: successColor,
-                        backgroundColor: successAlpha10,
-                      });
-                    } else {
-                      // Выбрал неверный ответ - красный фон
-                      containerStyles.push({
-                        borderColor: errorColor,
-                        backgroundColor: errorAlpha10,
-                      });
-                    }
-                  } else if (isAnswerCorrect) {
-                    // Пользователь не выбрал ответ, но ответ верный - warning фон
-                    containerStyles.push({
-                      borderColor: warningColor,
-                      backgroundColor: warningAlpha10,
-                    });
-                  }
-                  // Если пользователь не выбрал неправильный ответ - обычный фон (не меняем)
-                } else if (isSelected) {
-                  containerStyles.push(styles.answerButtonSelected);
-                }
-                
-                if (shouldShowResults && status === 'should-be-selected') {
-                  containerStyles.push(styles.answerButtonShouldBeSelected);
-                }
-
-                return (
-                  <ThemedView key={index} style={[containerStyles, { position: 'relative' }]}>
-                  <Pressable
-                    onPress={() => onAnswerToggle(index)}
-                    disabled={showResult}
-                      style={styles.answerButtonContent}
+                  return (
+                    <Pressable
+                      key={q.id}
+                      onPress={() => isVisited && goToQuestion(q.id)}
+                      disabled={!isVisited}
+                      style={[
+                        {
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          borderWidth: navBorderWidth,
+                          borderStyle: navBorderStyle,
+                          borderColor: navBorderColor,
+                          backgroundColor: navBackgroundColor,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          marginHorizontal: 4,
+                        },
+                        !isVisited && { opacity: 0.45 },
+                      ]}
                     >
-                      <ThemedText style={styles.answerText} numberOfLines={0}>
-                        {answer.answerText}
+                      <ThemedText
+                        style={{
+                          fontSize: 12,
+                          fontWeight: isCurrent || questionAnswer ? '600' : '400',
+                          color: navTextColor,
+                        }}
+                      >
+                        {index + 1}
                       </ThemedText>
                     </Pressable>
-                    {shouldShowBadge && answerLabel && (
-                      <ThemedView
+                  );
+                })}
+              </ThemedView>
+            )}
+        </ThemedView>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <ThemedView style={styles.content}>
+            <ThemedText style={[styles.progressText, { color: neutralSoft }]}>
+              Вопрос {currentQuestionIndex + 1} из {totalQuestions}
+            </ThemedText>
+
+            <GlassCard padding={24} borderRadius={16} style={{ marginBottom: 20 }}>
+              {question.image ? (
+                <ThemedView style={[styles.imageContainer, { borderColor: glass.borderSubtle, backgroundColor: glass.backgroundSubtle }]}>
+                  {isLoadingImage ? (
+                    <ThemedText style={[styles.imagePlaceholder, { color: neutralSoft }]}>
+                      Загрузка изображения...
+                    </ThemedText>
+                  ) : imageDataUrl ? (
+                    <Image
+                      source={{ uri: imageDataUrl }}
+                      style={styles.questionImage}
+                      contentFit="contain"
+                      transition={200}
+                    />
+                  ) : (
+                    <ThemedText style={[styles.imagePlaceholder, { color: neutralSoft }]}>
+                      [Изображение: {question.image}]
+                    </ThemedText>
+                  )}
+                </ThemedView>
+              ) : null}
+
+              <View style={styles.questionRow}>
+                <View style={[styles.questionNumberBadge, { backgroundColor: `${buttonColor}26` }]}>
+                  <ThemedText style={[styles.questionNumberText, { color: buttonColor }]}>
+                    {currentQuestionIndex + 1}
+                  </ThemedText>
+                </View>
+                <ThemedText style={styles.questionTitle}>{question.questionText}</ThemedText>
+              </View>
+            </GlassCard>
+
+            {question.answers && question.answers.length > 0 ? (
+              <ThemedView style={styles.answersContainer}>
+                {question.answers.map((answer, index) => {
+                  const status = getAnswerStatus(
+                    index,
+                    shouldShowResults,
+                    question,
+                    answers,
+                    question.id,
+                  );
+                  const isSelected = selectedAnswers.includes(index);
+                  const isAnswerCorrect = answer.isCorrect || false;
+                  const wasSelected =
+                    shouldShowResults && currentAnswer
+                      ? currentAnswer.answerIds.map((id) => parseInt(id, 10)).includes(index)
+                      : isSelected;
+
+                  let answerBg = glass.backgroundSubtle;
+                  let answerBorder = glass.borderSubtle;
+                  let letterBg = glass.backgroundSubtle;
+                  let letterBorder = glass.borderSubtle;
+                  let letterColor = neutralSoft;
+
+                  if (shouldShowResults && currentAnswer) {
+                    if (wasSelected && isAnswerCorrect) {
+                      answerBg = successContainer;
+                      answerBorder = successColor;
+                      letterBg = successContainer;
+                      letterBorder = successColor;
+                      letterColor = successColor;
+                    } else if (wasSelected && !isAnswerCorrect) {
+                      answerBg = errorContainer;
+                      answerBorder = errorColor;
+                      letterBg = errorContainer;
+                      letterBorder = errorColor;
+                      letterColor = errorColor;
+                    } else if (!wasSelected && isAnswerCorrect) {
+                      answerBg = successContainer;
+                      answerBorder = successColor;
+                      letterBg = successContainer;
+                      letterBorder = successColor;
+                      letterColor = successColor;
+                    }
+                  } else if (isSelected) {
+                    answerBg = primaryContainer;
+                    answerBorder = buttonColor;
+                    letterBg = primaryContainer;
+                    letterBorder = buttonColor;
+                    letterColor = buttonColor;
+                  }
+
+                  if (shouldShowResults && status === 'should-be-selected') {
+                    answerBorder = successColor;
+                    answerBg = successContainer;
+                  }
+
+                  return (
+                    <Pressable
+                      key={index}
+                      onPress={() => onAnswerToggle(index)}
+                      disabled={showResult}
+                      style={({ pressed }) => [
+                        {
+                          borderRadius: 12,
+                          borderWidth: 1,
+                          borderColor: answerBorder,
+                          backgroundColor: answerBg,
+                          opacity: pressed && !showResult ? 0.9 : 1,
+                          transform: [{ scale: pressed && !showResult ? 0.98 : 1 }],
+                        },
+                      ]}
+                    >
+                      <View style={styles.answerRow}>
+                        <View
                           style={[
-                          styles.answerBadge,
-                          answerLabelType === 'selected-correct' && {
-                            backgroundColor: successColor,
-                          },
-                          answerLabelType === 'not-selected-correct' && {
-                            backgroundColor: warningColor,
-                          },
-                          answerLabelType === 'selected-incorrect' && {
-                            backgroundColor: errorColor,
-                          },
-                        ]}
-                      >
-                        <ThemedText
-                          style={[
-                            styles.answerBadgeText,
+                            styles.answerLetterBadge,
                             {
-                              color: '#fff',
+                              backgroundColor: letterBg,
+                              borderColor: letterBorder,
                             },
-                        ]}
-                      >
-                          {answerLabel}
-                      </ThemedText>
-                      </ThemedView>
-                    )}
-                  </ThemedView>
-                );
-              })}
-            </ThemedView>
-          )}
-          {shouldShowResults && currentAnswer && (
-            <ThemedView
-              style={[
-                styles.resultMessage,
-                {
-                  backgroundColor: currentAnswer.isCorrect
-                    ? successAlpha10
-                    : isPartiallyCorrect
-                    ? warningAlpha10
-                    : errorAlpha10,
-                },
-              ]}
-            >
-              <ThemedText
+                          ]}
+                        >
+                          <ThemedText
+                            style={[
+                              styles.answerLetterText,
+                              { color: letterColor },
+                              isSelected && styles.answerLetterTextSelected,
+                            ]}
+                          >
+                            {String.fromCharCode(65 + index)}
+                          </ThemedText>
+                        </View>
+                        <ThemedText style={styles.answerText} numberOfLines={0}>
+                          {answer.answerText}
+                        </ThemedText>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </ThemedView>
+            ) : null}
+
+            {shouldShowResults && currentAnswer ? (
+              <ThemedView
                 style={[
-                  styles.resultMessageText,
+                  styles.resultMessage,
                   {
-                    color: currentAnswer.isCorrect 
-                      ? successColor 
+                    backgroundColor: currentAnswer.isCorrect
+                      ? successAlpha10
                       : isPartiallyCorrect
-                      ? warningColor
-                      : errorColor,
+                        ? warningAlpha10
+                        : errorAlpha10,
                   },
                 ]}
               >
-                {currentAnswer.isCorrect 
-                  ? '✓ Правильный ответ!' 
-                  : isPartiallyCorrect
-                  ? '⚠ Частично правильный ответ'
-                  : '✗ Неправильный ответ'}
-              </ThemedText>
-              {currentAnswer.score > 0 && (
-                <ThemedText style={styles.resultScoreText}>
-                  Баллов: {currentAnswer.score}
+                <ThemedText
+                  style={[
+                    styles.resultMessageText,
+                    {
+                      color: currentAnswer.isCorrect
+                        ? successColor
+                        : isPartiallyCorrect
+                          ? warningColor
+                          : errorColor,
+                    },
+                  ]}
+                >
+                  {currentAnswer.isCorrect
+                    ? '✓ Правильный ответ!'
+                    : isPartiallyCorrect
+                      ? '⚠ Частично правильный ответ'
+                      : '✗ Неправильный ответ'}
                 </ThemedText>
-              )}
-            </ThemedView>
-          )}
-          <ThemedView style={styles.buttonsRow}>
-            {!isFirstQuestion && !isTestCompleted && test.showBackButton !== false ? (
-              <>
+                {currentAnswer.score > 0 ? (
+                  <ThemedText style={[styles.resultScoreText, { color: neutralSoft }]}>
+                    Баллов: {currentAnswer.score}
+                  </ThemedText>
+                ) : null}
+              </ThemedView>
+            ) : null}
+
+            <ThemedView style={styles.buttonsRow}>
+              {!isFirstQuestion && !isTestCompleted && test.showBackButton !== false ? (
                 <Pressable
                   onPress={onPrevious}
                   style={({ pressed }) => [
-                    styles.previousButton,
+                    styles.glassButton,
                     {
                       flex: 1,
-                      backgroundColor: pressed ? borderColor + 'CC' : 'transparent',
-                      borderColor: borderColor,
-                      opacity: pressed ? 0.8 : 1,
+                      borderColor: glass.border,
+                      backgroundColor: glass.backgroundSubtle,
+                      opacity: pressed ? 0.85 : 1,
                     },
                   ]}
                 >
-                  <ThemedText style={styles.previousButtonText}>Назад</ThemedText>
+                  <ThemedText style={styles.glassButtonText}>Назад</ThemedText>
                 </Pressable>
-                <Pressable
-                  onPress={onNext}
-                  disabled={!showResult && selectedAnswers.length === 0}
-                  style={({ pressed }) => [
-                    styles.nextButton,
-                    {
-                      flex: 1,
-                      backgroundColor:
-                        !showResult && selectedAnswers.length === 0
-                          ? disabledBackground
-                          : pressed
-                          ? buttonColor + 'CC'
-                          : buttonColor,
-                      opacity: (!showResult && selectedAnswers.length === 0) || pressed ? 0.8 : 1,
-                    },
-                  ]}
-                >
-                  <ThemedText style={styles.nextButtonText}>
-                    {showResult ? (isTestCompleted ? 'Завершить' : 'Далее') : 'Далее'}
-                  </ThemedText>
-                </Pressable>
-              </>
-            ) : (
-          <Pressable
-            onPress={onNext}
-            disabled={!showResult && selectedAnswers.length === 0}
-            style={({ pressed }) => [
-              styles.nextButton,
-              {
-                    flex: 1,
-                backgroundColor:
-                  !showResult && selectedAnswers.length === 0
-                        ? disabledBackground
-                    : pressed
-                    ? buttonColor + 'CC'
-                    : buttonColor,
-                opacity: (!showResult && selectedAnswers.length === 0) || pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <ThemedText style={styles.nextButtonText}>
-                  {showResult ? (isTestCompleted ? 'Завершить' : 'Далее') : 'Далее'}
-            </ThemedText>
-          </Pressable>
-            )}
+              ) : null}
+
+              <View style={styles.nextButtonWrap}>
+                {canProceed ? (
+                  <Button title={nextLabel} onPress={onNext} fullWidth size="large" />
+                ) : (
+                  <Pressable
+                    disabled
+                    style={[
+                      styles.glassButton,
+                      {
+                        flex: 1,
+                        borderColor: glass.borderSubtle,
+                        backgroundColor: glass.backgroundSubtle,
+                        opacity: 0.4,
+                      },
+                    ]}
+                  >
+                    <ThemedText style={[styles.glassButtonText, { color: neutralSoft }]}>
+                      {nextLabel}
+                    </ThemedText>
+                  </Pressable>
+                )}
+              </View>
+            </ThemedView>
+
+            {shouldShowSkipButton ? (
+              <Pressable
+                onPress={onSkip}
+                style={({ pressed }) => [
+                  styles.glassButton,
+                  {
+                    borderColor: glass.border,
+                    backgroundColor: glass.backgroundSubtle,
+                    opacity: pressed ? 0.85 : 1,
+                    marginTop: 8,
+                  },
+                ]}
+              >
+                <ThemedText style={styles.glassButtonText}>Пропустить</ThemedText>
+              </Pressable>
+            ) : null}
+
+            {!isTestCompleted ? (
+              <Pressable
+                onPress={handleFinishWithConfirmation}
+                style={({ pressed }) => [
+                  styles.finishTestButtonGhost,
+                  { opacity: pressed ? 0.85 : 1 },
+                ]}
+                {...(Platform.OS === 'web' && {
+                  cursor: 'pointer',
+                  onClick: (e: { preventDefault: () => void; stopPropagation: () => void }) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleFinishWithConfirmation();
+                  },
+                })}
+              >
+                <ThemedText style={styles.finishTestButtonGhostText}>Завершить тест</ThemedText>
+              </Pressable>
+            ) : null}
           </ThemedView>
-          {shouldShowSkipButton && (
-            <Pressable
-              onPress={onSkip}
-              style={({ pressed }) => [
-                styles.skipButton,
-                {
-                  backgroundColor: pressed ? borderColor + 'CC' : 'transparent',
-                  borderColor: borderColor,
-                  opacity: pressed ? 0.8 : 1,
-                },
-              ]}
-            >
-              <ThemedText style={styles.skipButtonText}>Пропустить</ThemedText>
-            </Pressable>
-          )}
-          {!isTestCompleted && (
-            <Pressable
-              onPress={handleFinishWithConfirmation}
-              style={({ pressed }) => [
-                styles.finishTestButton,
-                {
-                  backgroundColor: pressed ? errorColor + 'CC' : errorColor,
-                  opacity: pressed ? 0.8 : 1,
-                },
-              ]}
-              // Для веб добавляем cursor pointer и явную обработку onClick
-              {...(Platform.OS === 'web' && {
-                cursor: 'pointer',
-                onClick: (e: any) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleFinishWithConfirmation();
-                },
-              })}
-            >
-              <ThemedText style={styles.finishTestButtonText}>Завершить тест</ThemedText>
-            </Pressable>
-          )}
-        </ThemedView>
-      </ScrollView>
-    </Animated.View>
+        </ScrollView>
+      </Animated.View>
+    </ScreenBackground>
   );
 }

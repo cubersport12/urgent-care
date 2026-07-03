@@ -1,7 +1,6 @@
 import { AuthProvider } from '@/contexts/auth-context';
 import { TestProvider } from '@/contexts/test-context';
 import { ThemeProvider } from '@/contexts/theme-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
   Inter_300Light,
   Inter_400Regular,
@@ -19,6 +18,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme-context';
@@ -74,9 +74,6 @@ function RootStack() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const theme = __DEV__ ? 'dark' : (colorScheme ?? 'light');
-
   const [fontsLoaded] = useFonts({
     Inter_300Light,
     Inter_400Regular,
@@ -97,12 +94,16 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <TestProvider>
-        <AuthProvider>
-          <RootStack />
-        </AuthProvider>
-      </TestProvider>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <TestProvider>
+          <AuthProvider>
+            <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
+              <RootStack />
+            </SafeAreaView>
+          </AuthProvider>
+        </TestProvider>
+      </SafeAreaProvider>
     </ThemeProvider>
   );
 }

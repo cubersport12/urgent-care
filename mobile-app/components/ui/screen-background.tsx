@@ -12,20 +12,12 @@ export function ScreenBackground({ children, style, variant = 'default', ...rest
   return (
     <View style={[styles.root, { backgroundColor: page }, style]} {...rest}>
       {variant === 'study' && (
-        <>
-          <LinearGradient
-            colors={['rgba(0, 132, 255, 0.08)', 'transparent']}
-            style={styles.gradientTop}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-          />
-          <LinearGradient
-            colors={['rgba(77, 139, 49, 0.05)', 'transparent']}
-            style={styles.gradientBottom}
-            start={{ x: 0.3, y: 0.7 }}
-            end={{ x: 0.7, y: 1 }}
-          />
-        </>
+        <LinearGradient
+          colors={['rgba(0, 132, 255, 0.08)', 'transparent']}
+          style={styles.gradientTop}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+        />
       )}
       {children}
     </View>
@@ -43,14 +35,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: '60%',
-    pointerEvents: 'none',
-  },
-  gradientBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
     pointerEvents: 'none',
   },
 });

@@ -1,6 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
-import { GlassCard } from '@/components/ui/glass-card';
-import { GradientButton } from '@/components/ui/gradient-button';
+import { Button } from '@/components/ui/button';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
@@ -14,11 +14,88 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  View,
 } from 'react-native';
+
+type GlassInputProps = {
+  label: string;
+  icon: string;
+  placeholder: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  secureTextEntry?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoComplete?: 'email' | 'password' | 'name' | 'off' | 'username';
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+};
+
+function GlassInput({
+  label,
+  icon,
+  placeholder,
+  value,
+  onChangeText,
+  secureTextEntry,
+  autoCapitalize,
+  autoComplete,
+  keyboardType,
+}: GlassInputProps) {
+  const { primary: tintColor, text: textColor, neutralSoft } = useAppTheme();
+  const glass = useGlass();
+  const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const isPassword = secureTextEntry;
+  const shouldHideText = isPassword && !showPassword;
+
+  return (
+    <View style={styles.inputContainer}>
+      <ThemedText style={styles.label}>{label}</ThemedText>
+      <View
+        style={[
+          styles.inputWrapper,
+          {
+            borderColor: isFocused ? tintColor : glass.border,
+            backgroundColor: isFocused ? glass.backgroundHover : glass.backgroundSubtle,
+          },
+        ]}
+      >
+        <IconSymbol
+          name={icon as never}
+          size={20}
+          color={isFocused ? tintColor : neutralSoft}
+          style={styles.leftIcon}
+        />
+        <TextInput
+          style={[styles.textInput, { color: textColor }]}
+          placeholder={placeholder}
+          placeholderTextColor={neutralSoft}
+          value={value}
+          onChangeText={onChangeText}
+          secureTextEntry={shouldHideText}
+          autoCapitalize={autoCapitalize}
+          autoComplete={autoComplete}
+          keyboardType={keyboardType}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+        />
+        {isPassword ? (
+          <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.rightIcon}>
+            <IconSymbol
+              name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
+              size={20}
+              color={neutralSoft}
+            />
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { primary: tintColor, text: textColor } = useAppTheme();
+  const { primary: tintColor, layout1, border } = useAppTheme();
   const glass = useGlass();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -54,24 +131,28 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <GlassCard padding={24} borderRadius={16} style={styles.inner}>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: layout1,
+                borderColor: border,
+              },
+            ]}
+          >
+            <View style={[styles.logoCircle, { borderColor: glass.border, backgroundColor: glass.backgroundSubtle }]}>
+              <IconSymbol name="cross.fill" size={32} color={tintColor} />
+            </View>
+
             <ThemedText type="h1" style={styles.title}>
               Вход
             </ThemedText>
             <ThemedText style={styles.hint}>Введите почту и пароль учётной записи</ThemedText>
 
-            <ThemedText style={styles.label}>Почта</ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  borderColor: glass.border,
-                  backgroundColor: glass.backgroundSubtle,
-                  color: textColor,
-                },
-              ]}
+            <GlassInput
+              label="Электронная почта"
+              icon="envelope.fill"
               placeholder="email@example.com"
-              placeholderTextColor={glass.border}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -79,37 +160,35 @@ export default function LoginScreen() {
               keyboardType="email-address"
             />
 
-            <ThemedText style={styles.label}>Пароль</ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  borderColor: glass.border,
-                  backgroundColor: glass.backgroundSubtle,
-                  color: textColor,
-                },
-              ]}
+            <GlassInput
+              label="Пароль"
+              icon="lock.fill"
               placeholder="••••••••"
-              placeholderTextColor={glass.border}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
               autoComplete="password"
             />
 
-            <GradientButton
-              title={submitting ? 'Вход...' : 'Войти'}
-              onPress={() => void handleLogin()}
-              disabled={submitting}
-              fullWidth
-            />
+            <View style={styles.buttonContainer}>
+              <Button
+                title={submitting ? 'Вход...' : 'Войти'}
+                onPress={() => void handleLogin()}
+                disabled={submitting}
+                fullWidth
+                size="large"
+              />
+            </View>
 
             <Link href="/(auth)/register" asChild>
               <Pressable style={styles.linkWrap}>
-                <ThemedText style={[styles.link, { color: tintColor }]}>Регистрация</ThemedText>
+                <ThemedText style={styles.linkText}>
+                  Нет аккаунта?{' '}
+                  <ThemedText style={[styles.link, { color: tintColor }]}>Зарегистрироваться</ThemedText>
+                </ThemedText>
               </Pressable>
             </Link>
-          </GlassCard>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenBackground>
@@ -123,43 +202,82 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
-  inner: {
+  card: {
     maxWidth: 400,
     width: '100%',
     alignSelf: 'center',
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 28,
+  },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 20,
   },
   title: {
     marginBottom: 8,
     textAlign: 'center',
     fontSize: 28,
+    fontWeight: 'bold',
   },
   hint: {
     opacity: 0.75,
-    marginBottom: 24,
+    marginBottom: 28,
     textAlign: 'center',
     fontSize: 14,
   },
+  inputContainer: {
+    marginBottom: 18,
+    width: '100%',
+  },
   label: {
     fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 6,
+    fontWeight: '600',
+    marginBottom: 8,
     opacity: 0.9,
+    paddingLeft: 4,
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 14,
+    height: 52,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+  },
+  leftIcon: {
+    marginRight: 12,
+  },
+  textInput: {
+    flex: 1,
+    height: '100%',
     fontSize: 16,
-    marginBottom: 16,
+    paddingVertical: 0,
+  },
+  rightIcon: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  buttonContainer: {
+    marginTop: 12,
+    width: '100%',
   },
   linkWrap: {
-    marginTop: 20,
-    paddingVertical: 12,
+    marginTop: 24,
+    paddingVertical: 8,
     alignItems: 'center',
   },
+  linkText: {
+    fontSize: 14,
+    opacity: 0.8,
+  },
   link: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });

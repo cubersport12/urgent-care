@@ -1,140 +1,188 @@
 import { useAppTheme } from '@/hooks/use-theme-color';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet } from 'react-native';
-import Pdf from 'react-native-pdf';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { WebView } from 'react-native-webview';
+import type { PdfViewProps } from './pdf-view.types';
+import { normalizePdfDataUri, pdfJsHtmlFromBase64 } from './pdf-view.types';
 
-type PdfViewProps = {
-  /**
-   * Base64 data URL или обычный URL PDF файла
-   */
-  source: string | null | undefined;
-  /**
-   * Callback, вызываемый при загрузке PDF
-   */
-  onLoad?: () => void;
-  /**
-   * Callback, вызываемый при ошибке загрузки
-   */
-  onError?: (error: Error) => void;
-  /**
-   * Callback, вызываемый при изменении страницы
-   * @param page - номер текущей страницы (начинается с 1)
-   * @param numberOfPages - общее количество страниц
-   */
-  onPageChanged?: (page: number, numberOfPages: number) => void;
-  /**
-   * Дополнительные стили для контейнера
-   */
-  style?: any;
-  /**
-   * Включить пагинацию (переключение страниц свайпом)
-   */
-  enablePaging?: boolean;
-  /**
-   * Горизонтальная прокрутка (true) или вертикальная (false)
-   */
-  horizontal?: boolean;
-  /**
-   * Расстояние между страницами
-   */
-  spacing?: number;
-  /**
-   * Номер начальной страницы (начинается с 1)
-   */
-  page?: number;
-  /**
-   * Политика масштабирования (0 = fit width, 1 = fit height, 2 = fit both)
-   */
-  fitPolicy?: 0 | 1 | 2;
-};
+function extractBase64(dataUri: string): string {
+  const match = dataUri.match(/base64,(.+)$/);
+  return match ? match[1] : dataUri;
+}
 
 /**
- * Компонент для отображения PDF на Android и iOS платформах
- * Использует react-native-pdf для нативного отображения PDF
+ * PDF на iOS/Android: base64 → файл в cache → WebView.
+ * iOS открывает file:// напрямую; Android — через HTML-обёртку (встроенный PDF-плагин убран).
  */
 export function PdfView({
   source,
   onLoad,
   onError,
-  onPageChanged,
   style,
-  enablePaging = true,
-  horizontal = false,
-  spacing = 0,
-  page = 1,
-  fitPolicy = 2,
+  onScrollToEnd,
 }: PdfViewProps) {
-  const [totalPages, setTotalPages] = useState(0);
+  const { page: backgroundColor } = useAppTheme();
+  const [webViewSource, setWebViewSource] = useState<{ uri: string } | { html: string; baseUrl?: string } | null>(
+    null,
+  );
+  const [isPreparing, setIsPreparing] = useState(false);
+  const filePathRef = useRef<string | null>(null);
+  const hasCalledScrollEndRef = useRef(false);
   const hasCalledOnLoadRef = useRef(false);
-  const { page: bg } = useAppTheme();
 
-  // Вызываем onLoad при первой загрузке
   useEffect(() => {
-    if (totalPages > 0 && !hasCalledOnLoadRef.current && onLoad) {
-      hasCalledOnLoadRef.current = true;
-      onLoad();
-    }
-  }, [totalPages, onLoad]);
+    hasCalledScrollEndRef.current = false;
+    hasCalledOnLoadRef.current = false;
+  }, [source]);
 
-  if (!source) {
-    return null;
-  }
+  useEffect(() => {
+    let cancelled = false;
 
-  // Нормализуем URI для react-native-pdf
-  // react-native-pdf требует формат: "data:application/pdf;base64,JVBERi0xLjcKJc..."
-  let normalizedUri = source;
-  if (source.startsWith('data:')) {
-    // Если уже data URL, проверяем формат
-    if (!source.startsWith('data:application/pdf;base64,')) {
-      // Если формат неправильный, пытаемся исправить
-      const base64Match = source.match(/data:.*?;base64,(.+)/);
-      if (base64Match) {
-        normalizedUri = `data:application/pdf;base64,${base64Match[1]}`;
+    async function prepare() {
+      if (!source) {
+        setWebViewSource(null);
+        return;
+      }
+
+      setIsPreparing(true);
+      setWebViewSource(null);
+
+      try {
+        const normalized = normalizePdfDataUri(source);
+        const base64 = extractBase64(normalized);
+        const cacheDir = FileSystem.cacheDirectory;
+
+        if (Platform.OS === 'android') {
+          if (cancelled) return;
+          setWebViewSource({ html: pdfJsHtmlFromBase64(base64) });
+          return;
+        }
+
+        if (!cacheDir) {
+          throw new Error('Cache directory is unavailable');
+        }
+
+        if (filePathRef.current) {
+          await FileSystem.deleteAsync(filePathRef.current, { idempotent: true });
+          filePathRef.current = null;
+        }
+
+        const filePath = `${cacheDir}pdf-${Date.now()}.pdf`;
+        await FileSystem.writeAsStringAsync(filePath, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        if (cancelled) {
+          await FileSystem.deleteAsync(filePath, { idempotent: true });
+          return;
+        }
+
+        filePathRef.current = filePath;
+
+        const fileUri = filePath.startsWith('file://') ? filePath : `file://${filePath}`;
+        setWebViewSource({ uri: fileUri });
+      } catch (error) {
+        if (!cancelled) {
+          console.error('PDF prepare error:', error);
+          onError?.(error instanceof Error ? error : new Error('Failed to prepare PDF'));
+          setWebViewSource(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsPreparing(false);
+        }
       }
     }
-  } else {
-    // Если это не data URL, предполагаем что это base64 строка без префикса
-    normalizedUri = `data:application/pdf;base64,${source}`;
+
+    void prepare();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [source, onError]);
+
+  useEffect(() => {
+    return () => {
+      if (filePathRef.current) {
+        void FileSystem.deleteAsync(filePathRef.current, { idempotent: true });
+        filePathRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleLoadEnd = () => {
+    if (!hasCalledOnLoadRef.current) {
+      hasCalledOnLoadRef.current = true;
+      onLoad?.();
+    }
+  };
+
+  const handleMessage = (event: { nativeEvent: { data: string } }) => {
+    const data = event.nativeEvent.data;
+    if (data === 'loaded' && !hasCalledOnLoadRef.current) {
+      hasCalledOnLoadRef.current = true;
+      onLoad?.();
+    }
+    if (data === 'error') {
+      onError?.(new Error('Failed to render PDF'));
+    }
+    if (data === 'end' && onScrollToEnd && !hasCalledScrollEndRef.current) {
+      hasCalledScrollEndRef.current = true;
+      onScrollToEnd();
+    }
+  };
+
+  if (isPreparing || !webViewSource) {
+    return (
+      <View style={[styles.container, style, styles.centered, { backgroundColor }]}>
+        {isPreparing ? <ActivityIndicator size="large" /> : null}
+      </View>
+    );
   }
 
   return (
-    <Pdf
-      source={{ uri: normalizedUri, cache: true }}
-      onLoadComplete={(numberOfPages: number) => {
-        setTotalPages(numberOfPages);
-        // Если PDF состоит из одной страницы, вызываем onLoad сразу
-        if (numberOfPages === 1 && !hasCalledOnLoadRef.current && onLoad) {
-          hasCalledOnLoadRef.current = true;
-          onLoad();
-        }
-      }}
-      onPageChanged={(pageNumber: number, numberOfPages: number) => {
-        setTotalPages(numberOfPages);
-        if (onPageChanged) {
-          onPageChanged(pageNumber, numberOfPages);
-        }
-      }}
-      onError={(error: any) => {
-        console.error('PDF error:', error);
-        if (onError) {
-          onError(new Error(error?.message || 'Failed to load PDF'));
-        }
-      }}
-      style={[styles.pdf, style, { backgroundColor: bg }]}
-      enablePaging={enablePaging}
-      horizontal={horizontal}
-      spacing={spacing}
-      page={page}
-      fitPolicy={fitPolicy}
-    />
+    <View style={[styles.container, style, { backgroundColor }]}>
+      <WebView
+        source={webViewSource}
+        style={styles.webview}
+        originWhitelist={['*']}
+        javaScriptEnabled
+        domStorageEnabled
+        allowFileAccess
+        allowFileAccessFromFileURLs
+        allowUniversalAccessFromFileURLs
+        nestedScrollEnabled
+        setSupportMultipleWindows={false}
+        mixedContentMode="always"
+        onLoadEnd={Platform.OS === 'ios' ? handleLoadEnd : undefined}
+        onError={(syntheticEvent) => {
+          console.error('WebView PDF error:', syntheticEvent.nativeEvent);
+          onError?.(new Error('Failed to load PDF'));
+        }}
+        onHttpError={(syntheticEvent) => {
+          console.error('WebView PDF HTTP error:', syntheticEvent.nativeEvent);
+          onError?.(new Error('Failed to load PDF'));
+        }}
+        onMessage={handleMessage}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  pdf: {
+  container: {
     flex: 1,
+    minHeight: 0,
     width: '100%',
-    height: '100%'
+    overflow: 'hidden',
+  },
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  webview: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
 });
-

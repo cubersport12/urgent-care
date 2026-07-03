@@ -1,4 +1,5 @@
 import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
+import { staggerEnter } from '@/hooks/use-enter-animation';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { useIsFocused } from '@react-navigation/native';
 import { useEffect } from 'react';
@@ -7,10 +8,8 @@ import Animated from 'react-native-reanimated';
 import { ThemedText } from '../themed-text';
 import { GlassCard } from '../ui/glass-card';
 import { IconSymbol } from '../ui/icon-symbol';
-import { ParticleHelix } from '../ui/particle-helix';
 import { ProgressBar } from '../ui/progress-bar';
 import { StatusBadge } from '../ui/status-badge';
-import { staggerEnter } from '@/hooks/use-enter-animation';
 
 type AccountOverallStatsProps = {
   refreshKey?: number;
@@ -87,9 +86,9 @@ export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps
 
   return (
     <View style={styles.container}>
-      <Animated.View entering={staggerEnter(1)} style={styles.helixWrap}>
+      {/* <Animated.View entering={staggerEnter(1)} style={styles.helixWrap}>
         <ParticleHelix />
-      </Animated.View>
+      </Animated.View> */}
 
       <View style={styles.metricsGrid}>
         {metrics.map((m, i) => (
@@ -99,7 +98,7 @@ export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps
                 <IconSymbol name={m.icon} size={20} color={m.color} />
               </View>
               <ThemedText style={styles.metricValue}>{m.value}</ThemedText>
-              <ThemedText type="caption" style={{ color: neutralSoft }}>
+              <ThemedText type="caption" style={{ color: neutralSoft, marginTop: 6 }}>
                 {m.label}
               </ThemedText>
             </GlassCard>
@@ -200,7 +199,7 @@ const styles = StyleSheet.create({
   detailHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   detailTitle: {
     fontSize: 14,

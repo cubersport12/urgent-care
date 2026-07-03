@@ -49,6 +49,9 @@ const MAPPING = {
   'rectangle.portrait.and.arrow.right': 'logout',
   'shield.fill': 'shield',
   'arrow.counterclockwise': 'refresh',
+  'envelope.fill': 'email',
+  'eye.fill': 'visibility',
+  'eye.slash.fill': 'visibility-off',
 } as IconMapping;
 
 /**

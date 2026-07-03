@@ -1,5 +1,6 @@
 import { Radius } from '@/constants/theme';
 import { useAppTheme, useGlass, useThemeValue } from '@/hooks/use-theme-color';
+import { useTheme } from '@/contexts/theme-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Gradients } from '@/constants/theme';
 import { Platform, Pressable, StyleSheet, type PressableProps } from 'react-native';
@@ -30,11 +31,11 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
-  const theme = useAppTheme();
+  const { theme } = useTheme();
+  const appTheme = useAppTheme();
   const glass = useGlass();
   const disabledOpacityValue = useThemeValue('disabledOpacity');
   const {
-    primary: primaryColor,
     onPrimary: onPrimaryColor,
     success: successColor,
     onSuccess: onSuccessColor,
@@ -44,14 +45,18 @@ export function Button({
     layout2,
     onLayout1,
     text,
-  } = theme;
+  } = appTheme;
+
+  const isGradient = variant === 'primary' || variant === 'gradient';
+  const gradientColors = theme === 'light' ? Gradients.primaryLight : Gradients.primary;
 
   const getButtonColors = () => {
     switch (variant) {
       case 'primary':
+      case 'gradient':
         return {
-          backgroundColor: primaryColor,
-          pressedBackgroundColor: primaryColor + 'CC',
+          backgroundColor: 'transparent',
+          pressedBackgroundColor: 'transparent',
           textColor: onPrimaryColor,
         };
       case 'success':
@@ -78,12 +83,6 @@ export function Button({
           backgroundColor: 'transparent',
           pressedBackgroundColor: glass.backgroundSubtle,
           textColor: text,
-        };
-      case 'gradient':
-        return {
-          backgroundColor: 'transparent',
-          pressedBackgroundColor: 'transparent',
-          textColor: onPrimaryColor,
         };
       case 'default':
       default:
@@ -129,7 +128,7 @@ export function Button({
     </>
   );
 
-  if (variant === 'gradient') {
+  if (isGradient) {
     return (
       <Pressable
         {...props}
@@ -145,17 +144,22 @@ export function Button({
             resolvedStyle,
           ];
         }}
+        {...(Platform.OS === 'web' && {
+          cursor: isDisabled ? 'not-allowed' : 'pointer',
+        })}
       >
         <LinearGradient
-          colors={[...Gradients.primary]}
+          colors={[...gradientColors]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
             styles.button,
+            styles.gradientButton,
             {
               paddingHorizontal: sizeStyles.paddingHorizontal,
               paddingVertical: sizeStyles.paddingVertical,
               minHeight: sizeStyles.minHeight,
+              width: fullWidth ? '100%' : undefined,
             },
           ]}
         >
@@ -206,6 +210,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     borderRadius: Radius.lg,
+  },
+  gradientButton: {
+    shadowColor: 'rgba(0, 132, 255, 0.3)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 4,
   },
   text: {
     fontWeight: '500',

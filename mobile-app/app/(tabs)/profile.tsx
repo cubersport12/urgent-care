@@ -1,15 +1,15 @@
 import { ThemedText } from '@/components/themed-text';
-import { AnimatedOrb } from '@/components/ui/animated-orb';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { ScreenBackground } from '@/components/ui/screen-background';
+import { ThemePicker } from '@/components/ui/theme-picker';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { staggerEnter } from '@/hooks/use-enter-animation';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -137,9 +137,9 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={staggerEnter(0)}>
+        {/* <Animated.View entering={staggerEnter(0)}>
           <AnimatedOrb />
-        </Animated.View>
+        </Animated.View> */}
 
         <Animated.View entering={staggerEnter(1)} style={styles.profileCardWrap}>
           <GlassCard padding={24} borderRadius={16}>
@@ -193,6 +193,7 @@ export default function ProfileScreen() {
 
         <Animated.View entering={staggerEnter(3)} style={styles.section}>
           <ThemedText type="h2">Настройки</ThemedText>
+          <ThemePicker />
           {settingsItems.map((item, i) => (
             <Pressable
               key={item.label}
@@ -237,7 +238,6 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.pageBottom,
   },
   profileCardWrap: {
-    marginTop: -16,
     zIndex: 1,
   },
   avatarBlock: {

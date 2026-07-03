@@ -60,7 +60,7 @@ export function RescueComplete({
   selectedImplications = [],
   onBack,
 }: RescueCompleteProps) {
-  const { page: backgroundColor, primary: primaryShadow, success, error } = useAppTheme();
+  const { page: backgroundColor, success, error } = useAppTheme();
 
   const data = useMemo(() => parseRescueItemDataVm(rescueItem.data), [rescueItem.data]);
 
@@ -155,7 +155,7 @@ export function RescueComplete({
             variant="primary"
             size="large"
             fullWidth
-            style={[styles.backButton, { shadowColor: primaryShadow }]}
+            style={styles.backButton}
           />
         </ThemedView>
       </ScrollView>
@@ -235,20 +235,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginTop: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 56,
-    width: '100%',
     maxWidth: 300,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
+    alignSelf: 'center',
   },
 });

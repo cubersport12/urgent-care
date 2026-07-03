@@ -5,9 +5,10 @@ import { Pressable, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
+import { Button } from '../ui/button';
 import { IconSymbol } from '../ui/icon-symbol';
 import { QuestionAccordion } from './question-accordion';
-import { styles } from './styles';
+import { useTestTakingStyles } from './styles';
 
 type TestResultsViewProps = {
   onBack: () => void;
@@ -26,7 +27,8 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
     visitedQuestions,
   } = useTest();
 
-  const { page: backgroundColor, layout2: pressedBackgroundColor, primary: tintColor, success: successColor, error: errorColor, primary: buttonColor } = useAppTheme();
+  const { page: backgroundColor, layout2: pressedBackgroundColor, primary: tintColor, success: successColor, error: errorColor } = useAppTheme();
+  const styles = useTestTakingStyles();
 
   // Обрабатываем пропущенные вопросы при монтировании компонента
   useEffect(() => {
@@ -144,18 +146,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
         </ThemedView>
       </ScrollView>
       <ThemedView style={[styles.fixedButtonContainer, { backgroundColor }]}>
-        <Pressable
-          onPress={handleFinish}
-          style={({ pressed }) => [
-            styles.finishButton,
-            {
-              backgroundColor: pressed ? buttonColor + 'CC' : buttonColor,
-              opacity: pressed ? 0.8 : 1,
-            },
-          ]}
-        >
-          <ThemedText style={styles.finishButtonText}>Завершить</ThemedText>
-        </Pressable>
+        <Button title="Завершить" onPress={handleFinish} fullWidth size="large" />
       </ThemedView>
     </Animated.View>
   );

@@ -1,8 +1,16 @@
 import { Radius } from '@/constants/theme';
-import { useGlass, useThemeShadow } from '@/hooks/use-theme-color';
 import { useTheme } from '@/contexts/theme-context';
+import { useAppTheme, useGlass, useThemeShadow } from '@/hooks/use-theme-color';
 import { BlurView } from 'expo-blur';
 import { Platform, Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+
+const NO_SHADOW = {
+  shadowColor: 'transparent',
+  shadowOffset: { width: 0, height: 0 },
+  shadowOpacity: 0,
+  shadowRadius: 0,
+  elevation: 0,
+} as const;
 
 type GlassCardProps = ViewProps & {
   onPress?: () => void;
@@ -24,8 +32,11 @@ export function GlassCard({
 }: GlassCardProps) {
   const { theme } = useTheme();
   const glass = useGlass();
+  const { layout1 } = useAppTheme();
   const shadow = useThemeShadow('glass');
+  const isLight = theme === 'light';
   const blurIntensity = intensity ?? (theme === 'dark' ? 20 : 12);
+  const showBlur = !isLight && Platform.OS !== 'web';
 
   const content = (
     <View
@@ -34,22 +45,22 @@ export function GlassCard({
         {
           borderRadius,
           borderColor: glass.border,
-          backgroundColor: glass.background,
+          backgroundColor: isLight ? layout1 : glass.background,
           padding,
         },
-        shadow,
+        isLight ? NO_SHADOW : shadow,
         style,
       ]}
       {...rest}
     >
-      {Platform.OS !== 'web' && (
+      {showBlur ? (
         <BlurView
           intensity={blurIntensity}
-          tint={theme === 'dark' ? 'dark' : 'light'}
+          tint="dark"
           style={[StyleSheet.absoluteFill, { borderRadius, overflow: 'hidden' }]}
         />
-      )}
-      <View style={styles.insetHighlight} pointerEvents="none" />
+      ) : null}
+      {!isLight ? <View style={styles.insetHighlightDark} pointerEvents="none" /> : null}
       <View style={styles.content}>{children}</View>
     </View>
   );
@@ -75,7 +86,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     position: 'relative',
   },
-  insetHighlight: {
+  insetHighlightDark: {
     position: 'absolute',
     top: 0,
     left: 0,

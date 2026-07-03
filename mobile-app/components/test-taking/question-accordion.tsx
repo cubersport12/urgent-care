@@ -5,7 +5,7 @@ import { TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
 import { IconSymbol } from '../ui/icon-symbol';
-import { styles } from './styles';
+import { useTestTakingStyles } from './styles';
 import { getAnswerStatusForResults } from './utils';
 
 type QuestionAccordionProps = {
@@ -37,6 +37,7 @@ export function QuestionAccordion({
 }: QuestionAccordionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { layout2: pressedBackgroundColor, success: successColor, error: errorColor, successContainer, errorContainer, neutral: iconColor, onPrimary: whiteColor } = useAppTheme();
+  const styles = useTestTakingStyles();
   
   // Create alpha colors from containers
   const successAlpha20 = successContainer + '33'; // ~20% opacity

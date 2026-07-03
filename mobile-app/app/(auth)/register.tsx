@@ -1,23 +1,98 @@
 import { ThemedText } from '@/components/themed-text';
-import { GlassCard } from '@/components/ui/glass-card';
-import { GradientButton } from '@/components/ui/gradient-button';
+import { Button } from '@/components/ui/button';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
+  View,
 } from 'react-native';
+
+type GlassInputProps = {
+  label: string;
+  icon: string;
+  placeholder: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  secureTextEntry?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+};
+
+function GlassInput({
+  label,
+  icon,
+  placeholder,
+  value,
+  onChangeText,
+  secureTextEntry,
+  autoCapitalize,
+  keyboardType,
+}: GlassInputProps) {
+  const { primary: tintColor, text: textColor, neutralSoft } = useAppTheme();
+  const glass = useGlass();
+  const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const isPassword = secureTextEntry;
+  const shouldHideText = isPassword && !showPassword;
+
+  return (
+    <View style={styles.inputContainer}>
+      <ThemedText style={styles.label}>{label}</ThemedText>
+      <View
+        style={[
+          styles.inputWrapper,
+          {
+            borderColor: isFocused ? tintColor : glass.border,
+            backgroundColor: isFocused ? glass.backgroundHover : glass.backgroundSubtle,
+          },
+        ]}
+      >
+        <IconSymbol
+          name={icon as never}
+          size={20}
+          color={isFocused ? tintColor : neutralSoft}
+          style={styles.leftIcon}
+        />
+        <TextInput
+          style={[styles.textInput, { color: textColor }]}
+          placeholder={placeholder}
+          placeholderTextColor={neutralSoft}
+          value={value}
+          onChangeText={onChangeText}
+          secureTextEntry={shouldHideText}
+          autoCapitalize={autoCapitalize}
+          keyboardType={keyboardType}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+        />
+        {isPassword ? (
+          <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.rightIcon}>
+            <IconSymbol
+              name={showPassword ? 'eye.slash.fill' : 'eye.fill'}
+              size={20}
+              color={neutralSoft}
+            />
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+}
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { text: textColor } = useAppTheme();
+  const { primary: tintColor, layout1, border } = useAppTheme();
   const glass = useGlass();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -69,59 +144,79 @@ export default function RegisterScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <GlassCard padding={24} borderRadius={16} style={styles.inner}>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: layout1,
+                borderColor: border,
+              },
+            ]}
+          >
+            <View style={[styles.logoCircle, { borderColor: glass.border, backgroundColor: glass.backgroundSubtle }]}>
+              <IconSymbol name="plus.circle.fill" size={32} color={tintColor} />
+            </View>
+
             <ThemedText type="h1" style={styles.title}>
               Регистрация
             </ThemedText>
             <ThemedText style={styles.hint}>Создайте учётную запись</ThemedText>
 
-            <ThemedText style={styles.label}>Имя</ThemedText>
-            <TextInput
-              style={[styles.input, { borderColor: glass.border, backgroundColor: glass.backgroundSubtle, color: textColor }]}
+            <GlassInput
+              label="Имя"
+              icon="person.fill"
               placeholder="Как к вам обращаться"
-              placeholderTextColor={glass.border}
               value={name}
               onChangeText={setName}
             />
 
-            <ThemedText style={styles.label}>Почта</ThemedText>
-            <TextInput
-              style={[styles.input, { borderColor: glass.border, backgroundColor: glass.backgroundSubtle, color: textColor }]}
+            <GlassInput
+              label="Электронная почта"
+              icon="envelope.fill"
               placeholder="email@example.com"
-              placeholderTextColor={glass.border}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
             />
 
-            <ThemedText style={styles.label}>Пароль</ThemedText>
-            <TextInput
-              style={[styles.input, { borderColor: glass.border, backgroundColor: glass.backgroundSubtle, color: textColor }]}
+            <GlassInput
+              label="Пароль"
+              icon="lock.fill"
               placeholder="Не менее 6 символов"
-              placeholderTextColor={glass.border}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
             />
 
-            <ThemedText style={styles.label}>Подтвердите пароль</ThemedText>
-            <TextInput
-              style={[styles.input, { borderColor: glass.border, backgroundColor: glass.backgroundSubtle, color: textColor }]}
+            <GlassInput
+              label="Подтвердите пароль"
+              icon="lock.fill"
               placeholder="Повторите пароль"
-              placeholderTextColor={glass.border}
               value={confirm}
               onChangeText={setConfirm}
               secureTextEntry
             />
 
-            <GradientButton
-              title={submitting ? 'Регистрация...' : 'Зарегистрироваться'}
-              onPress={() => void handleRegister()}
-              disabled={submitting}
-              fullWidth
-            />
-          </GlassCard>
+            <View style={styles.buttonContainer}>
+              <Button
+                title={submitting ? 'Регистрация...' : 'Зарегистрироваться'}
+                onPress={() => void handleRegister()}
+                disabled={submitting}
+                fullWidth
+                size="large"
+              />
+            </View>
+
+            <Link href="/(auth)/login" asChild>
+              <Pressable style={styles.linkWrap}>
+                <ThemedText style={styles.linkText}>
+                  Уже есть аккаунт?{' '}
+                  <ThemedText style={[styles.link, { color: tintColor }]}>Войти</ThemedText>
+                </ThemedText>
+              </Pressable>
+            </Link>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenBackground>
@@ -130,17 +225,87 @@ export default function RegisterScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  inner: { maxWidth: 400, width: '100%', alignSelf: 'center' },
-  title: { marginBottom: 8, textAlign: 'center', fontSize: 28 },
-  hint: { opacity: 0.75, marginBottom: 24, textAlign: 'center', fontSize: 14 },
-  label: { fontSize: 13, fontWeight: '500', marginBottom: 6 },
-  input: {
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 24,
+  },
+  card: {
+    maxWidth: 400,
+    width: '100%',
+    alignSelf: 'center',
+    borderRadius: 24,
     borderWidth: 1,
-    borderRadius: 12,
+    padding: 28,
+  },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    marginBottom: 8,
+    textAlign: 'center',
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  hint: {
+    opacity: 0.75,
+    marginBottom: 28,
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  inputContainer: {
+    marginBottom: 18,
+    width: '100%',
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+    opacity: 0.9,
+    paddingLeft: 4,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 14,
+    height: 52,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+  },
+  leftIcon: {
+    marginRight: 12,
+  },
+  textInput: {
+    flex: 1,
+    height: '100%',
     fontSize: 16,
-    marginBottom: 16,
+    paddingVertical: 0,
+  },
+  rightIcon: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  buttonContainer: {
+    marginTop: 12,
+    width: '100%',
+  },
+  linkWrap: {
+    marginTop: 24,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  linkText: {
+    fontSize: 14,
+    opacity: 0.8,
+  },
+  link: {
+    fontWeight: '600',
   },
 });

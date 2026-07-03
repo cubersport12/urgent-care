@@ -4,7 +4,7 @@ import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { PdfView } from './pdf-view/pdf-view';
 import { ThemedText } from './themed-text';
@@ -103,18 +103,16 @@ const ArticleViewContent = memo(({
 
   const { border: borderColor } = useAppTheme();
   
-  // Состояние для отслеживания прочтения PDF
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  // Состояние для отслеживания прочтения PDF (legacy page API — не используется с WebView)
   const isMarkedAsReadRef = useRef(false);
-  
-  // Отслеживаем, когда пользователь доскроллил до конца PDF
-  useEffect(() => {
-    if (totalPages > 0 && currentPage >= totalPages && !isMarkedAsReadRef.current) {
+
+  const markAsReadIfNeeded = useCallback(() => {
+    if (!isMarkedAsReadRef.current) {
       isMarkedAsReadRef.current = true;
       void markAsReadRef.current();
     }
-  }, [currentPage, totalPages, markAsReadRef]);
+  }, [markAsReadRef]);
+
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
       <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
@@ -134,28 +132,22 @@ const ArticleViewContent = memo(({
           <ThemedText style={styles.loadingText}>Загрузка...</ThemedText>
         </ThemedView>
       ) : pdfUri ? (
-        <PdfView
-          source={pdfUri}
-          onPageChanged={(page: number, numberOfPages: number) => {
-            // Для нативных платформ отслеживаем переход на последнюю страницу
-            if (Platform.OS !== 'web') {
-              setCurrentPage(page);
-              setTotalPages(numberOfPages);
-            }
-          }}
-          onScrollToEnd={() => {
-            // Для веб-платформы отслеживаем прокрутку до конца
-            if (!isMarkedAsReadRef.current) {
-              isMarkedAsReadRef.current = true;
-              void markAsReadRef.current();
-            }
-          }}
-          onError={(error) => {
-            console.error('PDF error:', error);
-          }}
-          style={styles.pdf}
-        />
-      ) : null}
+        <View style={styles.pdfContainer}>
+          <PdfView
+            key={pdfUri}
+            source={pdfUri}
+            onScrollToEnd={markAsReadIfNeeded}
+            onError={(error) => {
+              console.error('PDF error:', error);
+            }}
+            style={styles.pdf}
+          />
+        </View>
+      ) : (
+        <ThemedView style={styles.loadingContainer}>
+          <ThemedText style={styles.loadingText}>Не удалось загрузить документ</ThemedText>
+        </ThemedView>
+      )}
     </Animated.View>
   );
 }, (prevProps, nextProps) => {
@@ -271,8 +263,9 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   }, [markAsReadWithUpdate]);
 
   return (
-    <Animated.View style={styles.container}>
+    <Animated.View style={styles.container} pointerEvents="box-none">
       <ArticleViewContent
+        key={article.id}
         pdfUri={pdfUri}
         isLoading={isLoading}
         article={article}
@@ -280,13 +273,15 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
         markAsReadRef={markAsReadRefWithUpdate}
         tintColorRef={tintColorRef}
       />
-      <NavigationButtons
-        isRead={isRead}
-        hasPrevious={hasPrevious}
-        article={article}
-        onNext={onNext}
-        onPrevious={onPrevious}
-      />
+      <View pointerEvents="box-none" style={styles.navButtonsLayer}>
+        <NavigationButtons
+          isRead={isRead}
+          hasPrevious={hasPrevious}
+          article={article}
+          onNext={onNext}
+          onPrevious={onPrevious}
+        />
+      </View>
     </Animated.View>
   );
 }
@@ -294,6 +289,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    ...(Platform.OS === 'web' ? { minHeight: 0, height: '100%' } : {}),
   },
   header: {
     paddingHorizontal: 16,
@@ -360,6 +356,15 @@ const styles = StyleSheet.create({
   },
   navButtonNext: {
     right: 16,
+  },
+  navButtonsLayer: {
+    ...StyleSheet.absoluteFillObject,
+    pointerEvents: 'box-none',
+  },
+  pdfContainer: {
+    flex: 1,
+    minHeight: 0,
+    width: '100%',
   },
   pdf: {
     flex: 1,

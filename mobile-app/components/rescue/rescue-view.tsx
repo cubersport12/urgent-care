@@ -7,7 +7,7 @@ import {
 } from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
@@ -202,17 +202,19 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
           style={styles.backButton}
         />
       </ThemedView>
-      <RescueSceneVisualNovel
-        backgroundImage={currentScene.background}
-        defaultBackground={rescueItem.data?.defaultBackground}
-        text={currentScene.text}
-        choices={currentScene.choices ?? []}
-        typingSpeedMs={typingSpeedMs}
-        onNext={handleNextScene}
-        parametersList={visibleSceneParameters}
-        parameterValues={parameters}
-        isReviewed={currentScene.isReviewed}
-      />
+      <View style={styles.sceneArea}>
+        <RescueSceneVisualNovel
+          backgroundImage={currentScene.background}
+          defaultBackground={rescueItem.data?.defaultBackground}
+          text={currentScene.text}
+          choices={currentScene.choices ?? []}
+          typingSpeedMs={typingSpeedMs}
+          onNext={handleNextScene}
+          parametersList={visibleSceneParameters}
+          parameterValues={parameters}
+          isReviewed={currentScene.isReviewed}
+        />
+      </View>
     </ThemedView>
   );
 }
@@ -235,6 +237,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     minHeight: 44,
     justifyContent: 'flex-start',
+  },
+  sceneArea: {
+    flex: 1,
+    minHeight: 0,
   },
 });
 

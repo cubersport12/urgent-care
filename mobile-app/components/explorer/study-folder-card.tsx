@@ -53,7 +53,9 @@ export function StudyFolderCard({
 
 const styles = StyleSheet.create({
   wrapper: {
-    width: '100%',
+    width: '48%',
+    flexGrow: 1,
+    minWidth: 140,
   },
   iconCircle: {
     width: 48,

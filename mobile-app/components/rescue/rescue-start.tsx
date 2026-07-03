@@ -1,16 +1,17 @@
+import { Spacing } from '@/constants/theme';
 import { AppRescueItemVm, RescueTimerParameterVm } from '@/hooks/api/types';
 import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { useAddOrUpdateRescueStats } from '@/hooks/api/useRescueStats';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useCallback, useEffect } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '../explorer/back-button';
 import { ThemedText } from '../themed-text';
-import { ThemedView } from '../themed-view';
 import { GlassCard } from '../ui/glass-card';
-import { GradientButton } from '../ui/gradient-button';
+import { Button } from '../ui/button';
 import { IconSymbol } from '../ui/icon-symbol';
 import { ScreenBackground } from '../ui/screen-background';
 
@@ -25,6 +26,7 @@ type RescueStartProps = {
 
 export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarted }: RescueStartProps) {
   const { deviceId } = useDeviceId();
+  const insets = useSafeAreaInsets();
   const { addOrUpdate, isLoading: isRecordingStart } = useAddOrUpdateRescueStats({
     clientId: deviceId ?? '',
     rescueId: rescueItem.id,
@@ -55,8 +57,8 @@ export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarte
   });
 
   const { primary: tintColor } = useAppTheme();
+  const footerPaddingBottom = Math.max(insets.bottom, 12) + Spacing.nav;
 
-  // Форматируем дату создания
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -85,7 +87,8 @@ export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarte
         <BackButton onPress={onBack} label="Назад" />
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={[styles.scrollViewContent, styles.scrollViewContentWithButton]}
+          contentContainerStyle={styles.scrollViewContent}
+          showsVerticalScrollIndicator={false}
         >
           <ThemedText type="h1" style={styles.title}>
             {rescueItem.name}
@@ -93,51 +96,52 @@ export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarte
 
           {rescueItem.createdAt && (
             <GlassCard padding={16} borderRadius={12} style={styles.infoCard}>
-              <ThemedView style={styles.infoRowHorizontal}>
+              <View style={styles.infoRowHorizontal}>
                 <IconSymbol name="clock.fill" size={20} color={tintColor} />
                 <ThemedText style={styles.infoLabel}>Создано:</ThemedText>
-              </ThemedView>
+              </View>
               <ThemedText style={styles.infoValue}>{formatDate(rescueItem.createdAt)}</ThemedText>
             </GlassCard>
           )}
 
           {rescueItem.description && (
             <GlassCard padding={16} borderRadius={12} style={styles.infoCard}>
-              <ThemedView style={styles.infoRowHorizontal}>
+              <View style={styles.infoRowHorizontal}>
                 <IconSymbol name="doc.fill" size={20} color={tintColor} />
                 <ThemedText style={styles.infoLabel}>Описание:</ThemedText>
-              </ThemedView>
+              </View>
               <ThemedText style={styles.descriptionText}>{rescueItem.description}</ThemedText>
             </GlassCard>
           )}
 
           {(rescueItem.data?.parameters?.length ?? 0) > 0 && (
             <GlassCard padding={16} borderRadius={12} style={styles.infoCard}>
-              <ThemedView style={styles.infoRowHorizontal}>
+              <View style={styles.infoRowHorizontal}>
                 <IconSymbol name="list.bullet.clipboard.fill" size={20} color={tintColor} />
                 <ThemedText style={styles.infoLabel}>Параметры сцены:</ThemedText>
-              </ThemedView>
-              <ThemedView style={styles.parametersContainer}>
+              </View>
+              <View style={styles.parametersContainer}>
                 {rescueItem.data?.parameters?.map((param) => (
-                  <ThemedView key={param.id} style={styles.parameterItem}>
+                  <View key={param.id} style={styles.parameterItem}>
                     <ThemedText style={styles.parameterLabel}>{param.name}:</ThemedText>
                     <ThemedText type="mono" style={styles.parameterValue}>
                       {formatTimerParameter(param)}
                     </ThemedText>
-                  </ThemedView>
+                  </View>
                 ))}
-              </ThemedView>
+              </View>
             </GlassCard>
           )}
         </ScrollView>
-        <ThemedView style={styles.startButtonContainer}>
-          <GradientButton
+        <View style={[styles.startButtonContainer, { paddingBottom: footerPaddingBottom }]}>
+          <Button
             title={isRecordingStart ? 'Загрузка...' : 'Начать'}
             onPress={() => void handleBegin()}
             disabled={isRecordingStart}
             fullWidth
+            size="large"
           />
-        </ThemedView>
+        </View>
       </Animated.View>
     </ScreenBackground>
   );
@@ -151,16 +155,9 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
-    padding: 20,
-  },
-  scrollViewContentWithButton: {
-    paddingBottom: 100, // Отступ снизу для кнопки
-  },
-  content: {
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   title: {
     marginBottom: 24,
@@ -170,8 +167,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   infoCard: {
-    padding: 16,
-    borderRadius: 16,
     marginBottom: 16,
     width: '100%',
     gap: 8,
@@ -208,7 +203,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    borderBottomColor: 'rgba(128, 128, 128, 0.2)',
   },
   parameterLabel: {
     fontSize: 16,
@@ -221,28 +216,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   startButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-    backgroundColor: 'transparent',
-  },
-  startButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 56,
-    width: '100%',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
+    paddingTop: 12,
+    paddingHorizontal: 4,
   },
 });
-

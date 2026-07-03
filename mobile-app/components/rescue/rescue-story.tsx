@@ -1,4 +1,5 @@
-import { Fonts } from '@/constants/theme';
+import { Fonts, Radius } from '@/constants/theme';
+import { useTheme } from '@/contexts/theme-context';
 import {
   type NullableValue,
   RescueParameterSeverityEnum,
@@ -7,11 +8,11 @@ import {
   RescueTimerParameterVm,
 } from '@/hooks/api/types';
 import { useFileImage } from '@/hooks/api/useFileImage';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { Image } from 'expo-image';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -47,38 +48,81 @@ function severityBandKey(s: RescueParameterSeverityVm | null): string {
   return `${s.min ?? ''}:${s.max ?? ''}:${s.severity ?? ''}`;
 }
 
-/** Базовый и «вспышечный» цвет по enum серьёзности */
-function colorsForSeverity(severity?: RescueParameterSeverityEnum): { base: string; flash: string } {
+/** Цвет значения по enum серьёзности (kimi palette) */
+function colorForSeverity(severity?: RescueParameterSeverityEnum): string {
   switch (severity) {
     case RescueParameterSeverityEnum.Normal:
-      return { base: 'rgba(96, 125, 139, 0.88)', flash: 'rgba(178, 223, 219, 0.95)' };
     case RescueParameterSeverityEnum.Low:
-      return { base: 'rgba(33, 150, 243, 0.88)', flash: 'rgba(144, 202, 249, 0.95)' };
+      return '#4D8B31';
     case RescueParameterSeverityEnum.Medium:
-      return { base: 'rgba(255, 152, 0, 0.88)', flash: 'rgba(255, 204, 128, 0.95)' };
+      return '#F59E0B';
     case RescueParameterSeverityEnum.High:
-      return { base: 'rgba(211, 47, 47, 0.88)', flash: 'rgba(255, 138, 128, 0.95)' };
+      return '#FF6B6B';
     default:
-      return { base: 'rgba(0, 0, 0, 0.65)', flash: 'rgba(120, 120, 120, 0.92)' };
+      return '#7E7E7E';
   }
 }
 
-/** Toast описания уровня: появление сверху вниз */
-function SeverityDescriptionToast({
-  message,
-}: {
-  message: string | null;
-}) {
+/** Сплошные цвета карточки параметра */
+function solidCardColors(theme: 'light' | 'dark'): { base: string; flash: string } {
+  return theme === 'dark'
+    ? { base: '#1C1C1E', flash: '#2C2C2E' }
+    : { base: '#FFFFFF', flash: '#EEF2F7' };
+}
+
+/** Панели новеллы: полупрозрачные подложки + читаемый текст */
+function novelSurfaces(theme: 'light' | 'dark', hasCritical: boolean) {
+  if (theme === 'dark') {
+    return {
+      textPanelBg: hasCritical ? 'rgba(36, 18, 18, 0.5)' : 'rgba(5, 5, 5, 0.5)',
+      parametersPanelBg: hasCritical ? 'rgba(255, 107, 107, 0.1)' : 'rgba(5, 5, 5, 0.1)',
+      panelBorder: hasCritical ? 'rgba(255, 107, 107, 0.35)' : 'rgba(255, 255, 255, 0.12)',
+      sceneText: '#EAEAEA',
+      mutedText: '#9CA3AF',
+    };
+  }
+  return {
+    textPanelBg: hasCritical ? 'rgba(255, 245, 245, 0.5)' : 'rgba(255, 255, 255, 0.5)',
+    parametersPanelBg: hasCritical ? 'rgba(255, 107, 107, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+    panelBorder: hasCritical ? 'rgba(224, 85, 85, 0.35)' : 'rgba(0, 0, 0, 0.1)',
+    sceneText: '#1A1A1A',
+    mutedText: '#6B7280',
+  };
+}
+
+/** Базовый и «вспышечный» фон карточки при смене значения */
+function flashColorsForSeverity(
+  theme: 'light' | 'dark',
+  _severity?: RescueParameterSeverityEnum,
+): { base: string; flash: string } {
+  return solidCardColors(theme);
+}
+
+/** Toast описания уровня */
+function SeverityDescriptionToast({ message }: { message: string | null }) {
+  const glass = useGlass();
+
   if (!message) return null;
 
   return (
-    <ThemedView style={styles.severityToast} pointerEvents="none">
-      <ThemedText style={styles.severityToastText}>{message}</ThemedText>
-    </ThemedView>
+    <View
+      style={[
+        styles.severityToast,
+        {
+          backgroundColor: 'rgba(28, 28, 30, 0.92)',
+          borderColor: glass.border,
+        },
+      ]}
+      pointerEvents="none"
+    >
+      <ThemedText lightColor="#FFFFFF" darkColor="#FFFFFF" style={styles.severityToastText}>
+        {message}
+      </ThemedText>
+    </View>
   );
 }
 
-/** Компонент для отображения одного параметра с анимацией при изменении (цвета из severities) */
+/** Glass-карточка параметра в стиле kimi PatientParameterCard */
 function ParameterBadge({
   param,
   value,
@@ -88,11 +132,20 @@ function ParameterBadge({
   value: number;
   onSeverityDescription?: (description: string) => void;
 }) {
-  const backgroundColor = useSharedValue(
-    colorsForSeverity(findSeverityForValue(value, param.severities)?.severity).base,
-  );
+  const { theme } = useTheme();
+  const glass = useGlass();
+  const { border: borderColor } = useAppTheme();
+  const surfaces = novelSurfaces(theme, false);
+  const severityBand = findSeverityForValue(value, param.severities);
+  const severityColor = colorForSeverity(severityBand?.severity);
+  const min = severityBand?.min ?? 0;
+  const max = severityBand?.max ?? Math.max(value, min + 1, 200);
+  const range = max - min || 1;
+  const pct = Math.max(0, Math.min(100, ((value - min) / range) * 100));
+
+  const backgroundColor = useSharedValue(flashColorsForSeverity(theme, severityBand?.severity).base);
   const prevValueRef = useRef(value);
-  const prevBandKeyRef = useRef(severityBandKey(findSeverityForValue(value, param.severities)));
+  const prevBandKeyRef = useRef(severityBandKey(severityBand));
 
   useEffect(() => {
     if (prevValueRef.current === value) return;
@@ -101,56 +154,79 @@ function ParameterBadge({
 
     const newBand = findSeverityForValue(value, param.severities);
     const newKey = severityBandKey(newBand);
-    // Toast только при входе в другую полосу min/max/severity, не при каждом тике таймера в той же полосе
     if (newKey !== prevBandKeyRef.current && newBand?.description?.trim()) {
       onSeverityDescription?.(newBand.description.trim());
     }
     prevBandKeyRef.current = newKey;
 
-    const { base: nextBase, flash } = colorsForSeverity(newBand?.severity);
-
+    const { base, flash } = flashColorsForSeverity(theme, newBand?.severity);
     backgroundColor.value = withSequence(
       withTiming(flash, { duration: 160 }),
-      withTiming(nextBase, { duration: 320 }),
+      withTiming(base, { duration: 320 }),
     );
-  }, [value, param.severities, backgroundColor, onSeverityDescription]);
+  }, [value, param.severities, backgroundColor, onSeverityDescription, theme]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: backgroundColor.value,
   }));
 
   const valueLabel = param.type === 'timer' ? formatSecondsAsHms(value) : String(value);
+  const isHigh = severityBand?.severity === RescueParameterSeverityEnum.High;
 
   return (
-    <Animated.View style={[styles.parameterBadge, animatedStyle]}>
-      <ThemedText style={styles.parameterText}>
-        {param.name}: {valueLabel}
-      </ThemedText>
+    <Animated.View
+      style={[
+        styles.parameterCard,
+        animatedStyle,
+        {
+          borderColor,
+        },
+      ]}
+    >
+      <View style={styles.parameterCardRow}>
+        <ThemedText
+          lightColor={surfaces.mutedText}
+          darkColor={surfaces.mutedText}
+          style={styles.parameterName}
+        >
+          {param.name}
+        </ThemedText>
+        <ThemedText
+          type="mono"
+          lightColor={severityColor}
+          darkColor={severityColor}
+          style={styles.parameterValue}
+        >
+          {valueLabel}
+        </ThemedText>
+      </View>
+      <View style={[styles.parameterTrack, { backgroundColor: glass.progressTrack }]}>
+        <View
+          style={[
+            styles.parameterFill,
+            {
+              width: `${pct}%`,
+              backgroundColor: severityColor,
+              shadowColor: isHigh ? severityColor : 'transparent',
+              shadowOpacity: isHigh ? 0.8 : 0,
+              shadowRadius: isHigh ? 6 : 0,
+            },
+          ]}
+        />
+      </View>
     </Animated.View>
   );
 }
 
 type RescueSceneVisualNovelProps = {
-  /** Фон сцены (URL или id); пустой — берётся defaultBackground из {@link AppRescueItemDataVm} */
   backgroundImage?: string;
-  /** Фон по умолчанию из AppRescueItemDataVm.defaultBackground, если у сцены нет своего */
   defaultBackground?: string;
-  /** Текст сцены, который печатается снизу */
   text: string;
-  /** Варианты выбора в этой сцене */
   choices: RescueSceneChoiceVm[];
-  /** Скорость печати, мс на символ */
   typingSpeedMs?: number;
-  /** Список параметров для отображения на экране */
   parametersList?: RescueTimerParameterVm[];
-  /** Текущие значения параметров */
   parameterValues?: Record<string, number>;
-  /**
-   * Явно false — сцена не отмечена автором как проверенная: показываем красную рамку-предупреждение.
-   * null/undefined/true — без рамки.
-   */
   isReviewed?: NullableValue<boolean>;
-  /** Вызывается, когда пользователь завершил сцену и нажал "Далее" */
   onNext: (selectedChoice: RescueSceneChoiceVm | null) => void;
 };
 
@@ -166,15 +242,16 @@ export function RescueSceneVisualNovel({
   onNext,
 }: RescueSceneVisualNovelProps) {
   const { height: windowHeight } = useWindowDimensions();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const {
     page: backgroundColor,
     primary: primaryColor,
     error: errorColor,
+    text: textColor,
   } = useAppTheme();
 
   const sceneNotReviewedByAuthor = isReviewed === false;
-
   const textAreaMaxHeight = windowHeight / 3;
 
   const resolvedBackground = useMemo(() => {
@@ -196,10 +273,8 @@ export function RescueSceneVisualNovel({
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fullText = text ?? '';
-
   const hasChoices = useMemo(() => choices && choices.length > 0, [choices]);
 
-  // Запускаем эффект печати при смене текста сцены
   useEffect(() => {
     if (typingIntervalRef.current) {
       clearInterval(typingIntervalRef.current);
@@ -237,7 +312,6 @@ export function RescueSceneVisualNovel({
   }, [fullText, typingSpeedMs]);
 
   const handleNextPress = () => {
-    // Сначала завершить печать, если она еще идет
     if (isTyping) {
       if (typingIntervalRef.current) {
         clearInterval(typingIntervalRef.current);
@@ -248,57 +322,55 @@ export function RescueSceneVisualNovel({
       return;
     }
 
-    // Затем показать вопрос (если есть) одним нажатием
     if (hasChoices && !hasShownChoices) {
       setHasShownChoices(true);
       return;
     }
 
-    // Если на экране варианты выбора — переход только по нажатию варианта, не по клику
     if (hasChoices && hasShownChoices) {
       return;
     }
 
-    // Сцена завершена — переходим дальше
     onNext(null);
   };
 
   const showNextButton = hasChoices ? !hasShownChoices : true;
   const canAdvanceOnTap = isTyping || !hasChoices || !hasShownChoices;
-
   const showImage = imageDataUrl && (isInlineDataUri || !isLoadingImage);
+
+  const hasCritical = parametersList.some((param) => {
+    const val = parameterValues[param.id] ?? param.startValue;
+    const band = findSeverityForValue(val, param.severities);
+    return band?.severity === RescueParameterSeverityEnum.High;
+  });
+
+  const surfaces = novelSurfaces(theme, hasCritical);
 
   return (
     <ThemedView
       style={[
         styles.container,
         { backgroundColor },
-        sceneNotReviewedByAuthor && [
-          styles.unreviewedSceneFrame,
-          { borderColor: errorColor },
-        ],
+        sceneNotReviewedByAuthor && [styles.unreviewedSceneFrame, { borderColor: errorColor }],
       ]}
     >
       {sceneNotReviewedByAuthor ? (
-        <ThemedView
+        <View
           style={[styles.unreviewedBanner, { backgroundColor: `${errorColor}E6` }]}
           pointerEvents="none"
         >
-          <ThemedText style={styles.unreviewedBannerText}>
+          <ThemedText lightColor="#FFFFFF" darkColor="#FFFFFF" style={styles.unreviewedBannerText}>
             Сцена не проверена автором на ошибки и корректность содержимого
           </ThemedText>
-        </ThemedView>
+        </View>
       ) : null}
 
       {!isInlineDataUri && isLoadingImage ? (
-        <ThemedView style={styles.loadingContainer}>
+        <View style={styles.loadingContainer}>
           <ThemedText>Загрузка изображения...</ThemedText>
-        </ThemedView>
+        </View>
       ) : showImage ? (
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={handleNextPress}
-        >
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleNextPress}>
           <Image
             source={{ uri: imageDataUrl }}
             style={styles.backgroundImage}
@@ -311,39 +383,27 @@ export function RescueSceneVisualNovel({
           style={[StyleSheet.absoluteFill, styles.placeholderContainer]}
           onPress={handleNextPress}
         >
-          <ThemedText>
-            [Изображение: {resolvedBackground || 'не задано'}]
-          </ThemedText>
+          <ThemedText>[Изображение: {resolvedBackground || 'не задано'}]</ThemedText>
         </Pressable>
       )}
 
-      {/* Полупрозрачный оверлей для читаемости */}
-      {/* <ThemedView
-        style={[
-          styles.overlay,
-          { backgroundColor: overlayBackground ?? 'rgba(0,0,0,0.25)' },
-        ]}
-      /> */}
-
-      {/* Панель параметров */}
-      { parametersList.length > 0 && (
-        <ThemedView
+      {parametersList.length > 0 && (
+        <View
           style={[
-            styles.parametersContainer,
+            styles.parametersPanel,
             {
-              paddingTop: insets.top + 16 + (sceneNotReviewedByAuthor ? 42 : 0),
+              paddingTop: 8 + (sceneNotReviewedByAuthor ? 42 : 0),
+              backgroundColor: surfaces.parametersPanelBg,
+              borderBottomColor: surfaces.panelBorder,
             },
           ]}
+          pointerEvents="box-none"
         >
           <SeverityDescriptionToast
             key={severityToastMessage ?? 'empty'}
             message={severityToastMessage}
           />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.parametersScrollContent}
-          >
+          <View style={styles.parametersGrid}>
             {parametersList.map((param) => (
               <ParameterBadge
                 key={param.id}
@@ -352,82 +412,136 @@ export function RescueSceneVisualNovel({
                 onSeverityDescription={setSeverityToastMessage}
               />
             ))}
-          </ScrollView>
-        </ThemedView>
+          </View>
+        </View>
       )}
 
-      {/* Центральный блок вариантов ответа */}
-      {hasChoices && hasShownChoices && (
-        <ThemedView style={styles.centerChoicesContainer}>
-          <ThemedView style={styles.choicesRow}>
+      <View
+        style={[
+          styles.bottomPanel,
+          {
+            borderTopColor: surfaces.panelBorder,
+            backgroundColor: surfaces.textPanelBg,
+            paddingBottom: Math.max(insets.bottom, 16),
+          },
+        ]}
+        pointerEvents="box-none"
+      >
+        {hasChoices && hasShownChoices ? (
+          <View style={styles.choicesSection}>
             {choices.map((choice) => (
               <Button
                 key={choice.id}
                 title={choice.text}
                 onPress={() => onNext(choice)}
-                variant="primary"
+                variant="glass"
                 fullWidth
                 size="large"
                 style={styles.choiceButton}
               />
             ))}
-          </ThemedView>
-        </ThemedView>
-      )}
+          </View>
+        ) : null}
 
-      {/* Нижняя панель: текст сцены (макс. 1/3 экрана, с прокруткой) и кнопки ниже */}
-      <ThemedView style={styles.bottomTextContainer}>
         <ScrollView
           style={[styles.textScrollView, { maxHeight: textAreaMaxHeight }]}
           contentContainerStyle={styles.textScrollContent}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          <ThemedText style={styles.sceneText}>
+          <ThemedText
+            lightColor={surfaces.sceneText}
+            darkColor={surfaces.sceneText}
+            style={styles.sceneText}
+          >
             {displayedText}
-            {isTyping && <ThemedText style={styles.cursor}>▋</ThemedText>}
+            {isTyping ? (
+              <ThemedText lightColor={primaryColor} darkColor={primaryColor} style={styles.cursor}>
+                ▋
+              </ThemedText>
+            ) : null}
           </ThemedText>
         </ScrollView>
 
-        <ThemedView style={styles.actionsRow}>
-          {showNextButton ? (
-            <Pressable
-              onPress={handleNextPress}
-              style={styles.linkButton}
-            >
+        {showNextButton ? (
+          <View style={styles.actionsRow}>
+            <Pressable onPress={handleNextPress} style={styles.linkButton}>
               <ThemedText
                 style={[
                   styles.linkButtonText,
-                  { color: canAdvanceOnTap ? primaryColor : 'rgba(255,255,255,0.5)' },
+                  { color: canAdvanceOnTap ? primaryColor : `${textColor}80` },
                 ]}
               >
-                {isTyping ? 'Показать сразу' : hasChoices && !hasShownChoices ? 'Показать варианты' : 'Далее'}
+                {isTyping
+                  ? 'Показать сразу'
+                  : hasChoices && !hasShownChoices
+                    ? 'Показать варианты'
+                    : 'Далее'}
               </ThemedText>
             </Pressable>
-          ) : null}
-        </ThemedView>
-      </ThemedView>
+          </View>
+        ) : null}
+      </View>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  parametersContainer: {
+  container: {
+    flex: 1,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  parametersPanel: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 4,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  parametersScrollContent: {
-    paddingHorizontal: 16,
+  parametersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
+    paddingHorizontal: 16,
     paddingTop: 4,
-    flexGrow: 1,
     justifyContent: 'center',
+  },
+  parameterCard: {
+    flexGrow: 1,
+    flexBasis: '46%',
+    minWidth: 140,
+    maxWidth: '100%',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+  },
+  parameterCardRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  parameterName: {
+    fontSize: 13,
+    flexShrink: 1,
+  },
+  parameterValue: {
+    fontSize: 18,
+    fontWeight: '400',
+  },
+  parameterTrack: {
+    marginTop: 8,
+    height: 3,
+    borderRadius: Radius.pill,
+    overflow: 'hidden',
+  },
+  parameterFill: {
+    height: '100%',
+    borderRadius: Radius.pill,
   },
   severityToast: {
     position: 'absolute',
@@ -437,10 +551,8 @@ const styles = StyleSheet.create({
     zIndex: 5,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: 'rgba(28, 28, 30, 0.92)',
+    borderRadius: Radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.12)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
@@ -448,27 +560,10 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   severityToastText: {
-    color: '#FFFFFF',
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '500',
     textAlign: 'center',
-  },
-  parameterBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  parameterText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  container: {
-    flex: 1,
-    position: 'relative',
   },
   unreviewedSceneFrame: {
     borderWidth: 4,
@@ -486,29 +581,22 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0,0,0,0.2)',
   },
   unreviewedBannerText: {
-    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
     lineHeight: 18,
   },
   loadingContainer: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 0,
   },
   placeholderContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1,
+    zIndex: 0,
   },
   backgroundImage: {
     width: '100%',
@@ -518,84 +606,53 @@ const styles = StyleSheet.create({
     left: 0,
     zIndex: 0,
   },
-  bottomTextContainer: {
+  bottomPanel: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 24,
-    paddingVertical: 18,
-    paddingTop: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
     zIndex: 2,
+    gap: 12,
   },
   textScrollView: {
     flexGrow: 0,
   },
   textScrollContent: {
-    paddingRight: 8,
+    paddingRight: 4,
   },
   sceneText: {
     fontFamily: Fonts.sans,
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#FFFFFF',
-    lineHeight: 32,
-    letterSpacing: 0.5,
-    textAlign: 'justify',
-    textShadowColor: 'rgba(0, 0, 0, 0.9)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    fontSize: 16,
+    fontWeight: '400',
+    lineHeight: 26,
+    letterSpacing: 0.2,
+    textAlign: 'left',
   },
   cursor: {
     fontFamily: Fonts.sans,
-    fontSize: 32,
+    fontSize: 18,
     fontWeight: '500',
-    color: '#FFFFFF',
-    opacity: 0.9,
-    textShadowColor: 'rgba(0, 0, 0, 0.9)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
   },
   actionsRow: {
-    marginTop: 12,
     flexDirection: 'column',
     alignItems: 'flex-end',
-    gap: 8,
   },
-  centerChoicesContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 3,
-    paddingHorizontal: 20,
-    paddingBottom: 150, // смещение немного вверх, чтобы не перекрывалось текстом
-  },
-  choicesRow: {
+  choicesSection: {
     width: '100%',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 16,
+    gap: 10,
   },
   choiceButton: {
     width: '100%',
   },
   linkButton: {
-    paddingVertical: 6,
+    paddingVertical: 4,
     paddingHorizontal: 4,
   },
   linkButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
-    textDecorationLine: 'underline',
-  },
-  linkButtonTextSelected: {
-    opacity: 0.9,
   },
 });
-

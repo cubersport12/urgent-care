@@ -30,7 +30,7 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarActiveTintColor: colors.white,
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.neutralSoft,
         tabBarBackground: () => <GlassTabBarBackground />,
         tabBarStyle: {
@@ -51,13 +51,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Обучение',
-          tabBarIcon: ({ color, focused }) => (
-            <IconSymbol
-              size={24}
-              name="house.fill"
-              color={color}
-              style={focused ? styles.activeIcon : undefined}
-            />
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={24} name="house.fill" color={color} />
           ),
         }}
       />
@@ -65,13 +60,8 @@ export default function TabLayout() {
         name="stats"
         options={{
           title: 'Статистика',
-          tabBarIcon: ({ color, focused }) => (
-            <IconSymbol
-              size={24}
-              name="chart.bar.fill"
-              color={color}
-              style={focused ? styles.activeIcon : undefined}
-            />
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={24} name="chart.bar.fill" color={color} />
           ),
         }}
       />
@@ -79,13 +69,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Профиль',
-          tabBarIcon: ({ color, focused }) => (
-            <IconSymbol
-              size={24}
-              name="person.fill"
-              color={color}
-              style={focused ? styles.activeIcon : undefined}
-            />
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={24} name="person.fill" color={color} />
           ),
         }}
       />
@@ -98,11 +83,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  activeIcon: {
-    shadowColor: 'rgba(0, 132, 255, 0.6)',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
   },
 });
