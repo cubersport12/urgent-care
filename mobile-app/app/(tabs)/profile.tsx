@@ -6,6 +6,7 @@ import { ScreenBackground } from '@/components/ui/screen-background';
 import { ThemePicker } from '@/components/ui/theme-picker';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
+import { useNavRail } from '@/contexts/nav-rail-context';
 import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { staggerEnter } from '@/hooks/use-enter-animation';
@@ -69,6 +70,7 @@ export default function ProfileScreen() {
   const { deviceId } = useDeviceId();
   const { primary, neutralSoft, error: dangerColor, text } = useAppTheme();
   const glass = useGlass();
+  const { contentPaddingBottom } = useNavRail();
   const { data: stats, fetchData } = useAccountOverallStats();
 
   const accountName =
@@ -134,7 +136,7 @@ export default function ProfileScreen() {
   return (
     <ScreenBackground style={styles.root}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: contentPaddingBottom }]}
         showsVerticalScrollIndicator={false}
       >
         {/* <Animated.View entering={staggerEnter(0)}>
@@ -235,7 +237,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing.pageX,
     paddingTop: 16,
-    paddingBottom: Spacing.pageBottom,
   },
   profileCardWrap: {
     zIndex: 1,

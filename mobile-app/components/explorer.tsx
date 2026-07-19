@@ -1,3 +1,5 @@
+import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTest } from '@/contexts/test-context';
 import { supabase } from '@/supabase';
 import {
@@ -513,6 +515,8 @@ export function Explorer() {
     opacity.value = withTiming(1, { duration: 300 });
   };
 
+  const { isWide, contentPaddingBottom } = useNavRail();
+
   const handleBackFromFolder = () => {
     // Возврат из папки - идем на уровень выше
     setIsNavigating(true);
@@ -595,6 +599,14 @@ export function Explorer() {
       opacity: opacity.value,
     };
   });
+
+  const showFolderChromeBack =
+    currentFolderId !== undefined &&
+    !selectedArticle &&
+    !selectedTest &&
+    !selectedRescueItem;
+
+  useChromeBack(showFolderChromeBack ? handleBackFromFolder : null);
 
   // Если выбрана статья, показываем ArticleView
   if (selectedArticle) {
@@ -726,7 +738,7 @@ export function Explorer() {
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
           ) : null}
           <View style={styles.headerContent}>
-            <BackButton onPress={handleBackFromFolder} />
+            {!isWide ? <BackButton onPress={handleBackFromFolder} /> : null}
             {currentFolderName ? (
               <ThemedText style={styles.currentFolderName} numberOfLines={1}>
                 {currentFolderName}
@@ -740,7 +752,7 @@ export function Explorer() {
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollViewContent,
-            { paddingBottom: Spacing.pageBottom },
+            { paddingBottom: contentPaddingBottom },
           ]}
         >
           {isRootView && (

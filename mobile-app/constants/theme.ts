@@ -61,6 +61,13 @@ export const Spacing = {
   card: 16,
 } as const;
 
+/** Tablet left navigation rail widths */
+export const NavRail = {
+  collapsedWidth: 72,
+  expandedWidth: 200,
+  breakpoint: 768,
+} as const;
+
 export const Glow = {
   dark: {
     primary: 'rgba(0, 132, 255, 0.3)',

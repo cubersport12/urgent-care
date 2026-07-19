@@ -1,8 +1,11 @@
+import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTest } from '@/contexts/test-context';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
@@ -29,6 +32,9 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
 
   const { page: backgroundColor, layout2: pressedBackgroundColor, primary: tintColor, success: successColor, error: errorColor } = useAppTheme();
   const styles = useTestTakingStyles();
+  const insets = useSafeAreaInsets();
+  const { isWide, contentPaddingLeft } = useNavRail();
+  useChromeBack(onBack);
 
   // Обрабатываем пропущенные вопросы при монтировании компонента
   useEffect(() => {
@@ -73,21 +79,34 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
   };
 
   return (
-    <Animated.View style={[styles.container, { backgroundColor }, animatedStyle]}>
-      <ThemedView style={styles.header}>
-        <Pressable
-          onPress={onBack}
-          style={({ pressed }) => [
-            styles.backButton,
-            {
-              backgroundColor: pressed ? pressedBackgroundColor : backgroundColor,
-            },
-          ]}
-        >
-          <IconSymbol name="chevron.left" size={28} color={tintColor} />
-          <ThemedText style={styles.backButtonText}>Назад</ThemedText>
-        </Pressable>
-      </ThemedView>
+    <Animated.View
+      style={[
+        styles.container,
+        {
+          backgroundColor,
+          paddingTop: insets.top,
+          paddingLeft: isWide ? contentPaddingLeft : insets.left,
+          paddingRight: insets.right,
+        },
+        animatedStyle,
+      ]}
+    >
+      {!isWide ? (
+        <ThemedView style={styles.header}>
+          <Pressable
+            onPress={onBack}
+            style={({ pressed }) => [
+              styles.backButton,
+              {
+                backgroundColor: pressed ? pressedBackgroundColor : backgroundColor,
+              },
+            ]}
+          >
+            <IconSymbol name="chevron.left" size={28} color={tintColor} />
+            <ThemedText style={styles.backButtonText}>Назад</ThemedText>
+          </Pressable>
+        </ThemedView>
+      ) : null}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}

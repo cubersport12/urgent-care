@@ -1,4 +1,5 @@
-import { Fonts, Radius } from '@/constants/theme';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
+import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTheme } from '@/contexts/theme-context';
 import {
   type NullableValue,
@@ -244,6 +245,7 @@ export function RescueSceneVisualNovel({
   const { height: windowHeight } = useWindowDimensions();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const { isWide } = useNavRail();
   const {
     page: backgroundColor,
     primary: primaryColor,
@@ -252,7 +254,12 @@ export function RescueSceneVisualNovel({
   } = useAppTheme();
 
   const sceneNotReviewedByAuthor = isReviewed === false;
-  const textAreaMaxHeight = windowHeight / 3;
+  // Ниже кнопки «Назад» (телефон) / под статус-бар (wide) — без двойного insets.top
+  const parametersTopPad =
+    (isWide ? insets.top : 0) + 8 + (sceneNotReviewedByAuthor ? 42 : 0);
+  // Отступ снизу: safe area + tab bar на телефоне, чтобы текст не обрезался
+  const bottomPad = Math.max(insets.bottom, 12) + (isWide ? 8 : Spacing.nav);
+  const textAreaMaxHeight = Math.round(windowHeight * 0.42);
 
   const resolvedBackground = useMemo(() => {
     const scene = (backgroundImage ?? '').trim();
@@ -392,7 +399,7 @@ export function RescueSceneVisualNovel({
           style={[
             styles.parametersPanel,
             {
-              paddingTop: 8 + (sceneNotReviewedByAuthor ? 42 : 0),
+              paddingTop: parametersTopPad,
               backgroundColor: surfaces.parametersPanelBg,
               borderBottomColor: surfaces.panelBorder,
             },
@@ -416,19 +423,9 @@ export function RescueSceneVisualNovel({
         </View>
       )}
 
-      <View
-        style={[
-          styles.bottomPanel,
-          {
-            borderTopColor: surfaces.panelBorder,
-            backgroundColor: surfaces.textPanelBg,
-            paddingBottom: Math.max(insets.bottom, 16),
-          },
-        ]}
-        pointerEvents="box-none"
-      >
-        {hasChoices && hasShownChoices ? (
-          <View style={styles.choicesSection}>
+      {hasChoices && hasShownChoices ? (
+        <View style={styles.choicesOverlay} pointerEvents="box-none">
+          <View style={styles.choicesCenter}>
             {choices.map((choice) => (
               <Button
                 key={choice.id}
@@ -441,13 +438,26 @@ export function RescueSceneVisualNovel({
               />
             ))}
           </View>
-        ) : null}
+        </View>
+      ) : null}
 
+      <View
+        style={[
+          styles.bottomPanel,
+          {
+            borderTopColor: surfaces.panelBorder,
+            backgroundColor: surfaces.textPanelBg,
+            paddingBottom: bottomPad,
+          },
+        ]}
+        pointerEvents="box-none"
+      >
         <ScrollView
           style={[styles.textScrollView, { maxHeight: textAreaMaxHeight }]}
           contentContainerStyle={styles.textScrollContent}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
           bounces={false}
+          nestedScrollEnabled
         >
           <ThemedText
             lightColor={surfaces.sceneText}
@@ -505,15 +515,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 0,
+    justifyContent: 'flex-start',
+    alignContent: 'flex-start',
   },
   parameterCard: {
-    flexGrow: 1,
-    flexBasis: '46%',
-    minWidth: 140,
-    maxWidth: '100%',
+    width: 168,
+    maxWidth: 200,
+    flexGrow: 0,
+    flexShrink: 1,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: Radius.lg,
@@ -617,11 +628,26 @@ const styles = StyleSheet.create({
     zIndex: 2,
     gap: 12,
   },
+  choicesOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  choicesCenter: {
+    width: '100%',
+    maxWidth: 420,
+    gap: 12,
+  },
   textScrollView: {
     flexGrow: 0,
   },
   textScrollContent: {
     paddingRight: 4,
+    paddingBottom: 4,
+    flexGrow: 1,
   },
   sceneText: {
     fontFamily: Fonts.sans,
@@ -639,10 +665,6 @@ const styles = StyleSheet.create({
   actionsRow: {
     flexDirection: 'column',
     alignItems: 'flex-end',
-  },
-  choicesSection: {
-    width: '100%',
-    gap: 10,
   },
   choiceButton: {
     width: '100%',

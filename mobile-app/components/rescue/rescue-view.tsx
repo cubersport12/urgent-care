@@ -5,9 +5,12 @@ import {
   RescueSceneChoiceVm,
   RescueSceneVm,
 } from '@/hooks/api/types';
+import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useNavRail } from '@/contexts/nav-rail-context';
 import { useAppTheme } from '@/hooks/use-theme-color';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
@@ -30,6 +33,12 @@ type RescueViewProps = {
 
 export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 }: RescueViewProps) {
   const { page: backgroundColor, border: borderColor } = useAppTheme();
+  const insets = useSafeAreaInsets();
+  const { isWide, contentPaddingLeft } = useNavRail();
+  const handleChromeBack = useCallback(() => {
+    void onBack();
+  }, [onBack]);
+  useChromeBack(handleChromeBack);
 
   const orderedScenes = useMemo<RescueSceneVm[]>(() => {
     const scenes = rescueItem.data?.scenes ?? [];
@@ -190,18 +199,30 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
   };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
-      <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
-        <Button
-          title="Назад"
-          onPress={onBack}
-          variant="default"
-          icon="chevron.left"
-          iconPosition="left"
-          size="medium"
-          style={styles.backButton}
-        />
-      </ThemedView>
+    <ThemedView
+      style={[
+        styles.container,
+        {
+          backgroundColor,
+          paddingTop: isWide ? 0 : insets.top,
+          paddingLeft: isWide ? contentPaddingLeft : insets.left,
+          paddingRight: insets.right,
+        },
+      ]}
+    >
+      {!isWide ? (
+        <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
+          <Button
+            title="Назад"
+            onPress={onBack}
+            variant="default"
+            icon="chevron.left"
+            iconPosition="left"
+            size="medium"
+            style={styles.backButton}
+          />
+        </ThemedView>
+      ) : null}
       <View style={styles.sceneArea}>
         <RescueSceneVisualNovel
           backgroundImage={currentScene.background}
@@ -225,7 +246,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 4,
+    paddingBottom: 8,
     borderBottomWidth: 1,
     alignItems: 'flex-start',
   },
@@ -235,7 +257,7 @@ const styles = StyleSheet.create({
     gap: 4,
     borderRadius: 8,
     paddingHorizontal: 12,
-    minHeight: 44,
+    minHeight: 40,
     justifyContent: 'flex-start',
   },
   sceneArea: {

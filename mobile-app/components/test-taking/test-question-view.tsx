@@ -1,3 +1,5 @@
+import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTest } from '@/contexts/test-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { saveTestResult } from '@/hooks/api/useTestResults';
@@ -228,6 +230,9 @@ export function TestQuestionView({
     handleFinishWithConfirmation();
   };
 
+  const { isWide } = useNavRail();
+  useChromeBack(handleBackToFolder);
+
   const progressPercent =
     totalQuestions > 0 ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0;
   const nextLabel = showResult
@@ -252,9 +257,11 @@ export function TestQuestionView({
         </View>
 
         <ThemedView style={[styles.header, { borderBottomColor: glass.border }]}>
-          <ThemedView style={styles.headerContent}>
-            <BackButton onPress={handleBackToFolder} />
-          </ThemedView>
+          {!isWide ? (
+            <ThemedView style={styles.headerContent}>
+              <BackButton onPress={handleBackToFolder} />
+            </ThemedView>
+          ) : null}
           {test.showNavigation !== false &&
             test.questions &&
             test.questions.length > 0 &&

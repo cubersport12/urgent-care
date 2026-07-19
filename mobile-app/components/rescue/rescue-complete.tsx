@@ -14,6 +14,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
+import { ScreenBackground } from '../ui/screen-background';
 
 type RescueCompleteProps = {
   rescueItem: AppRescueItemVm;
@@ -60,7 +61,7 @@ export function RescueComplete({
   selectedImplications = [],
   onBack,
 }: RescueCompleteProps) {
-  const { page: backgroundColor, success, error } = useAppTheme();
+  const { success, error } = useAppTheme();
 
   const data = useMemo(() => parseRescueItemDataVm(rescueItem.data), [rescueItem.data]);
 
@@ -116,13 +117,13 @@ export function RescueComplete({
   }, [selectedImplications]);
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor }]}>
+    <ScreenBackground style={styles.container}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <ThemedView style={styles.content}>
+        <ThemedView style={[styles.content, { backgroundColor: 'transparent' }]}>
           <ThemedText type="title" style={[styles.title, titleColor ? { color: titleColor } : undefined]}>
             {title}
           </ThemedText>
@@ -159,7 +160,7 @@ export function RescueComplete({
           />
         </ThemedView>
       </ScrollView>
-    </ThemedView>
+    </ScreenBackground>
   );
 }
 

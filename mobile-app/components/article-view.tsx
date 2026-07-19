@@ -1,11 +1,14 @@
 import { useArticlesStats, useFilePdf } from '@/hooks/api';
 import { AppArticleStatsVm, AppArticleVm } from '@/hooks/api/types';
+import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useNavRail } from '@/contexts/nav-rail-context';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { supabase } from '@/supabase';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PdfView } from './pdf-view/pdf-view';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
@@ -102,7 +105,9 @@ const ArticleViewContent = memo(({
   });
 
   const { border: borderColor } = useAppTheme();
-  
+  const { isWide } = useNavRail();
+  useChromeBack(onBack);
+
   // Состояние для отслеживания прочтения PDF (legacy page API — не используется с WebView)
   const isMarkedAsReadRef = useRef(false);
 
@@ -115,17 +120,19 @@ const ArticleViewContent = memo(({
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
-      <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
-        <Button
-          title="Назад"
-          onPress={onBack}
-          variant="default"
-          icon="chevron.left"
-          iconPosition="left"
-          size="medium"
-          style={styles.backButton}
-        />
-      </ThemedView>
+      {!isWide ? (
+        <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
+          <Button
+            title="Назад"
+            onPress={onBack}
+            variant="default"
+            icon="chevron.left"
+            iconPosition="left"
+            size="medium"
+            style={styles.backButton}
+          />
+        </ThemedView>
+      ) : null}
       {isLoading ? (
         <ThemedView style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={tintColorRef.current} />
@@ -160,7 +167,9 @@ ArticleViewContent.displayName = 'ArticleViewContent';
 export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious = false }: ArticleViewProps) {
   // Единственный хук, который должен вызывать перерисовку
   const { response: pdfUri, isLoading } = useFilePdf(`${article.id}.pdf`);
-  
+  const insets = useSafeAreaInsets();
+  const { isWide, contentPaddingLeft } = useNavRail();
+
   // Все остальные хуки - данные хранятся в refs, чтобы не вызывать перерисовку
   const { deviceId } = useDeviceId();
   const deviceIdRef = useRef(deviceId);
@@ -263,7 +272,17 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   }, [markAsReadWithUpdate]);
 
   return (
-    <Animated.View style={styles.container} pointerEvents="box-none">
+    <Animated.View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          paddingLeft: isWide ? contentPaddingLeft : insets.left,
+          paddingRight: insets.right,
+        },
+      ]}
+      pointerEvents="box-none"
+    >
       <ArticleViewContent
         key={article.id}
         pdfUri={pdfUri}

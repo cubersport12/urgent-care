@@ -18,7 +18,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme-context';
@@ -67,7 +67,7 @@ function RootStack() {
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
-        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+        <StatusBar style={theme === 'dark' ? 'light' : 'dark'} translucent />
       </NavigationThemeProvider>
     </View>
   );
@@ -98,9 +98,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <TestProvider>
           <AuthProvider>
-            <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
-              <RootStack />
-            </SafeAreaView>
+            <RootStack />
           </AuthProvider>
         </TestProvider>
       </SafeAreaProvider>

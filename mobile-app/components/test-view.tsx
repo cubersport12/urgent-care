@@ -1,4 +1,6 @@
 import { AppTestVm } from '@/hooks/api/types';
+import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useNavRail } from '@/contexts/nav-rail-context';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 import { useEffect } from 'react';
@@ -21,6 +23,8 @@ type TestViewProps = {
 export function TestView({ test, onBack, onStart }: TestViewProps) {
   const opacity = useSharedValue(0);
   const { primary: tintColor } = useAppTheme();
+  const { isWide } = useNavRail();
+  useChromeBack(onBack);
 
   useEffect(() => {
     opacity.value = withTiming(1, { duration: 300 });
@@ -41,9 +45,11 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
   return (
     <ScreenBackground style={styles.container}>
       <Animated.View style={[styles.inner, animatedStyle]}>
-        <View style={styles.header}>
-          <BackButton onPress={onBack} />
-        </View>
+        {!isWide ? (
+          <View style={styles.header}>
+            <BackButton onPress={onBack} />
+          </View>
+        ) : null}
 
         <View style={styles.centered}>
           <Animated.View entering={staggerEnter(0)} style={styles.titleBlock}>

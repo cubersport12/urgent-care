@@ -1,4 +1,6 @@
 import { Spacing } from '@/constants/theme';
+import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useNavRail } from '@/contexts/nav-rail-context';
 import { AppRescueItemVm, RescueTimerParameterVm } from '@/hooks/api/types';
 import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { useAddOrUpdateRescueStats } from '@/hooks/api/useRescueStats';
@@ -27,6 +29,8 @@ type RescueStartProps = {
 export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarted }: RescueStartProps) {
   const { deviceId } = useDeviceId();
   const insets = useSafeAreaInsets();
+  const { isWide } = useNavRail();
+  useChromeBack(onBack);
   const { addOrUpdate, isLoading: isRecordingStart } = useAddOrUpdateRescueStats({
     clientId: deviceId ?? '',
     rescueId: rescueItem.id,
@@ -57,7 +61,8 @@ export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarte
   });
 
   const { primary: tintColor } = useAppTheme();
-  const footerPaddingBottom = Math.max(insets.bottom, 12) + Spacing.nav;
+  const footerPaddingBottom =
+    Math.max(insets.bottom, 12) + (isWide ? 12 : Spacing.nav);
 
   const formatDate = (dateString: string) => {
     try {
@@ -84,7 +89,7 @@ export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarte
   return (
     <ScreenBackground style={styles.container}>
       <Animated.View style={[styles.inner, animatedStyle]}>
-        <BackButton onPress={onBack} label="Назад" />
+        {!isWide ? <BackButton onPress={onBack} label="Назад" /> : null}
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContent}
