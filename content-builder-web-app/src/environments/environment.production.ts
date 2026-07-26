@@ -3,7 +3,7 @@ import { deepseekToken } from './deepseek-token';
 export const environment = {
   production: true,
   deepseekToken,
-  apiUrl: 'http://localhost:8000',
+  apiUrl: 'https://trouble-dent.ru',
   testAuth: {
     email: 'test@yandex.ru',
     password: 'test'

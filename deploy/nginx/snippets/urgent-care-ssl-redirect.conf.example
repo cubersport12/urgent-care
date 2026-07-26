@@ -1,0 +1,11 @@
+# HTTP → HTTPS redirect (enable after certificates work)
+# Include inside the port-80 server block, or replace that block with:
+#
+# server {
+#     listen 80;
+#     listen [::]:80;
+#     server_name YOUR_DOMAIN;
+#     return 301 https://$host$request_uri;
+# }
+
+return 301 https://$host$request_uri;

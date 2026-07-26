@@ -1,9 +1,9 @@
-name: Angular CI
+# GitHub Pages publish is manual-only.
+# Production deploy + APK: see release.yml (triggered by GitHub Release).
+
+name: GitHub Pages (manual)
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: false
 
 jobs:
@@ -20,46 +20,45 @@ jobs:
     environment:
       name: github-pages
     runs-on: ubuntu-latest
-    name: Сборка Content Builder
+    name: Build & publish GitHub Pages
     steps:
-      - name: Проверка кода
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Установка Node.js
-        uses: actions/setup-node@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '22' # Укажите нужную версию Node.js
-      
-      - name: Установка зависимостей Start Page
+          node-version: '22'
+
+      - name: Install Start Page deps
         run: npm install --legacy-peer-deps
         working-directory: ./start-page
 
-      - name: Сборка приложения Start Page
+      - name: Build Start Page
         run: npm run build
         working-directory: ./start-page
 
-      - name: Установка зависимостей Content Builder
+      - name: Install Content Builder deps
         run: npm ci --legacy-peer-deps
         working-directory: ./content-builder-web-app
 
-      - name: Сборка приложения Content Builder
+      - name: Build Content Builder
         run: npm run build
         working-directory: ./content-builder-web-app
         env:
           DEEPSEEK_TOKEN: ${{ secrets.DEEPSEEK_TOKEN }}
 
-      - name: Установка зависимостей mobile app
-        run: npm install
+      - name: Install mobile app deps
+        run: npm ci
         working-directory: ./mobile-app
 
-      - name: Сборка приложения mobile Web App
+      - name: Build mobile Web App (GH Pages path)
         run: npm run web:build
         working-directory: ./mobile-app
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
           path: ./dist
 
       - name: Deploy to GitHub Pages

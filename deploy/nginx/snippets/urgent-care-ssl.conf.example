@@ -1,0 +1,15 @@
+# Enable when TLS certs are ready (Let's Encrypt or custom).
+# 1. Put certs at:
+#      /etc/nginx/ssl/urgent-care/fullchain.pem
+#      /etc/nginx/ssl/urgent-care/privkey.pem
+#    or use certbot paths under /etc/letsencrypt/live/DOMAIN/
+# 2. Set server_name in the SSL site to your domain
+# 3. Include this file inside the HTTPS server block
+
+ssl_certificate     /etc/nginx/ssl/urgent-care/fullchain.pem;
+ssl_certificate_key /etc/nginx/ssl/urgent-care/privkey.pem;
+ssl_session_timeout 1d;
+ssl_session_cache shared:SSL:10m;
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_prefer_server_ciphers off;
+add_header Strict-Transport-Security "max-age=31536000" always;

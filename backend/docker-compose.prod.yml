@@ -1,0 +1,66 @@
+# Production stack for /opt/urgent-care/backend
+# Usage: docker compose -f docker-compose.prod.yml up -d --build
+#
+# Host binds are localhost-only (nginx reverse-proxies the API).
+# Port choices avoid conflict with self-hosted Supabase on this VPS
+# (Kong :54321, DB :54322).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: urgent
+      POSTGRES_PASSWORD: urgent_pass
+      POSTGRES_DB: urgent_care
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urgent -d urgent_care"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    mem_limit: 384m
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "127.0.0.1:9100:9000"
+      - "127.0.0.1:9101:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    mem_limit: 256m
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://urgent:urgent_pass@postgres:5432/urgent_care
+      S3_ENDPOINT: http://minio:9000
+      ENVIRONMENT: staging
+      DEBUG: "false"
+    ports:
+      - "127.0.0.1:8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 512m
+
+volumes:
+  pgdata:
+  miniodata:

@@ -7,6 +7,7 @@
     "start": "ng serve",
     "prebuild": "node scripts/write-environment.mjs",
     "build": "ng build --base-href=/urgent-care/content-builder/ --configuration production",
+    "build:vps": "ng build --base-href=/content-builder/ --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "update": "ng update @angular/core @angular/cli @angular/cdk @angular/material --force",

@@ -23,6 +23,10 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 Or full stack: `docker compose up --build`.
 
+Production (VPS): see [`../deploy/README.md`](../deploy/README.md) and `docker compose -f docker-compose.prod.yml up -d --build`.
+
+Daily DB backups on the VPS: `/var/backups/urgent-care/` (cron via `deploy/remote/install-backup-cron.sh`).
+
 Docs: http://localhost:8000/docs · OpenAPI: http://localhost:8000/openapi.json
 
 ```bash

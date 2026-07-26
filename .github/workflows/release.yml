@@ -1,0 +1,237 @@
+# Triggered when you publish a GitHub Release.
+# - Builds TroubleDent.apk, attaches it to that release, publishes to https://trouble-dent.ru/releases/
+# - Builds web frontends and deploys backend + static to the VPS
+
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.event.release.tag_name || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  EXPO_PUBLIC_API_URL: https://trouble-dent.ru
+  EXPO_BASE_URL: /mobile-app
+  DEPLOY_HOST: 77.91.90.39
+  DEPLOY_PUBLIC_HOST: trouble-dent.ru
+  DEPLOY_USER: root
+
+jobs:
+  build-android:
+    name: Build & publish APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mobile-app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mobile-app
+        run: npm ci
+
+      - name: Set app version from release tag
+        if: github.event_name == 'release'
+        working-directory: mobile-app
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const tag = String(process.env.RELEASE_TAG || '').replace(/^v/i, '');
+            if (!tag) process.exit(0);
+            const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+            const app = JSON.parse(fs.readFileSync('./app.json', 'utf8'));
+            pkg.version = tag;
+            app.expo.version = tag.split('+')[0];
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+            fs.writeFileSync('./app.json', JSON.stringify(app, null, 2) + '\n');
+            console.log('version set to', tag);
+          "
+
+      - name: Append build hash (manual dispatch)
+        if: github.event_name != 'release'
+        working-directory: mobile-app
+        run: |
+          export BUILD_HASH="$(git rev-parse --short HEAD)"
+          node -e "
+            const fs = require('fs');
+            const hash = process.env.BUILD_HASH;
+            const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+            const app = JSON.parse(fs.readFileSync('./app.json', 'utf8'));
+            const basePkg = String(pkg.version || '1.0.0').split('+')[0];
+            const baseApp = String(app.expo?.version || '1.0.0').split('+')[0];
+            pkg.version = basePkg + '+' + hash;
+            app.expo.version = baseApp + '+' + hash;
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+            fs.writeFileSync('./app.json', JSON.stringify(app, null, 2) + '\n');
+          "
+
+      - name: Generate Android project (Expo prebuild)
+        working-directory: mobile-app
+        run: npx expo prebuild --platform android --non-interactive --no-install
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('mobile-app/android/**/*.gradle*', 'mobile-app/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        working-directory: mobile-app
+        run: chmod +x android/gradlew
+
+      - name: Build Release APK
+        working-directory: mobile-app
+        run: cd android && ./gradlew assembleRelease
+
+      - name: Prepare named APK
+        run: |
+          cp mobile-app/android/app/build/outputs/apk/release/app-release.apk \
+             mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Attach APK to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
+          overwrite_files: true
+
+  publish-apk:
+    name: Publish APK to /releases
+    needs: build-android
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout (deploy scripts)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.sha }}
+          sparse-checkout: |
+            deploy
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-apk
+          path: apk
+
+      - name: Setup SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ env.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload APK and refresh nginx releases listing
+        env:
+          TAG: ${{ github.event.release.tag_name || github.sha }}
+        run: |
+          set -euo pipefail
+          SSH=(ssh -i "$HOME/.ssh/deploy_key" -o IdentitiesOnly=yes)
+          SCP=(scp -i "$HOME/.ssh/deploy_key" -o IdentitiesOnly=yes)
+          TARGET="${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}"
+          VERSION_TAG="${TAG:-latest}"
+          "${SSH[@]}" "$TARGET" "mkdir -p /opt/urgent-care/deploy/remote /var/www/urgent-care/releases"
+          "${SCP[@]}" -r deploy/nginx deploy/remote deploy/enable-ssl.sh "$TARGET:/opt/urgent-care/deploy/"
+          "${SCP[@]}" apk/TroubleDent.apk "$TARGET:/tmp/TroubleDent.apk"
+          "${SSH[@]}" "$TARGET" "sed -i 's/\r$//' /opt/urgent-care/deploy/remote/*.sh; chmod +x /opt/urgent-care/deploy/remote/*.sh; bash /opt/urgent-care/deploy/remote/setup-nginx.sh; bash /opt/urgent-care/deploy/remote/publish-apk.sh /tmp/TroubleDent.apk '${VERSION_TAG}'; rm -f /tmp/TroubleDent.apk"
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            start-page/package-lock.json
+            content-builder-web-app/package-lock.json
+            mobile-app/package-lock.json
+
+      - name: Setup SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ env.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Install start-page deps
+        working-directory: start-page
+        run: npm install --legacy-peer-deps
+
+      - name: Build start-page
+        working-directory: start-page
+        run: npm run build
+
+      - name: Install content-builder deps
+        working-directory: content-builder-web-app
+        run: npm ci --legacy-peer-deps
+
+      - name: Build content-builder (VPS)
+        working-directory: content-builder-web-app
+        env:
+          DEEPSEEK_TOKEN: ${{ secrets.DEEPSEEK_TOKEN }}
+        run: npm run build:vps
+
+      - name: Install mobile-app deps
+        working-directory: mobile-app
+        run: npm ci
+
+      - name: Build mobile-app web (VPS)
+        working-directory: mobile-app
+        run: npm run web:build:vps
+
+      - name: Deploy to VPS
+        run: |
+          export DEPLOY_SSH_KEY="$HOME/.ssh/deploy_key"
+          export DEPLOY_HOST="${{ env.DEPLOY_HOST }}"
+          export DEPLOY_USER="${{ env.DEPLOY_USER }}"
+          export DEPLOY_PUBLIC_HOST="${{ env.DEPLOY_PUBLIC_HOST }}"
+          chmod +x scripts/deploy.sh deploy/remote/*.sh deploy/enable-ssl.sh
+          ./scripts/deploy.sh --skip-build
