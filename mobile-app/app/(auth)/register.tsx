@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
-import { supabase } from '@/supabase';
+import { register } from '@/lib/auth-api';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -118,16 +118,15 @@ export default function RegisterScreen() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signUp({
-        email: e,
-        password,
-        options: { data: { full_name: n, name: n } },
-      });
-      if (error) {
-        Alert.alert('Регистрация не удалась', error.message);
-        return;
+      try {
+        await register(e, password, n);
+        router.replace('/(tabs)');
+      } catch (err) {
+        Alert.alert(
+          'Регистрация не удалась',
+          err instanceof Error ? err.message : 'Ошибка регистрации',
+        );
       }
-      router.replace('/(auth)/login');
     } finally {
       setSubmitting(false);
     }

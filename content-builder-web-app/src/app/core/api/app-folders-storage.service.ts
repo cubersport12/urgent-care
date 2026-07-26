@@ -27,24 +27,33 @@ export class AppFoldersStorageService extends BaseStorage {
     return new Observable((obs) => {
       const array: AppFolderVm[] = [];
       const fetchFolder = (id: string): Observable<AppFolderVm[]> => {
-        const obs = this._fetch(folderSchema, ref => ref.filter('id', 'eq', id)) satisfies Observable<AppFolderVm[]>;
-        return obs.pipe(mergeMap((folders) => {
-          const f = folders[0];
-          if (f != null) {
-            array.push(f);
-          }
-          return f != null ? fetchFolder(f.parentId ?? '') : of([]);
-        }));
+        if (!id) {
+          return of([]);
+        }
+        const req = this._fetch(folderSchema, () => ({ id })) satisfies Observable<AppFolderVm[]>;
+        return req.pipe(
+          mergeMap((folders) => {
+            const f = folders[0];
+            if (f != null) {
+              array.push(f);
+            }
+            return f?.parentId != null ? fetchFolder(f.parentId) : of([]);
+          })
+        );
       };
-      fetchFolder(folderId)
-        .subscribe(() => {
+      fetchFolder(folderId).subscribe({
+        next: () => {
           obs.next(array.reverse());
           obs.complete();
-        });
+        },
+        error: (err) => obs.error(err)
+      });
     });
   }
 
   public fetchFolders(parentId?: NullableValue<string>): Observable<AppFolderVm[]> {
-    return this._fetch(folderSchema, ref => parentId?.length ? ref.filter('parentId', 'eq', parentId) : ref.filter('parentId', 'is', null));
+    return this._fetch(folderSchema, () =>
+      parentId?.length ? { parentId } : { parentId: null }
+    );
   }
 }

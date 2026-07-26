@@ -1,21 +1,23 @@
-import { supabase } from '@/supabase';
-import { PostgrestSingleResponse } from '@supabase/supabase-js';
+import { apiFetch } from '@/lib/api';
+import { downloadMediaBlob } from '@/lib/api';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDeviceId } from '../use-device-id';
 import { AppArticleStatsVm, AppArticleVm, NullableValue } from './types';
-import { useSupabaseFetch } from './useSupabaseFetch';
-
-const RELATION_NAME = 'articles';
+import type { ApiListResponse } from '@/lib/api';
+import { apiFetchRelation } from './useApiFetch';
 
 export const useArticles = (parentId?: string) => {
-  const [response, setResponse] = useState<Partial<PostgrestSingleResponse<AppArticleVm[]>>>({});
+  const [response, setResponse] = useState<
+    Partial<Awaited<ReturnType<typeof apiFetchRelation<AppArticleVm>>>>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const result = await useSupabaseFetch(RELATION_NAME, ref => parentId?.length ? ref.filter('parentId', 'eq', parentId) : ref.filter('parentId', 'is', null));
+      const result = await apiFetchRelation<AppArticleVm>('articles', {
+        parentId: parentId?.length ? parentId : null,
+      });
       setResponse(result);
     } finally {
       setIsLoading(false);
@@ -34,16 +36,17 @@ export const useArticles = (parentId?: string) => {
 };
 
 export const fetchArticle = async (articleId: string) => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const r = await useSupabaseFetch(RELATION_NAME, ref => ref.filter('id', 'eq', articleId));
+  const r = await apiFetchRelation<AppArticleVm>('articles', { id: articleId });
   return {
     ...r,
-    data: r?.data?.[0]
-  } as Partial<PostgrestSingleResponse<AppArticleVm>>;
+    data: r?.data?.[0] ?? null,
+  };
 };
 
 export const useArticle = (articleId: NullableValue<string>) => {
-  const [response, setResponse] = useState<Partial<PostgrestSingleResponse<AppArticleVm>>>({});
+  const [response, setResponse] = useState<Partial<{ data: AppArticleVm | null; error: Error | null }>>(
+    {},
+  );
 
   useEffect(() => {
     if (articleId != null) {
@@ -57,23 +60,6 @@ export const useArticle = (articleId: NullableValue<string>) => {
   return response;
 };
 
-/**
- * Хук для добавления или обновления статистики статьи
- * 
- * @param stats - Данные статистики статьи (clientId, articleId, readed)
- * @returns Объект с функцией для добавления/обновления и состоянием загрузки
- * 
- * @example
- * ```tsx
- * const { addOrUpdate, isLoading, error } = useAddOrUpdateArticleStats({
- *   clientId: 'device-id',
- *   articleId: 'article-id',
- *   readed: true
- * });
- * 
- * await addOrUpdate();
- * ```
- */
 export const useAddOrUpdateArticleStats = (stats: Omit<AppArticleStatsVm, 'createdAt'>) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -81,76 +67,45 @@ export const useAddOrUpdateArticleStats = (stats: Omit<AppArticleStatsVm, 'creat
   const addOrUpdate = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-
     try {
-      // Подготавливаем данные для вставки/обновления
-      const dataToUpsert = {
-        id: stats.id,
-        clientId: stats.clientId,
-        articleId: stats.articleId,
-        readed: stats.readed ?? false,
-        createdAt: new Date().toJSON()
-      } as AppArticleStatsVm;
-
-      // Используем upsert для добавления или обновления записи
-      // Конфликт определяется по комбинации clientId и articleId
-      const response = await supabase
-        .from('articles_stats')
-        .upsert(dataToUpsert, {
-          onConflict: 'clientId,articleId',
-        })
-        .select()
-        .single();
-
-      if (response.error) {
-        throw response.error;
-      }
-
-      return response.data as AppArticleStatsVm;
+      const data = await apiFetch<AppArticleStatsVm>('/api/v1/articles-stats', {
+        method: 'PUT',
+        body: JSON.stringify({
+          articleId: stats.articleId,
+          readed: stats.readed ?? false,
+          createdAt: new Date().toJSON(),
+        }),
+      });
+      return data;
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to add or update article stats');
-      setError(error);
-      console.error('Error adding or updating article stats:', err);
-      throw error;
+      const e = err instanceof Error ? err : new Error('Failed to add or update article stats');
+      setError(e);
+      throw e;
     } finally {
       setIsLoading(false);
     }
-  }, [stats.clientId, stats.articleId, stats.readed]);
+  }, [stats.articleId, stats.readed]);
 
-  return {
-    addOrUpdate,
-    isLoading,
-    error,
-  };
+  return { addOrUpdate, isLoading, error };
 };
 
 export const useArticlesStats = (articlesIds: string[]) => {
-  const [response, setResponse] = useState<Partial<PostgrestSingleResponse<AppArticleStatsVm[]>>>({});
+  const [response, setResponse] = useState<Partial<ApiListResponse<AppArticleStatsVm>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { deviceId } = useDeviceId();
-
-  // Создаем стабильный ключ для массива articlesIds
   const articlesIdsKey = useMemo(() => [...articlesIds].sort().join(','), [articlesIds]);
-  
-  // Мемоизируем articlesIds для использования в fetchData
   const memoizedArticlesIds = useMemo(() => articlesIds, [articlesIdsKey]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const r = await useSupabaseFetch('articles_stats', ref => {
-        let query = ref.in('articleId', memoizedArticlesIds);
-        if (deviceId) {
-          query = query.eq('clientId', deviceId);
-        }
-        return query;
-      });
-      setResponse(r);
+      const r = await apiFetchRelation<AppArticleStatsVm>('articles_stats');
+      const filtered = (r.data ?? []).filter((s) => memoizedArticlesIds.includes(s.articleId));
+      setResponse({ data: filtered, error: r.error });
     } finally {
       setIsLoading(false);
     }
-  }, [memoizedArticlesIds, deviceId]);
+  }, [memoizedArticlesIds]);
 
   useEffect(() => {
     if (articlesIds.length > 0 && deviceId) {
@@ -158,11 +113,7 @@ export const useArticlesStats = (articlesIds: string[]) => {
     }
   }, [fetchData, articlesIds.length, deviceId]);
 
-  return {
-    ...response,
-    isLoading,
-    fetchData,
-  };
+  return { ...response, isLoading, fetchData };
 };
 
 export const useFileContentString = (fileName: string) => {
@@ -172,30 +123,11 @@ export const useFileContentString = (fileName: string) => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const r = await supabase.storage.from('cubersport12').download(`public/${fileName}`);
-      if (r.data instanceof Blob) {
-        const reader = new FileReader();
-
-        reader.onload = () => {
-          const text = reader.result as string;
-          setResponse(text);
-          setIsLoading(false);
-        };
-
-        reader.onerror = () => {
-          setIsLoading(false);
-          throw new Error('Failed to read file');
-        };
-
-        reader.readAsText(r.data);
-      }
-      else {
-        setIsLoading(false);
-        throw new Error('File not found');
-      }
-    } catch (error) {
+      const blob = await downloadMediaBlob(fileName);
+      const text = await blob.text();
+      setResponse(text);
+    } finally {
       setIsLoading(false);
-      throw error;
     }
   }, [fileName]);
 
@@ -203,9 +135,5 @@ export const useFileContentString = (fileName: string) => {
     void fetchData();
   }, [fetchData]);
 
-  return {
-    response,
-    isLoading,
-    fetchData,
-  };
+  return { response, isLoading, fetchData };
 };

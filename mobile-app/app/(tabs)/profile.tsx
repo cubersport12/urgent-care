@@ -11,7 +11,7 @@ import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
-import { supabase } from '@/supabase';
+import { apiFetch } from '@/lib/api';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -74,8 +74,7 @@ export default function ProfileScreen() {
   const { data: stats, fetchData } = useAccountOverallStats();
 
   const accountName =
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
+    user?.full_name ||
     (user?.email ? user.email.split('@')[0] : null) ||
     'Студент';
 
@@ -110,9 +109,7 @@ export default function ProfileScreen() {
     const performClear = async () => {
       setIsClearing(true);
       try {
-        await supabase.from('articles_stats').delete().eq('clientId', deviceId);
-        await supabase.from('tests_stats').delete().eq('clientId', deviceId);
-        await supabase.from('rescue_stats').delete().eq('clientId', deviceId);
+        await apiFetch('/api/v1/stats', { method: 'DELETE' });
         void fetchData();
         Alert.alert('Успешно', 'Статистика очищена');
       } catch (error) {

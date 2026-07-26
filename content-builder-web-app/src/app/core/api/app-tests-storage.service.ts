@@ -12,11 +12,13 @@ export class AppTestsStorageService extends BaseStorage {
   }
 
   public fetchAllTests(): Observable<AppTestVm[]> {
-    return this._fetch<AppTestVm>(testSchema);
+    return this._fetch<AppTestVm>(testSchema, () => ({ all: true }));
   }
 
   public fetchTests(parentId: NullableValue<string>): Observable<AppTestVm[]> {
-    return this._fetch<AppTestVm>(testSchema, ref => parentId?.length ? ref.filter('parentId', 'eq', parentId) : ref.filter('parentId', 'is', null));
+    return this._fetch<AppTestVm>(testSchema, () =>
+      parentId?.length ? { parentId } : { parentId: null }
+    );
   }
 
   public createTest(test: AppTestVm): Observable<void> {

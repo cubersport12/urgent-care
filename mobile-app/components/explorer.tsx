@@ -1,7 +1,6 @@
 import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTest } from '@/contexts/test-context';
-import { supabase } from '@/supabase';
 import {
   AppArticleVm,
   AppRescueItemVm,
@@ -16,6 +15,7 @@ import { useRescueItems } from '@/hooks/api/useRescueItems';
 import { useAddOrUpdateRescueStats, useRescuesStats } from '@/hooks/api/useRescueStats';
 import { useTests } from '@/hooks/api/useTests';
 import { useAddOrUpdateTestStats, useTestsStats } from '@/hooks/api/useTestStats';
+import { apiFetchRelation } from '@/hooks/api/useApiFetch';
 import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-completion';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
@@ -81,13 +81,13 @@ export function Explorer() {
     const fetchAllData = async () => {
       try {
         const [articlesRes, testsRes, rescuesRes] = await Promise.all([
-          supabase.from('articles').select('*'),
-          supabase.from('tests').select('*'),
-          supabase.from('rescue').select('*'),
+          apiFetchRelation<AppArticleVm>('articles', { all: true }),
+          apiFetchRelation<AppTestVm>('tests', { all: true }),
+          apiFetchRelation<AppRescueItemVm>('rescue', { all: true }),
         ]);
-        if (articlesRes.data) setAllArticles(articlesRes.data as AppArticleVm[]);
-        if (testsRes.data) setAllTests(testsRes.data as AppTestVm[]);
-        if (rescuesRes.data) setAllRescues(rescuesRes.data as AppRescueItemVm[]);
+        if (articlesRes.data) setAllArticles(articlesRes.data);
+        if (testsRes.data) setAllTests(testsRes.data);
+        if (rescuesRes.data) setAllRescues(rescuesRes.data);
       } catch (error) {
         console.error('Error fetching all materials:', error);
       }

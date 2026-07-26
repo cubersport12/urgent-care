@@ -14,11 +14,13 @@ export class AppArticlesStorageService extends BaseStorage {
   }
 
   public fetchAllArticles(): Observable<AppArticleVm[]> {
-    return this._fetch<AppArticleVm>(articleSchema);
+    return this._fetch<AppArticleVm>(articleSchema, () => ({ all: true }));
   }
 
   public fetchArticles(parentId: NullableValue<string>): Observable<AppArticleVm[]> {
-    return this._fetch<AppArticleVm>(articleSchema, ref => parentId?.length ? ref.filter('parentId', 'eq', parentId) : ref.filter('parentId', 'is', null));
+    return this._fetch<AppArticleVm>(articleSchema, () =>
+      parentId?.length ? { parentId } : { parentId: null }
+    );
   }
 
   public createArticle(article: AppArticleVm): Observable<void> {
@@ -30,6 +32,9 @@ export class AppArticlesStorageService extends BaseStorage {
   }
 
   public deleteArticle(articleId: string): Observable<void> {
-    return forkJoin([this._delete(articleId), this._filesStorage.deleteFile(`${articleId}.html`)]) as Observable<never>;
+    return forkJoin([
+      this._delete(articleId),
+      this._filesStorage.deleteFile(`${articleId}.pdf`)
+    ]) as Observable<never>;
   }
 }

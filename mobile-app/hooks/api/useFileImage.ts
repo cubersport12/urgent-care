@@ -1,4 +1,4 @@
-import { supabase } from '@/supabase';
+import { downloadMediaBlob } from '@/lib/api';
 import { useCallback, useEffect, useState } from 'react';
 import { NullableValue } from './types';
 
@@ -11,30 +11,23 @@ export const useFileImage = (fileName: string) => {
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
     try {
-      const r = await supabase.storage.from('cubersport12').download(`public/${fileName}`);
-      if (r.data instanceof Blob) {
-        const reader = new FileReader();
-
+      const blob = await downloadMediaBlob(fileName);
+      const reader = new FileReader();
+      await new Promise<void>((resolve, reject) => {
         reader.onload = () => {
-          const dataUrl = reader.result as string;
-          setResponse(dataUrl);
+          setResponse(reader.result as string);
           setIsLoading(false);
+          resolve();
         };
-
         reader.onerror = () => {
           setIsLoading(false);
-          throw new Error('Failed to read image file');
+          reject(new Error('Failed to read image file'));
         };
-
-        reader.readAsDataURL(r.data);
-      }
-      else {
-        setIsLoading(false);
-        throw new Error('File not found');
-      }
+        reader.readAsDataURL(blob);
+      });
     } catch (error) {
       setIsLoading(false);
       throw error;
@@ -45,10 +38,5 @@ export const useFileImage = (fileName: string) => {
     void fetchData();
   }, [fetchData]);
 
-  return {
-    response,
-    isLoading,
-    fetchData,
-  };
+  return { response, isLoading, fetchData };
 };
-

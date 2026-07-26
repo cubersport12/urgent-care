@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
-import { supabase } from '@/supabase';
+import { login } from '@/lib/auth-api';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -109,12 +109,15 @@ export default function LoginScreen() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: e, password });
-      if (error) {
-        Alert.alert('Не удалось войти', error.message);
-        return;
+      try {
+        await login(e, password);
+        router.replace('/(tabs)');
+      } catch (err) {
+        Alert.alert(
+          'Не удалось войти',
+          err instanceof Error ? err.message : 'Ошибка входа',
+        );
       }
-      router.replace('/(tabs)');
     } finally {
       setSubmitting(false);
     }

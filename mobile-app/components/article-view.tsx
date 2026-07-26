@@ -4,7 +4,7 @@ import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
-import { supabase } from '@/supabase';
+import { apiFetch } from '@/lib/api';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -219,15 +219,14 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
         createdAt: new Date().toISOString(),
       } as Omit<AppArticleStatsVm, 'id'>;
 
-      // Используем upsert для добавления или обновления записи
-      // Конфликт определяется по комбинации clientId и articleId
-      await supabase
-        .from('articles_stats')
-        .upsert(dataToUpsert, {
-          onConflict: 'clientId,articleId',
-        })
-        .select()
-        .single();
+      await apiFetch('/api/v1/articles-stats', {
+        method: 'PUT',
+        body: JSON.stringify({
+          articleId: dataToUpsert.articleId,
+          readed: dataToUpsert.readed,
+          createdAt: dataToUpsert.createdAt,
+        }),
+      });
 
       // Устанавливаем флаг через ref, не вызывая перерисовку
       isMarkedAsReadRef.current = true;

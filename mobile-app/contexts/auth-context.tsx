@@ -1,10 +1,15 @@
-import { supabase } from '@/supabase';
-import type { Session, User } from '@supabase/supabase-js';
+import {
+  getCurrentUser,
+  loadStoredAuth,
+  onAuthChange,
+  type ApiUser,
+} from '@/lib/api';
+import { signOut as apiSignOut } from '@/lib/auth-api';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 type AuthContextValue = {
-  session: Session | null;
-  user: User | null;
+  session: { access_token: string } | null;
+  user: ApiUser | null;
   initialized: boolean;
   signOut: () => Promise<void>;
 };
@@ -12,38 +17,29 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<ApiUser | null>(null);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
+    void loadStoredAuth().then((u) => {
+      setUser(u);
       setInitialized(true);
     });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    return onAuthChange(setUser);
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    await apiSignOut();
   }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      session,
-      user: session?.user ?? null,
+      session: user ? { access_token: 'stored' } : null,
+      user: user ?? getCurrentUser(),
       initialized,
       signOut,
     }),
-    [session, initialized, signOut],
+    [user, initialized, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

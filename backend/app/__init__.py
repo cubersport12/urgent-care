@@ -1,0 +1,1 @@
+"""Urgent Care API package."""

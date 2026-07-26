@@ -12,11 +12,6 @@
     "update": "ng update @angular/core @angular/cli @angular/cdk @angular/material --force"
   },
   "private": true,
-  "overrides": {
-    "@supabase/supabase-js": {
-      "@supabase/gotrue-js": "2.61.0"
-    }
-  },
   "dependencies": {
     "@angular/animations": "^22.0.1",
     "@angular/cdk": "^22.0.1",
@@ -31,7 +26,6 @@
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@ngxs/store": "^21.0.0",
-    "@supabase/supabase-js": "^2.39.7",
     "angular-split": "^20.0.0",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",

@@ -1,0 +1,55 @@
+[project]
+name = "urgent-care-api"
+version = "1.0.0"
+description = "Urgent Care API — content, stats, auth (replaces Supabase)"
+requires-python = ">=3.12"
+readme = "README.md"
+
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.32.1",
+    "python-multipart==0.0.17",
+    "sqlalchemy[asyncio]==2.0.36",
+    "asyncpg==0.30.0",
+    "alembic==1.14.0",
+    "pydantic==2.10.3",
+    "pydantic-settings==2.6.1",
+    "email-validator==2.2.0",
+    "python-jose[cryptography]==3.3.0",
+    "bcrypt==5.0.0",
+    "boto3==1.35.84",
+    "httpx==0.28.1",
+    "structlog==24.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.24.0",
+    "ruff==0.8.3",
+    "mypy==1.13.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "B", "C4", "UP", "ASYNC"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

@@ -22,7 +22,6 @@
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "@shopify/react-native-skia": "2.2.12",
-    "@supabase/supabase-js": "^2.87.1",
     "expo": "~54.0.29",
     "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.12",

@@ -1,24 +1,22 @@
-import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { useCallback, useEffect, useState } from 'react';
 import { AppTestVm } from './types';
-import { useSupabaseFetch } from './useSupabaseFetch';
+import { apiFetchRelation } from './useApiFetch';
 
-const RELATION_NAME = 'tests';
-
-export const useTests = (folderId?: string) => {
-  const [response, setResponse] = useState<Partial<PostgrestSingleResponse<AppTestVm[]>>>({});
+export const useTests = (parentId?: string) => {
+  const [response, setResponse] = useState<Partial<Awaited<ReturnType<typeof apiFetchRelation<AppTestVm>>>>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const result = await useSupabaseFetch(RELATION_NAME, ref => folderId?.length ? ref.filter('parentId', 'eq', folderId ?? '') : ref.filter('parentId', 'is', null));
+      const result = await apiFetchRelation<AppTestVm>('tests', {
+        parentId: parentId?.length ? parentId : null,
+      });
       setResponse(result);
     } finally {
       setIsLoading(false);
     }
-  }, [folderId]);
+  }, [parentId]);
 
   useEffect(() => {
     void fetchData();
@@ -30,4 +28,3 @@ export const useTests = (folderId?: string) => {
     fetchData,
   };
 };
-

@@ -12,11 +12,13 @@ export class AppRescueStorageService extends BaseStorage {
   }
 
   public fetchAllRescueItems(): Observable<AppRescueItemVm[]> {
-    return this._fetch<AppRescueItemVm>(rescueItemSchema);
+    return this._fetch<AppRescueItemVm>(rescueItemSchema, () => ({ all: true }));
   }
 
   public fetchRescueItems(parentId: NullableValue<string>): Observable<AppRescueItemVm[]> {
-    return this._fetch<AppRescueItemVm>(rescueItemSchema, ref => parentId?.length ? ref.filter('parentId', 'eq', parentId) : ref.filter('parentId', 'is', null));
+    return this._fetch<AppRescueItemVm>(rescueItemSchema, () =>
+      parentId?.length ? { parentId } : { parentId: null }
+    );
   }
 
   public createRescueItem(rescueItem: AppRescueItemVm): Observable<void> {

@@ -35,10 +35,7 @@ export class AppComponent {
   }
 
   private async _initialize() {
-    await this._supabase.client.auth.signInWithPassword({
-      email: 'test@yandex.ru',
-      password: 'test'
-    });
+    await this._supabase.ensureAuthenticated();
   }
 
   protected _handleAdd(): void {

@@ -1,19 +1,19 @@
-import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { useCallback, useEffect, useState } from 'react';
 import { AppRescueItemVm } from './types';
-import { useSupabaseFetch } from './useSupabaseFetch';
-
-const RELATION_NAME = 'rescue';
+import { apiFetchRelation } from './useApiFetch';
 
 export const useRescueItems = (parentId?: string) => {
-  const [response, setResponse] = useState<Partial<PostgrestSingleResponse<AppRescueItemVm[]>>>({});
+  const [response, setResponse] = useState<
+    Partial<Awaited<ReturnType<typeof apiFetchRelation<AppRescueItemVm>>>>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const result = await useSupabaseFetch(RELATION_NAME, ref => parentId?.length ? ref.filter('parentId', 'eq', parentId ?? '') : ref.filter('parentId', 'is', null));
+      const result = await apiFetchRelation<AppRescueItemVm>('rescue', {
+        parentId: parentId?.length ? parentId : null,
+      });
       setResponse(result);
     } finally {
       setIsLoading(false);
@@ -30,4 +30,3 @@ export const useRescueItems = (parentId?: string) => {
     fetchData,
   };
 };
-

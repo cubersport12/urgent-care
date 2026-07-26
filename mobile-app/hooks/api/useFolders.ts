@@ -1,19 +1,20 @@
-import { PostgrestSingleResponse } from '@supabase/supabase-js';
+import type { ApiListResponse } from '@/lib/api';
 import { useCallback, useEffect, useState } from 'react';
 import { AppFolderVm } from './types';
-import { useSupabaseFetch } from './useSupabaseFetch';
+import { apiFetchRelation } from './useApiFetch';
 
-const RELATION_NAME = 'folders';
+type ListResponse = Awaited<ReturnType<typeof apiFetchRelation<AppFolderVm>>>;
 
 export const useFolders = (parentId?: string) => {
-  const [response, setResponse] = useState<Partial<PostgrestSingleResponse<AppFolderVm[]>>>({});
+  const [response, setResponse] = useState<Partial<ListResponse>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const result = await useSupabaseFetch(RELATION_NAME, ref => parentId?.length ? ref.filter('parentId', 'eq', parentId ?? '') : ref.filter('parentId', 'is', null));
+      const result = await apiFetchRelation<AppFolderVm>('folders', {
+        parentId: parentId?.length ? parentId : null,
+      });
       setResponse(result);
     } finally {
       setIsLoading(false);
@@ -32,39 +33,37 @@ export const useFolders = (parentId?: string) => {
 };
 
 export const useFolder = (folderId: string) => {
-  const [response, setResponse] = useState<Partial<PostgrestSingleResponse<AppFolderVm[]>>>({});
+  const [response, setResponse] = useState<Partial<ApiListResponse<AppFolderVm>>>({});
 
   useEffect(() => {
     const fetchFolder = async () => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const result = await useSupabaseFetch(RELATION_NAME, ref => ref.filter('id', 'eq', folderId));
+      const result = await apiFetchRelation<AppFolderVm>('folders', { id: folderId });
       setResponse(result);
     };
     void fetchFolder();
   }, [folderId]);
   return {
     ...response,
-    data: response.data?.[0]
+    data: response.data?.[0],
   };
 };
 
 export const useFolderPath = (folderId: string) => {
-  const [response, setResponse] = useState<Partial<PostgrestSingleResponse<AppFolderVm[]>>>({});
+  const [response, setResponse] = useState<Partial<ApiListResponse<AppFolderVm>>>({});
 
   useEffect(() => {
     const fId = folderId || '';
-    const fetchF = async (id: string): Promise<AppFolderVm> => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      return (await useSupabaseFetch(RELATION_NAME, ref => ref.filter('id', 'eq', id)))?.data?.[0];
+    const fetchF = async (id: string): Promise<AppFolderVm | undefined> => {
+      return (await apiFetchRelation<AppFolderVm>('folders', { id }))?.data?.[0];
     };
     const fetchPath = async () => {
       let result = await fetchF(fId);
-      const path: AppFolderVm[] = [result];
+      const path: AppFolderVm[] = result ? [result] : [];
       while (result?.parentId != null) {
         result = await fetchF(result.parentId);
-        path.push(result);
+        if (result) path.push(result);
       }
-      setResponse({ data: path.reverse() });
+      setResponse({ data: path.reverse(), error: null });
     };
     void fetchPath();
   }, [folderId]);

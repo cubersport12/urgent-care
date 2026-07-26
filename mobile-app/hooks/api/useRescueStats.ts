@@ -1,9 +1,9 @@
-import { supabase } from '@/supabase';
-import { PostgrestSingleResponse } from '@supabase/supabase-js';
+import { apiFetch } from '@/lib/api';
+import type { ApiListResponse } from '@/lib/api';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDeviceId } from '../use-device-id';
 import { AppRescueStatsVm } from './types';
-import { useSupabaseFetch } from './useSupabaseFetch';
+import { apiFetchRelation } from './useApiFetch';
 
 type RescueStatsKeys = Pick<AppRescueStatsVm, 'clientId' | 'rescueId'>;
 
@@ -11,24 +11,6 @@ type RescueStatsPatch = Partial<
   Pick<AppRescueStatsVm, 'startedAt' | 'completedAt' | 'passed' | 'data' | 'id'>
 >;
 
-/**
- * Хук для добавления или обновления статистики режима спасения
- * (по сути как {@link useAddOrUpdateArticleStats}: один `upsert` по паре `clientId` + `rescueId`).
- *
- * @param keys - `clientId` и `rescueId`
- * @returns `addOrUpdate(patch)` — дополняет/перезаписывает поля и выполняет upsert в `rescue_stats`
- *
- * @example
- * ```tsx
- * const { addOrUpdate, isLoading, error } = useAddOrUpdateRescueStats({
- *   clientId: deviceId ?? '',
- *   rescueId: rescueItem.id,
- * });
- *
- * await addOrUpdate({ startedAt: new Date().toISOString() });
- * await addOrUpdate({ completedAt: new Date().toISOString(), passed: true });
- * ```
- */
 export const useAddOrUpdateRescueStats = (keys: RescueStatsKeys) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -43,79 +25,45 @@ export const useAddOrUpdateRescueStats = (keys: RescueStatsKeys) => {
       setError(null);
 
       try {
-        const { data: existing, error: selErr } = await supabase
-          .from('rescue_stats')
-          .select('*')
-          .eq('clientId', keys.clientId)
-          .eq('rescueId', keys.rescueId)
-          .maybeSingle();
+        const existingList = await apiFetchRelation<AppRescueStatsVm>('rescue_stats', {
+          rescueId: keys.rescueId,
+        });
+        const row = existingList.data?.[0] ?? null;
 
-        if (selErr) {
-          throw selErr;
-        }
-
-        const row = existing as AppRescueStatsVm | null;
-
-        const isNewSession =
-          patch.startedAt !== undefined && patch.completedAt === undefined;
+        const isNewSession = patch.startedAt !== undefined && patch.completedAt === undefined;
 
         let startedAt = row?.startedAt;
         let completedAt = row?.completedAt ?? null;
         let passed = row?.passed ?? null;
         let data: AppRescueStatsVm['data'] = row?.data ?? null;
-        const id = patch.id ?? row?.id;
 
         if (isNewSession) {
           startedAt = patch.startedAt;
           completedAt = null;
           passed = null;
-          if (patch.data !== undefined) {
-            data = patch.data;
-          }
+          if (patch.data !== undefined) data = patch.data;
         } else {
-          if (patch.startedAt !== undefined) {
-            startedAt = patch.startedAt;
-          }
-          if (patch.completedAt !== undefined) {
-            completedAt = patch.completedAt;
-          }
-          if (patch.passed !== undefined) {
-            passed = patch.passed;
-          }
-          if (patch.data !== undefined) {
-            data = patch.data;
-          }
+          if (patch.startedAt !== undefined) startedAt = patch.startedAt;
+          if (patch.completedAt !== undefined) completedAt = patch.completedAt;
+          if (patch.passed !== undefined) passed = patch.passed;
+          if (patch.data !== undefined) data = patch.data;
         }
 
         const finalStartedAt = startedAt ?? patch.completedAt ?? new Date().toISOString();
 
-        const dataToUpsert: AppRescueStatsVm = {
-          ...(id ? { id } : {}),
-          clientId: keys.clientId,
-          rescueId: keys.rescueId,
-          startedAt: finalStartedAt,
-          completedAt,
-          passed,
-          data,
-        };
-
-        const response = await supabase
-          .from('rescue_stats')
-          .upsert(dataToUpsert, {
-            onConflict: 'clientId,rescueId',
-          })
-          .select()
-          .single();
-
-        if (response.error) {
-          throw response.error;
-        }
-
-        return response.data as AppRescueStatsVm;
+        return await apiFetch<AppRescueStatsVm>('/api/v1/rescue-stats', {
+          method: 'PUT',
+          body: JSON.stringify({
+            rescueId: keys.rescueId,
+            startedAt: finalStartedAt,
+            completedAt,
+            passed,
+            data,
+          }),
+        });
       } catch (err) {
         const e = err instanceof Error ? err : new Error('Failed to add or update rescue stats');
         setError(e);
-        console.error('Error adding or updating rescue stats:', err);
         throw e;
       } finally {
         setIsLoading(false);
@@ -124,21 +72,13 @@ export const useAddOrUpdateRescueStats = (keys: RescueStatsKeys) => {
     [keys.clientId, keys.rescueId],
   );
 
-  return {
-    addOrUpdate,
-    isLoading,
-    error,
-  };
+  return { addOrUpdate, isLoading, error };
 };
 
-/**
- * Статистика rescue по списку id для текущего устройства (clientId).
- */
 export const useRescuesStats = (rescueIds: string[]) => {
-  const [response, setResponse] = useState<Partial<PostgrestSingleResponse<AppRescueStatsVm[]>>>({});
+  const [response, setResponse] = useState<Partial<ApiListResponse<AppRescueStatsVm>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const { deviceId } = useDeviceId();
-
   const memoizedIds = useMemo(() => [...rescueIds].sort(), [rescueIds]);
 
   const fetchData = useCallback(async () => {
@@ -149,19 +89,13 @@ export const useRescuesStats = (rescueIds: string[]) => {
     }
     setIsLoading(true);
     try {
-      // eslint-disable-next-line react-hooks/rules-of-hooks -- как в useArticlesStats / useTestsStats
-      const r = await useSupabaseFetch('rescue_stats', (ref) => {
-        let query = ref.in('rescueId', memoizedIds);
-        if (deviceId) {
-          query = query.eq('clientId', deviceId);
-        }
-        return query;
-      });
-      setResponse(r);
+      const r = await apiFetchRelation<AppRescueStatsVm>('rescue_stats');
+      const filtered = (r.data ?? []).filter((s) => memoizedIds.includes(s.rescueId));
+      setResponse({ data: filtered, error: r.error });
     } finally {
       setIsLoading(false);
     }
-  }, [memoizedIds, deviceId]);
+  }, [memoizedIds]);
 
   useEffect(() => {
     if (rescueIds.length > 0 && deviceId) {
@@ -169,9 +103,5 @@ export const useRescuesStats = (rescueIds: string[]) => {
     }
   }, [fetchData, rescueIds.length, deviceId]);
 
-  return {
-    ...response,
-    isLoading,
-    fetchData,
-  };
+  return { ...response, isLoading, fetchData };
 };

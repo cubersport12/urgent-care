@@ -1,8 +1,14 @@
-import { PostgrestResponse } from '@supabase/supabase-js';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDeviceId } from '../use-device-id';
-import { AppArticleStatsVm, AppArticleVm, AppRescueItemVm, AppRescueStatsVm, AppTestStatsVm, AppTestVm } from './types';
-import { useSupabaseFetch } from './useSupabaseFetch';
+import {
+  AppArticleStatsVm,
+  AppArticleVm,
+  AppRescueItemVm,
+  AppRescueStatsVm,
+  AppTestStatsVm,
+  AppTestVm,
+} from './types';
+import { apiFetchRelation } from './useApiFetch';
 
 export type AccountOverallStatsVm = {
   documentsReadPercent: number;
@@ -66,17 +72,23 @@ export const useAccountOverallStats = () => {
     setError(null);
 
     try {
-      const [articlesResponse, testsResponse, rescuesResponse, articleStatsResponse, testStatsResponse, rescueStatsResponse] =
-        await Promise.all([
-          useSupabaseFetch<AppArticleVm>('articles'),
-          useSupabaseFetch<AppTestVm>('tests'),
-          useSupabaseFetch<AppRescueItemVm>('rescue'),
-          useSupabaseFetch<AppArticleStatsVm>('articles_stats', (ref) => ref.eq('clientId', deviceId)),
-          useSupabaseFetch<AppTestStatsVm>('tests_stats', (ref) => ref.eq('clientId', deviceId)),
-          useSupabaseFetch<AppRescueStatsVm>('rescue_stats', (ref) => ref.eq('clientId', deviceId)),
-        ]);
+      const [
+        articlesResponse,
+        testsResponse,
+        rescuesResponse,
+        articleStatsResponse,
+        testStatsResponse,
+        rescueStatsResponse,
+      ] = await Promise.all([
+        apiFetchRelation<AppArticleVm>('articles', { all: true }),
+        apiFetchRelation<AppTestVm>('tests', { all: true }),
+        apiFetchRelation<AppRescueItemVm>('rescue', { all: true }),
+        apiFetchRelation<AppArticleStatsVm>('articles_stats'),
+        apiFetchRelation<AppTestStatsVm>('tests_stats'),
+        apiFetchRelation<AppRescueStatsVm>('rescue_stats'),
+      ]);
 
-      const responses: PostgrestResponse<unknown>[] = [
+      const responses = [
         articlesResponse,
         testsResponse,
         rescuesResponse,
@@ -85,9 +97,7 @@ export const useAccountOverallStats = () => {
         rescueStatsResponse,
       ];
       const firstError = responses.find((r) => r.error)?.error;
-      if (firstError) {
-        throw firstError;
-      }
+      if (firstError) throw firstError;
 
       const allArticles = (articlesResponse.data ?? []).filter((a) => a.includeToStatistics !== false);
       const allTests = (testsResponse.data ?? []).filter((t) => t.includeToStatistics !== false);
@@ -101,11 +111,14 @@ export const useAccountOverallStats = () => {
       const testIds = new Set(allTests.map((t) => t.id));
       const rescueIds = new Set(allRescues.map((r) => r.id));
 
-      const readDocuments = articleStats.filter((s) => articleIds.has(s.articleId) && s.readed === true).length;
+      const readDocuments = articleStats.filter((s) => articleIds.has(s.articleId) && s.readed === true)
+        .length;
       const passedTests = testStats.filter((s) => testIds.has(s.testId) && s.passed === true).length;
       const failedTests = testStats.filter((s) => testIds.has(s.testId) && s.passed === false).length;
-      const passedRescues = rescueStats.filter((s) => rescueIds.has(s.rescueId) && s.passed === true).length;
-      const failedRescues = rescueStats.filter((s) => rescueIds.has(s.rescueId) && s.passed === false).length;
+      const passedRescues = rescueStats.filter((s) => rescueIds.has(s.rescueId) && s.passed === true)
+        .length;
+      const failedRescues = rescueStats.filter((s) => rescueIds.has(s.rescueId) && s.passed === false)
+        .length;
 
       setStats({
         documentsReadPercent: toPercent(readDocuments, allArticles.length),
@@ -149,4 +162,3 @@ export const useAccountOverallStats = () => {
     [stats, isLoading, error, fetchData],
   );
 };
-
