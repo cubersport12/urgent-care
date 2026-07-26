@@ -1,15 +1,15 @@
+import type { UserOut } from '@/api/generated/types.gen';
 import {
   getCurrentUser,
   loadStoredAuth,
   onAuthChange,
-  type ApiUser,
-} from '@/lib/api';
+} from '@/lib/auth-storage';
 import { signOut as apiSignOut } from '@/lib/auth-api';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 type AuthContextValue = {
   session: { access_token: string } | null;
-  user: ApiUser | null;
+  user: UserOut | null;
   initialized: boolean;
   signOut: () => Promise<void>;
 };
@@ -17,7 +17,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<ApiUser | null>(null);
+  const [user, setUser] = useState<UserOut | null>(null);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {

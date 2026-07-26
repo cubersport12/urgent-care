@@ -882,7 +882,9 @@ export class FoldersExplorerComponent {
       mergeMap((pathMap) => {
         const scenes = (data.scenes ?? []).map(scene => ({
           ...scene,
-          background: pathMap.get(scene.background) ?? scene.background
+          background: scene.background
+            ? (pathMap.get(scene.background) ?? scene.background)
+            : scene.background
         }));
         const defaultBackground = data.defaultBackground
           ? (pathMap.get(data.defaultBackground) ?? data.defaultBackground)

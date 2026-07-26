@@ -23,7 +23,16 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 Or full stack: `docker compose up --build`.
 
-Docs: http://localhost:8000/docs
+Docs: http://localhost:8000/docs · OpenAPI: http://localhost:8000/openapi.json
+
+```bash
+# Export OpenAPI without a running server
+python scripts/export_openapi.py --out ../mobile-app/openapi.json
+
+# Clients (with API running):
+#   cd ../mobile-app && npm run sync-and-generate-api
+#   cd ../content-builder-web-app && npm run sync-and-generate-api
+```
 
 ## Migrate from Supabase
 

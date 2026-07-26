@@ -75,7 +75,7 @@ export default function ProfileScreen() {
 
   const accountName =
     user?.full_name ||
-    (user?.email ? user.email.split('@')[0] : null) ||
+    (user?.email ? String(user.email).split('@')[0] : null) ||
     'Студент';
 
   const userInitial = accountName.charAt(0).toUpperCase();

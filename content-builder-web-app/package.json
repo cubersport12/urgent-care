@@ -9,7 +9,10 @@
     "build": "ng build --base-href=/urgent-care/content-builder/ --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "update": "ng update @angular/core @angular/cli @angular/cdk @angular/material --force"
+    "update": "ng update @angular/core @angular/cli @angular/cdk @angular/material --force",
+    "sync-openapi": "node scripts/sync-openapi.mjs",
+    "generate-api": "openapi-ts && node scripts/stamp-generated-api.mjs",
+    "sync-and-generate-api": "npm run sync-openapi && npm run generate-api"
   },
   "private": true,
   "dependencies": {
@@ -41,6 +44,7 @@
     "@angular/cli": "^22.0.1",
     "@angular/compiler-cli": "^22.0.1",
     "@eslint/js": "^9.17.0",
+    "@hey-api/openapi-ts": "^0.99.0",
     "@stylistic/eslint-plugin": "^2.12.1",
     "@types/jasmine": "~5.1.0",
     "@types/jszip": "^3.4.1",

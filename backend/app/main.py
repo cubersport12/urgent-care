@@ -8,12 +8,19 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from sqlalchemy import text
 
 from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.errors import AppError
 from app.db.base import engine
+
+
+def _generate_operation_id(route: APIRoute) -> str:
+    """Stable OpenAPI operationId: `{tag}_{name}` for codegen."""
+    tag = route.tags[0] if route.tags else "api"
+    return f"{tag}_{route.name}"
 
 
 def configure_logging() -> None:
@@ -56,10 +63,20 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version="1.0.0",
+        description=(
+            "Urgent Care API — content CMS, learning stats, auth, media. "
+            "OpenAPI: `/openapi.json` · Swagger UI: `/docs` · ReDoc: `/redoc`."
+        ),
         docs_url="/docs" if not settings.is_prod else None,
         redoc_url="/redoc" if not settings.is_prod else None,
         openapi_url="/openapi.json" if not settings.is_prod else None,
+        generate_unique_id_function=_generate_operation_id,
         lifespan=lifespan,
+        swagger_ui_parameters={
+            "persistAuthorization": True,
+            "displayRequestDuration": True,
+            "filter": True,
+        },
     )
 
     cors_kwargs: dict[str, Any] = {

@@ -8,7 +8,7 @@ export function useDeviceId(): { deviceId: string | null; isLoading: boolean } {
   const { user, initialized } = useAuth();
 
   return {
-    deviceId: user?.id ?? null,
+    deviceId: user?.id != null ? String(user.id) : null,
     isLoading: !initialized,
   };
 }

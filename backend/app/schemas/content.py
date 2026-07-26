@@ -12,7 +12,14 @@ class CamelModel(BaseModel):
         from_attributes=True,
         populate_by_name=True,
         ser_json_by_alias=True,
+        # Prefer camelCase names in OpenAPI / generated clients
+        json_schema_serialization_defaults_required=True,
     )
+
+
+class LinkToArticle(CamelModel):
+    key: str
+    article_id: str = Field(alias="articleId")
 
 
 class FolderOut(CamelModel):
@@ -49,7 +56,7 @@ class ArticleOut(CamelModel):
         None, alias="hideWhileNotPrevComplete"
     )
     include_to_statistics: bool | None = Field(None, alias="includeToStatistics")
-    links_to_articles: list[Any] | None = Field(None, alias="linksToArticles")
+    links_to_articles: list[LinkToArticle] | None = Field(None, alias="linksToArticles")
 
 
 class ArticleCreate(CamelModel):
@@ -66,7 +73,7 @@ class ArticleCreate(CamelModel):
         None, alias="hideWhileNotPrevComplete"
     )
     include_to_statistics: bool | None = Field(None, alias="includeToStatistics")
-    links_to_articles: list[Any] | None = Field(None, alias="linksToArticles")
+    links_to_articles: list[LinkToArticle] | None = Field(None, alias="linksToArticles")
 
 
 class ArticleUpdate(CamelModel):
@@ -82,7 +89,7 @@ class ArticleUpdate(CamelModel):
         None, alias="hideWhileNotPrevComplete"
     )
     include_to_statistics: bool | None = Field(None, alias="includeToStatistics")
-    links_to_articles: list[Any] | None = Field(None, alias="linksToArticles")
+    links_to_articles: list[LinkToArticle] | None = Field(None, alias="linksToArticles")
 
 
 class TestOut(CamelModel):

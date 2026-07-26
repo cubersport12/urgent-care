@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import Response
+from pydantic import BaseModel, ConfigDict, Field
 from starlette.responses import Response as StarletteResponse
 
 from app.api.deps import get_current_admin, get_current_user
@@ -13,6 +14,13 @@ from app.models.user import User
 from app.utils.s3 import get_s3_client
 
 router = APIRouter(prefix="/media", tags=["media"])
+
+
+class MediaUploadOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, ser_json_by_alias=True)
+
+    path: str
+    file_name: str = Field(alias="fileName")
 
 ALLOWED_PREFIX = "public/"
 
@@ -40,12 +48,12 @@ async def download_media(
     return Response(content=body, media_type=content_type)
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=MediaUploadOut, status_code=status.HTTP_201_CREATED)
 async def upload_media(
     _: Annotated[User, Depends(get_current_admin)],
     file: UploadFile = File(...),
     file_name: str | None = Form(None, alias="fileName"),
-) -> dict[str, str]:
+) -> MediaUploadOut:
     name = file_name or file.filename
     if not name:
         raise HTTPException(status_code=400, detail="fileName required")
@@ -55,9 +63,8 @@ async def upload_media(
     s3 = get_s3_client()
     await s3.ensure_bucket()
     await s3.upload_bytes(data=data, key=key, content_type=content_type)
-    # Return path relative to bucket (matches previous Supabase path shape)
     relative = key.removeprefix("public/")
-    return {"path": f"public/{relative}", "fileName": relative}
+    return MediaUploadOut(path=f"public/{relative}", file_name=relative)
 
 
 @router.delete("/{file_path:path}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)

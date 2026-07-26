@@ -11,7 +11,10 @@
     "web:build": "npx expo export -p web --output-dir ../dist/mobile-app",
     "prebuild": "npx expo prebuild",
     "prebuild:clean": "npx expo prebuild --clean",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "sync-openapi": "node scripts/sync-openapi.mjs",
+    "generate-api": "openapi-ts && node scripts/stamp-generated-api.mjs",
+    "sync-and-generate-api": "npm run sync-openapi && npm run generate-api"
   },
   "dependencies": {
     "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
@@ -54,6 +57,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@hey-api/openapi-ts": "^0.99.0",
     "@types/react": "~19.1.0",
     "eslint": "^9.39.2",
     "eslint-config-expo": "~10.0.0",

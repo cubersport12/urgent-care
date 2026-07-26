@@ -1,161 +1,169 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+/**
+ * Thin compatibility layer + media helpers over generated OpenAPI client.
+ */
+import { API_BASE_URL, authFetch } from '@/api/client';
+import {
+  articlesGetArticle,
+  articlesListArticles,
+  foldersGetFolder,
+  foldersListFolders,
+  rescueGetRescue,
+  rescueListRescue,
+  statsListArticleStats,
+  statsListRescueStats,
+  statsListTestResults,
+  statsListTestStats,
+  testsGetTest,
+  testsListTests,
+} from '@/api/generated/sdk.gen';
+import { apiCall } from '@/api/utils';
+import { getAccessToken, getCurrentUser, loadStoredAuth, onAuthChange } from '@/lib/auth-storage';
 
-const DEFAULT_URL =
-  Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
-
-export const API_BASE_URL = (
-  process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL
-).replace(/\/$/, '');
-
-const ACCESS_KEY = 'uc_access_token';
-const REFRESH_KEY = 'uc_refresh_token';
-const USER_KEY = 'uc_user';
-
-export type ApiUser = {
-  id: string;
-  email: string;
-  full_name: string;
-  role: string;
-  is_active: boolean;
-  created_at: string;
-};
-
+export type { UserOut as ApiUser } from '@/api/generated/types.gen';
 export type ApiListResponse<T> = {
   data: T[] | null;
   error: Error | null;
 };
 
-export type ApiSingleResponse<T> = {
-  data: T | null;
-  error: Error | null;
+export {
+  getAccessToken,
+  getCurrentUser,
+  loadStoredAuth,
+  onAuthChange,
+  clearAuth,
+  persistAuth,
+} from '@/lib/auth-storage';
+
+export { API_BASE_URL };
+
+export type FetchOptions = {
+  parentId?: string | null;
+  all?: boolean;
+  id?: string;
+  articleId?: string;
+  testId?: string;
+  rescueId?: string;
 };
 
-let accessToken: string | null = null;
-let refreshToken: string | null = null;
-let cachedUser: ApiUser | null = null;
-
-type AuthListener = (user: ApiUser | null) => void;
-const listeners = new Set<AuthListener>();
-
-export function onAuthChange(listener: AuthListener): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-function notifyAuth() {
-  for (const l of listeners) {
-    l(cachedUser);
-  }
-}
-
-export async function loadStoredAuth(): Promise<ApiUser | null> {
+async function asListResponse<T>(fn: () => Promise<T[]>): Promise<ApiListResponse<T>> {
   try {
-    const [a, r, u] = await Promise.all([
-      AsyncStorage.getItem(ACCESS_KEY),
-      AsyncStorage.getItem(REFRESH_KEY),
-      AsyncStorage.getItem(USER_KEY),
-    ]);
-    accessToken = a;
-    refreshToken = r;
-    cachedUser = u ? (JSON.parse(u) as ApiUser) : null;
-    return cachedUser;
-  } catch {
-    return null;
+    const data = await fn();
+    return { data: data ?? [], error: null };
+  } catch (e) {
+    return { data: null, error: e instanceof Error ? e : new Error(String(e)) };
   }
 }
 
-export async function persistAuth(tokens: {
-  access_token: string;
-  refresh_token: string;
-  user: ApiUser;
-}): Promise<void> {
-  accessToken = tokens.access_token;
-  refreshToken = tokens.refresh_token;
-  cachedUser = {
-    ...tokens.user,
-    id: String(tokens.user.id),
-  };
-  await Promise.all([
-    AsyncStorage.setItem(ACCESS_KEY, accessToken),
-    AsyncStorage.setItem(REFRESH_KEY, refreshToken),
-    AsyncStorage.setItem(USER_KEY, JSON.stringify(cachedUser)),
-  ]);
-  notifyAuth();
-}
+export async function apiFetchRelation<T = unknown>(
+  relation: string,
+  options: FetchOptions = {},
+): Promise<ApiListResponse<T>> {
+  const parentQuery =
+    options.all
+      ? { all: true }
+      : options.parentId != null && options.parentId.length > 0
+        ? { parentId: options.parentId }
+        : options.parentId === null || options.parentId === undefined
+          ? {}
+          : {};
 
-export async function clearAuth(): Promise<void> {
-  accessToken = null;
-  refreshToken = null;
-  cachedUser = null;
-  await Promise.all([
-    AsyncStorage.removeItem(ACCESS_KEY),
-    AsyncStorage.removeItem(REFRESH_KEY),
-    AsyncStorage.removeItem(USER_KEY),
-  ]);
-  notifyAuth();
-}
-
-export function getAccessToken(): string | null {
-  return accessToken;
-}
-
-export function getCurrentUser(): ApiUser | null {
-  return cachedUser;
-}
-
-async function tryRefresh(): Promise<boolean> {
-  if (!refreshToken) return false;
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { access_token: string };
-    accessToken = data.access_token;
-    await AsyncStorage.setItem(ACCESS_KEY, accessToken);
-    return true;
-  } catch {
-    return false;
+  switch (relation) {
+    case 'folders':
+      if (options.id) {
+        return asListResponse(async () => [
+          (await apiCall(() => foldersGetFolder({ path: { item_id: options.id! } }))) as T,
+        ]);
+      }
+      return asListResponse(async () =>
+        (await apiCall(() =>
+          foldersListFolders({ query: { ...parentQuery, all: options.all || undefined } }),
+        )) as T[],
+      );
+    case 'articles':
+      if (options.id) {
+        return asListResponse(async () => [
+          (await apiCall(() => articlesGetArticle({ path: { item_id: options.id! } }))) as T,
+        ]);
+      }
+      return asListResponse(async () =>
+        (await apiCall(() =>
+          articlesListArticles({ query: { ...parentQuery, all: options.all || undefined } }),
+        )) as T[],
+      );
+    case 'tests':
+      if (options.id) {
+        return asListResponse(async () => [
+          (await apiCall(() => testsGetTest({ path: { item_id: options.id! } }))) as T,
+        ]);
+      }
+      return asListResponse(async () =>
+        (await apiCall(() =>
+          testsListTests({ query: { ...parentQuery, all: options.all || undefined } }),
+        )) as T[],
+      );
+    case 'rescue':
+      if (options.id) {
+        return asListResponse(async () => [
+          (await apiCall(() => rescueGetRescue({ path: { item_id: options.id! } }))) as T,
+        ]);
+      }
+      return asListResponse(async () =>
+        (await apiCall(() =>
+          rescueListRescue({ query: { ...parentQuery, all: options.all || undefined } }),
+        )) as T[],
+      );
+    case 'articles_stats':
+      return asListResponse(async () =>
+        (await apiCall(() =>
+          statsListArticleStats({
+            query: options.articleId ? { articleId: options.articleId } : {},
+          }),
+        )) as T[],
+      );
+    case 'tests_stats':
+      return asListResponse(async () =>
+        (await apiCall(() =>
+          statsListTestStats({
+            query: options.testId ? { testId: options.testId } : {},
+          }),
+        )) as T[],
+      );
+    case 'rescue_stats':
+      return asListResponse(async () =>
+        (await apiCall(() =>
+          statsListRescueStats({
+            query: options.rescueId ? { rescueId: options.rescueId } : {},
+          }),
+        )) as T[],
+      );
+    case 'test_results':
+      return asListResponse(async () =>
+        (await apiCall(() =>
+          statsListTestResults({
+            query: options.testId ? { testId: options.testId } : {},
+          }),
+        )) as T[],
+      );
+    default:
+      return { data: null, error: new Error(`Unknown relation: ${relation}`) };
   }
 }
 
+/** Generic JSON request for endpoints not yet wrapped (stats upserts, etc.) */
 export async function apiFetch<T>(
   path: string,
   init: RequestInit = {},
-  retry = true,
 ): Promise<T> {
   const headers = new Headers(init.headers);
   if (!(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  if (accessToken) {
-    headers.set('Authorization', `Bearer ${accessToken}`);
-  }
-
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
-
-  if (res.status === 401 && retry && refreshToken) {
-    const ok = await tryRefresh();
-    if (ok) return apiFetch<T>(path, init, false);
-  }
-
-  if (res.status === 204) {
-    return undefined as T;
-  }
-
+  const token = getAccessToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const res = await authFetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  if (res.status === 204) return undefined as T;
   const text = await res.text();
-  let body: unknown = null;
-  if (text) {
-    try {
-      body = JSON.parse(text);
-    } catch {
-      body = text;
-    }
-  }
-
+  const body = text ? JSON.parse(text) : null;
   if (!res.ok) {
     const detail =
       typeof body === 'object' && body && 'detail' in body
@@ -163,7 +171,6 @@ export async function apiFetch<T>(
         : res.statusText;
     throw new Error(detail || `HTTP ${res.status}`);
   }
-
   return body as T;
 }
 
@@ -178,9 +185,7 @@ export async function apiGetList<T>(path: string): Promise<ApiListResponse<T>> {
 
 export async function downloadMediaBlob(fileName: string): Promise<Blob> {
   const path = fileName.startsWith('public/') ? fileName : `public/${fileName}`;
-  const headers = new Headers();
-  if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
-  const res = await fetch(`${API_BASE_URL}/api/v1/media/${path}`, { headers });
+  const res = await authFetch(`${API_BASE_URL}/api/v1/media/${path}`);
   if (!res.ok) throw new Error(`File not found: ${fileName}`);
   return res.blob();
 }

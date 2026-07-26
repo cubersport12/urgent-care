@@ -1,55 +1,46 @@
+/**
+ * App view-models: API DTOs from OpenAPI codegen + local domain shapes for JSONB blobs.
+ */
+import type {
+  ArticleOut,
+  ArticleStatsOut,
+  FolderOut,
+  LinkToArticle,
+  RescueOut,
+  RescueStatsOut,
+  TestOut,
+  TestResultOut,
+  TestStatsOut,
+  UserOut,
+} from '@/api/generated/types.gen';
+
 export type NullableValue<T> = T | null | undefined;
 
-export type AppIdentity = {
-  id: string;
-};
-export type AppBaseVm = { name: string; order?: number; parentId: NullableValue<string> } & AppIdentity;
+export type AppIdentity = { id: string };
+export type AppBaseVm = {
+  name: string;
+  order?: number | null;
+  parentId: NullableValue<string>;
+} & AppIdentity;
 
-export type AppFolderVm = {
-} & AppBaseVm;
+/** @deprecated prefer FolderOut from OpenAPI */
+export type AppFolderVm = FolderOut;
 
-export type AppLinkToArticleVm = {
-  key: string;
-  articleId: string;
-};
+export type AppLinkToArticleVm = LinkToArticle;
 
-export type AppArticleVm = {
-  nextRunArticle?: NullableValue<string>;
-  timeRead?: NullableValue<number>;
-  disableWhileNotPrevComplete?: NullableValue<boolean>;
-  hideWhileNotPrevComplete?: NullableValue<boolean>;
-  includeToStatistics?: NullableValue<boolean>;
-  linksToArticles: NullableValue<AppLinkToArticleVm[]>;
-} & AppBaseVm;
+export type AppArticleVm = ArticleOut;
 
-export type AppTestVm = {
-  accessabilityConditions?: NullableValue<AppTestAccessablityCondition[]>;
-  questions?: NullableValue<AppTestQuestionVm[]>;
-  minScore?: NullableValue<number>;
-  maxErrors?: NullableValue<number>;
-  showCorrectAnswer?: NullableValue<boolean>;
-  includeToStatistics?: NullableValue<boolean>;
-  showSkipButton?: NullableValue<boolean>;
-  showNavigation?: NullableValue<boolean>;
-  showBackButton?: NullableValue<boolean>;
-  hidden?: NullableValue<boolean>;
-} & AppBaseVm;
-
-export type AppTestQuestionVm = {
-  questionText: string;
-  image?: NullableValue<string>;
-  answers: NullableValue<AppTestQuestionAnswerVm[]>;
-  activationCondition?: AppTestQuestionActivationCondition;
-} & AppBaseVm;
 export type AppTestQuestionAnswerVm = {
   answerText: string;
   image?: NullableValue<string>;
   score?: number;
   isCorrect?: boolean;
 };
+
 export enum AppTestQuestionActivationConditionKind {
-  CompleteQuestion = 'CompleteQuestion'
+  CompleteQuestion = 'CompleteQuestion',
 }
+
 export type AppTestQuestionActivationConditionScoreData = {
   type: 'score';
   score: number;
@@ -64,20 +55,21 @@ export type AppTestQuestionActivationCondition = {
   relationQuestionId: string;
 };
 
+export type AppTestQuestionVm = {
+  questionText: string;
+  image?: NullableValue<string>;
+  answers: NullableValue<AppTestQuestionAnswerVm[]>;
+  activationCondition?: AppTestQuestionActivationCondition;
+} & AppBaseVm;
+
 export enum AppTestAccessablityLogicalOperator {
   And = 'and',
-  Or = 'or'
+  Or = 'or',
 }
 
 export type AppTestAccessablityCondition = {
   logicalOperator?: AppTestAccessablityLogicalOperator;
 } & (AppTestAccessablityConditionTest | AppTestAccessablityConditionArticle);
-
-export type AppTestAccessablityConditionTest = {
-  type: 'test';
-  testId: string;
-  data: AppTestAccessablityConditionTestScore | AppTestAccessablityConditionTestSuccedded;
-};
 
 export type AppTestAccessablityConditionTestScore = {
   type: 'score';
@@ -88,19 +80,28 @@ export type AppTestAccessablityConditionTestSuccedded = {
   success: boolean;
 };
 
+export type AppTestAccessablityConditionTest = {
+  type: 'test';
+  testId: string;
+  data: AppTestAccessablityConditionTestScore | AppTestAccessablityConditionTestSuccedded;
+};
+
 export type AppTestAccessablityConditionArticle = {
   type: 'article';
   articleId: string;
   isReaded?: NullableValue<boolean>;
 };
 
-// Режим спасения (rescue) — визуальная новелла с параметрами по таймеру
+export type AppTestVm = Omit<TestOut, 'questions' | 'accessabilityConditions'> & {
+  questions?: NullableValue<AppTestQuestionVm[]>;
+  accessabilityConditions?: NullableValue<AppTestAccessablityCondition[]>;
+};
 
 export enum RescueParameterSeverityEnum {
   Normal = 'normal',
   Low = 'low',
   Medium = 'medium',
-  High = 'high'
+  High = 'high',
 }
 
 export type RescueParameterSeverityVm = {
@@ -110,40 +111,19 @@ export type RescueParameterSeverityVm = {
   description?: string;
 };
 
-/** Общий параметр, изменяемый по  таймеру */
 export type RescueTimerParameterVm = {
-  /* ИД */
   id: string;
-  /* Наименование параметра */
   name: string;
-  /* Насколько указанный параметр будет изменен */
   delta: number;
-  /* Стартовое значение параметра на старте */
   startValue: number;
-  /* Уровни серьезности параметра */
   severities?: RescueParameterSeverityVm[];
-  /** `numeric` — число и delta; `timer` — старт в `startValue` как секунды суток, ввод через время */
   type?: 'numeric' | 'timer';
   isHidden?: boolean;
 };
 
-/** На какой параметр воздействовать после выбора ответа на вопрос */
 export type RescueChoiceParameterChangeVm = {
-  /* ИД параметра */
   parameterId: string;
-  /* Насколько изменить указанный параметр */
   value: number;
-};
-
-/** Вариант выбора в сцене: текст, изменения параметров и следующая сцена */
-export type RescueSceneChoiceVm = {
-  id: string;
-  text: string;
-  parameterChanges: RescueChoiceParameterChangeVm[];
-  /** id сцены, на которую переход при выборе; null — конец/без перехода */
-  nextSceneId: NullableValue<string>;
-  /** Последствия выбора (теги на экране завершения) */
-  implications?: NullableValue<RescueScheneChoiceImplicationVm[]>;
 };
 
 export type RescueScheneChoiceImplicationVm = {
@@ -151,41 +131,38 @@ export type RescueScheneChoiceImplicationVm = {
   severity: RescueParameterSeverityEnum;
 };
 
-/** Сцена: фон, текст и варианты выбора (визуальная новелла) */
+export type RescueSceneChoiceVm = {
+  id: string;
+  text: string;
+  parameterChanges: RescueChoiceParameterChangeVm[];
+  nextSceneId: NullableValue<string>;
+  implications?: NullableValue<RescueScheneChoiceImplicationVm[]>;
+};
+
 export type RescueSceneVm = {
   id: string;
   order?: number;
-  /** URL или id фона; если не задан — в рантайме подставляется {@link AppRescueItemDataVm.defaultBackground} */
   background?: string;
   text: string;
   choices: RescueSceneChoiceVm[];
   hidden?: NullableValue<boolean>;
-  /** Была ли сцена проверена на наличие ошибок */
   isReviewed?: NullableValue<boolean>;
 };
 
-// --- Условия завершения режима спасения (успех / неуспех) ---
-
-/** Логическое объединение вложенных условий в группе */
 export enum RescueCompletionLogicalOperator {
   And = 'and',
-  Or = 'or'
+  Or = 'or',
 }
 
-/** Операция сравнения текущего числового значения параметра с константой */
 export enum RescueCompletionCompareOperator {
   Eq = 'eq',
   Neq = 'neq',
   Gt = 'gt',
   Gte = 'gte',
   Lt = 'lt',
-  Lte = 'lte'
+  Lte = 'lte',
 }
 
-/**
- * Лист дерева условий: одно сравнение значения параметра (id из {@link RescueTimerParameterVm}).
- * Пример: параметр «1» больше 5 — `{ type: 'compare', parameterId: '1', operator: Gt, value: 5 }`.
- */
 export type RescueCompletionCompareVm = {
   type: 'compare';
   parameterId: string;
@@ -193,71 +170,46 @@ export type RescueCompletionCompareVm = {
   value: number;
 };
 
-/**
- * Группа условий, объединённых по И/ИЛИ.
- * Пример успеха: (пар.1 > 5 и пар.1 < 50) и (пар.2 < 100 и пар.2 > 50) и (пар.3 = 30)
- * — корневая группа `And` с тремя дочерними элементами: две вложенные `And` по двум compare и один compare.
- */
 export type RescueCompletionGroupVm = {
   type: 'group';
   logicalOperator: RescueCompletionLogicalOperator;
   conditions: RescueCompletionConditionVm[];
 };
 
-/** Условие завершения: сравнение или вложенная логическая группа */
 export type RescueCompletionConditionVm = RescueCompletionCompareVm | RescueCompletionGroupVm;
 
-/**
- * Модель завершения режима спасения: отдельные деревья условий для успешного и неуспешного исхода.
- * Семантику приоритета (что проверять первым, могут ли совпасть оба) задаёт приложение / рантайм.
- */
 export type AppRescueItemCompletionVm = {
-  /** Дерево условий успешного завершения */
   success?: NullableValue<RescueCompletionConditionVm>;
-  /** Дерево условий неуспешного завершения (та же структура, что и у success) */
   failure?: NullableValue<RescueCompletionConditionVm>;
 };
 
 export type AppRescueItemDataVm = {
-  /** Общие параметры по таймеру */
   parameters?: RescueTimerParameterVm[];
-  /** Сцены визуальной новеллы */
   scenes?: RescueSceneVm[];
-  /** URL или id фона по умолчанию */
   defaultBackground?: string;
-  /** Условия успешного и неуспешного завершения режима */
   completion?: AppRescueItemCompletionVm;
 };
 
-export type AppRescueItemVm = {
-  createdAt: string;
-  description: string;
+export type AppRescueItemVm = Omit<RescueOut, 'data'> & {
   data: AppRescueItemDataVm;
-} & AppBaseVm;
-
-export type AppArticleStatsVm = {
-  readed?: boolean;
-  clientId: string;
-  articleId: string;
-  createdAt: string;
-}
-
-export type AppTestStatsVm = {
-  clientId: string;
-  testId: string;
-  startedAt: string;
-  completedAt?: NullableValue<string>;
-  passed?: NullableValue<boolean>;
-  data?: NullableValue<any>;
-}
-
-/** Статистика прохождения режима спасения (таблица rescue_stats) */
-export type AppRescueStatsVm = {
-  id?: string;
-  clientId: string;
-  rescueId: string;
-  startedAt: string;
-  completedAt?: NullableValue<string>;
-  passed?: NullableValue<boolean>;
-  data?: NullableValue<any>;
 };
+
+export type AppArticleStatsVm = ArticleStatsOut;
+export type AppTestStatsVm = TestStatsOut;
+export type AppRescueStatsVm = RescueStatsOut;
+export type AppTestResultVm = TestResultOut;
+export type AppUserVm = UserOut;
+
+export type {
+  ArticleOut,
+  FolderOut,
+  RescueOut,
+  TestOut,
+  ArticleStatsOut,
+  TestStatsOut,
+  RescueStatsOut,
+  TestResultOut,
+  UserOut,
+  Token,
+  LinkToArticle,
+} from '@/api/generated/types.gen';

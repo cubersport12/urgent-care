@@ -1,6 +1,9 @@
+import { configureApiClient } from '@/api/client';
 import { AuthProvider } from '@/contexts/auth-context';
 import { TestProvider } from '@/contexts/test-context';
 import { ThemeProvider } from '@/contexts/theme-context';
+
+configureApiClient();
 import {
   Inter_300Light,
   Inter_400Regular,

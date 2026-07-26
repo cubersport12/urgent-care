@@ -1,55 +1,64 @@
+/**
+ * App view-models: OpenAPI-generated DTOs + local domain shapes for JSONB.
+ */
+import type {
+  ArticleOut,
+  FolderOut,
+  LinkToArticle,
+  RescueOut,
+  TestOut,
+  UserOut,
+} from '@/core/api/generated/types.gen';
+
 export type NullableValue<T> = T | null | undefined;
 
-export type AppIdentity = {
-  id: string;
+export type AppIdentity = { id: string };
+export type AppBaseVm = {
+  name: string;
+  order?: number | null;
+  parentId: NullableValue<string>;
+} & AppIdentity;
+
+/** UI/store models: OpenAPI DTOs softened so form values may be `undefined`. */
+export type AppFolderVm = Omit<FolderOut, 'order' | 'parentId'> & {
+  order?: NullableValue<number>;
+  parentId?: NullableValue<string>;
 };
-export type AppBaseVm = { name: string; order?: number; parentId: NullableValue<string> } & AppIdentity;
 
-export type AppFolderVm = {
-} & AppBaseVm;
+export type AppLinkToArticleVm = LinkToArticle;
 
-export type AppLinkToArticleVm = {
-  key: string;
-  articleId: string;
-};
-
-export type AppArticleVm = {
+export type AppArticleVm = Omit<
+  ArticleOut,
+  | 'order'
+  | 'parentId'
+  | 'nextRunArticle'
+  | 'timeRead'
+  | 'disableWhileNotPrevComplete'
+  | 'hideWhileNotPrevComplete'
+  | 'includeToStatistics'
+  | 'linksToArticles'
+> & {
+  order?: NullableValue<number>;
+  parentId?: NullableValue<string>;
   nextRunArticle?: NullableValue<string>;
   timeRead?: NullableValue<number>;
   disableWhileNotPrevComplete?: NullableValue<boolean>;
   hideWhileNotPrevComplete?: NullableValue<boolean>;
   includeToStatistics?: NullableValue<boolean>;
-  linksToArticles: NullableValue<AppLinkToArticleVm[]>;
-} & AppBaseVm;
+  linksToArticles?: NullableValue<AppLinkToArticleVm[]>;
+};
 
-export type AppTestVm = {
-  accessabilityConditions?: NullableValue<AppTestAccessablityCondition[]>;
-  questions?: NullableValue<AppTestQuestionVm[]>;
-  minScore?: NullableValue<number>;
-  maxErrors?: NullableValue<number>;
-  showCorrectAnswer?: NullableValue<boolean>;
-  includeToStatistics?: NullableValue<boolean>;
-  showSkipButton?: NullableValue<boolean>;
-  showNavigation?: NullableValue<boolean>;
-  showBackButton?: NullableValue<boolean>;
-  hidden?: NullableValue<boolean>;
-} & AppBaseVm;
-
-export type AppTestQuestionVm = {
-  questionText: string;
-  image?: NullableValue<string>;
-  answers: NullableValue<AppTestQuestionAnswerVm[]>;
-  activationCondition?: AppTestQuestionActivationCondition;
-} & AppBaseVm;
 export type AppTestQuestionAnswerVm = {
   answerText: string;
   image?: NullableValue<string>;
   score?: number;
   isCorrect?: boolean;
 };
+
 export enum AppTestQuestionActivationConditionKind {
   CompleteQuestion = 'CompleteQuestion'
 }
+
 export type AppTestQuestionActivationConditionScoreData = {
   type: 'score';
   score: number;
@@ -64,6 +73,13 @@ export type AppTestQuestionActivationCondition = {
   relationQuestionId: string;
 };
 
+export type AppTestQuestionVm = {
+  questionText: string;
+  image?: NullableValue<string>;
+  answers: NullableValue<AppTestQuestionAnswerVm[]>;
+  activationCondition?: AppTestQuestionActivationCondition;
+} & AppBaseVm;
+
 export enum AppTestAccessablityLogicalOperator {
   And = 'and',
   Or = 'or'
@@ -72,12 +88,6 @@ export enum AppTestAccessablityLogicalOperator {
 export type AppTestAccessablityCondition = {
   logicalOperator?: AppTestAccessablityLogicalOperator;
 } & (AppTestAccessablityConditionTest | AppTestAccessablityConditionArticle);
-
-export type AppTestAccessablityConditionTest = {
-  type: 'test';
-  testId: string;
-  data: AppTestAccessablityConditionTestScore | AppTestAccessablityConditionTestSuccedded;
-};
 
 export type AppTestAccessablityConditionTestScore = {
   type: 'score';
@@ -88,49 +98,74 @@ export type AppTestAccessablityConditionTestSuccedded = {
   success: boolean;
 };
 
+export type AppTestAccessablityConditionTest = {
+  type: 'test';
+  testId: string;
+  data: AppTestAccessablityConditionTestScore | AppTestAccessablityConditionTestSuccedded;
+};
+
 export type AppTestAccessablityConditionArticle = {
   type: 'article';
   articleId: string;
   isReaded?: NullableValue<boolean>;
 };
 
-// Режим спасения (rescue) — визуальная новелла с параметрами по таймеру
+export type AppTestVm = Omit<
+  TestOut,
+  | 'questions'
+  | 'accessabilityConditions'
+  | 'order'
+  | 'parentId'
+  | 'minScore'
+  | 'maxErrors'
+  | 'showCorrectAnswer'
+  | 'includeToStatistics'
+  | 'showSkipButton'
+  | 'showNavigation'
+  | 'showBackButton'
+  | 'hidden'
+> & {
+  order?: NullableValue<number>;
+  parentId?: NullableValue<string>;
+  minScore?: NullableValue<number>;
+  maxErrors?: NullableValue<number>;
+  showCorrectAnswer?: NullableValue<boolean>;
+  includeToStatistics?: NullableValue<boolean>;
+  showSkipButton?: NullableValue<boolean>;
+  showNavigation?: NullableValue<boolean>;
+  showBackButton?: NullableValue<boolean>;
+  hidden?: NullableValue<boolean>;
+  questions?: NullableValue<AppTestQuestionVm[]>;
+  accessabilityConditions?: NullableValue<AppTestAccessablityCondition[]>;
+};
 
-/** Общий параметр, изменяемый по  таймеру */
+export enum RescueParameterSeverityEnum {
+  Normal = 'normal',
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high'
+}
+
+export type RescueParameterSeverityVm = {
+  min?: number;
+  max?: number;
+  severity?: RescueParameterSeverityEnum;
+  description?: string;
+};
+
 export type RescueTimerParameterVm = {
-  /* ИД */
   id: string;
-  /* Наименование параметра */
   name: string;
-  /* Насколько указанный параметр будет изменен */
   delta: number;
-  /* Стартовое значение параметра на старте. Либо число, либо время в секундах */
   startValue: number;
-  /* Уровни серьезности параметра */
   severities?: RescueParameterSeverityVm[];
-  /** `numeric` — число и delta; `timer` — старт в `startValue` как секунды суток, ввод через время */
   type?: 'numeric' | 'timer';
-  /** Скрыть параметр при отображении в сценариях */
-  isHidden?: NullableValue<boolean>;
+  isHidden?: boolean;
 };
 
-/** На какой параметр воздействовать после выбора ответа на вопрос */
 export type RescueChoiceParameterChangeVm = {
-  /* ИД параметра */
   parameterId: string;
-  /* Насколько изменить указанный параметр */
   value: number;
-};
-
-/** Вариант выбора в сцене: текст, изменения параметров и следующая сцена */
-export type RescueSceneChoiceVm = {
-  id: string;
-  text: string;
-  parameterChanges: RescueChoiceParameterChangeVm[];
-  /** id сцены, на которую переход при выборе; null — конец/без перехода */
-  nextSceneId: NullableValue<string>;
-  /** Последствия выбора */
-  implications: RescueScheneChoiceImplicationVm[];
 };
 
 export type RescueScheneChoiceImplicationVm = {
@@ -138,28 +173,29 @@ export type RescueScheneChoiceImplicationVm = {
   severity: RescueParameterSeverityEnum;
 };
 
-/** Сцена: фон, текст и варианты выбора (визуальная новелла) */
+export type RescueSceneChoiceVm = {
+  id: string;
+  text: string;
+  parameterChanges: RescueChoiceParameterChangeVm[];
+  nextSceneId: NullableValue<string>;
+  implications?: NullableValue<RescueScheneChoiceImplicationVm[]>;
+};
+
 export type RescueSceneVm = {
   id: string;
   order?: number;
-  /** URL или id фона */
-  background: string;
+  background?: string;
   text: string;
   choices: RescueSceneChoiceVm[];
   hidden?: NullableValue<boolean>;
-  /** Была ли сцена проверена на наличие ошибок */
   isReviewed?: NullableValue<boolean>;
 };
 
-// --- Условия завершения режима спасения (успех / неуспех) ---
-
-/** Логическое объединение вложенных условий в группе */
 export enum RescueCompletionLogicalOperator {
   And = 'and',
   Or = 'or'
 }
 
-/** Операция сравнения текущего числового значения параметра с константой */
 export enum RescueCompletionCompareOperator {
   Eq = 'eq',
   Neq = 'neq',
@@ -169,10 +205,6 @@ export enum RescueCompletionCompareOperator {
   Lte = 'lte'
 }
 
-/**
- * Лист дерева условий: одно сравнение значения параметра (id из {@link RescueTimerParameterVm}).
- * Пример: параметр «1» больше 5 — `{ type: 'compare', parameterId: '1', operator: Gt, value: 5 }`.
- */
 export type RescueCompletionCompareVm = {
   type: 'compare';
   parameterId: string;
@@ -180,58 +212,41 @@ export type RescueCompletionCompareVm = {
   value: number;
 };
 
-/**
- * Группа условий, объединённых по И/ИЛИ.
- * Пример успеха: (пар.1 > 5 и пар.1 < 50) и (пар.2 < 100 и пар.2 > 50) и (пар.3 = 30)
- * — корневая группа `And` с тремя дочерними элементами: две вложенные `And` по двум compare и один compare.
- */
 export type RescueCompletionGroupVm = {
   type: 'group';
   logicalOperator: RescueCompletionLogicalOperator;
   conditions: RescueCompletionConditionVm[];
 };
 
-/** Условие завершения: сравнение или вложенная логическая группа */
 export type RescueCompletionConditionVm = RescueCompletionCompareVm | RescueCompletionGroupVm;
 
-/**
- * Модель завершения режима спасения: отдельные деревья условий для успешного и неуспешного исхода.
- * Семантику приоритета (что проверять первым, могут ли совпасть оба) задаёт приложение / рантайм.
- */
 export type AppRescueItemCompletionVm = {
-  /** Дерево условий успешного завершения */
   success?: NullableValue<RescueCompletionConditionVm>;
-  /** Дерево условий неуспешного завершения (та же структура, что и у success) */
   failure?: NullableValue<RescueCompletionConditionVm>;
 };
 
 export type AppRescueItemDataVm = {
-  /** Общие параметры по таймеру */
   parameters?: RescueTimerParameterVm[];
-  /** Сцены визуальной новеллы */
   scenes?: RescueSceneVm[];
-  /** URL или id фона по умолчанию */
   defaultBackground?: string;
-  /** Условия успешного и неуспешного завершения режима */
   completion?: AppRescueItemCompletionVm;
 };
 
-export type AppRescueItemVm = {
-  createdAt: string;
-  description: string;
-  data: AppRescueItemDataVm;
-} & AppBaseVm;
-
-export type RescueParameterSeverityVm = {
-  min?: number;
-  max?: number;
-  severity?: RescueParameterSeverityEnum;
+export type AppRescueItemVm = Omit<RescueOut, 'data' | 'order' | 'parentId' | 'description'> & {
+  order?: NullableValue<number>;
+  parentId?: NullableValue<string>;
   description?: string;
+  data: AppRescueItemDataVm;
 };
 
-export enum RescueParameterSeverityEnum {
-  Normal = 'normal',
-  Low = 'low',
-  Medium = 'medium',
-  High = 'high'
-}
+export type AppUserVm = UserOut;
+
+export type {
+  ArticleOut,
+  FolderOut,
+  RescueOut,
+  TestOut,
+  LinkToArticle,
+  UserOut,
+  Token,
+} from '@/core/api/generated/types.gen';
