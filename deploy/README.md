@@ -19,7 +19,6 @@ Reuses the existing certs at `/etc/nginx/ssl/fullchain.pem` + `ssl.key` (formerl
 - Start page: `https://trouble-dent.ru/`
 - Content builder: `https://trouble-dent.ru/content-builder/`
 - Mobile web: `https://trouble-dent.ru/mobile-app/`
-- APK releases: `https://trouble-dent.ru/releases/` (`/var/www/urgent-care/releases/`)
 - API health: `https://trouble-dent.ru/health`
 - Docs: `https://trouble-dent.ru/docs`
 - API: `https://trouble-dent.ru/api/v1/…`
@@ -31,7 +30,7 @@ Supabase on this VPS should stay stopped (`deploy/remote/cutover-ssl.sh`).
 Production deploys run only when you **publish a GitHub Release**
 (`.github/workflows/release.yml`):
 
-1. Builds `TroubleDent.apk` and attaches it to that release
+1. Builds `TroubleDent.apk` → Actions artifact (+ attaches to the GitHub Release)
 2. Builds start-page / content-builder / mobile web and deploys to the VPS
 
 Required GitHub **repository secrets**:

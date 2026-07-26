@@ -53,7 +53,7 @@ if [[ "$SKIP_BUILD" -eq 0 && "$SKIP_FRONTEND" -eq 0 ]]; then
 fi
 
 echo "==> Preparing remote directories"
-"${SSH[@]}" "$SSH_TARGET" "mkdir -p /opt/urgent-care/backend /opt/urgent-care/deploy /var/www/urgent-care/releases"
+"${SSH[@]}" "$SSH_TARGET" "mkdir -p /opt/urgent-care/backend /opt/urgent-care/deploy /var/www/urgent-care"
 
 echo "==> Uploading backend"
 "${SCP[@]}" \

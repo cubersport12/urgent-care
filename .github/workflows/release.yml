@@ -1,5 +1,5 @@
 # Triggered when you publish a GitHub Release.
-# - Builds TroubleDent.apk, attaches it to that release, publishes to https://trouble-dent.ru/releases/
+# - Builds TroubleDent.apk → workflow artifact (+ attaches to the GitHub Release)
 # - Builds web frontends and deploys backend + static to the VPS
 
 name: Release
@@ -131,47 +131,6 @@ jobs:
           tag_name: ${{ github.event.release.tag_name }}
           files: mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
           overwrite_files: true
-
-  publish-apk:
-    name: Publish APK to /releases
-    needs: build-android
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout (deploy scripts)
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.release.tag_name || github.sha }}
-          sparse-checkout: |
-            deploy
-
-      - name: Download APK artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: android-release-apk
-          path: apk
-
-      - name: Setup SSH key
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ env.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Upload APK and refresh nginx releases listing
-        env:
-          TAG: ${{ github.event.release.tag_name || github.sha }}
-        run: |
-          set -euo pipefail
-          SSH=(ssh -i "$HOME/.ssh/deploy_key" -o IdentitiesOnly=yes)
-          SCP=(scp -i "$HOME/.ssh/deploy_key" -o IdentitiesOnly=yes)
-          TARGET="${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}"
-          VERSION_TAG="${TAG:-latest}"
-          "${SSH[@]}" "$TARGET" "mkdir -p /opt/urgent-care/deploy/remote /var/www/urgent-care/releases"
-          "${SCP[@]}" -r deploy/nginx deploy/remote deploy/enable-ssl.sh "$TARGET:/opt/urgent-care/deploy/"
-          "${SCP[@]}" apk/TroubleDent.apk "$TARGET:/tmp/TroubleDent.apk"
-          "${SSH[@]}" "$TARGET" "sed -i 's/\r$//' /opt/urgent-care/deploy/remote/*.sh; chmod +x /opt/urgent-care/deploy/remote/*.sh; bash /opt/urgent-care/deploy/remote/setup-nginx.sh; bash /opt/urgent-care/deploy/remote/publish-apk.sh /tmp/TroubleDent.apk '${VERSION_TAG}'; rm -f /tmp/TroubleDent.apk"
 
   deploy:
     name: Deploy to VPS

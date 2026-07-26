@@ -60,7 +60,7 @@ if (-not $SkipBuild -and -not $SkipFrontend) {
 }
 
 Write-Host "==> Preparing remote directories" -ForegroundColor Cyan
-Invoke-Ssh "mkdir -p /opt/urgent-care/backend /opt/urgent-care/deploy /var/www/urgent-care/releases"
+Invoke-Ssh "mkdir -p /opt/urgent-care/backend /opt/urgent-care/deploy /var/www/urgent-care"
 
 Write-Host "==> Uploading backend" -ForegroundColor Cyan
 $backendItems = @(
