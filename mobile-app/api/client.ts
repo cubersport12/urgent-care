@@ -2,8 +2,12 @@ import { Platform } from 'react-native';
 import { client } from '@/api/generated/client.gen';
 import { getAccessToken, getRefreshToken, persistAccessToken, clearAuth } from '@/lib/auth-storage';
 
-const DEFAULT_URL =
-  Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+// Dev: emulator/simulator loopback. Release: production (override with EXPO_PUBLIC_API_URL).
+const DEFAULT_URL = __DEV__
+  ? Platform.OS === 'android'
+    ? 'http://10.0.2.2:8000'
+    : 'http://localhost:8000'
+  : 'https://trouble-dent.ru';
 
 export const API_BASE_URL = (
   process.env.EXPO_PUBLIC_API_URL || DEFAULT_URL
