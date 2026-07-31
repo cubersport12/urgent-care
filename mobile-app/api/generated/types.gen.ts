@@ -6,6 +6,175 @@ export type ClientOptions = {
 };
 
 /**
+ * AchievementCreate
+ */
+export type AchievementCreate = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Iconpath
+     */
+    iconPath?: string | null;
+    /**
+     * Ruletype
+     */
+    ruleType?: string;
+    /**
+     * Rulethreshold
+     */
+    ruleThreshold?: number;
+    /**
+     * Sortorder
+     */
+    sortOrder?: number;
+    /**
+     * Isactive
+     */
+    isActive?: boolean;
+};
+
+/**
+ * AchievementMeOut
+ */
+export type AchievementMeOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Iconpath
+     */
+    iconPath?: string | null;
+    /**
+     * Ruletype
+     */
+    ruleType: string;
+    /**
+     * Rulethreshold
+     */
+    ruleThreshold: number;
+    /**
+     * Sortorder
+     */
+    sortOrder: number;
+    /**
+     * Unlocked
+     */
+    unlocked: boolean;
+    /**
+     * Unlockedat
+     */
+    unlockedAt?: string | null;
+    /**
+     * Progress
+     */
+    progress?: number;
+    reward?: RewardOut | null;
+};
+
+/**
+ * AchievementOut
+ */
+export type AchievementOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Iconpath
+     */
+    iconPath?: string | null;
+    /**
+     * Ruletype
+     */
+    ruleType: string;
+    /**
+     * Rulethreshold
+     */
+    ruleThreshold: number;
+    /**
+     * Sortorder
+     */
+    sortOrder: number;
+    /**
+     * Isactive
+     */
+    isActive: boolean;
+};
+
+/**
+ * AchievementUpdate
+ */
+export type AchievementUpdate = {
+    /**
+     * Code
+     */
+    code?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Iconpath
+     */
+    iconPath?: string | null;
+    /**
+     * Ruletype
+     */
+    ruleType?: string | null;
+    /**
+     * Rulethreshold
+     */
+    ruleThreshold?: number | null;
+    /**
+     * Sortorder
+     */
+    sortOrder?: number | null;
+    /**
+     * Isactive
+     */
+    isActive?: boolean | null;
+};
+
+/**
  * ArticleCreate
  */
 export type ArticleCreate = {
@@ -390,6 +559,16 @@ export type FolderUpdate = {
 };
 
 /**
+ * GrantAchievementRequest
+ */
+export type GrantAchievementRequest = {
+    /**
+     * Userid
+     */
+    userId: string;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -707,6 +886,138 @@ export type RescueUpdate = {
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
+};
+
+/**
+ * RewardCreate
+ */
+export type RewardCreate = {
+    /**
+     * Achievementid
+     */
+    achievementId: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Iconpath
+     */
+    iconPath?: string | null;
+    /**
+     * Sortorder
+     */
+    sortOrder?: number;
+    /**
+     * Isactive
+     */
+    isActive?: boolean;
+};
+
+/**
+ * RewardMeOut
+ */
+export type RewardMeOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Achievementid
+     */
+    achievementId: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Iconpath
+     */
+    iconPath?: string | null;
+    /**
+     * Sortorder
+     */
+    sortOrder: number;
+    /**
+     * Unlockedat
+     */
+    unlockedAt: string;
+    /**
+     * Achievementtitle
+     */
+    achievementTitle: string;
+};
+
+/**
+ * RewardOut
+ */
+export type RewardOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Achievementid
+     */
+    achievementId: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Iconpath
+     */
+    iconPath?: string | null;
+    /**
+     * Sortorder
+     */
+    sortOrder: number;
+    /**
+     * Isactive
+     */
+    isActive: boolean;
+};
+
+/**
+ * RewardUpdate
+ */
+export type RewardUpdate = {
+    /**
+     * Achievementid
+     */
+    achievementId?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Iconpath
+     */
+    iconPath?: string | null;
+    /**
+     * Sortorder
+     */
+    sortOrder?: number | null;
+    /**
+     * Isactive
+     */
+    isActive?: boolean | null;
 };
 
 /**
@@ -1847,6 +2158,278 @@ export type NotificationsMarkReadResponses = {
 };
 
 export type NotificationsMarkReadResponse = NotificationsMarkReadResponses[keyof NotificationsMarkReadResponses];
+
+export type AchievementsListAchievementsMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/achievements/me';
+};
+
+export type AchievementsListAchievementsMeResponses = {
+    /**
+     * Response Achievements List Achievements Me
+     *
+     * Successful Response
+     */
+    200: Array<AchievementMeOut>;
+};
+
+export type AchievementsListAchievementsMeResponse = AchievementsListAchievementsMeResponses[keyof AchievementsListAchievementsMeResponses];
+
+export type AchievementsListRewardsMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rewards/me';
+};
+
+export type AchievementsListRewardsMeResponses = {
+    /**
+     * Response Achievements List Rewards Me
+     *
+     * Successful Response
+     */
+    200: Array<RewardMeOut>;
+};
+
+export type AchievementsListRewardsMeResponse = AchievementsListRewardsMeResponses[keyof AchievementsListRewardsMeResponses];
+
+export type AchievementsListAchievementsAdminData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/achievements';
+};
+
+export type AchievementsListAchievementsAdminResponses = {
+    /**
+     * Response Achievements List Achievements Admin
+     *
+     * Successful Response
+     */
+    200: Array<AchievementOut>;
+};
+
+export type AchievementsListAchievementsAdminResponse = AchievementsListAchievementsAdminResponses[keyof AchievementsListAchievementsAdminResponses];
+
+export type AchievementsCreateAchievementData = {
+    body: AchievementCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/achievements';
+};
+
+export type AchievementsCreateAchievementErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsCreateAchievementError = AchievementsCreateAchievementErrors[keyof AchievementsCreateAchievementErrors];
+
+export type AchievementsCreateAchievementResponses = {
+    /**
+     * Successful Response
+     */
+    201: AchievementOut;
+};
+
+export type AchievementsCreateAchievementResponse = AchievementsCreateAchievementResponses[keyof AchievementsCreateAchievementResponses];
+
+export type AchievementsDeleteAchievementData = {
+    body?: never;
+    path: {
+        /**
+         * Achievement Id
+         */
+        achievement_id: string;
+    };
+    query?: never;
+    url: '/api/v1/achievements/{achievement_id}';
+};
+
+export type AchievementsDeleteAchievementErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsDeleteAchievementError = AchievementsDeleteAchievementErrors[keyof AchievementsDeleteAchievementErrors];
+
+export type AchievementsDeleteAchievementResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AchievementsDeleteAchievementResponse = AchievementsDeleteAchievementResponses[keyof AchievementsDeleteAchievementResponses];
+
+export type AchievementsUpdateAchievementData = {
+    body: AchievementUpdate;
+    path: {
+        /**
+         * Achievement Id
+         */
+        achievement_id: string;
+    };
+    query?: never;
+    url: '/api/v1/achievements/{achievement_id}';
+};
+
+export type AchievementsUpdateAchievementErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsUpdateAchievementError = AchievementsUpdateAchievementErrors[keyof AchievementsUpdateAchievementErrors];
+
+export type AchievementsUpdateAchievementResponses = {
+    /**
+     * Successful Response
+     */
+    200: AchievementOut;
+};
+
+export type AchievementsUpdateAchievementResponse = AchievementsUpdateAchievementResponses[keyof AchievementsUpdateAchievementResponses];
+
+export type AchievementsGrantAchievementData = {
+    body: GrantAchievementRequest;
+    path: {
+        /**
+         * Achievement Id
+         */
+        achievement_id: string;
+    };
+    query?: never;
+    url: '/api/v1/achievements/{achievement_id}/grant';
+};
+
+export type AchievementsGrantAchievementErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsGrantAchievementError = AchievementsGrantAchievementErrors[keyof AchievementsGrantAchievementErrors];
+
+export type AchievementsGrantAchievementResponses = {
+    /**
+     * Successful Response
+     */
+    200: AchievementMeOut;
+};
+
+export type AchievementsGrantAchievementResponse = AchievementsGrantAchievementResponses[keyof AchievementsGrantAchievementResponses];
+
+export type AchievementsListRewardsAdminData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rewards';
+};
+
+export type AchievementsListRewardsAdminResponses = {
+    /**
+     * Response Achievements List Rewards Admin
+     *
+     * Successful Response
+     */
+    200: Array<RewardOut>;
+};
+
+export type AchievementsListRewardsAdminResponse = AchievementsListRewardsAdminResponses[keyof AchievementsListRewardsAdminResponses];
+
+export type AchievementsCreateRewardData = {
+    body: RewardCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/rewards';
+};
+
+export type AchievementsCreateRewardErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsCreateRewardError = AchievementsCreateRewardErrors[keyof AchievementsCreateRewardErrors];
+
+export type AchievementsCreateRewardResponses = {
+    /**
+     * Successful Response
+     */
+    201: RewardOut;
+};
+
+export type AchievementsCreateRewardResponse = AchievementsCreateRewardResponses[keyof AchievementsCreateRewardResponses];
+
+export type AchievementsDeleteRewardData = {
+    body?: never;
+    path: {
+        /**
+         * Reward Id
+         */
+        reward_id: string;
+    };
+    query?: never;
+    url: '/api/v1/rewards/{reward_id}';
+};
+
+export type AchievementsDeleteRewardErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsDeleteRewardError = AchievementsDeleteRewardErrors[keyof AchievementsDeleteRewardErrors];
+
+export type AchievementsDeleteRewardResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AchievementsDeleteRewardResponse = AchievementsDeleteRewardResponses[keyof AchievementsDeleteRewardResponses];
+
+export type AchievementsUpdateRewardData = {
+    body: RewardUpdate;
+    path: {
+        /**
+         * Reward Id
+         */
+        reward_id: string;
+    };
+    query?: never;
+    url: '/api/v1/rewards/{reward_id}';
+};
+
+export type AchievementsUpdateRewardErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsUpdateRewardError = AchievementsUpdateRewardErrors[keyof AchievementsUpdateRewardErrors];
+
+export type AchievementsUpdateRewardResponses = {
+    /**
+     * Successful Response
+     */
+    200: RewardOut;
+};
+
+export type AchievementsUpdateRewardResponse = AchievementsUpdateRewardResponses[keyof AchievementsUpdateRewardResponses];
 
 export type FoldersListFoldersData = {
     body?: never;

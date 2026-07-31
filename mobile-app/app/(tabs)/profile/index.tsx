@@ -349,8 +349,25 @@ export default function ProfileScreen() {
           </GlassCard>
         </Animated.View>
 
-        {/* Section: О ПРИЛОЖЕНИИ */}
+        {/* Section: ПРОГРЕСС */}
         <Animated.View entering={staggerEnter(5)} style={styles.section}>
+          <ThemedText type="caption" style={[styles.sectionHeader, { color: neutralSoft }]}>
+            ПРОГРЕСС
+          </ThemedText>
+          <GlassCard padding={0} borderRadius={16}>
+            <ProfileRow
+              icon="trophy.fill"
+              iconBg="rgba(245, 158, 11, 0.1)"
+              iconColor="#F59E0B"
+              label="Достижения и награды"
+              onPress={() => router.push('/(tabs)/profile/achievements')}
+              isLast={true}
+            />
+          </GlassCard>
+        </Animated.View>
+
+        {/* Section: О ПРИЛОЖЕНИИ */}
+        <Animated.View entering={staggerEnter(6)} style={styles.section}>
           <ThemedText type="caption" style={[styles.sectionHeader, { color: neutralSoft }]}>
             О ПРИЛОЖЕНИИ
           </ThemedText>

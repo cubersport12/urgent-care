@@ -1,5 +1,6 @@
 import { useArticlesStats, useFilePdf } from '@/hooks/api';
 import { AppArticleStatsVm, AppArticleVm } from '@/hooks/api/types';
+import { useAchievements } from '@/contexts/achievements-context';
 import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useDeviceId } from '@/hooks/use-device-id';
@@ -177,6 +178,12 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     deviceIdRef.current = deviceId;
   }, [deviceId]);
 
+  const { checkUnlocks } = useAchievements();
+  const checkUnlocksRef = useRef(checkUnlocks);
+  useEffect(() => {
+    checkUnlocksRef.current = checkUnlocks;
+  }, [checkUnlocks]);
+
   const { primary: tintColor } = useAppTheme();
   
   const tintColorRef = useRef(tintColor);
@@ -231,6 +238,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
       // Устанавливаем флаг через ref, не вызывая перерисовку
       isMarkedAsReadRef.current = true;
       isReadRef.current = true;
+      void checkUnlocksRef.current();
     } catch (error) {
       console.error('Error marking article as read:', error);
     }

@@ -12,5 +12,7 @@ export * from './toggle-light-dark-button';
 export * from './test-editor';
 export * from './rescue-editor';
 export * from './tariffs-editor';
+export * from './achievements-editor';
+export * from './rewards-editor';
 export * from './folder-properties/folder-properties.component';
 export * from './tariff-select/tariff-select.component';

@@ -39,6 +39,7 @@ const MAPPING = {
   'bolt.fill': 'bolt',
   'circle': 'radio-button-unchecked',
   'trophy.fill': 'emoji-events',
+  'gift.fill': 'card-giftcard',
   'lock.fill': 'lock',
   'book.fill': 'menu-book',
   'clock.fill': 'schedule',

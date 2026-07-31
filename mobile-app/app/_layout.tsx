@@ -1,4 +1,5 @@
 import { configureApiClient } from '@/api/client';
+import { AchievementsProvider } from '@/contexts/achievements-context';
 import { AuthProvider } from '@/contexts/auth-context';
 import { ImmersiveProvider } from '@/contexts/immersive-context';
 import { NotificationsProvider } from '@/contexts/notifications-context';
@@ -107,8 +108,10 @@ export default function RootLayout() {
           <AuthProvider>
             <ImmersiveProvider>
               <NotificationsProvider>
-                <RootStack />
-                <GlobalNotificationBanner />
+                <AchievementsProvider>
+                  <RootStack />
+                  <GlobalNotificationBanner />
+                </AchievementsProvider>
               </NotificationsProvider>
             </ImmersiveProvider>
           </AuthProvider>

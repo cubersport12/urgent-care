@@ -34,6 +34,8 @@ import { CdkDropList, CdkDrag, CdkDragDrop, CdkDropListGroup, moveItemInArray } 
 import { TestsEditorService } from '../test-editor';
 import { RescueEditorService } from '../rescue-editor';
 import { TariffsEditorService } from '../tariffs-editor';
+import { AchievementsEditorService } from '../achievements-editor';
+import { RewardsEditorService } from '../rewards-editor';
 import { FolderPropertiesService } from '../folder-properties/folder-properties.component';
 import { SetItemTariffService } from '../set-item-tariff/set-item-tariff.component';
 import { AppFilesStorageService, AppFoldersStorageService, AppTariffsStorageService } from '@/core/api';
@@ -84,6 +86,8 @@ export class FoldersExplorerComponent {
   private readonly _testsEditor = inject(TestsEditorService);
   private readonly _rescueEditor = inject(RescueEditorService);
   private readonly _tariffsEditor = inject(TariffsEditorService);
+  private readonly _achievementsEditor = inject(AchievementsEditorService);
+  private readonly _rewardsEditor = inject(RewardsEditorService);
   private readonly _folderProperties = inject(FolderPropertiesService);
   private readonly _setItemTariff = inject(SetItemTariffService);
   private readonly _tariffsStorage = inject(AppTariffsStorageService);
@@ -474,6 +478,14 @@ export class FoldersExplorerComponent {
 
   protected _openTariffs(): void {
     this._tariffsEditor.open().afterClosed().subscribe(() => this._loadTariffs());
+  }
+
+  protected _openAchievements(): void {
+    this._achievementsEditor.open();
+  }
+
+  protected _openRewards(): void {
+    this._rewardsEditor.open();
   }
 
   protected _sendTestNotification(): void {

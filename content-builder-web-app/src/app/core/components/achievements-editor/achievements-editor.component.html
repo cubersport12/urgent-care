@@ -1,0 +1,60 @@
+<h2 mat-dialog-title class="flex items-center justify-between gap-2">
+  <span>Достижения</span>
+  <button type="button" mat-icon-button (click)="_close()" matTooltip="Закрыть">
+    <mat-icon svgIcon="xmark" />
+  </button>
+</h2>
+
+<mat-dialog-content class="!min-h-[240px]">
+  @if (_loading()) {
+    <p class="text-sm text-slate-500">Загрузка…</p>
+  } @else {
+    <table mat-table [dataSource]="_items()" class="w-full">
+      <ng-container matColumnDef="title">
+        <th mat-header-cell *matHeaderCellDef>Название</th>
+        <td mat-cell *matCellDef="let t">{{ t.title }}</td>
+      </ng-container>
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef>Код</th>
+        <td mat-cell *matCellDef="let t"><code>{{ t.code }}</code></td>
+      </ng-container>
+      <ng-container matColumnDef="rule">
+        <th mat-header-cell *matHeaderCellDef>Условие</th>
+        <td mat-cell *matCellDef="let t">
+          {{ _ruleLabel(t.ruleType) }}
+          @if (t.ruleType !== 'manual') {
+            <span class="text-slate-500"> ≥ {{ t.ruleThreshold }}</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="flags">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let t" class="text-xs text-slate-500">
+          @if (!t.isActive) {
+            <span>неактивно</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let t" class="!text-right">
+          <button type="button" mat-icon-button (click)="_edit(t)" matTooltip="Изменить">
+            <mat-icon svgIcon="pen-to-square" />
+          </button>
+          <button type="button" mat-icon-button color="warn" (click)="_delete(t)" matTooltip="Удалить">
+            <mat-icon svgIcon="trash" />
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="_columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: _columns"></tr>
+    </table>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button type="button" mat-flat-button color="primary" (click)="_create()">
+    <mat-icon svgIcon="plus" />
+    Добавить достижение
+  </button>
+</mat-dialog-actions>
