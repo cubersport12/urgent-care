@@ -136,6 +136,9 @@ Invoke-Ssh "bash /opt/urgent-care/deploy/remote/backup-db.sh pre-deploy"
 Write-Host "==> Installing daily DB backup cron" -ForegroundColor Cyan
 Invoke-Ssh "bash /opt/urgent-care/deploy/remote/install-backup-cron.sh"
 
+Write-Host "==> Installing daily subscription renew cron" -ForegroundColor Cyan
+Invoke-Ssh "bash /opt/urgent-care/deploy/remote/install-renew-cron.sh"
+
 Write-Host "==> Starting docker compose (prod)" -ForegroundColor Cyan
 Invoke-Ssh "bash /opt/urgent-care/deploy/remote/start-stack.sh"
 

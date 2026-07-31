@@ -249,4 +249,7 @@ export type {
   LinkToArticle,
   UserOut,
   Token,
+  TariffOut,
+  TariffCreate,
+  TariffUpdate,
 } from '@/core/api/generated/types.gen';

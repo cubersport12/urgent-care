@@ -1,8 +1,10 @@
 """Interactive test content."""
 from __future__ import annotations
 
-from sqlalchemy import Boolean, Integer, String
-from sqlalchemy.dialects.postgresql import JSONB
+import uuid
+
+from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -25,3 +27,6 @@ class Test(Base):
     hidden: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     questions: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     accessability_conditions: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    required_tariff_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tariffs.id"), nullable=True, index=True
+    )

@@ -6,7 +6,9 @@ import { Colors } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { ChromeBackProvider } from '@/contexts/chrome-back-context';
 import { NavRailProvider, useNavRail } from '@/contexts/nav-rail-context';
+import { useNotifications } from '@/contexts/notifications-context';
 import { useTheme } from '@/contexts/theme-context';
+import { handleTabPressToRoot } from '@/lib/tab-navigation';
 import { BottomTabBar, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
@@ -24,6 +26,7 @@ function TabsInner() {
   const { theme } = useTheme();
   const { session, initialized } = useAuth();
   const { isWide, railOuterWidth } = useNavRail();
+  const { unreadCount } = useNotifications();
   const colors = Colors[theme];
 
   if (!initialized) {
@@ -81,6 +84,9 @@ function TabsInner() {
             <IconSymbol size={24} name="house.fill" color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => handleTabPressToRoot('/(tabs)', navigation, 'index', e),
+        })}
       />
       <Tabs.Screen
         name="stats"
@@ -90,15 +96,29 @@ function TabsInner() {
             <IconSymbol size={24} name="chart.bar.fill" color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => handleTabPressToRoot('/(tabs)/stats', navigation, 'stats', e),
+        })}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Профиль',
+          tabBarBadge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.primary,
+            fontSize: 10,
+            minWidth: 16,
+            height: 16,
+            lineHeight: 14,
+          },
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="person.fill" color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => handleTabPressToRoot('/(tabs)/profile', navigation, 'profile', e),
+        })}
       />
     </Tabs>
   );

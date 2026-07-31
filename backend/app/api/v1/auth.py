@@ -58,6 +58,9 @@ async def register(
         role=role,
         is_active=True,
     )
+    from app.services.billing import BillingService
+
+    await BillingService(db).ensure_subscription(user)
     return _issue_token(user)
 
 
@@ -114,5 +117,11 @@ async def refresh(
 
 
 @router.get("/me", response_model=UserOut)
-async def me(user: Annotated[User, Depends(get_current_user)]) -> User:
+async def me(
+    user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
+    from app.services.billing import BillingService
+
+    await BillingService(db).ensure_subscription(user)
     return user

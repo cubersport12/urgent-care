@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -27,6 +28,7 @@ class FolderOut(CamelModel):
     name: str
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class FolderCreate(CamelModel):
@@ -34,12 +36,14 @@ class FolderCreate(CamelModel):
     name: str
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class FolderUpdate(CamelModel):
     name: str | None = None
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class ArticleOut(CamelModel):
@@ -57,6 +61,7 @@ class ArticleOut(CamelModel):
     )
     include_to_statistics: bool | None = Field(None, alias="includeToStatistics")
     links_to_articles: list[LinkToArticle] | None = Field(None, alias="linksToArticles")
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class ArticleCreate(CamelModel):
@@ -74,6 +79,7 @@ class ArticleCreate(CamelModel):
     )
     include_to_statistics: bool | None = Field(None, alias="includeToStatistics")
     links_to_articles: list[LinkToArticle] | None = Field(None, alias="linksToArticles")
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class ArticleUpdate(CamelModel):
@@ -90,6 +96,7 @@ class ArticleUpdate(CamelModel):
     )
     include_to_statistics: bool | None = Field(None, alias="includeToStatistics")
     links_to_articles: list[LinkToArticle] | None = Field(None, alias="linksToArticles")
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class TestOut(CamelModel):
@@ -107,6 +114,7 @@ class TestOut(CamelModel):
     hidden: bool | None = None
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class TestCreate(CamelModel):
@@ -124,6 +132,7 @@ class TestCreate(CamelModel):
     hidden: bool | None = None
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class TestUpdate(CamelModel):
@@ -140,6 +149,7 @@ class TestUpdate(CamelModel):
     hidden: bool | None = None
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class RescueOut(CamelModel):
@@ -150,6 +160,7 @@ class RescueOut(CamelModel):
     created_at: datetime = Field(alias="createdAt")
     description: str = ""
     data: dict[str, Any] | None = None
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class RescueCreate(CamelModel):
@@ -160,6 +171,7 @@ class RescueCreate(CamelModel):
     created_at: datetime | None = Field(None, alias="createdAt")
     description: str = ""
     data: dict[str, Any] | None = None
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
 
 
 class RescueUpdate(CamelModel):
@@ -168,3 +180,4 @@ class RescueUpdate(CamelModel):
     parent_id: str | None = Field(None, alias="parentId")
     description: str | None = None
     data: dict[str, Any] | None = None
+    required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")

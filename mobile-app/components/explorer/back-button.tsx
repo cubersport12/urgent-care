@@ -29,7 +29,7 @@ export function BackButton({ onPress }: BackButtonProps) {
       ]}
     >
       {showBlur ? (
-        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={20} tint="dark" pointerEvents="none" style={StyleSheet.absoluteFill} />
       ) : null}
       <IconSymbol name="chevron.left" size={18} color={text} />
     </Pressable>

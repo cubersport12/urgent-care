@@ -53,6 +53,15 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_service_key: str = ""
 
+    yookassa_shop_id: str = ""
+    yookassa_secret_key: str = ""
+    yookassa_return_url: str = "https://trouble-dent.ru/mobile-app/"
+    billing_enforcement: bool = True
+
+    @property
+    def yookassa_configured(self) -> bool:
+        return bool(self.yookassa_shop_id and self.yookassa_secret_key)
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: object) -> object:

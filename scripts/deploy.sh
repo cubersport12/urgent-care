@@ -116,6 +116,9 @@ echo "==> DB backup (pre-deploy)"
 echo "==> Installing daily DB backup cron"
 "${SSH[@]}" "$SSH_TARGET" "bash /opt/urgent-care/deploy/remote/install-backup-cron.sh"
 
+echo "==> Installing daily subscription renew cron"
+"${SSH[@]}" "$SSH_TARGET" "bash /opt/urgent-care/deploy/remote/install-renew-cron.sh"
+
 echo "==> Starting docker compose (prod)"
 "${SSH[@]}" "$SSH_TARGET" "bash /opt/urgent-care/deploy/remote/start-stack.sh"
 

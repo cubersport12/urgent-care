@@ -1,4 +1,5 @@
 import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useImmersiveMode } from '@/contexts/immersive-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTest } from '@/contexts/test-context';
 import {
@@ -607,6 +608,9 @@ export function Explorer() {
     !selectedRescueItem;
 
   useChromeBack(showFolderChromeBack ? handleBackFromFolder : null);
+
+  // Hide global notification toast while reading / testing / rescue novel
+  useImmersiveMode(!!(selectedArticle || selectedTest || selectedRescueItem));
 
   // Если выбрана статья, показываем ArticleView
   if (selectedArticle) {

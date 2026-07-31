@@ -46,6 +46,7 @@ import { AppFilesStorageService } from '@/core/api';
 import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { signal } from '@angular/core';
 import { forkJoin, take } from 'rxjs';
+import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 import {
   RescueAiGenerateDialogComponent,
   RescueAiGenerateDialogData,
@@ -163,7 +164,8 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
     MatTableModule,
     MatCheckboxModule,
     CdkDropList,
-    CdkDrag
+    CdkDrag,
+    TariffSelectComponent
   ],
   templateUrl: './rescue-editor.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -224,6 +226,7 @@ export class RescueEditorComponent {
     description: new FormControl<string>(''),
     /** id/URL фона по умолчанию (как у сцены) */
     defaultBackground: new FormControl<string>(''),
+    requiredTariffId: new FormControl<string | null>(null),
     parameters: new FormArray<FormGroup>([]),
     scenes: new FormArray<FormGroup>([])
   });
@@ -271,7 +274,8 @@ export class RescueEditorComponent {
     this._form.reset({
       name: d?.name ?? '',
       description: d?.description ?? '',
-      defaultBackground: data.defaultBackground ?? ''
+      defaultBackground: data.defaultBackground ?? '',
+      requiredTariffId: d?.requiredTariffId ?? null
     });
     this._form.setControl('parameters', new FormArray(parameters));
     this._form.setControl('scenes', new FormArray(scenes));
@@ -536,6 +540,7 @@ export class RescueEditorComponent {
       parentId: base.parentId ?? null,
       order: base.order ?? null,
       createdAt: base.createdAt ?? new Date().toISOString(),
+      requiredTariffId: raw.requiredTariffId ?? base.requiredTariffId ?? null,
       data: {
         parameters: parametersList,
         scenes: scenesList,

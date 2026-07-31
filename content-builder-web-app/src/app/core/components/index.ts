@@ -11,3 +11,6 @@ export * from './text-editable-value';
 export * from './toggle-light-dark-button';
 export * from './test-editor';
 export * from './rescue-editor';
+export * from './tariffs-editor';
+export * from './folder-properties/folder-properties.component';
+export * from './tariff-select/tariff-select.component';

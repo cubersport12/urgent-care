@@ -53,6 +53,12 @@ S3_REGION=us-east-1
 
 CORS_ORIGINS=${CORS_JSON}
 
+# YooKassa — fill shop id/secret for live payments (empty → mock activate in non-prod)
+YOOKASSA_SHOP_ID=
+YOOKASSA_SECRET_KEY=
+YOOKASSA_RETURN_URL=troubledent://billing/return
+BILLING_ENFORCEMENT=true
+
 SUPABASE_URL=https://trouble-dent.ru
 SUPABASE_SERVICE_KEY=${SUPABASE_KEY}
 EOF

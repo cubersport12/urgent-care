@@ -49,6 +49,10 @@ export type ArticleCreate = {
      * Linkstoarticles
      */
     linksToArticles?: Array<LinkToArticle> | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId?: string | null;
 };
 
 /**
@@ -95,6 +99,10 @@ export type ArticleOut = {
      * Linkstoarticles
      */
     linksToArticles: Array<LinkToArticle> | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId: string | null;
 };
 
 /**
@@ -181,6 +189,76 @@ export type ArticleUpdate = {
      * Linkstoarticles
      */
     linksToArticles?: Array<LinkToArticle> | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId?: string | null;
+};
+
+/**
+ * BillingMeOut
+ */
+export type BillingMeOut = {
+    /**
+     * Tariffid
+     */
+    tariffId: string;
+    /**
+     * Tariffcode
+     */
+    tariffCode: string;
+    /**
+     * Tarifftitle
+     */
+    tariffTitle: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Currentperiodstart
+     */
+    currentPeriodStart: string;
+    /**
+     * Currentperiodend
+     */
+    currentPeriodEnd: string;
+    /**
+     * Cancelatperiodend
+     */
+    cancelAtPeriodEnd: boolean;
+    /**
+     * Pricerub
+     */
+    priceRub: number;
+    /**
+     * Rank
+     */
+    rank: number;
+    /**
+     * Enforcement
+     */
+    enforcement: boolean;
+    /**
+     * Scheduledtariffid
+     */
+    scheduledTariffId?: string | null;
+    /**
+     * Scheduledtariffcode
+     */
+    scheduledTariffCode?: string | null;
+    /**
+     * Scheduledtarifftitle
+     */
+    scheduledTariffTitle?: string | null;
+    /**
+     * Scheduledeffectiveat
+     */
+    scheduledEffectiveAt?: string | null;
+    /**
+     * Scheduledchangestatus
+     */
+    scheduledChangeStatus?: string | null;
 };
 
 /**
@@ -228,6 +306,16 @@ export type BodyMediaUploadMedia = {
 };
 
 /**
+ * BroadcastOut
+ */
+export type BroadcastOut = {
+    /**
+     * Created
+     */
+    created: number;
+};
+
+/**
  * FolderCreate
  */
 export type FolderCreate = {
@@ -247,6 +335,10 @@ export type FolderCreate = {
      * Parentid
      */
     parentId?: string | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId?: string | null;
 };
 
 /**
@@ -269,6 +361,10 @@ export type FolderOut = {
      * Parentid
      */
     parentId: string | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId: string | null;
 };
 
 /**
@@ -287,6 +383,10 @@ export type FolderUpdate = {
      * Parentid
      */
     parentId?: string | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId?: string | null;
 };
 
 /**
@@ -328,6 +428,116 @@ export type LoginJson = {
 };
 
 /**
+ * MediaUploadOut
+ */
+export type MediaUploadOut = {
+    /**
+     * Path
+     */
+    path: string;
+    /**
+     * Filename
+     */
+    fileName: string;
+};
+
+/**
+ * NotificationBroadcast
+ */
+export type NotificationBroadcast = {
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Body
+     */
+    body?: string;
+};
+
+/**
+ * NotificationCreate
+ */
+export type NotificationCreate = {
+    /**
+     * Userid
+     */
+    userId: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Body
+     */
+    body?: string;
+};
+
+/**
+ * NotificationOut
+ */
+export type NotificationOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Createdat
+     */
+    createdAt: string;
+    /**
+     * Readat
+     */
+    readAt?: string | null;
+    /**
+     * Isread
+     */
+    isRead: boolean;
+};
+
+/**
+ * PaymentOut
+ */
+export type PaymentOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Tariffid
+     */
+    tariffId: string;
+    /**
+     * Amountrub
+     */
+    amountRub: number;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Createdat
+     */
+    createdAt: string;
+    /**
+     * Updatedat
+     */
+    updatedAt: string;
+    /**
+     * Yookassapaymentid
+     */
+    yookassaPaymentId?: string | null;
+};
+
+/**
  * RescueCreate
  */
 export type RescueCreate = {
@@ -361,6 +571,10 @@ export type RescueCreate = {
     data?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId?: string | null;
 };
 
 /**
@@ -397,6 +611,10 @@ export type RescueOut = {
     data: {
         [key: string]: unknown;
     } | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId: string | null;
 };
 
 /**
@@ -485,6 +703,188 @@ export type RescueUpdate = {
     data?: {
         [key: string]: unknown;
     } | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId?: string | null;
+};
+
+/**
+ * SubscribeOut
+ */
+export type SubscribeOut = {
+    /**
+     * Confirmationurl
+     */
+    confirmationUrl?: string | null;
+    /**
+     * Paymentid
+     */
+    paymentId?: string | null;
+    /**
+     * Mock
+     */
+    mock?: boolean;
+    /**
+     * Message
+     */
+    message?: string | null;
+    /**
+     * Scheduled
+     */
+    scheduled?: boolean;
+    /**
+     * Scheduledeffectiveat
+     */
+    scheduledEffectiveAt?: string | null;
+    /**
+     * Scheduledtariffid
+     */
+    scheduledTariffId?: string | null;
+};
+
+/**
+ * SubscribeRequest
+ */
+export type SubscribeRequest = {
+    /**
+     * Tariffid
+     */
+    tariffId: string;
+    /**
+     * Returnurl
+     */
+    returnUrl?: string | null;
+};
+
+/**
+ * TariffCreate
+ */
+export type TariffCreate = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Pricerub
+     */
+    priceRub?: number;
+    /**
+     * Perioddays
+     */
+    periodDays?: number;
+    /**
+     * Rank
+     */
+    rank?: number;
+    /**
+     * Isdefault
+     */
+    isDefault?: boolean;
+    /**
+     * Isactive
+     */
+    isActive?: boolean;
+    /**
+     * Sortorder
+     */
+    sortOrder?: number;
+};
+
+/**
+ * TariffOut
+ */
+export type TariffOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Pricerub
+     */
+    priceRub: number;
+    /**
+     * Perioddays
+     */
+    periodDays: number;
+    /**
+     * Rank
+     */
+    rank: number;
+    /**
+     * Isdefault
+     */
+    isDefault: boolean;
+    /**
+     * Isactive
+     */
+    isActive: boolean;
+    /**
+     * Sortorder
+     */
+    sortOrder: number;
+};
+
+/**
+ * TariffUpdate
+ */
+export type TariffUpdate = {
+    /**
+     * Code
+     */
+    code?: string | null;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Pricerub
+     */
+    priceRub?: number | null;
+    /**
+     * Perioddays
+     */
+    periodDays?: number | null;
+    /**
+     * Rank
+     */
+    rank?: number | null;
+    /**
+     * Isdefault
+     */
+    isDefault?: boolean | null;
+    /**
+     * Isactive
+     */
+    isActive?: boolean | null;
+    /**
+     * Sortorder
+     */
+    sortOrder?: number | null;
 };
 
 /**
@@ -547,6 +947,10 @@ export type TestCreate = {
      * Accessabilityconditions
      */
     accessabilityConditions?: Array<unknown> | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId?: string | null;
 };
 
 /**
@@ -609,6 +1013,10 @@ export type TestOut = {
      * Accessabilityconditions
      */
     accessabilityConditions: Array<unknown> | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId: string | null;
 };
 
 /**
@@ -817,6 +1225,10 @@ export type TestUpdate = {
      * Accessabilityconditions
      */
     accessabilityConditions?: Array<unknown> | null;
+    /**
+     * Requiredtariffid
+     */
+    requiredTariffId?: string | null;
 };
 
 /**
@@ -868,6 +1280,16 @@ export type TokenRefreshResponse = {
      * Expires In
      */
     expires_in: number;
+};
+
+/**
+ * UnreadCountOut
+ */
+export type UnreadCountOut = {
+    /**
+     * Count
+     */
+    count: number;
 };
 
 /**
@@ -1055,6 +1477,376 @@ export type AuthMeResponses = {
 };
 
 export type AuthMeResponse = AuthMeResponses[keyof AuthMeResponses];
+
+export type BillingListTariffsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/tariffs';
+};
+
+export type BillingListTariffsResponses = {
+    /**
+     * Response Billing List Tariffs
+     *
+     * Successful Response
+     */
+    200: Array<TariffOut>;
+};
+
+export type BillingListTariffsResponse = BillingListTariffsResponses[keyof BillingListTariffsResponses];
+
+export type BillingCreateTariffData = {
+    body: TariffCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/tariffs';
+};
+
+export type BillingCreateTariffErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingCreateTariffError = BillingCreateTariffErrors[keyof BillingCreateTariffErrors];
+
+export type BillingCreateTariffResponses = {
+    /**
+     * Successful Response
+     */
+    201: TariffOut;
+};
+
+export type BillingCreateTariffResponse = BillingCreateTariffResponses[keyof BillingCreateTariffResponses];
+
+export type BillingListTariffsAdminData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/tariffs/all';
+};
+
+export type BillingListTariffsAdminResponses = {
+    /**
+     * Response Billing List Tariffs Admin
+     *
+     * Successful Response
+     */
+    200: Array<TariffOut>;
+};
+
+export type BillingListTariffsAdminResponse = BillingListTariffsAdminResponses[keyof BillingListTariffsAdminResponses];
+
+export type BillingDeleteTariffData = {
+    body?: never;
+    path: {
+        /**
+         * Tariff Id
+         */
+        tariff_id: string;
+    };
+    query?: never;
+    url: '/api/v1/billing/tariffs/{tariff_id}';
+};
+
+export type BillingDeleteTariffErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingDeleteTariffError = BillingDeleteTariffErrors[keyof BillingDeleteTariffErrors];
+
+export type BillingDeleteTariffResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type BillingDeleteTariffResponse = BillingDeleteTariffResponses[keyof BillingDeleteTariffResponses];
+
+export type BillingUpdateTariffData = {
+    body: TariffUpdate;
+    path: {
+        /**
+         * Tariff Id
+         */
+        tariff_id: string;
+    };
+    query?: never;
+    url: '/api/v1/billing/tariffs/{tariff_id}';
+};
+
+export type BillingUpdateTariffErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingUpdateTariffError = BillingUpdateTariffErrors[keyof BillingUpdateTariffErrors];
+
+export type BillingUpdateTariffResponses = {
+    /**
+     * Successful Response
+     */
+    200: TariffOut;
+};
+
+export type BillingUpdateTariffResponse = BillingUpdateTariffResponses[keyof BillingUpdateTariffResponses];
+
+export type BillingBillingMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/me';
+};
+
+export type BillingBillingMeResponses = {
+    /**
+     * Successful Response
+     */
+    200: BillingMeOut;
+};
+
+export type BillingBillingMeResponse = BillingBillingMeResponses[keyof BillingBillingMeResponses];
+
+export type BillingSubscribeData = {
+    body: SubscribeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/subscribe';
+};
+
+export type BillingSubscribeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingSubscribeError = BillingSubscribeErrors[keyof BillingSubscribeErrors];
+
+export type BillingSubscribeResponses = {
+    /**
+     * Successful Response
+     */
+    200: SubscribeOut;
+};
+
+export type BillingSubscribeResponse = BillingSubscribeResponses[keyof BillingSubscribeResponses];
+
+export type BillingCancelSubscriptionData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/subscription/cancel';
+};
+
+export type BillingCancelSubscriptionResponses = {
+    /**
+     * Successful Response
+     */
+    200: BillingMeOut;
+};
+
+export type BillingCancelSubscriptionResponse = BillingCancelSubscriptionResponses[keyof BillingCancelSubscriptionResponses];
+
+export type BillingListPaymentsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/payments';
+};
+
+export type BillingListPaymentsResponses = {
+    /**
+     * Response Billing List Payments
+     *
+     * Successful Response
+     */
+    200: Array<PaymentOut>;
+};
+
+export type BillingListPaymentsResponse = BillingListPaymentsResponses[keyof BillingListPaymentsResponses];
+
+export type BillingSyncPaymentData = {
+    body?: never;
+    path: {
+        /**
+         * Payment Id
+         */
+        payment_id: string;
+    };
+    query?: never;
+    url: '/api/v1/billing/payments/{payment_id}/sync';
+};
+
+export type BillingSyncPaymentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingSyncPaymentError = BillingSyncPaymentErrors[keyof BillingSyncPaymentErrors];
+
+export type BillingSyncPaymentResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaymentOut;
+};
+
+export type BillingSyncPaymentResponse = BillingSyncPaymentResponses[keyof BillingSyncPaymentResponses];
+
+export type NotificationsListNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Unreadonly
+         */
+        unreadOnly?: boolean;
+    };
+    url: '/api/v1/notifications';
+};
+
+export type NotificationsListNotificationsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type NotificationsListNotificationsError = NotificationsListNotificationsErrors[keyof NotificationsListNotificationsErrors];
+
+export type NotificationsListNotificationsResponses = {
+    /**
+     * Response Notifications List Notifications
+     *
+     * Successful Response
+     */
+    200: Array<NotificationOut>;
+};
+
+export type NotificationsListNotificationsResponse = NotificationsListNotificationsResponses[keyof NotificationsListNotificationsResponses];
+
+export type NotificationsCreateNotificationData = {
+    body: NotificationCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/notifications';
+};
+
+export type NotificationsCreateNotificationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type NotificationsCreateNotificationError = NotificationsCreateNotificationErrors[keyof NotificationsCreateNotificationErrors];
+
+export type NotificationsCreateNotificationResponses = {
+    /**
+     * Successful Response
+     */
+    201: NotificationOut;
+};
+
+export type NotificationsCreateNotificationResponse = NotificationsCreateNotificationResponses[keyof NotificationsCreateNotificationResponses];
+
+export type NotificationsUnreadCountData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/notifications/unread-count';
+};
+
+export type NotificationsUnreadCountResponses = {
+    /**
+     * Successful Response
+     */
+    200: UnreadCountOut;
+};
+
+export type NotificationsUnreadCountResponse = NotificationsUnreadCountResponses[keyof NotificationsUnreadCountResponses];
+
+export type NotificationsMarkAllReadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/notifications/read-all';
+};
+
+export type NotificationsMarkAllReadResponses = {
+    /**
+     * Successful Response
+     */
+    200: UnreadCountOut;
+};
+
+export type NotificationsMarkAllReadResponse = NotificationsMarkAllReadResponses[keyof NotificationsMarkAllReadResponses];
+
+export type NotificationsBroadcastNotificationData = {
+    body: NotificationBroadcast;
+    path?: never;
+    query?: never;
+    url: '/api/v1/notifications/broadcast';
+};
+
+export type NotificationsBroadcastNotificationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type NotificationsBroadcastNotificationError = NotificationsBroadcastNotificationErrors[keyof NotificationsBroadcastNotificationErrors];
+
+export type NotificationsBroadcastNotificationResponses = {
+    /**
+     * Successful Response
+     */
+    201: BroadcastOut;
+};
+
+export type NotificationsBroadcastNotificationResponse = NotificationsBroadcastNotificationResponses[keyof NotificationsBroadcastNotificationResponses];
+
+export type NotificationsMarkReadData = {
+    body?: never;
+    path: {
+        /**
+         * Notification Id
+         */
+        notification_id: string;
+    };
+    query?: never;
+    url: '/api/v1/notifications/{notification_id}/read';
+};
+
+export type NotificationsMarkReadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type NotificationsMarkReadError = NotificationsMarkReadErrors[keyof NotificationsMarkReadErrors];
+
+export type NotificationsMarkReadResponses = {
+    /**
+     * Successful Response
+     */
+    200: NotificationOut;
+};
+
+export type NotificationsMarkReadResponse = NotificationsMarkReadResponses[keyof NotificationsMarkReadResponses];
 
 export type FoldersListFoldersData = {
     body?: never;
@@ -2035,13 +2827,9 @@ export type MediaUploadMediaError = MediaUploadMediaErrors[keyof MediaUploadMedi
 
 export type MediaUploadMediaResponses = {
     /**
-     * Response Media Upload Media
-     *
      * Successful Response
      */
-    201: {
-        [key: string]: string;
-    };
+    201: MediaUploadOut;
 };
 
 export type MediaUploadMediaResponse = MediaUploadMediaResponses[keyof MediaUploadMediaResponses];

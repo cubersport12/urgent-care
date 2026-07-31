@@ -1,6 +1,7 @@
 import { Colors, NavRail } from '@/constants/theme';
 import { useChromeBackContext } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
+import { useNotifications } from '@/contexts/notifications-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useGlass } from '@/hooks/use-theme-color';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -34,6 +35,7 @@ export function SideNavRail({ state, descriptors, navigation }: BottomTabBarProp
   const insets = useSafeAreaInsets();
   const { expanded, toggleExpanded, railOuterWidth } = useNavRail();
   const { chromeBack } = useChromeBackContext();
+  const { unreadCount } = useNotifications();
 
   // insets.left — «островок» под камеру слева; иконки рисуются правее выреза
   const leftSafePad = Math.max(insets.left, 8);
@@ -101,9 +103,22 @@ export function SideNavRail({ state, descriptors, navigation }: BottomTabBarProp
               target: route.key,
               canPreventDefault: true,
             });
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params);
+            if (event.defaultPrevented) {
+              return;
             }
+            // Fallback if listeners didn't handle nested stack (wide rail path)
+            if (isFocused) {
+              const nested = route.state;
+              if (nested && typeof nested.index === 'number' && nested.index > 0) {
+                const rootName = nested.routes[0]?.name;
+                if (rootName) {
+                  navigation.navigate(route.name, { screen: rootName });
+                  return;
+                }
+              }
+              return;
+            }
+            navigation.navigate(route.name, route.params);
           };
 
           return (
@@ -120,7 +135,21 @@ export function SideNavRail({ state, descriptors, navigation }: BottomTabBarProp
               accessibilityState={isFocused ? { selected: true } : {}}
               accessibilityLabel={label}
             >
-              <IconSymbol name={iconName} size={24} color={color} />
+              <View>
+                <IconSymbol name={iconName} size={24} color={color} />
+                {route.name === 'profile' && unreadCount > 0 ? (
+                  <View
+                    style={[
+                      styles.badge,
+                      { backgroundColor: colors.primary, borderColor: colors.page },
+                    ]}
+                  >
+                    <ThemedText style={styles.badgeText}>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </ThemedText>
+                  </View>
+                ) : null}
+              </View>
               {expanded ? (
                 <ThemedText
                   type="caption"
@@ -207,5 +236,23 @@ const styles = StyleSheet.create({
   },
   spacer: {
     flex: 1,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
+    lineHeight: 11,
   },
 });

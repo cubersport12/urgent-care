@@ -6,6 +6,11 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_current_user, get_db
+from app.api.v1._content_access import (
+    assert_content_visible,
+    filter_content_list,
+    with_default_tariff,
+)
 from app.api.v1._content_helpers import dump_create, dump_update, new_id, not_found
 from app.db.repositories.content import RescueRepository
 from app.models.user import User
@@ -17,25 +22,25 @@ router = APIRouter(prefix="/rescue", tags=["rescue"])
 @router.get("", response_model=list[RescueOut])
 async def list_rescue(
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[User, Depends(get_current_user)],
+    user: Annotated[User, Depends(get_current_user)],
     parent_id: str | None = Query(None, alias="parentId"),
     all_items: bool = Query(False, alias="all"),
 ) -> list:
     repo = RescueRepository(db)
-    if all_items:
-        return await repo.list_all()
-    return await repo.list_by_parent(parent_id)
+    items = await repo.list_all() if all_items else await repo.list_by_parent(parent_id)
+    return await filter_content_list(db, user, items)
 
 
 @router.get("/{item_id}", response_model=RescueOut)
 async def get_rescue(
     item_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[User, Depends(get_current_user)],
+    user: Annotated[User, Depends(get_current_user)],
 ):
     item = await RescueRepository(db).get(item_id)
     if not item:
         raise not_found("Rescue")
+    await assert_content_visible(db, user, item)
     return item
 
 
@@ -45,7 +50,7 @@ async def create_rescue(
     db: Annotated[AsyncSession, Depends(get_db)],
     _: Annotated[User, Depends(get_current_admin)],
 ):
-    fields = dump_create(payload)
+    fields = await with_default_tariff(db, dump_create(payload))
     if fields.get("created_at") is None:
         fields["created_at"] = datetime.now(timezone.utc)
     if fields.get("data") is None:

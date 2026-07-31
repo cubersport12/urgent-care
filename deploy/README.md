@@ -82,6 +82,31 @@ Then set in `/opt/urgent-care/backend/.env`:
 
 and `docker compose -f docker-compose.prod.yml up -d api`.
 
+## Billing (YooKassa)
+
+Set on the VPS in `/opt/urgent-care/backend/.env`:
+
+- `YOOKASSA_SHOP_ID` / `YOOKASSA_SECRET_KEY` — from YooKassa cabinet
+- `YOOKASSA_RETURN_URL=troubledent://billing/return` (mobile deep link; client may override)
+- `BILLING_ENFORCEMENT=true` — filter content by tariff rank
+
+Webhook URL (nginx already proxies `/api/`):  
+`https://trouble-dent.ru/api/v1/billing/webhooks/yookassa`
+
+Empty shop/secret in non-prod activates subscriptions without payment (mock).
+
+Daily renewals (scheduled plan changes, charge retries, grace → free):
+
+```bash
+# manual
+bash /opt/urgent-care/deploy/remote/renew-subscriptions.sh
+
+# install / refresh cron (04:00 UTC)
+bash /opt/urgent-care/deploy/remote/install-renew-cron.sh
+```
+
+Log: `/var/log/urgent-care-renew.log`
+
 ## Database backups
 
 Daily cron (03:00 UTC) dumps Postgres to `/var/backups/urgent-care/` (kept 14 days).

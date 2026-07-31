@@ -33,6 +33,7 @@ import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions, ArticlesState } from '@/core/store';
 import { finalize, mergeMap, Observable } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
+import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 
 @Injectable({
   providedIn: 'root'
@@ -66,7 +67,8 @@ type ArticleLinkFormType = {
     MatSelectModule,
     MatFormFieldModule,
     MatInputModule,
-    MatOption
+    MatOption,
+    TariffSelectComponent
   ],
   templateUrl: './article-editor.component.html',
   styles: ``,
@@ -109,6 +111,7 @@ export class ArticleEditorComponent {
     hideWhileNotPrevComplete: new FormControl<boolean>(true),
     includeToStatistics: new FormControl<boolean>(true),
     timeRead: new FormControl<number>(360),
+    requiredTariffId: new FormControl<string | null>(this._dialogData.requiredTariffId ?? null),
     linksToArticles: new FormArray<FormGroup<ArticleLinkFormType>>([])
   });
 
@@ -157,7 +160,7 @@ export class ArticleEditorComponent {
   }
 
   private _reset(): void {
-    const { name, disableWhileNotPrevComplete, linksToArticles, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead } = this._dialogData;
+    const { name, disableWhileNotPrevComplete, linksToArticles, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead, requiredTariffId } = this._dialogData;
     this._form.reset({
       name,
       disableWhileNotPrevComplete: disableWhileNotPrevComplete ?? false,
@@ -165,6 +168,7 @@ export class ArticleEditorComponent {
       includeToStatistics: includeToStatistics ?? true,
       nextRunArticle,
       timeRead: timeRead ?? 360,
+      requiredTariffId: requiredTariffId ?? null,
       linksToArticles: linksToArticles ?? []
     });
     this._setArtcilesLinksControls(linksToArticles ?? []);
@@ -226,7 +230,7 @@ export class ArticleEditorComponent {
   }
 
   protected _submit(): void {
-    const { pdf, name, disableWhileNotPrevComplete, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead, linksToArticles } = this._form.getRawValue();
+    const { pdf, name, disableWhileNotPrevComplete, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead, linksToArticles, requiredTariffId } = this._form.getRawValue();
     const id = this._dialogData.id ?? generateGUID();
     const action = this._dialogData.id
       ? this._store.dispatch(
@@ -238,7 +242,8 @@ export class ArticleEditorComponent {
             includeToStatistics,
             nextRunArticle,
             timeRead,
-            linksToArticles
+            linksToArticles,
+            requiredTariffId
           })
         )
       : this._store.dispatch(
@@ -251,7 +256,8 @@ export class ArticleEditorComponent {
             includeToStatistics,
             nextRunArticle,
             timeRead,
-            linksToArticles
+            linksToArticles,
+            requiredTariffId
           })
         );
 

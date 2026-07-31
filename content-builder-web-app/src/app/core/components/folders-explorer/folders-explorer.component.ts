@@ -7,6 +7,7 @@ import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatDivider } from '@angular/material/divider';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import {
   AppArticleVm,
   AppFolderVm,
@@ -19,17 +20,23 @@ import {
   NullableValue,
   RescueSceneVm
 } from '@/core/utils';
+import type { TariffOut } from '@/core/api/generated/types.gen';
+import { notificationsBroadcastNotification } from '@/core/api/generated/sdk.gen';
+import { ApiError, apiCall } from '@/core/api/api-utils';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TextEditableValueComponent } from '../text-editable-value';
 import { SkeletonComponent } from '../skeleton';
 import { ArticleEditorService } from '../article-editor';
-import { catchError, forkJoin, map, mergeMap, Observable, of } from 'rxjs';
+import { catchError, forkJoin, from, map, mergeMap, Observable, of } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
 import { cloneDeep, orderBy, random, range } from 'lodash';
 import { CdkDropList, CdkDrag, CdkDragDrop, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
 import { TestsEditorService } from '../test-editor';
 import { RescueEditorService } from '../rescue-editor';
-import { AppFilesStorageService, AppFoldersStorageService } from '@/core/api';
+import { TariffsEditorService } from '../tariffs-editor';
+import { FolderPropertiesService } from '../folder-properties/folder-properties.component';
+import { SetItemTariffService } from '../set-item-tariff/set-item-tariff.component';
+import { AppFilesStorageService, AppFoldersStorageService, AppTariffsStorageService } from '@/core/api';
 import { AngularSplitModule } from 'angular-split';
 
 type FolderOptionType = AppFolderVm & { type?: 'folder' };
@@ -46,6 +53,7 @@ type PanelSide = 'left' | 'right';
     MatIconButton,
     MatTooltip,
     MatDivider,
+    MatSnackBarModule,
     FormsModule,
     ReactiveFormsModule,
     TextEditableValueComponent,
@@ -75,8 +83,13 @@ export class FoldersExplorerComponent {
   private readonly _articlesEditor = inject(ArticleEditorService);
   private readonly _testsEditor = inject(TestsEditorService);
   private readonly _rescueEditor = inject(RescueEditorService);
+  private readonly _tariffsEditor = inject(TariffsEditorService);
+  private readonly _folderProperties = inject(FolderPropertiesService);
+  private readonly _setItemTariff = inject(SetItemTariffService);
+  private readonly _tariffsStorage = inject(AppTariffsStorageService);
   private readonly _filesStorage = inject(AppFilesStorageService);
   private readonly _foldersService = inject(AppFoldersStorageService);
+  private readonly _snack = inject(MatSnackBar);
   private readonly _getFolders = this._store.selectSignal(FoldersState.getFolders);
   private readonly _getArticles = this._store.selectSignal(ArticlesState.getArticles);
   private readonly _getTests = this._store.selectSignal(TestsState.getTests);
@@ -98,6 +111,18 @@ export class FoldersExplorerComponent {
   protected readonly _rightPath = signal<AppFolderVm[]>([]);
   protected readonly _contextMenuItem = signal<NullableValue<OptionType>>(null);
   protected readonly _contextMenuPanel = signal<PanelSide>('left');
+
+  /** null = показать все тарифы */
+  protected readonly _filterTariffId = signal<string | null>(null);
+  protected readonly _tariffs = signal<TariffOut[]>([]);
+  protected readonly _defaultTariffId = computed(
+    () => this._tariffs().find((t) => t.isDefault)?.id ?? null
+  );
+  protected readonly _tariffById = computed(() => {
+    const map = new Map<string, TariffOut>();
+    for (const t of this._tariffs()) map.set(t.id, t);
+    return map;
+  });
 
   protected readonly _clipboard = this._explorer.clipboard;
 
@@ -138,6 +163,7 @@ export class FoldersExplorerComponent {
     this._destroyRef.onDestroy(() => this._document.removeEventListener('keydown', onKeyDown, true));
 
     afterNextRender(() => this._focusHost());
+    this._loadTariffs();
 
     effect(() => {
       const folderId = this._leftFolderId();
@@ -446,6 +472,117 @@ export class FoldersExplorerComponent {
     this._rescueEditor.openRescueWithAi(this._getPanelFolderId(this._activePanel()));
   }
 
+  protected _openTariffs(): void {
+    this._tariffsEditor.open().afterClosed().subscribe(() => this._loadTariffs());
+  }
+
+  protected _sendTestNotification(): void {
+    from(
+      apiCall(() =>
+        notificationsBroadcastNotification({
+          body: {
+            title: 'Тестовое уведомление',
+            body: 'Проверка системы уведомлений из Content Builder'
+          }
+        })
+      )
+    ).subscribe({
+      next: (r) =>
+        this._snack.open(`Отправлено всем (${r.created})`, 'OK', { duration: 3000 }),
+      error: (e: unknown) =>
+        this._snack.open(e instanceof ApiError ? e.detail : 'Не удалось отправить', 'OK', {
+          duration: 5000
+        })
+    });
+  }
+
+  protected _openFolderProperties(folder: AppFolderVm): void {
+    this._folderProperties.open(folder);
+  }
+
+  protected _onFilterTariffChange(value: string | null): void {
+    this._filterTariffId.set(value && value.length > 0 ? value : null);
+  }
+
+  protected _onFilterSelectChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this._onFilterTariffChange(value || null);
+  }
+
+  protected _setTariffOnSelected(): void {
+    const item = this._getSelectedItem();
+    if (item == null) return;
+    this._setTariffOnItem(item);
+  }
+
+  protected _setTariffOnItem(item: OptionType): void {
+    const currentId = item.requiredTariffId ?? this._defaultTariffId();
+    this._setItemTariff
+      .open({ itemName: item.name, requiredTariffId: currentId })
+      .afterClosed()
+      .subscribe((tariffId) => {
+        if (tariffId == null) return;
+        this._applyTariff(item, tariffId);
+      });
+  }
+
+  protected _itemTariffId(item: OptionType): string | null {
+    return item.requiredTariffId ?? this._defaultTariffId();
+  }
+
+  protected _itemTariffRank(item: OptionType): number {
+    const id = this._itemTariffId(item);
+    if (id == null) return 0;
+    return this._tariffById().get(id)?.rank ?? 0;
+  }
+
+  protected _getTariffLabel(item: OptionType): string {
+    const id = this._itemTariffId(item);
+    if (id == null) return '—';
+    const t = this._tariffById().get(id);
+    return t?.title ?? '—';
+  }
+
+  protected _isFilterActive(): boolean {
+    return this._filterTariffId() != null;
+  }
+
+  private _loadTariffs(): void {
+    this._tariffsStorage.listAll().subscribe({
+      next: (list) => {
+        this._tariffs.set([...list].sort((a, b) => a.sortOrder - b.sortOrder || a.rank - b.rank));
+      },
+      error: () => this._tariffs.set([])
+    });
+  }
+
+  private _applyTariff(item: OptionType, requiredTariffId: string): void {
+    const panel = this._getActionPanel() ?? this._activePanel();
+    this._affectOptionId.set(item.id);
+    this._affectOptionPanel.set(panel);
+    let obs: Observable<void>;
+    switch (item.type) {
+      case 'folder':
+        obs = this._store.dispatch(new FoldersActions.UpdateFolder(item.id, { requiredTariffId }));
+        break;
+      case 'article':
+        obs = this._store.dispatch(new ArticlesActions.UpdateArticle(item.id, { requiredTariffId }));
+        break;
+      case 'test':
+        obs = this._store.dispatch(new TestsActions.UpdateTest(item.id, { requiredTariffId }));
+        break;
+      case 'rescue':
+        obs = this._store.dispatch(new RescueActions.UpdateRescueItem(item.id, { requiredTariffId }));
+        break;
+      default:
+        return;
+    }
+    obs.subscribe({
+      next: () => this._clearAffectOption(),
+      error: () => this._clearAffectOption()
+    });
+  }
+
   protected _refreshActivePanel(): void {
     const side = this._activePanel();
     this._fetchPanelData(this._getPanelFolderId(side), side);
@@ -563,6 +700,11 @@ export class FoldersExplorerComponent {
       }
       const order = this._getNextOrder(targetFolderId);
       this._moveItem(this._toClipboardEntry(draggedItem, 'cut'), targetFolderId, order).subscribe();
+      return;
+    }
+
+    // Reorder only when showing all tariffs — filtered list would corrupt global order
+    if (this._isFilterActive()) {
       return;
     }
 
@@ -704,12 +846,23 @@ export class FoldersExplorerComponent {
     const articles = this._getArticles()(parentId) ?? [];
     const tests = this._getTests()(parentId) ?? [];
     const rescueItems = this._getRescueItems()(parentId) ?? [];
-    return orderBy([
+    const filterId = this._filterTariffId();
+    // touch tariffs so filter labels/default id invalidate options when tariffs load
+    void this._defaultTariffId();
+    let list = orderBy([
       ...folders.map(x => ({ ...x, type: 'folder' } satisfies OptionType)),
       ...articles.map(x => ({ ...x, type: 'article' } satisfies OptionType)),
       ...tests.map(x => ({ ...x, type: 'test' } satisfies OptionType)),
       ...rescueItems.map(x => ({ ...x, type: 'rescue' } satisfies OptionType))
     ], x => x.order);
+    if (filterId != null) {
+      const maxRank = this._tariffById().get(filterId)?.rank;
+      if (maxRank != null) {
+        // Same rule as mobile access: tariff rank N sees required ranks <= N
+        list = list.filter((item) => this._itemTariffRank(item) <= maxRank);
+      }
+    }
+    return list;
   }
 
   private _fetchPanelData(parentId: NullableValue<string>, side: PanelSide): void {
@@ -747,7 +900,7 @@ export class FoldersExplorerComponent {
     if (!(target instanceof HTMLElement)) {
       return false;
     }
-    return target.closest('input, textarea, [contenteditable="true"]') != null;
+    return target.closest('input, textarea, select, [contenteditable="true"]') != null;
   }
 
   private _getSelectedItem(): NullableValue<OptionType> {

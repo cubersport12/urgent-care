@@ -1,7 +1,10 @@
 import { configureApiClient } from '@/api/client';
 import { AuthProvider } from '@/contexts/auth-context';
+import { ImmersiveProvider } from '@/contexts/immersive-context';
+import { NotificationsProvider } from '@/contexts/notifications-context';
 import { TestProvider } from '@/contexts/test-context';
 import { ThemeProvider } from '@/contexts/theme-context';
+import { GlobalNotificationBanner } from '@/components/ui/global-notification-banner';
 
 configureApiClient();
 import {
@@ -68,6 +71,7 @@ function RootStack() {
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="billing/return" options={{ presentation: 'transparentModal', headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style={theme === 'dark' ? 'light' : 'dark'} translucent />
@@ -101,7 +105,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <TestProvider>
           <AuthProvider>
-            <RootStack />
+            <ImmersiveProvider>
+              <NotificationsProvider>
+                <RootStack />
+                <GlobalNotificationBanner />
+              </NotificationsProvider>
+            </ImmersiveProvider>
           </AuthProvider>
         </TestProvider>
       </SafeAreaProvider>

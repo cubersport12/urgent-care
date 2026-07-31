@@ -3,7 +3,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { ArticlesCreateArticleData, ArticlesCreateArticleErrors, ArticlesCreateArticleResponses, ArticlesDeleteArticleData, ArticlesDeleteArticleErrors, ArticlesDeleteArticleResponses, ArticlesGetArticleData, ArticlesGetArticleErrors, ArticlesGetArticleResponses, ArticlesListArticlesData, ArticlesListArticlesErrors, ArticlesListArticlesResponses, ArticlesUpdateArticleData, ArticlesUpdateArticleErrors, ArticlesUpdateArticleResponses, AuthLoginData, AuthLoginErrors, AuthLoginJsonData, AuthLoginJsonErrors, AuthLoginJsonResponses, AuthLoginResponses, AuthMeData, AuthMeResponses, AuthRefreshData, AuthRefreshErrors, AuthRefreshResponses, AuthRegisterData, AuthRegisterErrors, AuthRegisterResponses, FoldersCreateFolderData, FoldersCreateFolderErrors, FoldersCreateFolderResponses, FoldersDeleteFolderData, FoldersDeleteFolderErrors, FoldersDeleteFolderResponses, FoldersGetFolderData, FoldersGetFolderErrors, FoldersGetFolderResponses, FoldersListFoldersData, FoldersListFoldersErrors, FoldersListFoldersResponses, FoldersUpdateFolderData, FoldersUpdateFolderErrors, FoldersUpdateFolderResponses, MediaDeleteMediaData, MediaDeleteMediaErrors, MediaDeleteMediaResponses, MediaDownloadMediaData, MediaDownloadMediaErrors, MediaDownloadMediaResponses, MediaUploadMediaData, MediaUploadMediaErrors, MediaUploadMediaResponses, MetaHealthData, MetaHealthResponses, MetaReadyData, MetaReadyResponses, RescueCreateRescueData, RescueCreateRescueErrors, RescueCreateRescueResponses, RescueDeleteRescueData, RescueDeleteRescueErrors, RescueDeleteRescueResponses, RescueGetRescueData, RescueGetRescueErrors, RescueGetRescueResponses, RescueListRescueData, RescueListRescueErrors, RescueListRescueResponses, RescueUpdateRescueData, RescueUpdateRescueErrors, RescueUpdateRescueResponses, StatsCreateTestResultData, StatsCreateTestResultErrors, StatsCreateTestResultResponses, StatsCreateTestStatsData, StatsCreateTestStatsErrors, StatsCreateTestStatsResponses, StatsListArticleStatsData, StatsListArticleStatsErrors, StatsListArticleStatsResponses, StatsListRescueStatsData, StatsListRescueStatsErrors, StatsListRescueStatsResponses, StatsListTestResultsData, StatsListTestResultsErrors, StatsListTestResultsResponses, StatsListTestStatsData, StatsListTestStatsErrors, StatsListTestStatsResponses, StatsResetAllStatsData, StatsResetAllStatsResponses, StatsUpdateTestStatsData, StatsUpdateTestStatsErrors, StatsUpdateTestStatsResponses, StatsUpsertArticleStatsData, StatsUpsertArticleStatsErrors, StatsUpsertArticleStatsResponses, StatsUpsertRescueStatsData, StatsUpsertRescueStatsErrors, StatsUpsertRescueStatsResponses, StatsUpsertTestStatsData, StatsUpsertTestStatsErrors, StatsUpsertTestStatsResponses, TestsCreateTestData, TestsCreateTestErrors, TestsCreateTestResponses, TestsDeleteTestData, TestsDeleteTestErrors, TestsDeleteTestResponses, TestsGetTestData, TestsGetTestErrors, TestsGetTestResponses, TestsListTestsData, TestsListTestsErrors, TestsListTestsResponses, TestsUpdateTestData, TestsUpdateTestErrors, TestsUpdateTestResponses } from './types.gen';
+import type { ArticlesCreateArticleData, ArticlesCreateArticleErrors, ArticlesCreateArticleResponses, ArticlesDeleteArticleData, ArticlesDeleteArticleErrors, ArticlesDeleteArticleResponses, ArticlesGetArticleData, ArticlesGetArticleErrors, ArticlesGetArticleResponses, ArticlesListArticlesData, ArticlesListArticlesErrors, ArticlesListArticlesResponses, ArticlesUpdateArticleData, ArticlesUpdateArticleErrors, ArticlesUpdateArticleResponses, AuthLoginData, AuthLoginErrors, AuthLoginJsonData, AuthLoginJsonErrors, AuthLoginJsonResponses, AuthLoginResponses, AuthMeData, AuthMeResponses, AuthRefreshData, AuthRefreshErrors, AuthRefreshResponses, AuthRegisterData, AuthRegisterErrors, AuthRegisterResponses, BillingBillingMeData, BillingBillingMeResponses, BillingCancelSubscriptionData, BillingCancelSubscriptionResponses, BillingCreateTariffData, BillingCreateTariffErrors, BillingCreateTariffResponses, BillingDeleteTariffData, BillingDeleteTariffErrors, BillingDeleteTariffResponses, BillingListPaymentsData, BillingListPaymentsResponses, BillingListTariffsAdminData, BillingListTariffsAdminResponses, BillingListTariffsData, BillingListTariffsResponses, BillingSubscribeData, BillingSubscribeErrors, BillingSubscribeResponses, BillingSyncPaymentData, BillingSyncPaymentErrors, BillingSyncPaymentResponses, BillingUpdateTariffData, BillingUpdateTariffErrors, BillingUpdateTariffResponses, FoldersCreateFolderData, FoldersCreateFolderErrors, FoldersCreateFolderResponses, FoldersDeleteFolderData, FoldersDeleteFolderErrors, FoldersDeleteFolderResponses, FoldersGetFolderData, FoldersGetFolderErrors, FoldersGetFolderResponses, FoldersListFoldersData, FoldersListFoldersErrors, FoldersListFoldersResponses, FoldersUpdateFolderData, FoldersUpdateFolderErrors, FoldersUpdateFolderResponses, MediaDeleteMediaData, MediaDeleteMediaErrors, MediaDeleteMediaResponses, MediaDownloadMediaData, MediaDownloadMediaErrors, MediaDownloadMediaResponses, MediaUploadMediaData, MediaUploadMediaErrors, MediaUploadMediaResponses, MetaHealthData, MetaHealthResponses, MetaReadyData, MetaReadyResponses, NotificationsBroadcastNotificationData, NotificationsBroadcastNotificationErrors, NotificationsBroadcastNotificationResponses, NotificationsCreateNotificationData, NotificationsCreateNotificationErrors, NotificationsCreateNotificationResponses, NotificationsListNotificationsData, NotificationsListNotificationsErrors, NotificationsListNotificationsResponses, NotificationsMarkAllReadData, NotificationsMarkAllReadResponses, NotificationsMarkReadData, NotificationsMarkReadErrors, NotificationsMarkReadResponses, NotificationsUnreadCountData, NotificationsUnreadCountResponses, RescueCreateRescueData, RescueCreateRescueErrors, RescueCreateRescueResponses, RescueDeleteRescueData, RescueDeleteRescueErrors, RescueDeleteRescueResponses, RescueGetRescueData, RescueGetRescueErrors, RescueGetRescueResponses, RescueListRescueData, RescueListRescueErrors, RescueListRescueResponses, RescueUpdateRescueData, RescueUpdateRescueErrors, RescueUpdateRescueResponses, StatsCreateTestResultData, StatsCreateTestResultErrors, StatsCreateTestResultResponses, StatsCreateTestStatsData, StatsCreateTestStatsErrors, StatsCreateTestStatsResponses, StatsListArticleStatsData, StatsListArticleStatsErrors, StatsListArticleStatsResponses, StatsListRescueStatsData, StatsListRescueStatsErrors, StatsListRescueStatsResponses, StatsListTestResultsData, StatsListTestResultsErrors, StatsListTestResultsResponses, StatsListTestStatsData, StatsListTestStatsErrors, StatsListTestStatsResponses, StatsResetAllStatsData, StatsResetAllStatsResponses, StatsUpdateTestStatsData, StatsUpdateTestStatsErrors, StatsUpdateTestStatsResponses, StatsUpsertArticleStatsData, StatsUpsertArticleStatsErrors, StatsUpsertArticleStatsResponses, StatsUpsertRescueStatsData, StatsUpsertRescueStatsErrors, StatsUpsertRescueStatsResponses, StatsUpsertTestStatsData, StatsUpsertTestStatsErrors, StatsUpsertTestStatsResponses, TestsCreateTestData, TestsCreateTestErrors, TestsCreateTestResponses, TestsDeleteTestData, TestsDeleteTestErrors, TestsDeleteTestResponses, TestsGetTestData, TestsGetTestErrors, TestsGetTestResponses, TestsListTestsData, TestsListTestsErrors, TestsListTestsResponses, TestsUpdateTestData, TestsUpdateTestErrors, TestsUpdateTestResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -76,6 +76,168 @@ export const authRefresh = <ThrowOnError extends boolean = false>(options: Optio
 export const authMe = <ThrowOnError extends boolean = false>(options?: Options<AuthMeData, ThrowOnError>): RequestResult<AuthMeResponses, unknown, ThrowOnError> => (options?.client ?? client).get<AuthMeResponses, unknown, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/auth/me',
+    ...options
+});
+
+/**
+ * List Tariffs
+ */
+export const billingListTariffs = <ThrowOnError extends boolean = false>(options?: Options<BillingListTariffsData, ThrowOnError>): RequestResult<BillingListTariffsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<BillingListTariffsResponses, unknown, ThrowOnError>({ url: '/api/v1/billing/tariffs', ...options });
+
+/**
+ * Create Tariff
+ */
+export const billingCreateTariff = <ThrowOnError extends boolean = false>(options: Options<BillingCreateTariffData, ThrowOnError>): RequestResult<BillingCreateTariffResponses, BillingCreateTariffErrors, ThrowOnError> => (options.client ?? client).post<BillingCreateTariffResponses, BillingCreateTariffErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/billing/tariffs',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Tariffs Admin
+ */
+export const billingListTariffsAdmin = <ThrowOnError extends boolean = false>(options?: Options<BillingListTariffsAdminData, ThrowOnError>): RequestResult<BillingListTariffsAdminResponses, unknown, ThrowOnError> => (options?.client ?? client).get<BillingListTariffsAdminResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/billing/tariffs/all',
+    ...options
+});
+
+/**
+ * Delete Tariff
+ */
+export const billingDeleteTariff = <ThrowOnError extends boolean = false>(options: Options<BillingDeleteTariffData, ThrowOnError>): RequestResult<BillingDeleteTariffResponses, BillingDeleteTariffErrors, ThrowOnError> => (options.client ?? client).delete<BillingDeleteTariffResponses, BillingDeleteTariffErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/billing/tariffs/{tariff_id}',
+    ...options
+});
+
+/**
+ * Update Tariff
+ */
+export const billingUpdateTariff = <ThrowOnError extends boolean = false>(options: Options<BillingUpdateTariffData, ThrowOnError>): RequestResult<BillingUpdateTariffResponses, BillingUpdateTariffErrors, ThrowOnError> => (options.client ?? client).patch<BillingUpdateTariffResponses, BillingUpdateTariffErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/billing/tariffs/{tariff_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Billing Me
+ */
+export const billingBillingMe = <ThrowOnError extends boolean = false>(options?: Options<BillingBillingMeData, ThrowOnError>): RequestResult<BillingBillingMeResponses, unknown, ThrowOnError> => (options?.client ?? client).get<BillingBillingMeResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/billing/me',
+    ...options
+});
+
+/**
+ * Subscribe
+ */
+export const billingSubscribe = <ThrowOnError extends boolean = false>(options: Options<BillingSubscribeData, ThrowOnError>): RequestResult<BillingSubscribeResponses, BillingSubscribeErrors, ThrowOnError> => (options.client ?? client).post<BillingSubscribeResponses, BillingSubscribeErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/billing/subscribe',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Cancel Subscription
+ */
+export const billingCancelSubscription = <ThrowOnError extends boolean = false>(options?: Options<BillingCancelSubscriptionData, ThrowOnError>): RequestResult<BillingCancelSubscriptionResponses, unknown, ThrowOnError> => (options?.client ?? client).post<BillingCancelSubscriptionResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/billing/subscription/cancel',
+    ...options
+});
+
+/**
+ * List Payments
+ */
+export const billingListPayments = <ThrowOnError extends boolean = false>(options?: Options<BillingListPaymentsData, ThrowOnError>): RequestResult<BillingListPaymentsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<BillingListPaymentsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/billing/payments',
+    ...options
+});
+
+/**
+ * Sync Payment
+ */
+export const billingSyncPayment = <ThrowOnError extends boolean = false>(options: Options<BillingSyncPaymentData, ThrowOnError>): RequestResult<BillingSyncPaymentResponses, BillingSyncPaymentErrors, ThrowOnError> => (options.client ?? client).post<BillingSyncPaymentResponses, BillingSyncPaymentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/billing/payments/{payment_id}/sync',
+    ...options
+});
+
+/**
+ * List Notifications
+ */
+export const notificationsListNotifications = <ThrowOnError extends boolean = false>(options?: Options<NotificationsListNotificationsData, ThrowOnError>): RequestResult<NotificationsListNotificationsResponses, NotificationsListNotificationsErrors, ThrowOnError> => (options?.client ?? client).get<NotificationsListNotificationsResponses, NotificationsListNotificationsErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/notifications',
+    ...options
+});
+
+/**
+ * Create Notification
+ */
+export const notificationsCreateNotification = <ThrowOnError extends boolean = false>(options: Options<NotificationsCreateNotificationData, ThrowOnError>): RequestResult<NotificationsCreateNotificationResponses, NotificationsCreateNotificationErrors, ThrowOnError> => (options.client ?? client).post<NotificationsCreateNotificationResponses, NotificationsCreateNotificationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/notifications',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Unread Count
+ */
+export const notificationsUnreadCount = <ThrowOnError extends boolean = false>(options?: Options<NotificationsUnreadCountData, ThrowOnError>): RequestResult<NotificationsUnreadCountResponses, unknown, ThrowOnError> => (options?.client ?? client).get<NotificationsUnreadCountResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/notifications/unread-count',
+    ...options
+});
+
+/**
+ * Mark All Read
+ */
+export const notificationsMarkAllRead = <ThrowOnError extends boolean = false>(options?: Options<NotificationsMarkAllReadData, ThrowOnError>): RequestResult<NotificationsMarkAllReadResponses, unknown, ThrowOnError> => (options?.client ?? client).post<NotificationsMarkAllReadResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/notifications/read-all',
+    ...options
+});
+
+/**
+ * Broadcast Notification
+ *
+ * Create the same notification for every active user and push over WS.
+ */
+export const notificationsBroadcastNotification = <ThrowOnError extends boolean = false>(options: Options<NotificationsBroadcastNotificationData, ThrowOnError>): RequestResult<NotificationsBroadcastNotificationResponses, NotificationsBroadcastNotificationErrors, ThrowOnError> => (options.client ?? client).post<NotificationsBroadcastNotificationResponses, NotificationsBroadcastNotificationErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/notifications/broadcast',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Mark Read
+ */
+export const notificationsMarkRead = <ThrowOnError extends boolean = false>(options: Options<NotificationsMarkReadData, ThrowOnError>): RequestResult<NotificationsMarkReadResponses, NotificationsMarkReadErrors, ThrowOnError> => (options.client ?? client).post<NotificationsMarkReadResponses, NotificationsMarkReadErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/notifications/{notification_id}/read',
     ...options
 });
 

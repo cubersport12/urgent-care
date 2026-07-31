@@ -1,6 +1,14 @@
 """ORM models — import for Alembic / metadata registration."""
 from app.models.article import Article
+from app.models.billing import (
+    Payment,
+    PaymentMethod,
+    SubscriptionChange,
+    Tariff,
+    UserSubscription,
+)
 from app.models.folder import Folder
+from app.models.notification import Notification
 from app.models.rescue import Rescue
 from app.models.stats import ArticleStats, RescueStats, TestResult, TestStats
 from app.models.test import Test
@@ -16,4 +24,10 @@ __all__ = [
     "TestStats",
     "RescueStats",
     "TestResult",
+    "Tariff",
+    "UserSubscription",
+    "Payment",
+    "PaymentMethod",
+    "SubscriptionChange",
+    "Notification",
 ]

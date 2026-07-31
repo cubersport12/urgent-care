@@ -27,6 +27,23 @@ Production (VPS): see [`../deploy/README.md`](../deploy/README.md) and `docker c
 
 Daily DB backups on the VPS: `/var/backups/urgent-care/` (cron via `deploy/remote/install-backup-cron.sh`).
 
+### Billing / subscriptions
+
+Tariffs and YooKassa live under `/api/v1/billing/*`. Content objects have `requiredTariffId`; non-admin users only see items whose tariff `rank` is ≤ their subscription rank.
+
+Env in `backend/.env` (see `.env.example`):
+
+- `YOOKASSA_SHOP_ID` / `YOOKASSA_SECRET_KEY` — from YooKassa cabinet (test keys start with `test_`)
+- `YOOKASSA_RETURN_URL=troubledent://billing/return`
+- `BILLING_ENFORCEMENT=true`
+
+Empty shop/secret in non-prod → subscribe activates immediately **without** opening the payment page (mock).  
+With keys set → API returns `confirmationUrl`, mobile opens YooKassa via `WebBrowser.openAuthSessionAsync`.
+
+Restart the API after changing keys (`docker compose … up -d api` or uvicorn).
+
+Daily renew script: `python scripts/renew_subscriptions.py` (VPS cron via `deploy/remote/install-renew-cron.sh`).
+
 Docs: http://localhost:8000/docs · OpenAPI: http://localhost:8000/openapi.json
 
 ```bash

@@ -57,6 +57,7 @@ export function GlassCard({
         <BlurView
           intensity={blurIntensity}
           tint="dark"
+          pointerEvents="none"
           style={[StyleSheet.absoluteFill, { borderRadius, overflow: 'hidden' }]}
         />
       ) : null}

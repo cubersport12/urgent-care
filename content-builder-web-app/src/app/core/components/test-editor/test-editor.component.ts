@@ -15,6 +15,7 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { AppFilesStorageService } from '@/core/api';
 import { forkJoin, Observable, of } from 'rxjs';
 import { cloneDeep, sum } from 'lodash';
+import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 
 @Injectable({
   providedIn: 'root'
@@ -46,7 +47,8 @@ export class TestsEditorService {
     MatCheckbox,
     MatInputModule,
     TestConditionsBuilderComponent,
-    TestQuestionsBuilderComponent
+    TestQuestionsBuilderComponent,
+    TariffSelectComponent
   ],
   templateUrl: './test-editor.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -77,7 +79,8 @@ export class TestEditorComponent {
     showSkipButton: new FormControl<boolean>(true),
     showNavigation: new FormControl<boolean>(true),
     showBackButton: new FormControl<boolean>(true),
-    hidden: new FormControl<boolean>(false)
+    hidden: new FormControl<boolean>(false),
+    requiredTariffId: new FormControl<string | null>(null)
   });
 
   // Вычисляем сумму правильных баллов
@@ -132,7 +135,7 @@ export class TestEditorComponent {
   }
 
   private _reset(): void {
-    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden } = this._dialogData;
+    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, requiredTariffId } = this._dialogData;
     this._form.reset({
       name,
       conditions: accessabilityConditions ?? [],
@@ -144,7 +147,8 @@ export class TestEditorComponent {
       showSkipButton: showSkipButton ?? true,
       showNavigation: showNavigation ?? true,
       showBackButton: showBackButton ?? true,
-      hidden: hidden ?? false
+      hidden: hidden ?? false,
+      requiredTariffId: requiredTariffId ?? null
     });
   }
 
@@ -155,7 +159,7 @@ export class TestEditorComponent {
   }
 
   private _getTestVm(): AppTestVm {
-    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden } = this._form.value;
+    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, requiredTariffId } = this._form.value;
     const result: AppTestVm = {
       ...(this._dialogData ?? {}),
       name: name!,
@@ -168,7 +172,8 @@ export class TestEditorComponent {
       showSkipButton,
       showNavigation,
       showBackButton,
-      hidden
+      hidden,
+      requiredTariffId: requiredTariffId ?? null
     };
     if ('type' in result) {
       delete result['type'];

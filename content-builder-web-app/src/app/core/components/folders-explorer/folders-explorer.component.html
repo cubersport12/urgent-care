@@ -48,6 +48,15 @@
       <button type="button" mat-icon-button color="warn" (click)="_deleteSelected()" [disabled]="!_hasSelection()" matTooltip="Delete — удалить">
         <mat-icon svgIcon="trash" />
       </button>
+      <button
+        type="button"
+        mat-icon-button
+        (click)="_setTariffOnSelected()"
+        [disabled]="!_hasSelection()"
+        matTooltip="Назначить тариф выбранному"
+      >
+        <mat-icon svgIcon="tag" />
+      </button>
     </div>
 
     <mat-divider [vertical]="true" class="!h-7 mx-0.5" />
@@ -56,6 +65,34 @@
       <button type="button" mat-icon-button (click)="_refreshActivePanel()" matTooltip="Обновить">
         <mat-icon svgIcon="rotate-right" />
       </button>
+      <button type="button" mat-icon-button (click)="_openTariffs()" matTooltip="Тарифы">
+        <mat-icon svgIcon="sliders" />
+      </button>
+      <button
+        type="button"
+        mat-icon-button
+        (click)="_sendTestNotification()"
+        matTooltip="Тестовое уведомление"
+      >
+        <mat-icon svgIcon="bell" />
+      </button>
+    </div>
+
+    <div class="flex items-center gap-1 ml-1">
+      <label class="tc-tariff-filter-label text-[11px] text-slate-500 dark:text-slate-400 select-none whitespace-nowrap" for="tc-tariff-filter">
+        Тариф
+      </label>
+      <select
+        id="tc-tariff-filter"
+        class="tc-tariff-filter"
+        [value]="_filterTariffId() ?? ''"
+        (change)="_onFilterSelectChange($event)"
+      >
+        <option value="">Все</option>
+        @for (t of _tariffs(); track t.id) {
+          <option [value]="t.id">{{ t.title }} (≤{{ t.rank }})</option>
+        }
+      </select>
     </div>
 
     <p class="ml-auto min-w-0 shrink px-2 text-[11px] leading-snug text-slate-400 truncate select-none dark:text-slate-500">
@@ -87,6 +124,16 @@
     <button mat-menu-item (click)="_beginRename(item.id, _contextMenuPanel())">
       <mat-icon svgIcon="pen-to-square" />
       Переименовать
+    </button>
+    @if (item.type === 'folder') {
+      <button mat-menu-item (click)="_openFolderProperties(item)">
+        <mat-icon svgIcon="sliders" />
+        Свойства папки
+      </button>
+    }
+    <button mat-menu-item (click)="_setTariffOnItem(item)">
+      <mat-icon svgIcon="tag" />
+      Назначить тариф
     </button>
     <button mat-menu-item (click)="_copy(item, _contextMenuPanel())">
       <mat-icon svgIcon="copy" />
@@ -132,6 +179,7 @@
         <thead>
           <tr>
             <th class="tc-header-cell">Имя</th>
+            <th class="tc-header-cell tc-tariff-col">Тариф</th>
             <th class="tc-header-cell tc-type-col">Тип</th>
           </tr>
         </thead>
@@ -141,7 +189,7 @@
               class="tc-parent-row cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
               (dblclick)="_handleGoUpClick(side, $event)"
             >
-              <td class="tc-cell" colspan="2">
+              <td class="tc-cell" colspan="3">
                 <span class="font-bold text-lg leading-none tracking-widest text-slate-600 dark:text-slate-300">...</span>
               </td>
             </tr>
@@ -190,6 +238,9 @@
                     }
                   </div>
                 }
+              </td>
+              <td class="tc-cell tc-tariff-col">
+                <span class="tc-tariff-badge" [title]="_getTariffLabel(item)">{{ _getTariffLabel(item) }}</span>
               </td>
               <td class="tc-cell tc-type-col text-xs text-slate-500 dark:text-slate-400">
                 {{ _getTypeLabel(item) }}

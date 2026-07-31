@@ -108,6 +108,18 @@ export const ArticleCreateSchema = {
                 }
             ],
             title: 'Linkstoarticles'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
@@ -217,6 +229,18 @@ export const ArticleOutSchema = {
                 }
             ],
             title: 'Linkstoarticles'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
@@ -230,7 +254,8 @@ export const ArticleOutSchema = {
         'disableWhileNotPrevComplete',
         'hideWhileNotPrevComplete',
         'includeToStatistics',
-        'linksToArticles'
+        'linksToArticles',
+        'requiredTariffId'
     ],
     title: 'ArticleOut'
 } as const;
@@ -423,10 +448,141 @@ export const ArticleUpdateSchema = {
                 }
             ],
             title: 'Linkstoarticles'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
     title: 'ArticleUpdate'
+} as const;
+
+export const BillingMeOutSchema = {
+    properties: {
+        tariffId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Tariffid'
+        },
+        tariffCode: {
+            type: 'string',
+            title: 'Tariffcode'
+        },
+        tariffTitle: {
+            type: 'string',
+            title: 'Tarifftitle'
+        },
+        status: {
+            type: 'string',
+            title: 'Status'
+        },
+        currentPeriodStart: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Currentperiodstart'
+        },
+        currentPeriodEnd: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Currentperiodend'
+        },
+        cancelAtPeriodEnd: {
+            type: 'boolean',
+            title: 'Cancelatperiodend'
+        },
+        priceRub: {
+            type: 'integer',
+            title: 'Pricerub'
+        },
+        rank: {
+            type: 'integer',
+            title: 'Rank'
+        },
+        enforcement: {
+            type: 'boolean',
+            title: 'Enforcement'
+        },
+        scheduledTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Scheduledtariffid'
+        },
+        scheduledTariffCode: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Scheduledtariffcode'
+        },
+        scheduledTariffTitle: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Scheduledtarifftitle'
+        },
+        scheduledEffectiveAt: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Scheduledeffectiveat'
+        },
+        scheduledChangeStatus: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Scheduledchangestatus'
+        }
+    },
+    type: 'object',
+    required: [
+        'tariffId',
+        'tariffCode',
+        'tariffTitle',
+        'status',
+        'currentPeriodStart',
+        'currentPeriodEnd',
+        'cancelAtPeriodEnd',
+        'priceRub',
+        'rank',
+        'enforcement'
+    ],
+    title: 'BillingMeOut'
 } as const;
 
 export const Body_auth_loginSchema = {
@@ -513,6 +669,20 @@ export const Body_media_upload_mediaSchema = {
     title: 'Body_media_upload_media'
 } as const;
 
+export const BroadcastOutSchema = {
+    properties: {
+        created: {
+            type: 'integer',
+            title: 'Created'
+        }
+    },
+    type: 'object',
+    required: [
+        'created'
+    ],
+    title: 'BroadcastOut'
+} as const;
+
 export const FolderCreateSchema = {
     properties: {
         id: {
@@ -551,6 +721,18 @@ export const FolderCreateSchema = {
                 }
             ],
             title: 'Parentid'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
@@ -591,6 +773,18 @@ export const FolderOutSchema = {
                 }
             ],
             title: 'Parentid'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
@@ -598,7 +792,8 @@ export const FolderOutSchema = {
         'id',
         'name',
         'order',
-        'parentId'
+        'parentId',
+        'requiredTariffId'
     ],
     title: 'FolderOut'
 } as const;
@@ -637,6 +832,18 @@ export const FolderUpdateSchema = {
                 }
             ],
             title: 'Parentid'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
@@ -717,6 +924,158 @@ export const MediaUploadOutSchema = {
     title: 'MediaUploadOut'
 } as const;
 
+export const NotificationBroadcastSchema = {
+    properties: {
+        title: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Title'
+        },
+        body: {
+            type: 'string',
+            maxLength: 5000,
+            title: 'Body',
+            default: ''
+        }
+    },
+    type: 'object',
+    required: [
+        'title'
+    ],
+    title: 'NotificationBroadcast'
+} as const;
+
+export const NotificationCreateSchema = {
+    properties: {
+        userId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Userid'
+        },
+        title: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Title'
+        },
+        body: {
+            type: 'string',
+            maxLength: 5000,
+            title: 'Body',
+            default: ''
+        }
+    },
+    type: 'object',
+    required: [
+        'userId',
+        'title'
+    ],
+    title: 'NotificationCreate'
+} as const;
+
+export const NotificationOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        body: {
+            type: 'string',
+            title: 'Body'
+        },
+        createdAt: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Createdat'
+        },
+        readAt: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Readat'
+        },
+        isRead: {
+            type: 'boolean',
+            title: 'Isread'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'title',
+        'body',
+        'createdAt',
+        'isRead'
+    ],
+    title: 'NotificationOut'
+} as const;
+
+export const PaymentOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        tariffId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Tariffid'
+        },
+        amountRub: {
+            type: 'number',
+            title: 'Amountrub'
+        },
+        status: {
+            type: 'string',
+            title: 'Status'
+        },
+        createdAt: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Createdat'
+        },
+        updatedAt: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updatedat'
+        },
+        yookassaPaymentId: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Yookassapaymentid'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'tariffId',
+        'amountRub',
+        'status',
+        'createdAt',
+        'updatedAt'
+    ],
+    title: 'PaymentOut'
+} as const;
+
 export const RescueCreateSchema = {
     properties: {
         id: {
@@ -783,6 +1142,18 @@ export const RescueCreateSchema = {
                 }
             ],
             title: 'Data'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
@@ -844,6 +1215,18 @@ export const RescueOutSchema = {
                 }
             ],
             title: 'Data'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
@@ -854,7 +1237,8 @@ export const RescueOutSchema = {
         'parentId',
         'createdAt',
         'description',
-        'data'
+        'data',
+        'requiredTariffId'
     ],
     title: 'RescueOut'
 } as const;
@@ -1036,10 +1420,356 @@ export const RescueUpdateSchema = {
                 }
             ],
             title: 'Data'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
     title: 'RescueUpdate'
+} as const;
+
+export const SubscribeOutSchema = {
+    properties: {
+        confirmationUrl: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Confirmationurl'
+        },
+        paymentId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Paymentid'
+        },
+        mock: {
+            type: 'boolean',
+            title: 'Mock',
+            default: false
+        },
+        message: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Message'
+        },
+        scheduled: {
+            type: 'boolean',
+            title: 'Scheduled',
+            default: false
+        },
+        scheduledEffectiveAt: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Scheduledeffectiveat'
+        },
+        scheduledTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Scheduledtariffid'
+        }
+    },
+    type: 'object',
+    title: 'SubscribeOut'
+} as const;
+
+export const SubscribeRequestSchema = {
+    properties: {
+        tariffId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Tariffid'
+        },
+        returnUrl: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 512
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Returnurl'
+        }
+    },
+    type: 'object',
+    required: [
+        'tariffId'
+    ],
+    title: 'SubscribeRequest'
+} as const;
+
+export const TariffCreateSchema = {
+    properties: {
+        code: {
+            type: 'string',
+            title: 'Code'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        priceRub: {
+            type: 'integer',
+            title: 'Pricerub',
+            default: 0
+        },
+        periodDays: {
+            type: 'integer',
+            title: 'Perioddays',
+            default: 30
+        },
+        rank: {
+            type: 'integer',
+            title: 'Rank',
+            default: 0
+        },
+        isDefault: {
+            type: 'boolean',
+            title: 'Isdefault',
+            default: false
+        },
+        isActive: {
+            type: 'boolean',
+            title: 'Isactive',
+            default: true
+        },
+        sortOrder: {
+            type: 'integer',
+            title: 'Sortorder',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: [
+        'code',
+        'title'
+    ],
+    title: 'TariffCreate'
+} as const;
+
+export const TariffOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        code: {
+            type: 'string',
+            title: 'Code'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        priceRub: {
+            type: 'integer',
+            title: 'Pricerub'
+        },
+        periodDays: {
+            type: 'integer',
+            title: 'Perioddays'
+        },
+        rank: {
+            type: 'integer',
+            title: 'Rank'
+        },
+        isDefault: {
+            type: 'boolean',
+            title: 'Isdefault'
+        },
+        isActive: {
+            type: 'boolean',
+            title: 'Isactive'
+        },
+        sortOrder: {
+            type: 'integer',
+            title: 'Sortorder'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'code',
+        'title',
+        'priceRub',
+        'periodDays',
+        'rank',
+        'isDefault',
+        'isActive',
+        'sortOrder'
+    ],
+    title: 'TariffOut'
+} as const;
+
+export const TariffUpdateSchema = {
+    properties: {
+        code: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Code'
+        },
+        title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Title'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        priceRub: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Pricerub'
+        },
+        periodDays: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Perioddays'
+        },
+        rank: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rank'
+        },
+        isDefault: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Isdefault'
+        },
+        isActive: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Isactive'
+        },
+        sortOrder: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Sortorder'
+        }
+    },
+    type: 'object',
+    title: 'TariffUpdate'
 } as const;
 
 export const TestCreateSchema = {
@@ -1192,6 +1922,18 @@ export const TestCreateSchema = {
                 }
             ],
             title: 'Accessabilityconditions'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
@@ -1344,6 +2086,18 @@ export const TestOutSchema = {
                 }
             ],
             title: 'Accessabilityconditions'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
@@ -1361,7 +2115,8 @@ export const TestOutSchema = {
         'showBackButton',
         'hidden',
         'questions',
-        'accessabilityConditions'
+        'accessabilityConditions',
+        'requiredTariffId'
     ],
     title: 'TestOut'
 } as const;
@@ -1807,6 +2562,18 @@ export const TestUpdateSchema = {
                 }
             ],
             title: 'Accessabilityconditions'
+        },
+        requiredTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredtariffid'
         }
     },
     type: 'object',
@@ -1882,6 +2649,20 @@ export const TokenRefreshResponseSchema = {
         'expires_in'
     ],
     title: 'TokenRefreshResponse'
+} as const;
+
+export const UnreadCountOutSchema = {
+    properties: {
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: [
+        'count'
+    ],
+    title: 'UnreadCountOut'
 } as const;
 
 export const UserCreateSchema = {

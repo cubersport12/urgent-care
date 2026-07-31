@@ -9,7 +9,13 @@ import {
   RescueParameterSeverityEnum
 } from './types';
 
-export const folderSchema = z.object({ id: z.string(), order: z.number().nullable(), name: z.string(), parentId: z.string().nullable() });
+export const folderSchema = z.object({
+  id: z.string(),
+  order: z.number().nullable(),
+  name: z.string(),
+  parentId: z.string().nullable(),
+  requiredTariffId: z.string().nullable().optional()
+});
 
 export const articleSchema = z.object({
   id: z.string(),
@@ -21,7 +27,8 @@ export const articleSchema = z.object({
   disableWhileNotPrevComplete: z.boolean().nullable(),
   hideWhileNotPrevComplete: z.boolean().nullable(),
   includeToStatistics: z.boolean().nullable(),
-  linksToArticles: z.array(z.object({ key: z.string(), articleId: z.string() })).nullable()
+  linksToArticles: z.array(z.object({ key: z.string(), articleId: z.string() })).nullable(),
+  requiredTariffId: z.string().nullable().optional()
 });
 
 export const questionSchema = z.object({
@@ -72,7 +79,8 @@ export const testSchema = z.object({
       success: z.boolean().nullable().optional()
     }).optional(),
     isReaded: z.boolean().nullable().optional()
-  })).nullable()
+  })).nullable(),
+  requiredTariffId: z.string().nullable().optional()
 });
 
 /** Уровень серьёзности параметра (диапазон + метка) */
@@ -182,7 +190,8 @@ export const rescueItemSchema = z.object({
   parentId: z.string().nullable().optional(),
   createdAt: z.string(),
   description: z.string(),
-  data: rescueItemDataSchema.optional()
+  data: rescueItemDataSchema.optional(),
+  requiredTariffId: z.string().nullable().optional()
 });
 
 export const rescueLibraryItemSchema = z.discriminatedUnion('type', [

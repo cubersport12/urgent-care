@@ -9,7 +9,11 @@ from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.responses import Response as StarletteResponse
 
-from app.api.deps import get_current_admin, get_current_user
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import get_current_admin, get_current_user, get_db
+from app.api.v1._content_access import assert_content_visible
+from app.db.repositories.content import ArticleRepository
 from app.models.user import User
 from app.utils.s3 import get_s3_client
 
@@ -37,9 +41,17 @@ def _normalize_key(file_path: str) -> str:
 @router.get("/{file_path:path}")
 async def download_media(
     file_path: str,
-    _: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
 ) -> Response:
     key = _normalize_key(file_path)
+    # Article PDFs are stored as public/{articleId}.pdf
+    name = key.removeprefix(ALLOWED_PREFIX)
+    if name.endswith(".pdf"):
+        article_id = name[:-4]
+        article = await ArticleRepository(db).get(article_id)
+        if article:
+            await assert_content_visible(db, user, article)
     s3 = get_s3_client()
     try:
         body, content_type = await s3.get_object(key=key)

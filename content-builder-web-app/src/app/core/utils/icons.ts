@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
 import { faSun, faMoon, faPlusCircle, faPlus, faExclamationCircle, faWindowMaximize, faTrash,
-  faFolder, faFolderOpen, faSpinner, faCheck, faTimes, faFileContract, faSlidersH, faFileCircleCheck, faEdit, faVideo, faBars, faKitMedical, faChevronRight, faChevronDown, faBolt, faUpload, faCopy, faScissors, faPaste, faArrowUp, faRotateRight, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
+  faFolder, faFolderOpen, faSpinner, faCheck, faTimes, faFileContract, faSlidersH, faFileCircleCheck, faEdit, faVideo, faBars, faKitMedical, faChevronRight, faChevronDown, faBolt, faUpload, faCopy, faScissors, faPaste, faArrowUp, faRotateRight, faEllipsisVertical, faTag, faBell } from '@fortawesome/free-solid-svg-icons';
 import { icon, library } from '@fortawesome/fontawesome-svg-core';
 
 @Injectable({ providedIn: 'root' })
@@ -40,7 +40,9 @@ export class AppIconsRegistry {
       faArrowUp,
       faRotateRight,
       faEllipsisVertical,
-      faFolderOpen
+      faFolderOpen,
+      faTag,
+      faBell
     ];
 
     icons.forEach((iconDefinition) => {

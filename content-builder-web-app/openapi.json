@@ -197,6 +197,621 @@
         ]
       }
     },
+    "/api/v1/billing/tariffs": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "List Tariffs",
+        "operationId": "billing_list_tariffs",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TariffOut"
+                  },
+                  "type": "array",
+                  "title": "Response Billing List Tariffs"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Create Tariff",
+        "operationId": "billing_create_tariff",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TariffCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TariffOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/billing/tariffs/all": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "List Tariffs Admin",
+        "operationId": "billing_list_tariffs_admin",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TariffOut"
+                  },
+                  "type": "array",
+                  "title": "Response Billing List Tariffs Admin"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/billing/tariffs/{tariff_id}": {
+      "patch": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Update Tariff",
+        "operationId": "billing_update_tariff",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tariff_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tariff Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TariffUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TariffOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Delete Tariff",
+        "operationId": "billing_delete_tariff",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tariff_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tariff Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/me": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Billing Me",
+        "operationId": "billing_billing_me",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingMeOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/billing/subscribe": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Subscribe",
+        "operationId": "billing_subscribe",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscribeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscribeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/billing/subscription/cancel": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Cancel Subscription",
+        "operationId": "billing_cancel_subscription",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingMeOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/billing/payments": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "List Payments",
+        "operationId": "billing_list_payments",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentOut"
+                  },
+                  "type": "array",
+                  "title": "Response Billing List Payments"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/billing/payments/{payment_id}/sync": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Sync Payment",
+        "operationId": "billing_sync_payment",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Payment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "List Notifications",
+        "operationId": "notifications_list_notifications",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "unreadOnly",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Unreadonly"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationOut"
+                  },
+                  "title": "Response Notifications List Notifications"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Create Notification",
+        "operationId": "notifications_create_notification",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Unread Count",
+        "operationId": "notifications_unread_count",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark All Read",
+        "operationId": "notifications_mark_all_read",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/broadcast": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Broadcast Notification",
+        "description": "Create the same notification for every active user and push over WS.",
+        "operationId": "notifications_broadcast_notification",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationBroadcast"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BroadcastOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/{notification_id}/read": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark Read",
+        "operationId": "notifications_mark_read",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/folders": {
       "get": {
         "tags": [
@@ -1841,11 +2456,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object",
-                  "title": "Response Media Upload Media"
+                  "$ref": "#/components/schemas/MediaUploadOut"
                 }
               }
             }
@@ -2022,6 +2633,18 @@
               }
             ],
             "title": "Linkstoarticles"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
@@ -2130,6 +2753,18 @@
               }
             ],
             "title": "Linkstoarticles"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
@@ -2143,7 +2778,8 @@
           "disableWhileNotPrevComplete",
           "hideWhileNotPrevComplete",
           "includeToStatistics",
-          "linksToArticles"
+          "linksToArticles",
+          "requiredTariffId"
         ],
         "title": "ArticleOut"
       },
@@ -2333,10 +2969,140 @@
               }
             ],
             "title": "Linkstoarticles"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
         "title": "ArticleUpdate"
+      },
+      "BillingMeOut": {
+        "properties": {
+          "tariffId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tariffid"
+          },
+          "tariffCode": {
+            "type": "string",
+            "title": "Tariffcode"
+          },
+          "tariffTitle": {
+            "type": "string",
+            "title": "Tarifftitle"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "currentPeriodStart": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Currentperiodstart"
+          },
+          "currentPeriodEnd": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Currentperiodend"
+          },
+          "cancelAtPeriodEnd": {
+            "type": "boolean",
+            "title": "Cancelatperiodend"
+          },
+          "priceRub": {
+            "type": "integer",
+            "title": "Pricerub"
+          },
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "enforcement": {
+            "type": "boolean",
+            "title": "Enforcement"
+          },
+          "scheduledTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduledtariffid"
+          },
+          "scheduledTariffCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduledtariffcode"
+          },
+          "scheduledTariffTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduledtarifftitle"
+          },
+          "scheduledEffectiveAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduledeffectiveat"
+          },
+          "scheduledChangeStatus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduledchangestatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tariffId",
+          "tariffCode",
+          "tariffTitle",
+          "status",
+          "currentPeriodStart",
+          "currentPeriodEnd",
+          "cancelAtPeriodEnd",
+          "priceRub",
+          "rank",
+          "enforcement"
+        ],
+        "title": "BillingMeOut"
       },
       "Body_auth_login": {
         "properties": {
@@ -2420,6 +3186,19 @@
         ],
         "title": "Body_media_upload_media"
       },
+      "BroadcastOut": {
+        "properties": {
+          "created": {
+            "type": "integer",
+            "title": "Created"
+          }
+        },
+        "type": "object",
+        "required": [
+          "created"
+        ],
+        "title": "BroadcastOut"
+      },
       "FolderCreate": {
         "properties": {
           "id": {
@@ -2458,6 +3237,18 @@
               }
             ],
             "title": "Parentid"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
@@ -2497,6 +3288,18 @@
               }
             ],
             "title": "Parentid"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
@@ -2504,7 +3307,8 @@
           "id",
           "name",
           "order",
-          "parentId"
+          "parentId",
+          "requiredTariffId"
         ],
         "title": "FolderOut"
       },
@@ -2542,6 +3346,18 @@
               }
             ],
             "title": "Parentid"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
@@ -2598,6 +3414,172 @@
           "password"
         ],
         "title": "LoginJson"
+      },
+      "MediaUploadOut": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "fileName": {
+            "type": "string",
+            "title": "Filename"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "fileName"
+        ],
+        "title": "MediaUploadOut"
+      },
+      "NotificationBroadcast": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Body",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "NotificationBroadcast"
+      },
+      "NotificationCreate": {
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Userid"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 5000,
+            "title": "Body",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "userId",
+          "title"
+        ],
+        "title": "NotificationCreate"
+      },
+      "NotificationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "readAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readat"
+          },
+          "isRead": {
+            "type": "boolean",
+            "title": "Isread"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "body",
+          "createdAt",
+          "isRead"
+        ],
+        "title": "NotificationOut"
+      },
+      "PaymentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tariffId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tariffid"
+          },
+          "amountRub": {
+            "type": "number",
+            "title": "Amountrub"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          },
+          "yookassaPaymentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yookassapaymentid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tariffId",
+          "amountRub",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "PaymentOut"
       },
       "RescueCreate": {
         "properties": {
@@ -2665,6 +3647,18 @@
               }
             ],
             "title": "Data"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
@@ -2725,6 +3719,18 @@
               }
             ],
             "title": "Data"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
@@ -2735,7 +3741,8 @@
           "parentId",
           "createdAt",
           "description",
-          "data"
+          "data",
+          "requiredTariffId"
         ],
         "title": "RescueOut"
       },
@@ -2914,10 +3921,351 @@
               }
             ],
             "title": "Data"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
         "title": "RescueUpdate"
+      },
+      "SubscribeOut": {
+        "properties": {
+          "confirmationUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmationurl"
+          },
+          "paymentId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paymentid"
+          },
+          "mock": {
+            "type": "boolean",
+            "title": "Mock",
+            "default": false
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "scheduled": {
+            "type": "boolean",
+            "title": "Scheduled",
+            "default": false
+          },
+          "scheduledEffectiveAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduledeffectiveat"
+          },
+          "scheduledTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduledtariffid"
+          }
+        },
+        "type": "object",
+        "title": "SubscribeOut"
+      },
+      "SubscribeRequest": {
+        "properties": {
+          "tariffId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tariffid"
+          },
+          "returnUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Returnurl"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tariffId"
+        ],
+        "title": "SubscribeRequest"
+      },
+      "TariffCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "priceRub": {
+            "type": "integer",
+            "title": "Pricerub",
+            "default": 0
+          },
+          "periodDays": {
+            "type": "integer",
+            "title": "Perioddays",
+            "default": 30
+          },
+          "rank": {
+            "type": "integer",
+            "title": "Rank",
+            "default": 0
+          },
+          "isDefault": {
+            "type": "boolean",
+            "title": "Isdefault",
+            "default": false
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Isactive",
+            "default": true
+          },
+          "sortOrder": {
+            "type": "integer",
+            "title": "Sortorder",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "title"
+        ],
+        "title": "TariffCreate"
+      },
+      "TariffOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "priceRub": {
+            "type": "integer",
+            "title": "Pricerub"
+          },
+          "periodDays": {
+            "type": "integer",
+            "title": "Perioddays"
+          },
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "title": "Isdefault"
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Isactive"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "title": "Sortorder"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "title",
+          "priceRub",
+          "periodDays",
+          "rank",
+          "isDefault",
+          "isActive",
+          "sortOrder"
+        ],
+        "title": "TariffOut"
+      },
+      "TariffUpdate": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "priceRub": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricerub"
+          },
+          "periodDays": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perioddays"
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rank"
+          },
+          "isDefault": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isdefault"
+          },
+          "isActive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isactive"
+          },
+          "sortOrder": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sortorder"
+          }
+        },
+        "type": "object",
+        "title": "TariffUpdate"
       },
       "TestCreate": {
         "properties": {
@@ -3069,6 +4417,18 @@
               }
             ],
             "title": "Accessabilityconditions"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
@@ -3220,6 +4580,18 @@
               }
             ],
             "title": "Accessabilityconditions"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
@@ -3237,7 +4609,8 @@
           "showBackButton",
           "hidden",
           "questions",
-          "accessabilityConditions"
+          "accessabilityConditions",
+          "requiredTariffId"
         ],
         "title": "TestOut"
       },
@@ -3677,6 +5050,18 @@
               }
             ],
             "title": "Accessabilityconditions"
+          },
+          "requiredTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredtariffid"
           }
         },
         "type": "object",
@@ -3749,6 +5134,19 @@
           "expires_in"
         ],
         "title": "TokenRefreshResponse"
+      },
+      "UnreadCountOut": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count"
+        ],
+        "title": "UnreadCountOut"
       },
       "UserCreate": {
         "properties": {
