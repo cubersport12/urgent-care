@@ -1,6 +1,6 @@
+import { recordLearningEvent } from '@/api/learning-events';
 import { useArticlesStats, useFilePdf } from '@/hooks/api';
 import { AppArticleStatsVm, AppArticleVm } from '@/hooks/api/types';
-import { useAchievements } from '@/contexts/achievements-context';
 import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useDeviceId } from '@/hooks/use-device-id';
@@ -85,6 +85,7 @@ const ArticleViewContent = memo(({
   onBack, 
   markAsReadRef,
   tintColorRef,
+  onScrollProgressRef,
 }: {
   pdfUri: string | null | undefined;
   isLoading: boolean;
@@ -92,6 +93,7 @@ const ArticleViewContent = memo(({
   onBack: () => void;
   markAsReadRef: React.MutableRefObject<() => Promise<void>>;
   tintColorRef: React.MutableRefObject<string>;
+  onScrollProgressRef: React.MutableRefObject<(percent: number) => void>;
 }) => {
   const opacity = useSharedValue(0);
 
@@ -145,6 +147,7 @@ const ArticleViewContent = memo(({
             key={pdfUri}
             source={pdfUri}
             onScrollToEnd={markAsReadIfNeeded}
+            onScrollProgress={(pct) => onScrollProgressRef.current(pct)}
             onError={(error) => {
               console.error('PDF error:', error);
             }}
@@ -178,12 +181,6 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     deviceIdRef.current = deviceId;
   }, [deviceId]);
 
-  const { checkUnlocks } = useAchievements();
-  const checkUnlocksRef = useRef(checkUnlocks);
-  useEffect(() => {
-    checkUnlocksRef.current = checkUnlocks;
-  }, [checkUnlocks]);
-
   const { primary: tintColor } = useAppTheme();
   
   const tintColorRef = useRef(tintColor);
@@ -194,6 +191,39 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   // Используем useRef вместо useState, чтобы избежать перерисовки компонента
   const isMarkedAsReadRef = useRef(false);
   const isReadRef = useRef(false);
+  const progressSentRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    progressSentRef.current = new Set();
+    void recordLearningEvent({
+      entityType: 'article',
+      entityId: article.id,
+      event: 'opened',
+    });
+  }, [article.id]);
+
+  const onScrollProgressRef = useRef((percent: number) => {
+    if (progressSentRef.current.has(percent)) return;
+    progressSentRef.current.add(percent);
+    void recordLearningEvent({
+      entityType: 'article',
+      entityId: article.id,
+      event: 'progress',
+      payload: { percent },
+    });
+  });
+  useEffect(() => {
+    onScrollProgressRef.current = (percent: number) => {
+      if (progressSentRef.current.has(percent)) return;
+      progressSentRef.current.add(percent);
+      void recordLearningEvent({
+        entityType: 'article',
+        entityId: article.id,
+        event: 'progress',
+        payload: { percent },
+      });
+    };
+  }, [article.id]);
   
   // Мемоизируем массив article.id, чтобы избежать бесконечных запросов
   const articleIds = useMemo(() => [article.id], [article.id]);
@@ -234,11 +264,16 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
           createdAt: dataToUpsert.createdAt,
         }),
       });
+      void recordLearningEvent({
+        entityType: 'article',
+        entityId: article.id,
+        event: 'progress',
+        payload: { percent: 100 },
+      });
 
       // Устанавливаем флаг через ref, не вызывая перерисовку
       isMarkedAsReadRef.current = true;
       isReadRef.current = true;
-      void checkUnlocksRef.current();
     } catch (error) {
       console.error('Error marking article as read:', error);
     }
@@ -298,6 +333,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
         onBack={onBack}
         markAsReadRef={markAsReadRefWithUpdate}
         tintColorRef={tintColorRef}
+        onScrollProgressRef={onScrollProgressRef}
       />
       <View pointerEvents="box-none" style={styles.navButtonsLayer}>
         <NavigationButtons

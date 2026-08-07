@@ -1,4 +1,3 @@
-import { useAchievements } from '@/contexts/achievements-context';
 import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTest } from '@/contexts/test-context';
@@ -64,7 +63,6 @@ export function TestQuestionView({
     processSkippedQuestions,
   } = useTest();
   const { deviceId } = useDeviceId();
-  const { checkUnlocks } = useAchievements();
 
   // Хук для сохранения статистики теста (вызываем всегда, но используем только когда нужно)
   const testStatsHook = useAddOrUpdateTestStats({
@@ -169,7 +167,6 @@ export function TestQuestionView({
             completedAt,
             passed: isPassed,
           });
-          if (isPassed) void checkUnlocks();
         } catch (error) {
           console.error('Error saving test stats on finish:', error);
           // Не блокируем завершение теста при ошибке сохранения статистики

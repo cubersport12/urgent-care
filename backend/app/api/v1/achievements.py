@@ -11,6 +11,7 @@ from app.models.achievement import Achievement, Reward
 from app.models.user import User
 from app.schemas.achievements import (
     RULE_TYPES,
+    TARGETED_RULE_TYPES,
     AchievementCreate,
     AchievementMeOut,
     AchievementOut,
@@ -41,6 +42,14 @@ def _validate_rule_type(rule_type: str) -> None:
         )
 
 
+def _validate_rule_target(rule_type: str, rule_target_id: str | None) -> None:
+    if rule_type in TARGETED_RULE_TYPES and not (rule_target_id or "").strip():
+        raise HTTPException(
+            status_code=400,
+            detail="ruleTargetId is required for this ruleType",
+        )
+
+
 # ── User (static paths before {id}) ─────────────────────────────────
 
 
@@ -49,18 +58,18 @@ async def list_achievements_me(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ) -> list[AchievementMeOut]:
+    from app.services.achievement_notify import sync_and_notify
+
     repo = AchievementRepository(db)
-    await repo.sync_unlocks(user.id)
+    # Catch-up if user was offline when events fired.
+    await sync_and_notify(db, user.id)
     achievements = await repo.list_achievements(active_only=True)
     unlocks = {u.achievement_id: u for u in await repo.list_user_unlocks(user.id)}
-    counts = await repo.progress_counts(str(user.id))
     rewards = {r.achievement_id: r for r in await repo.list_rewards(active_only=True)}
     out: list[AchievementMeOut] = []
     for ach in achievements:
         unlock = unlocks.get(ach.id)
-        progress = (
-            counts.get(ach.rule_type, 0) if ach.rule_type != "manual" else (1 if unlock else 0)
-        )
+        progress = await repo.rule_progress(user.id, ach)
         reward = rewards.get(ach.id)
         out.append(
             AchievementMeOut(
@@ -71,6 +80,7 @@ async def list_achievements_me(
                 icon_path=ach.icon_path,
                 rule_type=ach.rule_type,
                 rule_threshold=ach.rule_threshold,
+                rule_target_id=ach.rule_target_id,
                 sort_order=ach.sort_order,
                 unlocked=unlock is not None,
                 unlocked_at=unlock.unlocked_at if unlock else None,
@@ -87,7 +97,6 @@ async def list_rewards_me(
     user: Annotated[User, Depends(get_current_user)],
 ) -> list[RewardMeOut]:
     repo = AchievementRepository(db)
-    await repo.sync_unlocks(user.id)
     unlocks = {u.achievement_id: u for u in await repo.list_user_unlocks(user.id)}
     achievements = {a.id: a for a in await repo.list_achievements(active_only=True)}
     out: list[RewardMeOut] = []
@@ -137,6 +146,7 @@ async def create_achievement(
     _admin: Annotated[User, Depends(get_current_admin)],
 ) -> AchievementOut:
     _validate_rule_type(payload.rule_type)
+    _validate_rule_target(payload.rule_type, payload.rule_target_id)
     repo = AchievementRepository(db)
     if await repo.get_achievement_by_code(payload.code):
         raise HTTPException(status_code=400, detail="Achievement code already exists")
@@ -147,6 +157,7 @@ async def create_achievement(
         icon_path=payload.icon_path,
         rule_type=payload.rule_type,
         rule_threshold=payload.rule_threshold,
+        rule_target_id=(payload.rule_target_id or "").strip() or None,
         sort_order=payload.sort_order,
         is_active=payload.is_active,
     )
@@ -167,6 +178,11 @@ async def update_achievement(
     data = payload.model_dump(exclude_unset=True)
     if "rule_type" in data:
         _validate_rule_type(data["rule_type"])
+    rule_type = data.get("rule_type", row.rule_type)
+    target = data["rule_target_id"] if "rule_target_id" in data else row.rule_target_id
+    _validate_rule_target(rule_type, target)
+    if "rule_target_id" in data and data["rule_target_id"] is not None:
+        data["rule_target_id"] = data["rule_target_id"].strip() or None
     if "code" in data and data["code"]:
         data["code"] = data["code"].strip()
         other = await repo.get_achievement_by_code(data["code"])
@@ -198,10 +214,15 @@ async def grant_achievement(
     _admin: Annotated[User, Depends(get_current_admin)],
 ) -> AchievementMeOut:
     repo = AchievementRepository(db)
+    from app.services.achievement_notify import notify_unlocks
+
     ach = await repo.get_achievement(achievement_id)
     if not ach:
         raise HTTPException(status_code=404, detail="Achievement not found")
+    had = await repo.get_user_unlock(payload.user_id, achievement_id)
     unlock = await repo.grant(payload.user_id, achievement_id)
+    if not had:
+        await notify_unlocks(db, payload.user_id, [unlock])
     reward = await repo.get_reward_for_achievement(achievement_id)
     return AchievementMeOut(
         id=ach.id,
@@ -211,6 +232,7 @@ async def grant_achievement(
         icon_path=ach.icon_path,
         rule_type=ach.rule_type,
         rule_threshold=ach.rule_threshold,
+        rule_target_id=ach.rule_target_id,
         sort_order=ach.sort_order,
         unlocked=True,
         unlocked_at=unlock.unlocked_at,

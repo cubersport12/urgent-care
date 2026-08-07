@@ -21,6 +21,7 @@ export function PdfView({
   onError,
   style,
   onScrollToEnd,
+  onScrollProgress,
 }: PdfViewProps) {
   const { page: backgroundColor } = useAppTheme();
   const [webViewSource, setWebViewSource] = useState<{ uri: string } | { html: string; baseUrl?: string } | null>(
@@ -30,10 +31,12 @@ export function PdfView({
   const filePathRef = useRef<string | null>(null);
   const hasCalledScrollEndRef = useRef(false);
   const hasCalledOnLoadRef = useRef(false);
+  const progressSentRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     hasCalledScrollEndRef.current = false;
     hasCalledOnLoadRef.current = false;
+    progressSentRef.current = new Set();
   }, [source]);
 
   useEffect(() => {
@@ -126,6 +129,13 @@ export function PdfView({
     }
     if (data === 'error') {
       onError?.(new Error('Failed to render PDF'));
+    }
+    if (data.startsWith('progress:')) {
+      const pct = Number(data.slice('progress:'.length));
+      if (!Number.isNaN(pct) && !progressSentRef.current.has(pct)) {
+        progressSentRef.current.add(pct);
+        onScrollProgress?.(pct);
+      }
     }
     if (data === 'end' && onScrollToEnd && !hasCalledScrollEndRef.current) {
       hasCalledScrollEndRef.current = true;

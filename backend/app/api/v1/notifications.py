@@ -20,6 +20,7 @@ from app.schemas.notifications import (
     NotificationOut,
     UnreadCountOut,
 )
+from app.services.expo_push import push_user
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -87,6 +88,7 @@ async def broadcast_notification(
     )
     for row in rows:
         await notification_hub.send_user(row.user_id, _ws_payload(row))
+        await push_user(db, row.user_id, title=row.title, body=row.body)
     return BroadcastOut(created=len(rows))
 
 
@@ -115,6 +117,7 @@ async def create_notification(
         body=payload.body,
     )
     await notification_hub.send_user(row.user_id, _ws_payload(row))
+    await push_user(db, row.user_id, title=row.title, body=row.body)
     return _out(row)
 
 

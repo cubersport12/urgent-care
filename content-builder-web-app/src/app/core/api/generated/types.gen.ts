@@ -34,6 +34,10 @@ export type AchievementCreate = {
      */
     ruleThreshold?: number;
     /**
+     * Ruletargetid
+     */
+    ruleTargetId?: string | null;
+    /**
      * Sortorder
      */
     sortOrder?: number;
@@ -75,6 +79,10 @@ export type AchievementMeOut = {
      * Rulethreshold
      */
     ruleThreshold: number;
+    /**
+     * Ruletargetid
+     */
+    ruleTargetId?: string | null;
     /**
      * Sortorder
      */
@@ -127,6 +135,10 @@ export type AchievementOut = {
      */
     ruleThreshold: number;
     /**
+     * Ruletargetid
+     */
+    ruleTargetId?: string | null;
+    /**
      * Sortorder
      */
     sortOrder: number;
@@ -164,6 +176,10 @@ export type AchievementUpdate = {
      * Rulethreshold
      */
     ruleThreshold?: number | null;
+    /**
+     * Ruletargetid
+     */
+    ruleTargetId?: string | null;
     /**
      * Sortorder
      */

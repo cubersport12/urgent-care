@@ -23,6 +23,7 @@ class Achievement(Base):
     icon_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     rule_type: Mapped[str] = mapped_column(String(40), nullable=False, default="manual")
     rule_threshold: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    rule_target_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(

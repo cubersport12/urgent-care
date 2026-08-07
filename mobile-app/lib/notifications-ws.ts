@@ -2,7 +2,26 @@ import type { AppNotification } from '@/api/notifications';
 import { API_BASE_URL } from '@/api/client';
 import { getAccessToken } from '@/lib/auth-storage';
 
-type Handler = (n: AppNotification) => void;
+export type AchievementUnlockPayload = {
+  notification: AppNotification;
+  achievement: {
+    id: string;
+    title: string;
+    description?: string | null;
+    iconPath?: string | null;
+  };
+  reward?: {
+    title: string;
+    description?: string | null;
+    iconPath?: string | null;
+  } | null;
+};
+
+export type NotificationsWsEvent =
+  | { type: 'notification'; data: AppNotification }
+  | { type: 'achievement_unlocked'; data: AchievementUnlockPayload };
+
+type Handler = (ev: NotificationsWsEvent) => void;
 
 let socket: WebSocket | null = null;
 let handlers = new Set<Handler>();
@@ -76,10 +95,20 @@ export async function connectNotificationsWs() {
     try {
       const msg = JSON.parse(String(ev.data)) as {
         type?: string;
-        data?: AppNotification;
+        data?: unknown;
       };
       if (msg.type === 'notification' && msg.data) {
-        handlers.forEach((h) => h(msg.data!));
+        const event: NotificationsWsEvent = {
+          type: 'notification',
+          data: msg.data as AppNotification,
+        };
+        handlers.forEach((h) => h(event));
+      } else if (msg.type === 'achievement_unlocked' && msg.data) {
+        const event: NotificationsWsEvent = {
+          type: 'achievement_unlocked',
+          data: msg.data as AchievementUnlockPayload,
+        };
+        handlers.forEach((h) => h(event));
       }
     } catch {
       // ignore bad frames

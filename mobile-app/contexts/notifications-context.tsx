@@ -4,7 +4,9 @@ import {
   connectNotificationsWs,
   disconnectNotificationsWs,
   subscribeNotifications,
+  type NotificationsWsEvent,
 } from '@/lib/notifications-ws';
+import { registerPushToken } from '@/lib/push-notifications';
 import React, {
   createContext,
   useCallback,
@@ -19,7 +21,7 @@ type NotificationsContextValue = {
   banner: AppNotification | null;
   dismissBanner: () => void;
   refreshUnread: () => void;
-  onLiveNotification: (handler: (n: AppNotification) => void) => () => void;
+  onLiveNotification: (handler: (ev: NotificationsWsEvent) => void) => () => void;
 };
 
 const NotificationsContext = createContext<NotificationsContextValue | null>(null);
@@ -52,9 +54,15 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
     refreshUnread();
     void connectNotificationsWs();
-    const unsub = subscribeNotifications((n) => {
+    void registerPushToken();
+    const unsub = subscribeNotifications((ev) => {
+      if (ev.type === 'notification') {
+        setUnreadCount((c) => c + 1);
+        setBanner(ev.data);
+        return;
+      }
+      // Achievement unlocks: count toward inbox, toast handled by AchievementsProvider.
       setUnreadCount((c) => c + 1);
-      setBanner(n);
     });
     return () => {
       unsub();
@@ -62,7 +70,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     };
   }, [initialized, session, refreshUnread]);
 
-  const onLiveNotification = useCallback((handler: (n: AppNotification) => void) => {
+  const onLiveNotification = useCallback((handler: (ev: NotificationsWsEvent) => void) => {
     return subscribeNotifications(handler);
   }, []);
 

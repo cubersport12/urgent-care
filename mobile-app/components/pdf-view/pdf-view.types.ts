@@ -12,7 +12,28 @@ export type PdfViewProps = {
   page?: number;
   fitPolicy?: 0 | 1 | 2;
   onScrollToEnd?: () => void;
+  /** 0–100 scroll progress (native pdf.js viewer). */
+  onScrollProgress?: (percent: number) => void;
 };
+
+/** Injected into pdf.js HTML scroll handler */
+export const PDF_SCROLL_PROGRESS_JS = `
+    var __pdfProgressSent = {};
+    function __pdfReportProgress() {
+      var el = document.scrollingElement || document.documentElement;
+      var max = el.scrollHeight - el.clientHeight;
+      var pct = max <= 0 ? 100 : Math.min(100, Math.round((el.scrollTop / max) * 100));
+      [25, 50, 75].forEach(function(t) {
+        if (pct >= t && !__pdfProgressSent[t]) {
+          __pdfProgressSent[t] = true;
+          window.ReactNativeWebView && window.ReactNativeWebView.postMessage('progress:' + t);
+        }
+      });
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 48) {
+        window.ReactNativeWebView && window.ReactNativeWebView.postMessage('end');
+      }
+    }
+`;
 
 export function normalizePdfDataUri(source: string): string {
   if (!source.startsWith('data:')) {
@@ -75,12 +96,8 @@ export function pdfJsHtmlFromFile(fileUri: string): string {
       document.getElementById('error').textContent = 'Ошибка загрузки PDF: ' + err.message;
       window.ReactNativeWebView && window.ReactNativeWebView.postMessage('error');
     });
-    window.addEventListener('scroll', function() {
-      var el = document.scrollingElement || document.documentElement;
-      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 48) {
-        window.ReactNativeWebView && window.ReactNativeWebView.postMessage('end');
-      }
-    }, { passive: true });
+    ${PDF_SCROLL_PROGRESS_JS}
+    window.addEventListener('scroll', __pdfReportProgress, { passive: true });
   </script>
 </body>
 </html>`;
@@ -135,12 +152,8 @@ export function pdfJsHtmlFromBase64(base64: string): string {
       document.getElementById('error').textContent = 'Ошибка загрузки PDF: ' + err.message;
       window.ReactNativeWebView && window.ReactNativeWebView.postMessage('error');
     });
-    window.addEventListener('scroll', function() {
-      var el = document.scrollingElement || document.documentElement;
-      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 48) {
-        window.ReactNativeWebView && window.ReactNativeWebView.postMessage('end');
-      }
-    }, { passive: true });
+    ${PDF_SCROLL_PROGRESS_JS}
+    window.addEventListener('scroll', __pdfReportProgress, { passive: true });
   </script>
 </body>
 </html>`;

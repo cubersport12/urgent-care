@@ -25,6 +25,9 @@
           @if (t.ruleType !== 'manual') {
             <span class="text-slate-500"> ≥ {{ t.ruleThreshold }}</span>
           }
+          @if (t.ruleTargetId) {
+            <div class="text-[11px] text-slate-400 font-mono">{{ t.ruleTargetId }}</div>
+          }
         </td>
       </ng-container>
       <ng-container matColumnDef="flags">

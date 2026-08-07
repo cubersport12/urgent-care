@@ -7,8 +7,10 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.billing import router as billing_router
 from app.api.v1.cities import router as cities_router
 from app.api.v1.folders import router as folders_router
+from app.api.v1.learning_events import router as learning_events_router
 from app.api.v1.media import router as media_router
 from app.api.v1.notifications import router as notifications_router
+from app.api.v1.push import router as push_router
 from app.api.v1.rescue import router as rescue_router
 from app.api.v1.stats import router as stats_router
 from app.api.v1.support import router as support_router
@@ -19,8 +21,10 @@ api_router.include_router(auth_router)
 api_router.include_router(cities_router)
 api_router.include_router(billing_router)
 api_router.include_router(notifications_router)
+api_router.include_router(push_router)
 api_router.include_router(achievements_router)
 api_router.include_router(support_router)
+api_router.include_router(learning_events_router)
 api_router.include_router(folders_router)
 api_router.include_router(articles_router)
 api_router.include_router(tests_router)

@@ -5,7 +5,7 @@ import type { PdfViewProps } from './pdf-view.types';
  * Компонент для отображения PDF на веб-платформе.
  * PDF отображается во iframe с корректной flex-вёрсткой для прокрутки.
  */
-export function PdfView({ source, onLoad, onError, style, onScrollToEnd }: PdfViewProps) {
+export function PdfView({ source, onLoad, onError, style, onScrollToEnd, onScrollProgress: _onScrollProgress }: PdfViewProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const hasCalledOnScrollToEndRef = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);

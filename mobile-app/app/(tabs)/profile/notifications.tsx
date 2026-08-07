@@ -72,7 +72,8 @@ export default function NotificationsScreen() {
   );
 
   useEffect(() => {
-    return onLiveNotification((n) => {
+    return onLiveNotification((ev) => {
+      const n = ev.type === 'notification' ? ev.data : ev.data.notification;
       setItems((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev]));
     });
   }, [onLiveNotification]);

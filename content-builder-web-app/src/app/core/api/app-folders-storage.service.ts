@@ -56,4 +56,8 @@ export class AppFoldersStorageService extends BaseStorage {
       parentId?.length ? { parentId } : { parentId: null }
     );
   }
+
+  public fetchAllFolders(): Observable<AppFolderVm[]> {
+    return this._fetch(folderSchema, () => ({ all: true }));
+  }
 }

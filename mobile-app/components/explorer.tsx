@@ -1,4 +1,3 @@
-import { useAchievements } from '@/contexts/achievements-context';
 import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useImmersiveMode } from '@/contexts/immersive-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
@@ -50,7 +49,6 @@ import { Spacing } from '@/constants/theme';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 
 export function Explorer() {
-  const { checkUnlocks } = useAchievements();
   const [currentFolderId, setCurrentFolderId] = useState<string | undefined>(undefined);
   const [selectedArticle, setSelectedArticle] = useState<AppArticleVm | null>(null);
   const [selectedTest, setSelectedTest] = useState<AppTestVm | null>(null);
@@ -687,7 +685,6 @@ export function Explorer() {
               completedAt: new Date().toISOString(),
               passed,
             });
-            if (passed) void checkUnlocks();
           } catch (e) {
             console.error('rescue_stats complete:', e);
           }

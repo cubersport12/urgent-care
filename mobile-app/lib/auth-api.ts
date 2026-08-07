@@ -7,6 +7,7 @@ import {
 } from '@/api/generated/sdk.gen';
 import { apiCall } from '@/api/utils';
 import { clearAuth, persistAuth, persistUser } from '@/lib/auth-storage';
+import { registerPushToken, unregisterPushToken } from '@/lib/push-notifications';
 import type { Token, UserOut } from '@/api/generated/types.gen';
 
 export async function login(email: string, password: string): Promise<Token> {
@@ -14,6 +15,7 @@ export async function login(email: string, password: string): Promise<Token> {
     authLoginJson({ body: { email, password } }),
   );
   await persistAuth(data);
+  void registerPushToken();
   return data;
 }
 
@@ -35,6 +37,7 @@ export async function register(
     }),
   );
   await persistAuth(data);
+  void registerPushToken();
   return data;
 }
 
@@ -59,5 +62,6 @@ export async function resetPassword(token: string, password: string): Promise<vo
 }
 
 export async function signOut(): Promise<void> {
+  await unregisterPushToken();
   await clearAuth();
 }

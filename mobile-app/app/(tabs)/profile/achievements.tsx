@@ -6,7 +6,6 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenAppBar } from '@/components/ui/screen-app-bar';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { Spacing } from '@/constants/theme';
-import { useAchievements } from '@/contexts/achievements-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme } from '@/hooks/use-theme-color';
@@ -75,17 +74,19 @@ function ruleHint(a: AchievementMe): string {
 export default function AchievementsScreen() {
   const { primary, neutralSoft, text, error: dangerColor } = useAppTheme();
   const { contentPaddingBottom } = useNavRail();
-  const { checkUnlocks } = useAchievements();
   const [achievements, setAchievements] = useState<AchievementMe[]>([]);
   const [rewards, setRewards] = useState<RewardMe[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [a, r] = await Promise.all([checkUnlocks(), achievementsApi.listRewardsMine()]);
+    const [a, r] = await Promise.all([
+      achievementsApi.listMine(),
+      achievementsApi.listRewardsMine(),
+    ]);
     setAchievements(a);
     setRewards(r);
-  }, [checkUnlocks]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
