@@ -13,14 +13,12 @@ USER="${DEPLOY_USER:-root}"
 SSH_KEY="${DEPLOY_SSH_KEY:-${HOME}/.ssh/id_ed25519_gymai}"
 SKIP_BUILD=0
 SKIP_FRONTEND=0
-MIGRATE_SUPABASE=0
 PUBLIC_HOST="${DEPLOY_PUBLIC_HOST:-trouble-dent.ru}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --skip-build) SKIP_BUILD=1 ;;
     --skip-frontend) SKIP_FRONTEND=1 ;;
-    --migrate-supabase) MIGRATE_SUPABASE=1 ;;
     --host) HOST="$2"; shift ;;
     --user) USER="$2"; shift ;;
     --key) SSH_KEY="$2"; shift ;;
@@ -95,14 +93,8 @@ if [[ "$SKIP_FRONTEND" -eq 0 ]]; then
   "${SSH[@]}" "$SSH_TARGET" "chmod -R a+rX /var/www/urgent-care"
 fi
 
-SUPABASE_KEY=""
-if [[ -f backend/.env ]]; then
-  SUPABASE_KEY="$(grep -E '^SUPABASE_SERVICE_KEY=' backend/.env | head -1 | cut -d= -f2- | tr -d '\r' | tr -d \"\' )"
-fi
-SUPABASE_KEY_B64="$(printf '%s' "$SUPABASE_KEY" | base64 -w0 2>/dev/null || printf '%s' "$SUPABASE_KEY" | base64)"
-
 echo "==> Ensuring backend .env on server"
-"${SSH[@]}" "$SSH_TARGET" "SUPABASE_KEY_B64='${SUPABASE_KEY_B64}' bash /opt/urgent-care/deploy/remote/bootstrap-env.sh ${PUBLIC_HOST}"
+"${SSH[@]}" "$SSH_TARGET" "bash /opt/urgent-care/deploy/remote/bootstrap-env.sh ${PUBLIC_HOST}"
 
 echo "==> Configuring nginx"
 "${SSH[@]}" "$SSH_TARGET" "bash /opt/urgent-care/deploy/remote/setup-nginx.sh"
@@ -124,11 +116,6 @@ echo "==> Starting docker compose (prod)"
 
 echo "==> Ensuring admin user"
 "${SSH[@]}" "$SSH_TARGET" "bash /opt/urgent-care/deploy/remote/ensure-admin.sh"
-
-if [[ "$MIGRATE_SUPABASE" -eq 1 ]]; then
-  echo "==> Migrating data from Supabase"
-  "${SSH[@]}" "$SSH_TARGET" "cd /opt/urgent-care/backend && docker compose -f docker-compose.prod.yml exec -T api python scripts/migrate_from_supabase.py"
-fi
 
 echo ""
 echo "Deploy complete."

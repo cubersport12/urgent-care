@@ -67,6 +67,8 @@ export const testSchema = z.object({
   showNavigation: z.boolean().nullable().optional(),
   showBackButton: z.boolean().nullable().optional(),
   hidden: z.boolean().nullable().optional(),
+  randomizeQuestions: z.boolean().nullable().optional(),
+  questionsToShow: z.number().nullable().optional(),
   questions: z.array(questionSchema).nullable().optional(),
   accessabilityConditions: z.array(z.object({
     logicalOperator: z.enum([AppTestAccessablityLogicalOperator.And, AppTestAccessablityLogicalOperator.Or]),
@@ -176,6 +178,38 @@ export function formatRescueItemDataSchemaForPrompt(): string {
   return JSON.stringify(
     zodToJsonSchema(rescueItemDataSchema, {
       name: 'AppRescueItemDataVm',
+      $refStrategy: 'none'
+    }),
+    null,
+    2
+  );
+}
+
+/** Slim question list for AI generation (no activation branches). */
+export const aiGeneratedQuestionsSchema = z.object({
+  questions: z
+    .array(
+      z.object({
+        questionText: z.string(),
+        name: z.string().optional(),
+        answers: z
+          .array(
+            z.object({
+              answerText: z.string(),
+              isCorrect: z.boolean(),
+              score: z.number().nullable().optional()
+            })
+          )
+          .min(2)
+      })
+    )
+    .min(1)
+});
+
+export function formatAiGeneratedQuestionsSchemaForPrompt(): string {
+  return JSON.stringify(
+    zodToJsonSchema(aiGeneratedQuestionsSchema, {
+      name: 'AiGeneratedQuestions',
       $refStrategy: 'none'
     }),
     null,

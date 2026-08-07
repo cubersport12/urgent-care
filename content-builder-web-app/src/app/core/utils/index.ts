@@ -8,6 +8,6 @@ export * from './guid';
 export * from './icons';
 export * from './rescue-completion-format';
 export * from './rescue-timer-parameter-time';
-export * from './supabase';
+export * from './api-facade';
 export * from './types';
 export * from './zod';

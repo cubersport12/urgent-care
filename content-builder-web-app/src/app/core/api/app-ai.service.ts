@@ -1,7 +1,13 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
-import { formatRescueItemDataSchemaForPrompt, NullableValue, rescueItemDataSchema } from '@/core/utils';
+import {
+  aiGeneratedQuestionsSchema,
+  formatAiGeneratedQuestionsSchemaForPrompt,
+  formatRescueItemDataSchemaForPrompt,
+  NullableValue,
+  rescueItemDataSchema
+} from '@/core/utils';
 import { environment } from '../../../environments/environment';
 import { z } from 'zod';
 
@@ -89,6 +95,45 @@ export class AppAIService {
         return throwError(() => new Error('Ошибка запроса к DeepSeek'));
       })
     );
+  }
+
+  public generateTestQuestions(prompt: string): Observable<z.infer<typeof aiGeneratedQuestionsSchema>> {
+    const schemaJson = formatAiGeneratedQuestionsSchemaForPrompt();
+    const userPrompt = `JSON Schema целевого ответа:
+
+${schemaJson}
+
+Задание: ${prompt}
+
+Требования:
+- Сгенерируй тест по медицинскому направлению (вопросы с вариантами ответов).
+- У каждого вопроса минимум 2 ответа, ровно один или несколько с isCorrect=true.
+- score: число баллов за ответ (обычно >0 для правильных).
+- Верни ТОЛЬКО валидный JSON-объект без markdown-обёртки и комментариев.`;
+
+    return this.ask(userPrompt, {
+      systemPrompt:
+        'Ты методист по медицинским тестам. Генерируешь чёткие вопросы с вариантами ответов.'
+    }).pipe(map((response) => this._parseAiQuestionsResponse(response)));
+  }
+
+  private _parseAiQuestionsResponse(response: string): z.infer<typeof aiGeneratedQuestionsSchema> {
+    let json: unknown;
+    try {
+      json = JSON.parse(this._extractJsonObject(response));
+    } catch {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      throw new Error('ИИ вернул невалидный JSON. Попробуйте уточнить промпт и повторить.');
+    }
+    const parsed = aiGeneratedQuestionsSchema.safeParse(json);
+    if (!parsed.success) {
+      const details = parsed.error.issues
+        .map((issue) => `${issue.path.join('.') || 'корень'}: ${issue.message}`)
+        .join('; ');
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      throw new Error(`JSON не соответствует схеме: ${details}`);
+    }
+    return parsed.data;
   }
 
   public generateRescue(prompt: string): Observable<z.infer<typeof rescueItemDataSchema>> {

@@ -1,6 +1,6 @@
 # Urgent Care API
 
-FastAPI backend replacing direct Supabase access for `mobile-app` and `content-builder-web-app`.
+FastAPI backend for `mobile-app` and `content-builder-web-app`.
 
 ## Stack
 
@@ -13,7 +13,7 @@ FastAPI backend replacing direct Supabase access for `mobile-app` and `content-b
 
 ```bash
 cp .env.example .env
-# edit JWT_SECRET, optionally SUPABASE_* for migration
+# edit JWT_SECRET
 
 docker compose up -d postgres minio
 pip install -e ".[dev]"
@@ -54,17 +54,6 @@ python scripts/export_openapi.py --out ../mobile-app/openapi.json
 #   cd ../mobile-app && npm run sync-and-generate-api
 #   cd ../content-builder-web-app && npm run sync-and-generate-api
 ```
-
-## Migrate from Supabase
-
-```bash
-# After schema is applied and .env has SUPABASE_URL + SUPABASE_SERVICE_KEY
-python scripts/migrate_from_supabase.py
-```
-
-Copies users, content tables, stats, and storage objects into local Postgres + MinIO.
-
-Migrated users get a temporary password (default `ChangeMeAfterMigration!`).
 
 ## Create admin (content-builder)
 

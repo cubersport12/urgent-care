@@ -44,7 +44,19 @@ export function TestProvider({ children }: { children: ReactNode }) {
   const [startedAt, setStartedAt] = useState<string | null>(null); // Время начала теста
 
   const startTest = (testData: AppTestVm) => {
-    setTest(testData);
+    let questions = [...(testData.questions ?? [])];
+    if (testData.randomizeQuestions) {
+      // Fisher–Yates
+      for (let i = questions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questions[i], questions[j]] = [questions[j], questions[i]];
+      }
+      const n = testData.questionsToShow;
+      if (n != null && n > 0) {
+        questions = questions.slice(0, n);
+      }
+    }
+    setTest({ ...testData, questions });
     setCurrentQuestionIndex(0);
     setAnswers([]);
     setVisitedQuestions(new Set());
@@ -142,6 +154,16 @@ export function TestProvider({ children }: { children: ReactNode }) {
       // Функция для поиска следующего неотвеченного вопроса с проверкой условий активации
       const findNextUnansweredQuestion = (startFromIndex: number): number | null => {
         if (!test.questions) return null;
+
+        // Random queue: linear walk only (ignore activation branches)
+        if (test.randomizeQuestions) {
+          for (let i = startFromIndex + 1; i < test.questions.length; i++) {
+            if (!currentAnswers.find((a) => a.questionId === test.questions![i].id)) {
+              return i;
+            }
+          }
+          return null;
+        }
         
         // Сначала проверяем условия активации для всех вопросов, начиная с startFromIndex
         const activatedQuestions: { question: AppTestQuestionVm; index: number }[] = [];

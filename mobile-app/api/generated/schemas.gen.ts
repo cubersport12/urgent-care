@@ -1179,6 +1179,21 @@ export const FolderUpdateSchema = {
     title: 'FolderUpdate'
 } as const;
 
+export const ForgotPasswordSchema = {
+    properties: {
+        email: {
+            type: 'string',
+            format: 'email',
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    required: [
+        'email'
+    ],
+    title: 'ForgotPassword'
+} as const;
+
 export const GrantAchievementRequestSchema = {
     properties: {
         userId: {
@@ -1782,6 +1797,29 @@ export const RescueUpdateSchema = {
     title: 'RescueUpdate'
 } as const;
 
+export const ResetPasswordSchema = {
+    properties: {
+        token: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 10,
+            title: 'Token'
+        },
+        password: {
+            type: 'string',
+            maxLength: 100,
+            minLength: 6,
+            title: 'Password'
+        }
+    },
+    type: 'object',
+    required: [
+        'token',
+        'password'
+    ],
+    title: 'ResetPassword'
+} as const;
+
 export const RewardCreateSchema = {
     properties: {
         achievementId: {
@@ -2136,6 +2174,201 @@ export const SubscribeRequestSchema = {
         'tariffId'
     ],
     title: 'SubscribeRequest'
+} as const;
+
+export const SupportMessageCreateSchema = {
+    properties: {
+        body: {
+            type: 'string',
+            maxLength: 4000,
+            minLength: 1,
+            title: 'Body'
+        }
+    },
+    type: 'object',
+    required: [
+        'body'
+    ],
+    title: 'SupportMessageCreate'
+} as const;
+
+export const SupportMessageOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        threadId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Threadid'
+        },
+        senderRole: {
+            type: 'string',
+            title: 'Senderrole'
+        },
+        senderId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Senderid'
+        },
+        body: {
+            type: 'string',
+            title: 'Body'
+        },
+        createdAt: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Createdat'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'threadId',
+        'senderRole',
+        'senderId',
+        'body',
+        'createdAt'
+    ],
+    title: 'SupportMessageOut'
+} as const;
+
+export const SupportThreadDetailOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        userId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Userid'
+        },
+        userEmail: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Useremail'
+        },
+        userFullName: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Userfullname'
+        },
+        messages: {
+            items: {
+                $ref: '#/components/schemas/SupportMessageOut'
+            },
+            type: 'array',
+            title: 'Messages'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'userId',
+        'userEmail',
+        'userFullName',
+        'messages'
+    ],
+    title: 'SupportThreadDetailOut'
+} as const;
+
+export const SupportThreadOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        userId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Userid'
+        },
+        userEmail: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Useremail'
+        },
+        userFullName: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Userfullname'
+        },
+        lastMessageAt: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Lastmessageat'
+        },
+        updatedAt: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updatedat'
+        },
+        lastBody: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Lastbody'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'userId',
+        'userEmail',
+        'userFullName',
+        'lastMessageAt',
+        'updatedAt',
+        'lastBody'
+    ],
+    title: 'SupportThreadOut'
 } as const;
 
 export const TariffCreateSchema = {
@@ -2497,6 +2730,28 @@ export const TestCreateSchema = {
             ],
             title: 'Hidden'
         },
+        randomizeQuestions: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Randomizequestions'
+        },
+        questionsToShow: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Questionstoshow'
+        },
         questions: {
             anyOf: [
                 {
@@ -2661,6 +2916,28 @@ export const TestOutSchema = {
             ],
             title: 'Hidden'
         },
+        randomizeQuestions: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Randomizequestions'
+        },
+        questionsToShow: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Questionstoshow'
+        },
         questions: {
             anyOf: [
                 {
@@ -2712,6 +2989,8 @@ export const TestOutSchema = {
         'showNavigation',
         'showBackButton',
         'hidden',
+        'randomizeQuestions',
+        'questionsToShow',
         'questions',
         'accessabilityConditions',
         'requiredTariffId'
@@ -3137,6 +3416,28 @@ export const TestUpdateSchema = {
             ],
             title: 'Hidden'
         },
+        randomizeQuestions: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Randomizequestions'
+        },
+        questionsToShow: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Questionstoshow'
+        },
         questions: {
             anyOf: [
                 {
@@ -3293,6 +3594,18 @@ export const UserCreateSchema = {
                 }
             ],
             title: 'Name'
+        },
+        city_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'City Id'
         }
     },
     type: 'object',
@@ -3301,6 +3614,57 @@ export const UserCreateSchema = {
         'password'
     ],
     title: 'UserCreate'
+} as const;
+
+export const CityOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        region: {
+            type: 'string',
+            title: 'Region'
+        },
+        region_type: {
+            type: 'string',
+            title: 'Region Type',
+            default: ''
+        },
+        area: {
+            type: 'string',
+            title: 'Area',
+            default: ''
+        },
+        area_type: {
+            type: 'string',
+            title: 'Area Type',
+            default: ''
+        },
+        address: {
+            type: 'string',
+            title: 'Address',
+            default: ''
+        },
+        label: {
+            type: 'string',
+            title: 'Label',
+            readOnly: true
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name',
+        'region',
+        'label'
+    ],
+    title: 'CityOut'
 } as const;
 
 export const UserOutSchema = {
@@ -3317,6 +3681,29 @@ export const UserOutSchema = {
         full_name: {
             type: 'string',
             title: 'Full Name'
+        },
+        city_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'City Id'
+        },
+        city: {
+            anyOf: [
+                {
+                    '$ref': '#/components/schemas/CityOut'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'City'
         },
         role: {
             type: 'string',
@@ -3342,6 +3729,37 @@ export const UserOutSchema = {
         'created_at'
     ],
     title: 'UserOut'
+} as const;
+
+export const UserUpdateSchema = {
+    properties: {
+        full_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Full Name'
+        },
+        city_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'City Id'
+        }
+    },
+    type: 'object',
+    title: 'UserUpdate'
 } as const;
 
 export const ValidationErrorSchema = {

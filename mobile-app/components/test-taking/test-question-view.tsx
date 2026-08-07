@@ -268,6 +268,7 @@ export function TestQuestionView({
           {test.showNavigation !== false &&
             test.questions &&
             test.questions.length > 0 &&
+            !test.randomizeQuestions &&
             !test.questions.some((q) => q.activationCondition) && (
               <ThemedView style={styles.questionsNavigation}>
                 {test.questions.map((q, index) => {

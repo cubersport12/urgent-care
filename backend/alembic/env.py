@@ -14,8 +14,10 @@ from app.models import (  # noqa: F401
     billing,
     folder,
     notification,
+    password_reset,
     rescue,
     stats,
+    support,
     test,
     user,
 )

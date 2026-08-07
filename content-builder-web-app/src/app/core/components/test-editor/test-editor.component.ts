@@ -14,8 +14,14 @@ import { TestQuestionsBuilderComponent } from './test-questions-builder/test-que
 import { MatCheckbox } from '@angular/material/checkbox';
 import { AppFilesStorageService } from '@/core/api';
 import { forkJoin, Observable, of } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { cloneDeep, sum } from 'lodash';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
+import {
+  TestAiGenerateDialogComponent,
+  TestAiGenerateDialogData,
+  TestAiGenerateDialogResult
+} from './test-ai-generate-dialog.component';
 
 @Injectable({
   providedIn: 'root'
@@ -33,6 +39,27 @@ export class TestsEditorService {
       disableClose: true,
       data: test
     });
+  }
+
+  public openTestManual(parentId: NullableValue<string>): void {
+    this.openTest({ parentId });
+  }
+
+  public openTestWithAi(parentId: NullableValue<string>): void {
+    this._dialogs
+      .open(TestAiGenerateDialogComponent, {
+        data: { parentId } satisfies TestAiGenerateDialogData,
+        width: '560px',
+        maxWidth: '95vw',
+        disableClose: false
+      })
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((result: TestAiGenerateDialogResult | undefined) => {
+        if (result != null) {
+          this.openTest(result);
+        }
+      });
   }
 }
 
@@ -80,6 +107,8 @@ export class TestEditorComponent {
     showNavigation: new FormControl<boolean>(true),
     showBackButton: new FormControl<boolean>(true),
     hidden: new FormControl<boolean>(false),
+    randomizeQuestions: new FormControl<boolean>(false),
+    questionsToShow: new FormControl<NullableValue<number>>(null),
     requiredTariffId: new FormControl<string | null>(null)
   });
 
@@ -135,7 +164,7 @@ export class TestEditorComponent {
   }
 
   private _reset(): void {
-    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, requiredTariffId } = this._dialogData;
+    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, randomizeQuestions, questionsToShow, requiredTariffId } = this._dialogData;
     this._form.reset({
       name,
       conditions: accessabilityConditions ?? [],
@@ -148,6 +177,8 @@ export class TestEditorComponent {
       showNavigation: showNavigation ?? true,
       showBackButton: showBackButton ?? true,
       hidden: hidden ?? false,
+      randomizeQuestions: randomizeQuestions ?? false,
+      questionsToShow: questionsToShow ?? null,
       requiredTariffId: requiredTariffId ?? null
     });
   }
@@ -159,7 +190,7 @@ export class TestEditorComponent {
   }
 
   private _getTestVm(): AppTestVm {
-    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, requiredTariffId } = this._form.value;
+    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, randomizeQuestions, questionsToShow, requiredTariffId } = this._form.value;
     const result: AppTestVm = {
       ...(this._dialogData ?? {}),
       name: name!,
@@ -173,6 +204,8 @@ export class TestEditorComponent {
       showNavigation,
       showBackButton,
       hidden,
+      randomizeQuestions: randomizeQuestions ?? false,
+      questionsToShow: randomizeQuestions ? (questionsToShow ?? null) : null,
       requiredTariffId: requiredTariffId ?? null
     };
     if ('type' in result) {

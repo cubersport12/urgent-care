@@ -559,6 +559,16 @@ export type FolderUpdate = {
 };
 
 /**
+ * ForgotPassword
+ */
+export type ForgotPassword = {
+    /**
+     * Email
+     */
+    email: string;
+};
+
+/**
  * GrantAchievementRequest
  */
 export type GrantAchievementRequest = {
@@ -889,6 +899,20 @@ export type RescueUpdate = {
 };
 
 /**
+ * ResetPassword
+ */
+export type ResetPassword = {
+    /**
+     * Token
+     */
+    token: string;
+    /**
+     * Password
+     */
+    password: string;
+};
+
+/**
  * RewardCreate
  */
 export type RewardCreate = {
@@ -1066,6 +1090,106 @@ export type SubscribeRequest = {
      * Returnurl
      */
     returnUrl?: string | null;
+};
+
+/**
+ * SupportMessageCreate
+ */
+export type SupportMessageCreate = {
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
+ * SupportMessageOut
+ */
+export type SupportMessageOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Threadid
+     */
+    threadId: string;
+    /**
+     * Senderrole
+     */
+    senderRole: string;
+    /**
+     * Senderid
+     */
+    senderId: string | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Createdat
+     */
+    createdAt: string;
+};
+
+/**
+ * SupportThreadDetailOut
+ */
+export type SupportThreadDetailOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Userid
+     */
+    userId: string;
+    /**
+     * Useremail
+     */
+    userEmail: string | null;
+    /**
+     * Userfullname
+     */
+    userFullName: string | null;
+    /**
+     * Messages
+     */
+    messages: Array<SupportMessageOut>;
+};
+
+/**
+ * SupportThreadOut
+ */
+export type SupportThreadOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Userid
+     */
+    userId: string;
+    /**
+     * Useremail
+     */
+    userEmail: string | null;
+    /**
+     * Userfullname
+     */
+    userFullName: string | null;
+    /**
+     * Lastmessageat
+     */
+    lastMessageAt: string | null;
+    /**
+     * Updatedat
+     */
+    updatedAt: string;
+    /**
+     * Lastbody
+     */
+    lastBody: string | null;
 };
 
 /**
@@ -1251,6 +1375,14 @@ export type TestCreate = {
      */
     hidden?: boolean | null;
     /**
+     * Randomizequestions
+     */
+    randomizeQuestions?: boolean | null;
+    /**
+     * Questionstoshow
+     */
+    questionsToShow?: number | null;
+    /**
      * Questions
      */
     questions?: Array<unknown> | null;
@@ -1316,6 +1448,14 @@ export type TestOut = {
      * Hidden
      */
     hidden: boolean | null;
+    /**
+     * Randomizequestions
+     */
+    randomizeQuestions: boolean | null;
+    /**
+     * Questionstoshow
+     */
+    questionsToShow: number | null;
     /**
      * Questions
      */
@@ -1529,6 +1669,14 @@ export type TestUpdate = {
      */
     hidden?: boolean | null;
     /**
+     * Randomizequestions
+     */
+    randomizeQuestions?: boolean | null;
+    /**
+     * Questionstoshow
+     */
+    questionsToShow?: number | null;
+    /**
      * Questions
      */
     questions?: Array<unknown> | null;
@@ -1623,6 +1771,24 @@ export type UserCreate = {
      * Name
      */
     name?: string | null;
+    /**
+     * City Id
+     */
+    city_id?: string | null;
+};
+
+/**
+ * CityOut
+ */
+export type CityOut = {
+    id: string;
+    name: string;
+    region: string;
+    region_type?: string;
+    area?: string;
+    area_type?: string;
+    address?: string;
+    label: string;
 };
 
 /**
@@ -1642,6 +1808,14 @@ export type UserOut = {
      */
     full_name: string;
     /**
+     * City Id
+     */
+    city_id?: string | null;
+    /**
+     * City
+     */
+    city?: CityOut | null;
+    /**
      * Role
      */
     role: string;
@@ -1653,6 +1827,20 @@ export type UserOut = {
      * Created At
      */
     created_at: string;
+};
+
+/**
+ * UserUpdate
+ */
+export type UserUpdate = {
+    /**
+     * Full Name
+     */
+    full_name?: string | null;
+    /**
+     * City Id
+     */
+    city_id?: string | null;
 };
 
 /**
@@ -1788,6 +1976,81 @@ export type AuthMeResponses = {
 };
 
 export type AuthMeResponse = AuthMeResponses[keyof AuthMeResponses];
+
+export type AuthUpdateMeData = {
+    body: UserUpdate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/me';
+};
+
+export type AuthUpdateMeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthUpdateMeError = AuthUpdateMeErrors[keyof AuthUpdateMeErrors];
+
+export type AuthUpdateMeResponses = {
+    /**
+     * Successful Response
+     */
+    200: UserOut;
+};
+
+export type AuthUpdateMeResponse = AuthUpdateMeResponses[keyof AuthUpdateMeResponses];
+
+export type AuthForgotPasswordData = {
+    body: ForgotPassword;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/forgot-password';
+};
+
+export type AuthForgotPasswordErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthForgotPasswordError = AuthForgotPasswordErrors[keyof AuthForgotPasswordErrors];
+
+export type AuthForgotPasswordResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AuthForgotPasswordResponse = AuthForgotPasswordResponses[keyof AuthForgotPasswordResponses];
+
+export type AuthResetPasswordData = {
+    body: ResetPassword;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/reset-password';
+};
+
+export type AuthResetPasswordErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthResetPasswordError = AuthResetPasswordErrors[keyof AuthResetPasswordErrors];
+
+export type AuthResetPasswordResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AuthResetPasswordResponse = AuthResetPasswordResponses[keyof AuthResetPasswordResponses];
 
 export type BillingListTariffsData = {
     body?: never;
@@ -2430,6 +2693,125 @@ export type AchievementsUpdateRewardResponses = {
 };
 
 export type AchievementsUpdateRewardResponse = AchievementsUpdateRewardResponses[keyof AchievementsUpdateRewardResponses];
+
+export type SupportGetMyThreadData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/support/me';
+};
+
+export type SupportGetMyThreadResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportThreadDetailOut;
+};
+
+export type SupportGetMyThreadResponse = SupportGetMyThreadResponses[keyof SupportGetMyThreadResponses];
+
+export type SupportPostMyMessageData = {
+    body: SupportMessageCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/support/me/messages';
+};
+
+export type SupportPostMyMessageErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SupportPostMyMessageError = SupportPostMyMessageErrors[keyof SupportPostMyMessageErrors];
+
+export type SupportPostMyMessageResponses = {
+    /**
+     * Successful Response
+     */
+    201: SupportMessageOut;
+};
+
+export type SupportPostMyMessageResponse = SupportPostMyMessageResponses[keyof SupportPostMyMessageResponses];
+
+export type SupportListThreadsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/support/threads';
+};
+
+export type SupportListThreadsResponses = {
+    /**
+     * Response Support List Threads
+     *
+     * Successful Response
+     */
+    200: Array<SupportThreadOut>;
+};
+
+export type SupportListThreadsResponse = SupportListThreadsResponses[keyof SupportListThreadsResponses];
+
+export type SupportGetThreadData = {
+    body?: never;
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/api/v1/support/threads/{thread_id}';
+};
+
+export type SupportGetThreadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SupportGetThreadError = SupportGetThreadErrors[keyof SupportGetThreadErrors];
+
+export type SupportGetThreadResponses = {
+    /**
+     * Successful Response
+     */
+    200: SupportThreadDetailOut;
+};
+
+export type SupportGetThreadResponse = SupportGetThreadResponses[keyof SupportGetThreadResponses];
+
+export type SupportPostAdminMessageData = {
+    body: SupportMessageCreate;
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/api/v1/support/threads/{thread_id}/messages';
+};
+
+export type SupportPostAdminMessageErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SupportPostAdminMessageError = SupportPostAdminMessageErrors[keyof SupportPostAdminMessageErrors];
+
+export type SupportPostAdminMessageResponses = {
+    /**
+     * Successful Response
+     */
+    201: SupportMessageOut;
+};
+
+export type SupportPostAdminMessageResponse = SupportPostAdminMessageResponses[keyof SupportPostAdminMessageResponses];
 
 export type FoldersListFoldersData = {
     body?: never;

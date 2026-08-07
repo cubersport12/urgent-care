@@ -1,12 +1,12 @@
 import { inject, Injectable } from '@angular/core';
-import { AppSupabase } from '@/core/utils';
+import { AppApi } from '@/core/utils';
 import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AppFilesStorageService {
-  private readonly _api = inject(AppSupabase);
+  private readonly _api = inject(AppApi);
 
   public uploadFile(fileName: string, blob: Blob): Observable<string> {
     return new Observable((obs) => {

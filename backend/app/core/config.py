@@ -34,6 +34,20 @@ class Settings(BaseSettings):
     bcrypt_rounds: int = 12
 
     admin_email: str = "test@yandex.ru"
+    # Inbox for user→support messages (falls back to ADMIN_EMAIL if empty)
+    support_email: str = ""
+
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_tls: bool = True
+    password_reset_url: str = "https://trouble-dent.ru/mobile-app/reset-password"
+
+    @property
+    def support_inbox(self) -> str:
+        return (self.support_email or self.admin_email or "").strip()
 
     s3_endpoint: str
     s3_access_key: str
@@ -49,9 +63,6 @@ class Settings(BaseSettings):
         ]
     )
     cors_origin_regex: str | None = None
-
-    supabase_url: str = ""
-    supabase_service_key: str = ""
 
     yookassa_shop_id: str = ""
     yookassa_secret_key: str = ""

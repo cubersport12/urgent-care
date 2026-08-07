@@ -50,6 +50,7 @@ from app.models.billing import (  # noqa: E402, F401
     Tariff,
     UserSubscription,
 )
+from app.models.city import City  # noqa: E402, F401
 from app.models.folder import Folder  # noqa: E402, F401
 from app.models.rescue import Rescue  # noqa: E402, F401
 from app.models.stats import ArticleStats, RescueStats, TestResult, TestStats  # noqa: E402, F401

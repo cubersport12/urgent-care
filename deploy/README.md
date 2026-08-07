@@ -10,11 +10,11 @@
 - Nginx site: `/etc/nginx/sites-available/urgent-care`
 - Compose: `cd /opt/urgent-care/backend && docker compose -f docker-compose.prod.yml …`
 
-Host ports (localhost only): API `8001`, Postgres `5433`, MinIO `9100`/`9101` — chosen to coexist with Supabase (`54321`/`54322`) on the same VPS.
+Host ports (localhost only): API `8001`, Postgres `5433`, MinIO `9100`/`9101`.
 
 ## Current (HTTPS on trouble-dent.ru)
 
-Reuses the existing certs at `/etc/nginx/ssl/fullchain.pem` + `ssl.key` (formerly Supabase).
+TLS certs: `/etc/nginx/ssl/fullchain.pem` + `ssl.key`.
 
 - Start page: `https://trouble-dent.ru/`
 - Content builder: `https://trouble-dent.ru/content-builder/`
@@ -22,8 +22,6 @@ Reuses the existing certs at `/etc/nginx/ssl/fullchain.pem` + `ssl.key` (formerl
 - API health: `https://trouble-dent.ru/health`
 - Docs: `https://trouble-dent.ru/docs`
 - API: `https://trouble-dent.ru/api/v1/…`
-
-Supabase on this VPS should stay stopped (`deploy/remote/cutover-ssl.sh`).
 
 ## Release pipeline (APK + VPS deploy)
 
@@ -54,13 +52,12 @@ Optional flags:
 
 ```powershell
 .\scripts\deploy.ps1 -SkipBuild          # upload existing dist/
-.\scripts\deploy.ps1 -MigrateSupabase    # run migrate_from_supabase.py on server
 .\scripts\deploy.ps1 -SkipFrontend       # backend + nginx only
 ```
 
 SSH key default: `~\.ssh\id_ed25519_gymai` · host: `root@77.91.90.39`.
 
-## SSL cutover (reuse Supabase certs)
+## SSL cutover
 
 ```bash
 # From a machine with SSH, or on the VPS after syncing deploy/:

@@ -40,14 +40,11 @@ type EnvWithTestAuth = typeof environment & {
   testAuth?: { email: string; password: string };
 };
 
-/**
- * HTTP facade over generated OpenAPI client.
- * Kept as AppSupabase for existing inject sites.
- */
+/** HTTP facade over generated OpenAPI client. */
 @Injectable({
   providedIn: 'root'
 })
-export class AppSupabase {
+export class AppApi {
   private _ensureAuthPromise: Promise<void> | null = null;
 
   constructor() {

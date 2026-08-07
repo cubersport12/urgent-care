@@ -32,7 +32,11 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
 
   const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
-  const questionCount = test.questions?.length ?? 0;
+  const poolSize = test.questions?.length ?? 0;
+  const questionCount =
+    test.randomizeQuestions && test.questionsToShow != null && test.questionsToShow > 0
+      ? Math.min(test.questionsToShow, poolSize)
+      : poolSize;
   const infoLine =
     questionCount > 0 && test.minScore != null
       ? `${questionCount} вопросов | минимум ${test.minScore}%`

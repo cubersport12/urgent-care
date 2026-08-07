@@ -112,6 +112,8 @@ class TestOut(CamelModel):
     show_navigation: bool | None = Field(None, alias="showNavigation")
     show_back_button: bool | None = Field(None, alias="showBackButton")
     hidden: bool | None = None
+    randomize_questions: bool | None = Field(None, alias="randomizeQuestions")
+    questions_to_show: int | None = Field(None, alias="questionsToShow")
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
@@ -130,6 +132,8 @@ class TestCreate(CamelModel):
     show_navigation: bool | None = Field(None, alias="showNavigation")
     show_back_button: bool | None = Field(None, alias="showBackButton")
     hidden: bool | None = None
+    randomize_questions: bool | None = Field(None, alias="randomizeQuestions")
+    questions_to_show: int | None = Field(None, alias="questionsToShow")
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
@@ -147,6 +151,8 @@ class TestUpdate(CamelModel):
     show_navigation: bool | None = Field(None, alias="showNavigation")
     show_back_button: bool | None = Field(None, alias="showBackButton")
     hidden: bool | None = None
+    randomize_questions: bool | None = Field(None, alias="randomizeQuestions")
+    questions_to_show: int | None = Field(None, alias="questionsToShow")
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")

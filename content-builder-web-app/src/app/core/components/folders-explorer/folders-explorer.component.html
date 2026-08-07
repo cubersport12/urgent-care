@@ -7,9 +7,19 @@
       <button type="button" mat-icon-button [disabled]="_isCreating()" (click)="_createArticle()" matTooltip="Добавить текстовый документ">
         <mat-icon svgIcon="file-contract" />
       </button>
-      <button type="button" mat-icon-button (click)="_createTest()" matTooltip="Создать тест">
+      <button type="button" mat-icon-button [matMenuTriggerFor]="testCreateMenu" matTooltip="Создать тест">
         <mat-icon svgIcon="file-circle-check" />
       </button>
+      <mat-menu #testCreateMenu="matMenu">
+        <button mat-menu-item (click)="_createTest()">
+          <mat-icon svgIcon="pen-to-square" />
+          Добавить вручную
+        </button>
+        <button mat-menu-item (click)="_createTestWithAi()">
+          <mat-icon svgIcon="bolt" />
+          Сгенерировать через ИИ
+        </button>
+      </mat-menu>
       <button type="button" mat-icon-button [matMenuTriggerFor]="rescueCreateMenu" matTooltip="Создать спасение">
         <mat-icon svgIcon="kit-medical" />
       </button>

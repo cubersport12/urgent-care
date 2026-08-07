@@ -1,5 +1,5 @@
 import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
-import { AppIconsRegistry, AppSupabase, NullableValue } from '@/core/utils';
+import { AppApi, AppIconsRegistry, NullableValue } from '@/core/utils';
 import { ToggleLightDarkButtonComponent } from '@/core/components';
 import { Store } from '@ngxs/store';
 import { FoldersActions, FoldersState } from '@/core/store';
@@ -21,7 +21,7 @@ import { RouterOutlet } from '@angular/router';
 export class AppComponent {
   private readonly _store = inject(Store);
   private readonly _iconsRegistry = inject(AppIconsRegistry);
-  protected readonly _supabase = inject(AppSupabase);
+  protected readonly _api = inject(AppApi);
 
   protected readonly _folders = (parentId: NullableValue<string>) => computed(() => {
     const result = this._store.selectSignal(FoldersState.getFolders)();
@@ -35,7 +35,7 @@ export class AppComponent {
   }
 
   private async _initialize() {
-    await this._supabase.ensureAuthenticated();
+    await this._api.ensureAuthenticated();
   }
 
   protected _handleAdd(): void {

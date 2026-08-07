@@ -4,12 +4,6 @@ set -euo pipefail
 ENV_FILE=/opt/urgent-care/backend/.env
 HOST_NAME="${1:?host}"
 
-if [[ -n "${SUPABASE_KEY_B64:-}" ]]; then
-  SUPABASE_KEY=$(printf '%s' "$SUPABASE_KEY_B64" | base64 -d)
-else
-  SUPABASE_KEY="${2:-}"
-fi
-
 if [[ -f "$ENV_FILE" ]]; then
   echo "backend .env already exists - leaving as-is"
   exit 0
@@ -59,8 +53,13 @@ YOOKASSA_SECRET_KEY=
 YOOKASSA_RETURN_URL=troubledent://billing/return
 BILLING_ENFORCEMENT=true
 
-SUPABASE_URL=https://trouble-dent.ru
-SUPABASE_SERVICE_KEY=${SUPABASE_KEY}
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=
+SMTP_TLS=true
+PASSWORD_RESET_URL=${PUBLIC_BASE}/mobile-app/reset-password
 EOF
 chmod 600 "$ENV_FILE"
 echo "Created /opt/urgent-care/backend/.env"

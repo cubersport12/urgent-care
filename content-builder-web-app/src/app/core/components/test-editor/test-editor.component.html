@@ -42,7 +42,17 @@
       <mat-checkbox [formControl]="_form.controls.hidden">
         Скрытый
       </mat-checkbox>
+      <mat-checkbox [formControl]="_form.controls.randomizeQuestions">
+        Тест со случайным порядком вопросов
+      </mat-checkbox>
     </div>
+    @if (_form.controls.randomizeQuestions.value) {
+      <mat-form-field appearance="fill" class="w-64">
+        <mat-label>Показывать вопросов</mat-label>
+        <input matInput type="number" min="1" [formControl]="_form.controls.questionsToShow" />
+        <mat-hint>Пусто = все из пула</mat-hint>
+      </mat-form-field>
+    }
     <app-tariff-select [control]="_form.controls.requiredTariffId" />
     <app-test-conditions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.conditions" />
     <app-test-questions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.questions" />

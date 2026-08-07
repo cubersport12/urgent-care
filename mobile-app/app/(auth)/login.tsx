@@ -173,6 +173,12 @@ export default function LoginScreen() {
               autoComplete="password"
             />
 
+            <Link href="/(auth)/forgot-password" asChild>
+              <Pressable style={styles.forgotWrap}>
+                <ThemedText style={[styles.forgot, { color: tintColor }]}>Забыли пароль?</ThemedText>
+              </Pressable>
+            </Link>
+
             <View style={styles.buttonContainer}>
               <Button
                 title={submitting ? 'Вход...' : 'Войти'}
@@ -222,6 +228,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'center',
     marginBottom: 20,
+  },
+  forgotWrap: {
+    alignSelf: 'flex-end',
+    marginTop: -4,
+    marginBottom: 8,
+  },
+  forgot: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   title: {
     marginBottom: 8,

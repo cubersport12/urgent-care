@@ -59,6 +59,12 @@ export async function persistAccessToken(token: string): Promise<void> {
   await AsyncStorage.setItem(ACCESS_KEY, token);
 }
 
+export async function persistUser(user: UserOut): Promise<void> {
+  cachedUser = { ...user, id: String(user.id) };
+  await AsyncStorage.setItem(USER_KEY, JSON.stringify(cachedUser));
+  notifyAuth();
+}
+
 export async function clearAuth(): Promise<void> {
   accessToken = null;
   refreshToken = null;

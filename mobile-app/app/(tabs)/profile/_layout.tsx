@@ -7,6 +7,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="subscription" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="achievements" />
+      <Stack.Screen name="support" />
       <Stack.Screen name="about" />
     </Stack>
   );

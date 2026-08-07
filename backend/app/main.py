@@ -54,6 +54,14 @@ async def lifespan(app: FastAPI):
             await s3.ensure_public_read_policy()
         except Exception as exc:
             log.warning("minio_setup_skipped", error=str(exc))
+    try:
+        from app.db.base import AsyncSessionLocal
+        from app.services.seed_cities import seed_cities_if_empty
+
+        async with AsyncSessionLocal() as session:
+            await seed_cities_if_empty(session)
+    except Exception as exc:
+        log.warning("cities_seed_skipped", error=str(exc))
     yield
     await engine.dispose()
     log.info("app_stopped")

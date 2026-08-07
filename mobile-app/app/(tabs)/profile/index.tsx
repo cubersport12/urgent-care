@@ -1,16 +1,20 @@
+import { billingApi, type BillingMe } from '@/api/billing';
+import type { City } from '@/api/cities';
 import { ThemedText } from '@/components/themed-text';
+import { CityPicker } from '@/components/ui/city-picker';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
+import { useNotifications } from '@/contexts/notifications-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 import { useAppTheme, useGlass, useGlow } from '@/hooks/use-theme-color';
-import { billingApi, type BillingMe } from '@/api/billing';
-import { useNotifications } from '@/contexts/notifications-context';
+import { updateMe } from '@/lib/auth-api';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -22,7 +26,6 @@ import {
   View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { useFocusEffect } from '@react-navigation/native';
 
 function ProfileRow({
   icon,
@@ -89,6 +92,7 @@ export default function ProfileScreen() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [billing, setBilling] = useState<BillingMe | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [cityOpen, setCityOpen] = useState(false);
   const { primary, neutralSoft, error: dangerColor, text } = useAppTheme();
   const glow = useGlow();
   const { contentPaddingBottom } = useNavRail();
@@ -181,6 +185,11 @@ export default function ProfileScreen() {
                 <ThemedText style={[styles.subtitle, { color: neutralSoft }]}>
                   {user?.email ?? 'Стоматологический факультет'}
                 </ThemedText>
+                {user?.city ? (
+                  <ThemedText style={[styles.subtitle, { color: neutralSoft }]}>
+                    {user.city.label || user.city.name}
+                  </ThemedText>
+                ) : null}
                 
                 {/* Subscription Badge */}
                 <View style={styles.badgeContainer}>
@@ -336,6 +345,38 @@ export default function ProfileScreen() {
               isLast={false}
             />
 
+            <ProfileRow
+              icon="mappin.and.ellipse"
+              iconBg="rgba(239, 68, 68, 0.1)"
+              iconColor="#EF4444"
+              label="Город"
+              value={user?.city?.label || user?.city?.name || 'Не указан'}
+              onPress={() => setCityOpen(true)}
+              isLast={false}
+            />
+            <CityPicker
+              showField={false}
+              open={cityOpen}
+              onOpenChange={setCityOpen}
+              value={
+                user?.city
+                  ? ({
+                      id: user.city.id,
+                      name: user.city.name,
+                      region: user.city.region,
+                      label: user.city.label,
+                      address: user.city.address,
+                    } satisfies City)
+                  : null
+              }
+              onChange={(c) => {
+                void updateMe({ city_id: c.id })
+                  .then(() => setCityOpen(false))
+                  .catch((e) =>
+                    Alert.alert('Ошибка', e instanceof Error ? e.message : 'Не удалось сохранить'),
+                  );
+              }}
+            />
             {/* Notifications Row */}
             <ProfileRow
               icon="bell.fill"
@@ -366,8 +407,25 @@ export default function ProfileScreen() {
           </GlassCard>
         </Animated.View>
 
-        {/* Section: О ПРИЛОЖЕНИИ */}
+        {/* Section: ПОДДЕРЖКА */}
         <Animated.View entering={staggerEnter(6)} style={styles.section}>
+          <ThemedText type="caption" style={[styles.sectionHeader, { color: neutralSoft }]}>
+            ПОДДЕРЖКА
+          </ThemedText>
+          <GlassCard padding={0} borderRadius={16}>
+            <ProfileRow
+              icon="bubble.left.and.bubble.right.fill"
+              iconBg="rgba(59, 130, 246, 0.1)"
+              iconColor="#3B82F6"
+              label="Чат с поддержкой"
+              onPress={() => router.push('/(tabs)/profile/support')}
+              isLast={true}
+            />
+          </GlassCard>
+        </Animated.View>
+
+        {/* Section: О ПРИЛОЖЕНИИ */}
+        <Animated.View entering={staggerEnter(7)} style={styles.section}>
           <ThemedText type="caption" style={[styles.sectionHeader, { color: neutralSoft }]}>
             О ПРИЛОЖЕНИИ
           </ThemedText>

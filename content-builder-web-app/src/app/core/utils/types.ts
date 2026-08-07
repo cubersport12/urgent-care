@@ -124,6 +124,8 @@ export type AppTestVm = Omit<
   | 'showNavigation'
   | 'showBackButton'
   | 'hidden'
+  | 'randomizeQuestions'
+  | 'questionsToShow'
 > & {
   order?: NullableValue<number>;
   parentId?: NullableValue<string>;
@@ -135,6 +137,8 @@ export type AppTestVm = Omit<
   showNavigation?: NullableValue<boolean>;
   showBackButton?: NullableValue<boolean>;
   hidden?: NullableValue<boolean>;
+  randomizeQuestions?: NullableValue<boolean>;
+  questionsToShow?: NullableValue<number>;
   questions?: NullableValue<AppTestQuestionVm[]>;
   accessabilityConditions?: NullableValue<AppTestAccessablityCondition[]>;
 };

@@ -33,8 +33,10 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
   const { page: backgroundColor, layout2: pressedBackgroundColor, primary: tintColor, success: successColor, error: errorColor } = useAppTheme();
   const styles = useTestTakingStyles();
   const insets = useSafeAreaInsets();
-  const { isWide, contentPaddingLeft } = useNavRail();
+  const { isWide, contentPaddingLeft, contentPaddingBottom } = useNavRail();
   useChromeBack(onBack);
+  // Tab bar is absolute; lift the sticky CTA above it (esp. web).
+  const footerPad = (isWide ? 16 : contentPaddingBottom) + Math.max(insets.bottom, 0);
 
   // Обрабатываем пропущенные вопросы при монтировании компонента
   useEffect(() => {
@@ -109,7 +111,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
       ) : null}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
+        contentContainerStyle={[styles.scrollViewContent, { paddingBottom: 88 + footerPad }]}
       >
         <ThemedView style={styles.content}>
           <ThemedText type="title" style={styles.resultsTitle}>
@@ -164,7 +166,9 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
             })}
         </ThemedView>
       </ScrollView>
-      <ThemedView style={[styles.fixedButtonContainer, { backgroundColor }]}>
+      <ThemedView
+        style={[styles.fixedButtonContainer, { backgroundColor, paddingBottom: footerPad }]}
+      >
         <Button title="Завершить" onPress={handleFinish} fullWidth size="large" />
       </ThemedView>
     </Animated.View>

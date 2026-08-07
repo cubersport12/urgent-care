@@ -2,8 +2,6 @@
 # Usage: docker compose -f docker-compose.prod.yml up -d --build
 #
 # Host binds are localhost-only (nginx reverse-proxies the API).
-# Port choices avoid conflict with self-hosted Supabase on this VPS
-# (Kong :54321, DB :54322).
 
 services:
   postgres:

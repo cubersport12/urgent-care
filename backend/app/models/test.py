@@ -25,6 +25,8 @@ class Test(Base):
     show_navigation: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     show_back_button: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     hidden: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    randomize_questions: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    questions_to_show: Mapped[int | None] = mapped_column(Integer, nullable=True)
     questions: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     accessability_conditions: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     required_tariff_id: Mapped[uuid.UUID | None] = mapped_column(

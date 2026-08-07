@@ -465,7 +465,11 @@ export class FoldersExplorerComponent {
   }
 
   protected _createTest(): void {
-    this._testsEditor.openTest({ parentId: this._getPanelFolderId(this._activePanel()) });
+    this._testsEditor.openTestManual(this._getPanelFolderId(this._activePanel()));
+  }
+
+  protected _createTestWithAi(): void {
+    this._testsEditor.openTestWithAi(this._getPanelFolderId(this._activePanel()));
   }
 
   protected _createRescueManual(): void {

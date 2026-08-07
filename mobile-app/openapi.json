@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Urgent Care API",
-    "description": "Urgent Care API — content CMS, learning stats, auth, media. OpenAPI: `/openapi.json` · Swagger UI: `/docs` · ReDoc: `/redoc`.",
+    "description": "Urgent Care API \u2014 content CMS, learning stats, auth, media. OpenAPI: `/openapi.json` \u00b7 Swagger UI: `/docs` \u00b7 ReDoc: `/redoc`.",
     "version": "1.0.0"
   },
   "paths": {
@@ -195,6 +195,119 @@
             "OAuth2PasswordBearer": []
           }
         ]
+      },
+      "patch": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Update Me",
+        "operationId": "auth_update_me",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/forgot-password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Forgot Password",
+        "description": "Always 204 \u2014 do not reveal whether the email exists.",
+        "operationId": "auth_forgot_password",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Reset Password",
+        "operationId": "auth_reset_password",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPassword"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/billing/tariffs": {
@@ -1258,6 +1371,214 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/support/me": {
+      "get": {
+        "tags": [
+          "support"
+        ],
+        "summary": "Get My Thread",
+        "operationId": "support_get_my_thread",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportThreadDetailOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/support/me/messages": {
+      "post": {
+        "tags": [
+          "support"
+        ],
+        "summary": "Post My Message",
+        "operationId": "support_post_my_message",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportMessageCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportMessageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/support/threads": {
+      "get": {
+        "tags": [
+          "support"
+        ],
+        "summary": "List Threads",
+        "operationId": "support_list_threads",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SupportThreadOut"
+                  },
+                  "type": "array",
+                  "title": "Response Support List Threads"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/support/threads/{thread_id}": {
+      "get": {
+        "tags": [
+          "support"
+        ],
+        "summary": "Get Thread",
+        "operationId": "support_get_thread",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Thread Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportThreadDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/support/threads/{thread_id}/messages": {
+      "post": {
+        "tags": [
+          "support"
+        ],
+        "summary": "Post Admin Message",
+        "operationId": "support_post_admin_message",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Thread Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupportMessageCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupportMessageOut"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -2488,7 +2809,7 @@
           "stats"
         ],
         "summary": "Upsert Test Stats",
-        "description": "Upsert by (clientId, testId) — matches mobile select→insert/update flow.",
+        "description": "Upsert by (clientId, testId) \u2014 matches mobile select\u2192insert/update flow.",
         "operationId": "stats_upsert_test_stats",
         "security": [
           {
@@ -4148,6 +4469,20 @@
         "type": "object",
         "title": "FolderUpdate"
       },
+      "ForgotPassword": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ForgotPassword"
+      },
       "GrantAchievementRequest": {
         "properties": {
           "userId": {
@@ -4737,6 +5072,28 @@
         "type": "object",
         "title": "RescueUpdate"
       },
+      "ResetPassword": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 10,
+            "title": "Token"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 6,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "password"
+        ],
+        "title": "ResetPassword"
+      },
       "RewardCreate": {
         "properties": {
           "achievementId": {
@@ -5086,6 +5443,197 @@
           "tariffId"
         ],
         "title": "SubscribeRequest"
+      },
+      "SupportMessageCreate": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "SupportMessageCreate"
+      },
+      "SupportMessageOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "threadId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Threadid"
+          },
+          "senderRole": {
+            "type": "string",
+            "title": "Senderrole"
+          },
+          "senderId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Senderid"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "threadId",
+          "senderRole",
+          "senderId",
+          "body",
+          "createdAt"
+        ],
+        "title": "SupportMessageOut"
+      },
+      "SupportThreadDetailOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Userid"
+          },
+          "userEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useremail"
+          },
+          "userFullName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userfullname"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/SupportMessageOut"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "userId",
+          "userEmail",
+          "userFullName",
+          "messages"
+        ],
+        "title": "SupportThreadDetailOut"
+      },
+      "SupportThreadOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Userid"
+          },
+          "userEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useremail"
+          },
+          "userFullName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userfullname"
+          },
+          "lastMessageAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastmessageat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          },
+          "lastBody": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastbody"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "userId",
+          "userEmail",
+          "userFullName",
+          "lastMessageAt",
+          "updatedAt",
+          "lastBody"
+        ],
+        "title": "SupportThreadOut"
       },
       "TariffCreate": {
         "properties": {
@@ -5443,6 +5991,28 @@
             ],
             "title": "Hidden"
           },
+          "randomizeQuestions": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Randomizequestions"
+          },
+          "questionsToShow": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionstoshow"
+          },
           "questions": {
             "anyOf": [
               {
@@ -5606,6 +6176,28 @@
             ],
             "title": "Hidden"
           },
+          "randomizeQuestions": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Randomizequestions"
+          },
+          "questionsToShow": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionstoshow"
+          },
           "questions": {
             "anyOf": [
               {
@@ -5657,6 +6249,8 @@
           "showNavigation",
           "showBackButton",
           "hidden",
+          "randomizeQuestions",
+          "questionsToShow",
           "questions",
           "accessabilityConditions",
           "requiredTariffId"
@@ -6076,6 +6670,28 @@
             ],
             "title": "Hidden"
           },
+          "randomizeQuestions": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Randomizequestions"
+          },
+          "questionsToShow": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionstoshow"
+          },
           "questions": {
             "anyOf": [
               {
@@ -6227,6 +6843,18 @@
               }
             ],
             "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
           }
         },
         "type": "object",
@@ -6250,6 +6878,17 @@
           "full_name": {
             "type": "string",
             "title": "Full Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
           },
           "role": {
             "type": "string",
@@ -6275,6 +6914,36 @@
           "created_at"
         ],
         "title": "UserOut"
+      },
+      "UserUpdate": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          }
+        },
+        "type": "object",
+        "title": "UserUpdate"
       },
       "ValidationError": {
         "properties": {

@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { AppSupabase } from '@/core/utils';
+import { AppApi } from '@/core/utils';
 import { ZodObject } from 'zod';
 
 const TABLE_TO_RESOURCE: Record<string, string> = {
@@ -17,7 +17,7 @@ type FetchFilter = {
 };
 
 export abstract class BaseStorage {
-  protected readonly _api = inject(AppSupabase);
+  protected readonly _api = inject(AppApi);
 
   protected abstract _getTableName(): string;
 

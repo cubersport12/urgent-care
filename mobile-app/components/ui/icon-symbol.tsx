@@ -53,6 +53,10 @@ const MAPPING = {
   'envelope.fill': 'email',
   'eye.fill': 'visibility',
   'eye.slash.fill': 'visibility-off',
+  'mappin.and.ellipse': 'place',
+  'bubble.left.and.bubble.right.fill': 'forum',
+  'magnifyingglass': 'search',
+  'chevron.down': 'expand-more',
 } as IconMapping;
 
 /**

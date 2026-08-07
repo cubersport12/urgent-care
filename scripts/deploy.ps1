@@ -3,15 +3,13 @@
 #   .\scripts\deploy.ps1
 #   .\scripts\deploy.ps1 -SkipBuild
 #   .\scripts\deploy.ps1 -SkipFrontend
-#   .\scripts\deploy.ps1 -MigrateSupabase
 
 param(
     [string]$HostName = "77.91.90.39",
     [string]$User = "root",
     [string]$SshKey = "$env:USERPROFILE\.ssh\id_ed25519_gymai",
     [switch]$SkipBuild,
-    [switch]$SkipFrontend,
-    [switch]$MigrateSupabase
+    [switch]$SkipFrontend
 )
 
 $ErrorActionPreference = "Stop"
@@ -108,21 +106,8 @@ if (-not $SkipFrontend) {
     Invoke-Ssh "chmod -R a+rX /var/www/urgent-care"
 }
 
-$localSupabaseKey = ""
-$localEnvPath = Join-Path $RepoRoot "backend\.env"
-if (Test-Path $localEnvPath) {
-    foreach ($line in Get-Content $localEnvPath) {
-        if ($line -match '^SUPABASE_SERVICE_KEY=(.*)$') {
-            $localSupabaseKey = $Matches[1].Trim().Trim("'").Trim('"')
-            break
-        }
-    }
-}
-
 Write-Host "==> Ensuring backend .env on server" -ForegroundColor Cyan
-# Pass key via env to avoid shell quoting issues
-$envB64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($localSupabaseKey))
-Invoke-Ssh "SUPABASE_KEY_B64='$envB64' bash /opt/urgent-care/deploy/remote/bootstrap-env.sh $HostName"
+Invoke-Ssh "bash /opt/urgent-care/deploy/remote/bootstrap-env.sh $HostName"
 
 Write-Host "==> Configuring nginx" -ForegroundColor Cyan
 Invoke-Ssh "bash /opt/urgent-care/deploy/remote/setup-nginx.sh"
@@ -144,11 +129,6 @@ Invoke-Ssh "bash /opt/urgent-care/deploy/remote/start-stack.sh"
 
 Write-Host "==> Ensuring admin user" -ForegroundColor Cyan
 Invoke-Ssh "bash /opt/urgent-care/deploy/remote/ensure-admin.sh"
-
-if ($MigrateSupabase) {
-    Write-Host "==> Migrating data from Supabase" -ForegroundColor Cyan
-    Invoke-Ssh "cd /opt/urgent-care/backend && docker compose -f docker-compose.prod.yml exec -T api python scripts/migrate_from_supabase.py"
-}
 
 Write-Host ""
 Write-Host "Deploy complete." -ForegroundColor Green

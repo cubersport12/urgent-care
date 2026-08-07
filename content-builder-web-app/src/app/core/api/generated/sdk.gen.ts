@@ -3,7 +3,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { AchievementsCreateAchievementData, AchievementsCreateAchievementErrors, AchievementsCreateAchievementResponses, AchievementsCreateRewardData, AchievementsCreateRewardErrors, AchievementsCreateRewardResponses, AchievementsDeleteAchievementData, AchievementsDeleteAchievementErrors, AchievementsDeleteAchievementResponses, AchievementsDeleteRewardData, AchievementsDeleteRewardErrors, AchievementsDeleteRewardResponses, AchievementsGrantAchievementData, AchievementsGrantAchievementErrors, AchievementsGrantAchievementResponses, AchievementsListAchievementsAdminData, AchievementsListAchievementsAdminResponses, AchievementsListAchievementsMeData, AchievementsListAchievementsMeResponses, AchievementsListRewardsAdminData, AchievementsListRewardsAdminResponses, AchievementsListRewardsMeData, AchievementsListRewardsMeResponses, AchievementsUpdateAchievementData, AchievementsUpdateAchievementErrors, AchievementsUpdateAchievementResponses, AchievementsUpdateRewardData, AchievementsUpdateRewardErrors, AchievementsUpdateRewardResponses, ArticlesCreateArticleData, ArticlesCreateArticleErrors, ArticlesCreateArticleResponses, ArticlesDeleteArticleData, ArticlesDeleteArticleErrors, ArticlesDeleteArticleResponses, ArticlesGetArticleData, ArticlesGetArticleErrors, ArticlesGetArticleResponses, ArticlesListArticlesData, ArticlesListArticlesErrors, ArticlesListArticlesResponses, ArticlesUpdateArticleData, ArticlesUpdateArticleErrors, ArticlesUpdateArticleResponses, AuthLoginData, AuthLoginErrors, AuthLoginJsonData, AuthLoginJsonErrors, AuthLoginJsonResponses, AuthLoginResponses, AuthMeData, AuthMeResponses, AuthRefreshData, AuthRefreshErrors, AuthRefreshResponses, AuthRegisterData, AuthRegisterErrors, AuthRegisterResponses, BillingBillingMeData, BillingBillingMeResponses, BillingCancelSubscriptionData, BillingCancelSubscriptionResponses, BillingCreateTariffData, BillingCreateTariffErrors, BillingCreateTariffResponses, BillingDeleteTariffData, BillingDeleteTariffErrors, BillingDeleteTariffResponses, BillingListPaymentsData, BillingListPaymentsResponses, BillingListTariffsAdminData, BillingListTariffsAdminResponses, BillingListTariffsData, BillingListTariffsResponses, BillingSubscribeData, BillingSubscribeErrors, BillingSubscribeResponses, BillingSyncPaymentData, BillingSyncPaymentErrors, BillingSyncPaymentResponses, BillingUpdateTariffData, BillingUpdateTariffErrors, BillingUpdateTariffResponses, FoldersCreateFolderData, FoldersCreateFolderErrors, FoldersCreateFolderResponses, FoldersDeleteFolderData, FoldersDeleteFolderErrors, FoldersDeleteFolderResponses, FoldersGetFolderData, FoldersGetFolderErrors, FoldersGetFolderResponses, FoldersListFoldersData, FoldersListFoldersErrors, FoldersListFoldersResponses, FoldersUpdateFolderData, FoldersUpdateFolderErrors, FoldersUpdateFolderResponses, MediaDeleteMediaData, MediaDeleteMediaErrors, MediaDeleteMediaResponses, MediaDownloadMediaData, MediaDownloadMediaErrors, MediaDownloadMediaResponses, MediaUploadMediaData, MediaUploadMediaErrors, MediaUploadMediaResponses, MetaHealthData, MetaHealthResponses, MetaReadyData, MetaReadyResponses, NotificationsBroadcastNotificationData, NotificationsBroadcastNotificationErrors, NotificationsBroadcastNotificationResponses, NotificationsCreateNotificationData, NotificationsCreateNotificationErrors, NotificationsCreateNotificationResponses, NotificationsListNotificationsData, NotificationsListNotificationsErrors, NotificationsListNotificationsResponses, NotificationsMarkAllReadData, NotificationsMarkAllReadResponses, NotificationsMarkReadData, NotificationsMarkReadErrors, NotificationsMarkReadResponses, NotificationsUnreadCountData, NotificationsUnreadCountResponses, RescueCreateRescueData, RescueCreateRescueErrors, RescueCreateRescueResponses, RescueDeleteRescueData, RescueDeleteRescueErrors, RescueDeleteRescueResponses, RescueGetRescueData, RescueGetRescueErrors, RescueGetRescueResponses, RescueListRescueData, RescueListRescueErrors, RescueListRescueResponses, RescueUpdateRescueData, RescueUpdateRescueErrors, RescueUpdateRescueResponses, StatsCreateTestResultData, StatsCreateTestResultErrors, StatsCreateTestResultResponses, StatsCreateTestStatsData, StatsCreateTestStatsErrors, StatsCreateTestStatsResponses, StatsListArticleStatsData, StatsListArticleStatsErrors, StatsListArticleStatsResponses, StatsListRescueStatsData, StatsListRescueStatsErrors, StatsListRescueStatsResponses, StatsListTestResultsData, StatsListTestResultsErrors, StatsListTestResultsResponses, StatsListTestStatsData, StatsListTestStatsErrors, StatsListTestStatsResponses, StatsResetAllStatsData, StatsResetAllStatsResponses, StatsUpdateTestStatsData, StatsUpdateTestStatsErrors, StatsUpdateTestStatsResponses, StatsUpsertArticleStatsData, StatsUpsertArticleStatsErrors, StatsUpsertArticleStatsResponses, StatsUpsertRescueStatsData, StatsUpsertRescueStatsErrors, StatsUpsertRescueStatsResponses, StatsUpsertTestStatsData, StatsUpsertTestStatsErrors, StatsUpsertTestStatsResponses, TestsCreateTestData, TestsCreateTestErrors, TestsCreateTestResponses, TestsDeleteTestData, TestsDeleteTestErrors, TestsDeleteTestResponses, TestsGetTestData, TestsGetTestErrors, TestsGetTestResponses, TestsListTestsData, TestsListTestsErrors, TestsListTestsResponses, TestsUpdateTestData, TestsUpdateTestErrors, TestsUpdateTestResponses } from './types.gen';
+import type { AchievementsCreateAchievementData, AchievementsCreateAchievementErrors, AchievementsCreateAchievementResponses, AchievementsCreateRewardData, AchievementsCreateRewardErrors, AchievementsCreateRewardResponses, AchievementsDeleteAchievementData, AchievementsDeleteAchievementErrors, AchievementsDeleteAchievementResponses, AchievementsDeleteRewardData, AchievementsDeleteRewardErrors, AchievementsDeleteRewardResponses, AchievementsGrantAchievementData, AchievementsGrantAchievementErrors, AchievementsGrantAchievementResponses, AchievementsListAchievementsAdminData, AchievementsListAchievementsAdminResponses, AchievementsListAchievementsMeData, AchievementsListAchievementsMeResponses, AchievementsListRewardsAdminData, AchievementsListRewardsAdminResponses, AchievementsListRewardsMeData, AchievementsListRewardsMeResponses, AchievementsUpdateAchievementData, AchievementsUpdateAchievementErrors, AchievementsUpdateAchievementResponses, AchievementsUpdateRewardData, AchievementsUpdateRewardErrors, AchievementsUpdateRewardResponses, ArticlesCreateArticleData, ArticlesCreateArticleErrors, ArticlesCreateArticleResponses, ArticlesDeleteArticleData, ArticlesDeleteArticleErrors, ArticlesDeleteArticleResponses, ArticlesGetArticleData, ArticlesGetArticleErrors, ArticlesGetArticleResponses, ArticlesListArticlesData, ArticlesListArticlesErrors, ArticlesListArticlesResponses, ArticlesUpdateArticleData, ArticlesUpdateArticleErrors, ArticlesUpdateArticleResponses, AuthForgotPasswordData, AuthForgotPasswordErrors, AuthForgotPasswordResponses, AuthLoginData, AuthLoginErrors, AuthLoginJsonData, AuthLoginJsonErrors, AuthLoginJsonResponses, AuthLoginResponses, AuthMeData, AuthMeResponses, AuthRefreshData, AuthRefreshErrors, AuthRefreshResponses, AuthRegisterData, AuthRegisterErrors, AuthRegisterResponses, AuthResetPasswordData, AuthResetPasswordErrors, AuthResetPasswordResponses, AuthUpdateMeData, AuthUpdateMeErrors, AuthUpdateMeResponses, BillingBillingMeData, BillingBillingMeResponses, BillingCancelSubscriptionData, BillingCancelSubscriptionResponses, BillingCreateTariffData, BillingCreateTariffErrors, BillingCreateTariffResponses, BillingDeleteTariffData, BillingDeleteTariffErrors, BillingDeleteTariffResponses, BillingListPaymentsData, BillingListPaymentsResponses, BillingListTariffsAdminData, BillingListTariffsAdminResponses, BillingListTariffsData, BillingListTariffsResponses, BillingSubscribeData, BillingSubscribeErrors, BillingSubscribeResponses, BillingSyncPaymentData, BillingSyncPaymentErrors, BillingSyncPaymentResponses, BillingUpdateTariffData, BillingUpdateTariffErrors, BillingUpdateTariffResponses, FoldersCreateFolderData, FoldersCreateFolderErrors, FoldersCreateFolderResponses, FoldersDeleteFolderData, FoldersDeleteFolderErrors, FoldersDeleteFolderResponses, FoldersGetFolderData, FoldersGetFolderErrors, FoldersGetFolderResponses, FoldersListFoldersData, FoldersListFoldersErrors, FoldersListFoldersResponses, FoldersUpdateFolderData, FoldersUpdateFolderErrors, FoldersUpdateFolderResponses, MediaDeleteMediaData, MediaDeleteMediaErrors, MediaDeleteMediaResponses, MediaDownloadMediaData, MediaDownloadMediaErrors, MediaDownloadMediaResponses, MediaUploadMediaData, MediaUploadMediaErrors, MediaUploadMediaResponses, MetaHealthData, MetaHealthResponses, MetaReadyData, MetaReadyResponses, NotificationsBroadcastNotificationData, NotificationsBroadcastNotificationErrors, NotificationsBroadcastNotificationResponses, NotificationsCreateNotificationData, NotificationsCreateNotificationErrors, NotificationsCreateNotificationResponses, NotificationsListNotificationsData, NotificationsListNotificationsErrors, NotificationsListNotificationsResponses, NotificationsMarkAllReadData, NotificationsMarkAllReadResponses, NotificationsMarkReadData, NotificationsMarkReadErrors, NotificationsMarkReadResponses, NotificationsUnreadCountData, NotificationsUnreadCountResponses, RescueCreateRescueData, RescueCreateRescueErrors, RescueCreateRescueResponses, RescueDeleteRescueData, RescueDeleteRescueErrors, RescueDeleteRescueResponses, RescueGetRescueData, RescueGetRescueErrors, RescueGetRescueResponses, RescueListRescueData, RescueListRescueErrors, RescueListRescueResponses, RescueUpdateRescueData, RescueUpdateRescueErrors, RescueUpdateRescueResponses, StatsCreateTestResultData, StatsCreateTestResultErrors, StatsCreateTestResultResponses, StatsCreateTestStatsData, StatsCreateTestStatsErrors, StatsCreateTestStatsResponses, StatsListArticleStatsData, StatsListArticleStatsErrors, StatsListArticleStatsResponses, StatsListRescueStatsData, StatsListRescueStatsErrors, StatsListRescueStatsResponses, StatsListTestResultsData, StatsListTestResultsErrors, StatsListTestResultsResponses, StatsListTestStatsData, StatsListTestStatsErrors, StatsListTestStatsResponses, StatsResetAllStatsData, StatsResetAllStatsResponses, StatsUpdateTestStatsData, StatsUpdateTestStatsErrors, StatsUpdateTestStatsResponses, StatsUpsertArticleStatsData, StatsUpsertArticleStatsErrors, StatsUpsertArticleStatsResponses, StatsUpsertRescueStatsData, StatsUpsertRescueStatsErrors, StatsUpsertRescueStatsResponses, StatsUpsertTestStatsData, StatsUpsertTestStatsErrors, StatsUpsertTestStatsResponses, SupportGetMyThreadData, SupportGetMyThreadResponses, SupportGetThreadData, SupportGetThreadErrors, SupportGetThreadResponses, SupportListThreadsData, SupportListThreadsResponses, SupportPostAdminMessageData, SupportPostAdminMessageErrors, SupportPostAdminMessageResponses, SupportPostMyMessageData, SupportPostMyMessageErrors, SupportPostMyMessageResponses, TestsCreateTestData, TestsCreateTestErrors, TestsCreateTestResponses, TestsDeleteTestData, TestsDeleteTestErrors, TestsDeleteTestResponses, TestsGetTestData, TestsGetTestErrors, TestsGetTestResponses, TestsListTestsData, TestsListTestsErrors, TestsListTestsResponses, TestsUpdateTestData, TestsUpdateTestErrors, TestsUpdateTestResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -77,6 +77,45 @@ export const authMe = <ThrowOnError extends boolean = false>(options?: Options<A
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/auth/me',
     ...options
+});
+
+/**
+ * Update Me
+ */
+export const authUpdateMe = <ThrowOnError extends boolean = false>(options: Options<AuthUpdateMeData, ThrowOnError>): RequestResult<AuthUpdateMeResponses, AuthUpdateMeErrors, ThrowOnError> => (options.client ?? client).patch<AuthUpdateMeResponses, AuthUpdateMeErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/auth/me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Forgot Password
+ *
+ * Always 204 — do not reveal whether the email exists.
+ */
+export const authForgotPassword = <ThrowOnError extends boolean = false>(options: Options<AuthForgotPasswordData, ThrowOnError>): RequestResult<AuthForgotPasswordResponses, AuthForgotPasswordErrors, ThrowOnError> => (options.client ?? client).post<AuthForgotPasswordResponses, AuthForgotPasswordErrors, ThrowOnError>({
+    url: '/api/v1/auth/forgot-password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reset Password
+ */
+export const authResetPassword = <ThrowOnError extends boolean = false>(options: Options<AuthResetPasswordData, ThrowOnError>): RequestResult<AuthResetPasswordResponses, AuthResetPasswordErrors, ThrowOnError> => (options.client ?? client).post<AuthResetPasswordResponses, AuthResetPasswordErrors, ThrowOnError>({
+    url: '/api/v1/auth/reset-password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -353,6 +392,59 @@ export const achievementsDeleteReward = <ThrowOnError extends boolean = false>(o
 export const achievementsUpdateReward = <ThrowOnError extends boolean = false>(options: Options<AchievementsUpdateRewardData, ThrowOnError>): RequestResult<AchievementsUpdateRewardResponses, AchievementsUpdateRewardErrors, ThrowOnError> => (options.client ?? client).patch<AchievementsUpdateRewardResponses, AchievementsUpdateRewardErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/v1/rewards/{reward_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get My Thread
+ */
+export const supportGetMyThread = <ThrowOnError extends boolean = false>(options?: Options<SupportGetMyThreadData, ThrowOnError>): RequestResult<SupportGetMyThreadResponses, unknown, ThrowOnError> => (options?.client ?? client).get<SupportGetMyThreadResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/support/me',
+    ...options
+});
+
+/**
+ * Post My Message
+ */
+export const supportPostMyMessage = <ThrowOnError extends boolean = false>(options: Options<SupportPostMyMessageData, ThrowOnError>): RequestResult<SupportPostMyMessageResponses, SupportPostMyMessageErrors, ThrowOnError> => (options.client ?? client).post<SupportPostMyMessageResponses, SupportPostMyMessageErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/support/me/messages',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Threads
+ */
+export const supportListThreads = <ThrowOnError extends boolean = false>(options?: Options<SupportListThreadsData, ThrowOnError>): RequestResult<SupportListThreadsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<SupportListThreadsResponses, unknown, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/support/threads',
+    ...options
+});
+
+/**
+ * Get Thread
+ */
+export const supportGetThread = <ThrowOnError extends boolean = false>(options: Options<SupportGetThreadData, ThrowOnError>): RequestResult<SupportGetThreadResponses, SupportGetThreadErrors, ThrowOnError> => (options.client ?? client).get<SupportGetThreadResponses, SupportGetThreadErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/support/threads/{thread_id}',
+    ...options
+});
+
+/**
+ * Post Admin Message
+ */
+export const supportPostAdminMessage = <ThrowOnError extends boolean = false>(options: Options<SupportPostAdminMessageData, ThrowOnError>): RequestResult<SupportPostAdminMessageResponses, SupportPostAdminMessageErrors, ThrowOnError> => (options.client ?? client).post<SupportPostAdminMessageResponses, SupportPostAdminMessageErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/v1/support/threads/{thread_id}/messages',
     ...options,
     headers: {
         'Content-Type': 'application/json',

@@ -1,5 +1,7 @@
+import type { City } from '@/api/cities';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
+import { CityPicker } from '@/components/ui/city-picker';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
@@ -95,6 +97,7 @@ export default function RegisterScreen() {
   const { primary: tintColor, layout1, border } = useAppTheme();
   const glass = useGlass();
   const [name, setName] = useState('');
+  const [city, setCity] = useState<City | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -105,6 +108,10 @@ export default function RegisterScreen() {
     const e = email.trim();
     if (!n || !e || !password) {
       Alert.alert('Ошибка', 'Заполните имя, почту и пароль');
+      return;
+    }
+    if (!city) {
+      Alert.alert('Ошибка', 'Укажите город');
       return;
     }
     if (password !== confirm) {
@@ -119,7 +126,7 @@ export default function RegisterScreen() {
     setSubmitting(true);
     try {
       try {
-        await register(e, password, n);
+        await register(e, password, n, city.id);
         router.replace('/(tabs)');
       } catch (err) {
         Alert.alert(
@@ -168,6 +175,8 @@ export default function RegisterScreen() {
               value={name}
               onChangeText={setName}
             />
+
+            <CityPicker value={city} onChange={setCity} />
 
             <GlassInput
               label="Электронная почта"
