@@ -1,5 +1,5 @@
 """ORM models — import for Alembic / metadata registration."""
-from app.models.achievement import Achievement, Reward, UserAchievement
+from app.models.achievement import Achievement, Reward, RewardAchievement, UserAchievement
 from app.models.article import Article
 from app.models.billing import (
     Payment,
@@ -36,6 +36,7 @@ __all__ = [
     "PushToken",
     "Achievement",
     "Reward",
+    "RewardAchievement",
     "UserAchievement",
     "SupportThread",
     "SupportMessage",

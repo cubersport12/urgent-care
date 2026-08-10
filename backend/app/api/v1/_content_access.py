@@ -11,8 +11,11 @@ from app.models.user import User
 from app.services.entitlements import (
     default_tariff_id,
     filter_by_rank,
+    filter_by_reward,
+    is_reward_visible,
     is_visible,
     tariff_rank_map,
+    unlocked_reward_ids,
     user_content_rank,
 )
 
@@ -28,7 +31,9 @@ async def filter_content_list(
         return list(items)
     rank = await user_content_rank(db, user)
     ranks = await tariff_rank_map(db)
-    return filter_by_rank(items, user_rank=rank, ranks=ranks)
+    out = filter_by_rank(items, user_rank=rank, ranks=ranks)
+    unlocked = await unlocked_reward_ids(db, user.id)
+    return filter_by_reward(out, unlocked=unlocked)
 
 
 async def assert_content_visible(db: AsyncSession, user: User, item: Any) -> None:
@@ -38,6 +43,10 @@ async def assert_content_visible(db: AsyncSession, user: User, item: Any) -> Non
     ranks = await tariff_rank_map(db)
     tid: UUID | None = getattr(item, "required_tariff_id", None)
     if not is_visible(required_tariff_id=tid, user_rank=rank, ranks=ranks):
+        raise HTTPException(status_code=404, detail="Item not found")
+    unlocked = await unlocked_reward_ids(db, user.id)
+    rid: UUID | None = getattr(item, "required_reward_id", None)
+    if not is_reward_visible(required_reward_id=rid, unlocked=unlocked):
         raise HTTPException(status_code=404, detail="Item not found")
 
 

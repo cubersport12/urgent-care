@@ -6,7 +6,7 @@ from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -43,13 +43,6 @@ class Reward(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    achievement_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("achievements.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True,
-        index=True,
-    )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     icon_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
@@ -63,6 +56,28 @@ class Reward(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+    links: Mapped[list["RewardAchievement"]] = relationship(
+        "RewardAchievement",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+
+class RewardAchievement(Base):
+    __tablename__ = "reward_achievements"
+
+    reward_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("rewards.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    achievement_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("achievements.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
     )
 
 

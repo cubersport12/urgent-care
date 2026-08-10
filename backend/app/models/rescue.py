@@ -26,3 +26,9 @@ class Rescue(Base):
     required_tariff_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("tariffs.id"), nullable=True, index=True
     )
+    required_reward_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("rewards.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )

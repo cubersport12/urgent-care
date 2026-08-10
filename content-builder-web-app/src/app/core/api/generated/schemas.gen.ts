@@ -49,6 +49,18 @@ export const AchievementCreateSchema = {
             title: 'Rulethreshold',
             default: 1
         },
+        ruleTargetId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ruletargetid'
+        },
         sortOrder: {
             type: 'integer',
             title: 'Sortorder',
@@ -112,6 +124,17 @@ export const AchievementMeOutSchema = {
         ruleThreshold: {
             type: 'integer',
             title: 'Rulethreshold'
+        },
+        ruleTargetId: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ruletargetid'
         },
         sortOrder: {
             type: 'integer',
@@ -206,6 +229,17 @@ export const AchievementOutSchema = {
         ruleThreshold: {
             type: 'integer',
             title: 'Rulethreshold'
+        },
+        ruleTargetId: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ruletargetid'
         },
         sortOrder: {
             type: 'integer',
@@ -302,6 +336,18 @@ export const AchievementUpdateSchema = {
                 }
             ],
             title: 'Rulethreshold'
+        },
+        ruleTargetId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ruletargetid'
         },
         sortOrder: {
             anyOf: [
@@ -449,6 +495,18 @@ export const ArticleCreateSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -570,6 +628,18 @@ export const ArticleOutSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -584,7 +654,8 @@ export const ArticleOutSchema = {
         'hideWhileNotPrevComplete',
         'includeToStatistics',
         'linksToArticles',
-        'requiredTariffId'
+        'requiredTariffId',
+        'requiredRewardId'
     ],
     title: 'ArticleOut'
 } as const;
@@ -789,6 +860,18 @@ export const ArticleUpdateSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -1012,6 +1095,57 @@ export const BroadcastOutSchema = {
     title: 'BroadcastOut'
 } as const;
 
+export const CityOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        region: {
+            type: 'string',
+            title: 'Region'
+        },
+        region_type: {
+            type: 'string',
+            title: 'Region Type',
+            default: ''
+        },
+        area: {
+            type: 'string',
+            title: 'Area',
+            default: ''
+        },
+        area_type: {
+            type: 'string',
+            title: 'Area Type',
+            default: ''
+        },
+        address: {
+            type: 'string',
+            title: 'Address',
+            default: ''
+        },
+        label: {
+            type: 'string',
+            title: 'Label',
+            readOnly: true
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name',
+        'region',
+        'label'
+    ],
+    title: 'CityOut'
+} as const;
+
 export const FolderCreateSchema = {
     properties: {
         id: {
@@ -1062,6 +1196,18 @@ export const FolderCreateSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -1114,6 +1260,18 @@ export const FolderOutSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -1122,7 +1280,8 @@ export const FolderOutSchema = {
         'name',
         'order',
         'parentId',
-        'requiredTariffId'
+        'requiredTariffId',
+        'requiredRewardId'
     ],
     title: 'FolderOut'
 } as const;
@@ -1173,6 +1332,18 @@ export const FolderUpdateSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -1221,6 +1392,88 @@ export const HTTPValidationErrorSchema = {
     },
     type: 'object',
     title: 'HTTPValidationError'
+} as const;
+
+export const LearningEventCreateSchema = {
+    properties: {
+        entityType: {
+            type: 'string',
+            maxLength: 20,
+            minLength: 1,
+            title: 'Entitytype'
+        },
+        entityId: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: 'Entityid'
+        },
+        event: {
+            type: 'string',
+            maxLength: 40,
+            minLength: 1,
+            title: 'Event'
+        },
+        payload: {
+            anyOf: [
+                {
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Payload'
+        }
+    },
+    type: 'object',
+    required: [
+        'entityType',
+        'entityId',
+        'event'
+    ],
+    title: 'LearningEventCreate'
+} as const;
+
+export const LearningEventOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        entityType: {
+            type: 'string',
+            title: 'Entitytype'
+        },
+        entityId: {
+            type: 'string',
+            title: 'Entityid'
+        },
+        event: {
+            type: 'string',
+            title: 'Event'
+        },
+        payload: {
+            anyOf: [
+                {
+                    type: 'object'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Payload'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'entityType',
+        'entityId',
+        'event'
+    ],
+    title: 'LearningEventOut'
 } as const;
 
 export const LinkToArticleSchema = {
@@ -1435,6 +1688,28 @@ export const PaymentOutSchema = {
     title: 'PaymentOut'
 } as const;
 
+export const PushTokenUpsertSchema = {
+    properties: {
+        token: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 8,
+            title: 'Token'
+        },
+        platform: {
+            type: 'string',
+            maxLength: 20,
+            title: 'Platform',
+            default: 'unknown'
+        }
+    },
+    type: 'object',
+    required: [
+        'token'
+    ],
+    title: 'PushTokenUpsert'
+} as const;
+
 export const RescueCreateSchema = {
     properties: {
         id: {
@@ -1513,6 +1788,18 @@ export const RescueCreateSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -1586,6 +1873,18 @@ export const RescueOutSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -1597,7 +1896,8 @@ export const RescueOutSchema = {
         'createdAt',
         'description',
         'data',
-        'requiredTariffId'
+        'requiredTariffId',
+        'requiredRewardId'
     ],
     title: 'RescueOut'
 } as const;
@@ -1791,6 +2091,18 @@ export const RescueUpdateSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -1822,10 +2134,14 @@ export const ResetPasswordSchema = {
 
 export const RewardCreateSchema = {
     properties: {
-        achievementId: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Achievementid'
+        achievementIds: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            minItems: 1,
+            title: 'Achievementids'
         },
         title: {
             type: 'string',
@@ -1869,7 +2185,7 @@ export const RewardCreateSchema = {
     },
     type: 'object',
     required: [
-        'achievementId',
+        'achievementIds',
         'title'
     ],
     title: 'RewardCreate'
@@ -1882,10 +2198,20 @@ export const RewardMeOutSchema = {
             format: 'uuid',
             title: 'Id'
         },
-        achievementId: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Achievementid'
+        achievementIds: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Achievementids'
+        },
+        achievementTitles: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Achievementtitles'
         },
         title: {
             type: 'string',
@@ -1921,20 +2247,16 @@ export const RewardMeOutSchema = {
             type: 'string',
             format: 'date-time',
             title: 'Unlockedat'
-        },
-        achievementTitle: {
-            type: 'string',
-            title: 'Achievementtitle'
         }
     },
     type: 'object',
     required: [
         'id',
-        'achievementId',
+        'achievementIds',
+        'achievementTitles',
         'title',
         'sortOrder',
-        'unlockedAt',
-        'achievementTitle'
+        'unlockedAt'
     ],
     title: 'RewardMeOut'
 } as const;
@@ -1946,10 +2268,13 @@ export const RewardOutSchema = {
             format: 'uuid',
             title: 'Id'
         },
-        achievementId: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Achievementid'
+        achievementIds: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Achievementids'
         },
         title: {
             type: 'string',
@@ -1989,7 +2314,7 @@ export const RewardOutSchema = {
     type: 'object',
     required: [
         'id',
-        'achievementId',
+        'achievementIds',
         'title',
         'sortOrder',
         'isActive'
@@ -1999,17 +2324,21 @@ export const RewardOutSchema = {
 
 export const RewardUpdateSchema = {
     properties: {
-        achievementId: {
+        achievementIds: {
             anyOf: [
                 {
-                    type: 'string',
-                    format: 'uuid'
+                    items: {
+                        type: 'string',
+                        format: 'uuid'
+                    },
+                    type: 'array',
+                    minItems: 1
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'Achievementid'
+            title: 'Achievementids'
         },
         title: {
             anyOf: [
@@ -2787,6 +3116,18 @@ export const TestCreateSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -2973,6 +3314,18 @@ export const TestOutSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -2993,7 +3346,8 @@ export const TestOutSchema = {
         'questionsToShow',
         'questions',
         'accessabilityConditions',
-        'requiredTariffId'
+        'requiredTariffId',
+        'requiredRewardId'
     ],
     title: 'TestOut'
 } as const;
@@ -3473,6 +3827,18 @@ export const TestUpdateSchema = {
                 }
             ],
             title: 'Requiredtariffid'
+        },
+        requiredRewardId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Requiredrewardid'
         }
     },
     type: 'object',
@@ -3595,17 +3961,17 @@ export const UserCreateSchema = {
             ],
             title: 'Name'
         },
-        city: {
+        city_id: {
             anyOf: [
                 {
                     type: 'string',
-                    maxLength: 120
+                    format: 'uuid'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'City'
+            title: 'City Id'
         }
     },
     type: 'object',
@@ -3631,16 +3997,27 @@ export const UserOutSchema = {
             type: 'string',
             title: 'Full Name'
         },
-        city: {
+        city_id: {
             anyOf: [
                 {
-                    type: 'string'
+                    type: 'string',
+                    format: 'uuid'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'City'
+            title: 'City Id'
+        },
+        city: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/CityOut'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         },
         role: {
             type: 'string',
@@ -3682,17 +4059,17 @@ export const UserUpdateSchema = {
             ],
             title: 'Full Name'
         },
-        city: {
+        city_id: {
             anyOf: [
                 {
                     type: 'string',
-                    maxLength: 120
+                    format: 'uuid'
                 },
                 {
                     type: 'null'
                 }
             ],
-            title: 'City'
+            title: 'City Id'
         }
     },
     type: 'object',
@@ -3731,4 +4108,145 @@ export const ValidationErrorSchema = {
         'type'
     ],
     title: 'ValidationError'
+} as const;
+
+export const CityOutWritableSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        region: {
+            type: 'string',
+            title: 'Region'
+        },
+        region_type: {
+            type: 'string',
+            title: 'Region Type',
+            default: ''
+        },
+        area: {
+            type: 'string',
+            title: 'Area',
+            default: ''
+        },
+        area_type: {
+            type: 'string',
+            title: 'Area Type',
+            default: ''
+        },
+        address: {
+            type: 'string',
+            title: 'Address',
+            default: ''
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name',
+        'region'
+    ],
+    title: 'CityOut'
+} as const;
+
+export const TokenWritableSchema = {
+    properties: {
+        access_token: {
+            type: 'string',
+            title: 'Access Token'
+        },
+        refresh_token: {
+            type: 'string',
+            title: 'Refresh Token'
+        },
+        token_type: {
+            type: 'string',
+            title: 'Token Type',
+            default: 'bearer'
+        },
+        expires_in: {
+            type: 'integer',
+            title: 'Expires In'
+        },
+        user: {
+            $ref: '#/components/schemas/UserOutWritable'
+        }
+    },
+    type: 'object',
+    required: [
+        'access_token',
+        'refresh_token',
+        'expires_in',
+        'user'
+    ],
+    title: 'Token'
+} as const;
+
+export const UserOutWritableSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        },
+        full_name: {
+            type: 'string',
+            title: 'Full Name'
+        },
+        city_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'City Id'
+        },
+        city: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/CityOutWritable'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        role: {
+            type: 'string',
+            title: 'Role'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'email',
+        'full_name',
+        'role',
+        'is_active',
+        'created_at'
+    ],
+    title: 'UserOut'
 } as const;

@@ -79,7 +79,7 @@ class AchievementUpdate(CamelModel):
 
 class RewardOut(CamelModel):
     id: UUID
-    achievement_id: UUID = Field(alias="achievementId")
+    achievement_ids: list[UUID] = Field(alias="achievementIds")
     title: str
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath")
@@ -88,7 +88,7 @@ class RewardOut(CamelModel):
 
 
 class RewardCreate(CamelModel):
-    achievement_id: UUID = Field(alias="achievementId")
+    achievement_ids: list[UUID] = Field(alias="achievementIds", min_length=1)
     title: str = Field(min_length=1, max_length=200)
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath", max_length=512)
@@ -97,7 +97,7 @@ class RewardCreate(CamelModel):
 
 
 class RewardUpdate(CamelModel):
-    achievement_id: UUID | None = Field(None, alias="achievementId")
+    achievement_ids: list[UUID] | None = Field(None, alias="achievementIds", min_length=1)
     title: str | None = Field(None, min_length=1, max_length=200)
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath", max_length=512)
@@ -123,13 +123,13 @@ class AchievementMeOut(CamelModel):
 
 class RewardMeOut(CamelModel):
     id: UUID
-    achievement_id: UUID = Field(alias="achievementId")
+    achievement_ids: list[UUID] = Field(alias="achievementIds")
+    achievement_titles: list[str] = Field(alias="achievementTitles")
     title: str
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath")
     sort_order: int = Field(alias="sortOrder")
     unlocked_at: datetime = Field(alias="unlockedAt")
-    achievement_title: str = Field(alias="achievementTitle")
 
 
 class GrantAchievementRequest(CamelModel):

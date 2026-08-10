@@ -58,8 +58,8 @@ export class RewardsEditorService {
     <mat-dialog-content>
       <form class="flex flex-col gap-2 pt-2 min-w-[280px]" [formGroup]="_form">
         <mat-form-field appearance="fill">
-          <mat-label>Достижение</mat-label>
-          <mat-select formControlName="achievementId">
+          <mat-label>Достижения (все нужны)</mat-label>
+          <mat-select formControlName="achievementIds" multiple>
             @for (a of _data.achievements; track a.id) {
               <mat-option [value]="a.id">{{ a.title }} ({{ a.code }})</mat-option>
             }
@@ -106,7 +106,10 @@ export class RewardEditDialogComponent {
   protected readonly _uploading = signal(false);
 
   protected readonly _form = new FormGroup({
-    achievementId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    achievementIds: new FormControl<string[]>([], {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(1)]
+    }),
     title: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     description: new FormControl<string | null>(null),
     iconPath: new FormControl<string | null>(null),
@@ -118,7 +121,7 @@ export class RewardEditDialogComponent {
     const r = this._data.reward;
     if (r) {
       this._form.reset({
-        achievementId: r.achievementId,
+        achievementIds: [...r.achievementIds],
         title: r.title,
         description: r.description ?? null,
         iconPath: r.iconPath ?? null,
@@ -126,7 +129,7 @@ export class RewardEditDialogComponent {
         isActive: r.isActive
       });
     } else if (this._data.achievements[0]) {
-      this._form.controls.achievementId.setValue(this._data.achievements[0].id);
+      this._form.controls.achievementIds.setValue([this._data.achievements[0].id]);
     }
   }
 
@@ -150,7 +153,7 @@ export class RewardEditDialogComponent {
     if (this._form.invalid) return;
     const v = this._form.getRawValue();
     this._ref.close({
-      achievementId: v.achievementId,
+      achievementIds: v.achievementIds,
       title: v.title.trim(),
       description: v.description?.trim() || null,
       iconPath: v.iconPath?.trim() || null,
@@ -223,8 +226,9 @@ export class RewardsEditorComponent {
     });
   }
 
-  protected _achievementTitle(id: string): string {
-    return this._achievementMap()[id] ?? id;
+  protected _achievementTitles(ids: string[]): string {
+    const map = this._achievementMap();
+    return ids.map((id) => map[id] ?? id).join(', ');
   }
 
   protected _create(): void {

@@ -30,13 +30,17 @@ async def notify_unlocks(
 ) -> None:
     if not newly:
         return
+    from app.services.reward_unlock import is_reward_unlocked
+
     repo = AchievementRepository(session)
+    unlocked_achs = {u.achievement_id for u in await repo.list_user_unlocks(user_id)}
     for unlock in newly:
         ach = await repo.get_achievement(unlock.achievement_id)
         if not ach:
             continue
         reward = await repo.get_reward_for_achievement(ach.id)
-        if reward and not reward.is_active:
+        # Show reward toast only when ALL linked achievements are unlocked (AND).
+        if reward and not is_reward_unlocked(reward, unlocked_achs):
             reward = None
         body = (ach.description or "").strip() or "Новое достижение разблокировано"
         title = f"Достижение: {ach.title}"

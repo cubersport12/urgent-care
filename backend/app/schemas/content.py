@@ -29,6 +29,7 @@ class FolderOut(CamelModel):
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class FolderCreate(CamelModel):
@@ -37,6 +38,7 @@ class FolderCreate(CamelModel):
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class FolderUpdate(CamelModel):
@@ -44,6 +46,7 @@ class FolderUpdate(CamelModel):
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class ArticleOut(CamelModel):
@@ -62,6 +65,7 @@ class ArticleOut(CamelModel):
     include_to_statistics: bool | None = Field(None, alias="includeToStatistics")
     links_to_articles: list[LinkToArticle] | None = Field(None, alias="linksToArticles")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class ArticleCreate(CamelModel):
@@ -80,6 +84,7 @@ class ArticleCreate(CamelModel):
     include_to_statistics: bool | None = Field(None, alias="includeToStatistics")
     links_to_articles: list[LinkToArticle] | None = Field(None, alias="linksToArticles")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class ArticleUpdate(CamelModel):
@@ -97,6 +102,7 @@ class ArticleUpdate(CamelModel):
     include_to_statistics: bool | None = Field(None, alias="includeToStatistics")
     links_to_articles: list[LinkToArticle] | None = Field(None, alias="linksToArticles")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class TestOut(CamelModel):
@@ -117,6 +123,7 @@ class TestOut(CamelModel):
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class TestCreate(CamelModel):
@@ -137,6 +144,7 @@ class TestCreate(CamelModel):
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class TestUpdate(CamelModel):
@@ -156,6 +164,7 @@ class TestUpdate(CamelModel):
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class RescueOut(CamelModel):
@@ -167,6 +176,7 @@ class RescueOut(CamelModel):
     description: str = ""
     data: dict[str, Any] | None = None
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class RescueCreate(CamelModel):
@@ -178,6 +188,7 @@ class RescueCreate(CamelModel):
     description: str = ""
     data: dict[str, Any] | None = None
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
 
 class RescueUpdate(CamelModel):
@@ -187,3 +198,4 @@ class RescueUpdate(CamelModel):
     description: str | None = None
     data: dict[str, Any] | None = None
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
+    required_reward_id: UUID | None = Field(None, alias="requiredRewardId")

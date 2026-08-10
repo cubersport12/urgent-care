@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.achievement import Achievement, Reward, UserAchievement
+from app.models.achievement import Achievement, Reward, RewardAchievement, UserAchievement
 from app.models.article import Article
 from app.models.learning_event import LearningEvent
 from app.models.rescue import Rescue
@@ -64,21 +64,59 @@ class AchievementRepository:
         return await self.db.get(Reward, reward_id)
 
     async def get_reward_for_achievement(self, achievement_id: UUID) -> Reward | None:
+        """First active reward (by sort_order) that includes this achievement."""
         result = await self.db.execute(
-            select(Reward).where(Reward.achievement_id == achievement_id)
+            select(Reward)
+            .join(RewardAchievement, RewardAchievement.reward_id == Reward.id)
+            .where(
+                RewardAchievement.achievement_id == achievement_id,
+                Reward.is_active.is_(True),
+            )
+            .order_by(Reward.sort_order, Reward.title)
+            .limit(1)
         )
         return result.scalar_one_or_none()
 
-    async def create_reward(self, **fields) -> Reward:
-        row = Reward(id=uuid4(), **fields)
+    async def create_reward(
+        self,
+        *,
+        achievement_ids: list[UUID],
+        title: str,
+        description: str | None,
+        icon_path: str | None,
+        sort_order: int,
+        is_active: bool,
+    ) -> Reward:
+        row = Reward(
+            id=uuid4(),
+            title=title,
+            description=description,
+            icon_path=icon_path,
+            sort_order=sort_order,
+            is_active=is_active,
+        )
         self.db.add(row)
+        await self.db.flush()
+        for aid in achievement_ids:
+            self.db.add(RewardAchievement(reward_id=row.id, achievement_id=aid))
         await self.db.commit()
         await self.db.refresh(row)
         return row
 
-    async def update_reward(self, row: Reward, **fields) -> Reward:
+    async def update_reward(
+        self,
+        row: Reward,
+        *,
+        achievement_ids: list[UUID] | None = None,
+        **fields,
+    ) -> Reward:
         for key, value in fields.items():
             setattr(row, key, value)
+        if achievement_ids is not None:
+            row.links.clear()
+            await self.db.flush()
+            for aid in achievement_ids:
+                self.db.add(RewardAchievement(reward_id=row.id, achievement_id=aid))
         await self.db.commit()
         await self.db.refresh(row)
         return row

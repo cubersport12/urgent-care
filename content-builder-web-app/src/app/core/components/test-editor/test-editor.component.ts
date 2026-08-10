@@ -16,6 +16,7 @@ import { AppFilesStorageService } from '@/core/api';
 import { forkJoin, Observable, of } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { cloneDeep, sum } from 'lodash';
+import { RewardSelectComponent } from '../reward-select/reward-select.component';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 import {
   TestAiGenerateDialogComponent,
@@ -75,7 +76,8 @@ export class TestsEditorService {
     MatInputModule,
     TestConditionsBuilderComponent,
     TestQuestionsBuilderComponent,
-    TariffSelectComponent
+    TariffSelectComponent,
+    RewardSelectComponent
   ],
   templateUrl: './test-editor.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -109,7 +111,8 @@ export class TestEditorComponent {
     hidden: new FormControl<boolean>(false),
     randomizeQuestions: new FormControl<boolean>(false),
     questionsToShow: new FormControl<NullableValue<number>>(null),
-    requiredTariffId: new FormControl<string | null>(null)
+    requiredTariffId: new FormControl<string | null>(null),
+    requiredRewardId: new FormControl<string | null>(null)
   });
 
   // Вычисляем сумму правильных баллов
@@ -164,7 +167,7 @@ export class TestEditorComponent {
   }
 
   private _reset(): void {
-    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, randomizeQuestions, questionsToShow, requiredTariffId } = this._dialogData;
+    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, randomizeQuestions, questionsToShow, requiredTariffId, requiredRewardId } = this._dialogData;
     this._form.reset({
       name,
       conditions: accessabilityConditions ?? [],
@@ -179,7 +182,8 @@ export class TestEditorComponent {
       hidden: hidden ?? false,
       randomizeQuestions: randomizeQuestions ?? false,
       questionsToShow: questionsToShow ?? null,
-      requiredTariffId: requiredTariffId ?? null
+      requiredTariffId: requiredTariffId ?? null,
+      requiredRewardId: requiredRewardId ?? null
     });
   }
 
@@ -190,7 +194,7 @@ export class TestEditorComponent {
   }
 
   private _getTestVm(): AppTestVm {
-    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, randomizeQuestions, questionsToShow, requiredTariffId } = this._form.value;
+    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, randomizeQuestions, questionsToShow, requiredTariffId, requiredRewardId } = this._form.value;
     const result: AppTestVm = {
       ...(this._dialogData ?? {}),
       name: name!,
@@ -206,7 +210,8 @@ export class TestEditorComponent {
       hidden,
       randomizeQuestions: randomizeQuestions ?? false,
       questionsToShow: randomizeQuestions ? (questionsToShow ?? null) : null,
-      requiredTariffId: requiredTariffId ?? null
+      requiredTariffId: requiredTariffId ?? null,
+      requiredRewardId: requiredRewardId ?? null
     };
     if ('type' in result) {
       delete result['type'];

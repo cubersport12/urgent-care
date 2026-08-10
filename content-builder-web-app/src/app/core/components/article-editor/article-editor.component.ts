@@ -33,6 +33,7 @@ import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions, ArticlesState } from '@/core/store';
 import { finalize, mergeMap, Observable } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
+import { RewardSelectComponent } from '../reward-select/reward-select.component';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 
 @Injectable({
@@ -68,7 +69,8 @@ type ArticleLinkFormType = {
     MatFormFieldModule,
     MatInputModule,
     MatOption,
-    TariffSelectComponent
+    TariffSelectComponent,
+    RewardSelectComponent
   ],
   templateUrl: './article-editor.component.html',
   styles: ``,
@@ -112,6 +114,7 @@ export class ArticleEditorComponent {
     includeToStatistics: new FormControl<boolean>(true),
     timeRead: new FormControl<number>(360),
     requiredTariffId: new FormControl<string | null>(this._dialogData.requiredTariffId ?? null),
+    requiredRewardId: new FormControl<string | null>(this._dialogData.requiredRewardId ?? null),
     linksToArticles: new FormArray<FormGroup<ArticleLinkFormType>>([])
   });
 
@@ -160,7 +163,7 @@ export class ArticleEditorComponent {
   }
 
   private _reset(): void {
-    const { name, disableWhileNotPrevComplete, linksToArticles, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead, requiredTariffId } = this._dialogData;
+    const { name, disableWhileNotPrevComplete, linksToArticles, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead, requiredTariffId, requiredRewardId } = this._dialogData;
     this._form.reset({
       name,
       disableWhileNotPrevComplete: disableWhileNotPrevComplete ?? false,
@@ -169,6 +172,7 @@ export class ArticleEditorComponent {
       nextRunArticle,
       timeRead: timeRead ?? 360,
       requiredTariffId: requiredTariffId ?? null,
+      requiredRewardId: requiredRewardId ?? null,
       linksToArticles: linksToArticles ?? []
     });
     this._setArtcilesLinksControls(linksToArticles ?? []);
@@ -230,7 +234,7 @@ export class ArticleEditorComponent {
   }
 
   protected _submit(): void {
-    const { pdf, name, disableWhileNotPrevComplete, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead, linksToArticles, requiredTariffId } = this._form.getRawValue();
+    const { pdf, name, disableWhileNotPrevComplete, hideWhileNotPrevComplete, includeToStatistics, nextRunArticle, timeRead, linksToArticles, requiredTariffId, requiredRewardId } = this._form.getRawValue();
     const id = this._dialogData.id ?? generateGUID();
     const action = this._dialogData.id
       ? this._store.dispatch(
@@ -243,7 +247,8 @@ export class ArticleEditorComponent {
             nextRunArticle,
             timeRead,
             linksToArticles,
-            requiredTariffId
+            requiredTariffId,
+            requiredRewardId
           })
         )
       : this._store.dispatch(
@@ -257,7 +262,8 @@ export class ArticleEditorComponent {
             nextRunArticle,
             timeRead,
             linksToArticles,
-            requiredTariffId
+            requiredTariffId,
+            requiredRewardId
           })
         );
 

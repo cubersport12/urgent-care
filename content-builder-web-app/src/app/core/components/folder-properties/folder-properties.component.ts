@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { Store } from '@ngxs/store';
 import { AppFolderVm } from '@/core/utils';
 import { FoldersActions } from '@/core/store';
+import { RewardSelectComponent } from '../reward-select/reward-select.component';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 
 @Injectable({ providedIn: 'root' })
@@ -33,7 +34,8 @@ export class FolderPropertiesService {
     MatInputModule,
     MatButton,
     MatIcon,
-    TariffSelectComponent
+    TariffSelectComponent,
+    RewardSelectComponent
   ],
   template: `
     <h2 mat-dialog-title>Свойства папки</h2>
@@ -44,6 +46,7 @@ export class FolderPropertiesService {
           <input matInput formControlName="name" />
         </mat-form-field>
         <app-tariff-select [control]="_form.controls.requiredTariffId" />
+        <app-reward-select [control]="_form.controls.requiredRewardId" />
       </form>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -69,16 +72,18 @@ export class FolderPropertiesComponent {
 
   protected readonly _form = new FormGroup({
     name: new FormControl(this._data.name, { nonNullable: true, validators: [Validators.required] }),
-    requiredTariffId: new FormControl<string | null>(this._data.requiredTariffId ?? null)
+    requiredTariffId: new FormControl<string | null>(this._data.requiredTariffId ?? null),
+    requiredRewardId: new FormControl<string | null>(this._data.requiredRewardId ?? null)
   });
 
   protected _save(): void {
-    const { name, requiredTariffId } = this._form.getRawValue();
+    const { name, requiredTariffId, requiredRewardId } = this._form.getRawValue();
     this._store
       .dispatch(
         new FoldersActions.UpdateFolder(this._data.id, {
           name,
-          requiredTariffId
+          requiredTariffId,
+          requiredRewardId
         })
       )
       .subscribe(() => this._ref.close(true));

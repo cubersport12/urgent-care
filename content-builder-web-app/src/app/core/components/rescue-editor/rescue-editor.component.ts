@@ -46,6 +46,7 @@ import { AppFilesStorageService } from '@/core/api';
 import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { signal } from '@angular/core';
 import { forkJoin, take } from 'rxjs';
+import { RewardSelectComponent } from '../reward-select/reward-select.component';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 import {
   RescueAiGenerateDialogComponent,
@@ -165,7 +166,8 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
     MatCheckboxModule,
     CdkDropList,
     CdkDrag,
-    TariffSelectComponent
+    TariffSelectComponent,
+    RewardSelectComponent
   ],
   templateUrl: './rescue-editor.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -227,6 +229,7 @@ export class RescueEditorComponent {
     /** id/URL фона по умолчанию (как у сцены) */
     defaultBackground: new FormControl<string>(''),
     requiredTariffId: new FormControl<string | null>(null),
+    requiredRewardId: new FormControl<string | null>(null),
     parameters: new FormArray<FormGroup>([]),
     scenes: new FormArray<FormGroup>([])
   });
@@ -275,7 +278,8 @@ export class RescueEditorComponent {
       name: d?.name ?? '',
       description: d?.description ?? '',
       defaultBackground: data.defaultBackground ?? '',
-      requiredTariffId: d?.requiredTariffId ?? null
+      requiredTariffId: d?.requiredTariffId ?? null,
+      requiredRewardId: d?.requiredRewardId ?? null
     });
     this._form.setControl('parameters', new FormArray(parameters));
     this._form.setControl('scenes', new FormArray(scenes));
@@ -541,6 +545,7 @@ export class RescueEditorComponent {
       order: base.order ?? null,
       createdAt: base.createdAt ?? new Date().toISOString(),
       requiredTariffId: raw.requiredTariffId ?? base.requiredTariffId ?? null,
+      requiredRewardId: raw.requiredRewardId ?? base.requiredRewardId ?? null,
       data: {
         parameters: parametersList,
         scenes: scenesList,

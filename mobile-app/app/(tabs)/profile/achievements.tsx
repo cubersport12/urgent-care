@@ -210,7 +210,7 @@ export default function AchievementsScreen() {
                         </ThemedText>
                       ) : null}
                       <ThemedText type="caption" style={{ color: neutralSoft }}>
-                        За: {r.achievementTitle}
+                        За: {r.achievementTitles.join(', ')}
                       </ThemedText>
                     </View>
                     <IconSymbol name="star.fill" size={18} color="#F59E0B" />

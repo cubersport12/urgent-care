@@ -10,6 +10,7 @@
         <textarea matInput formControlName="description" rows="2"></textarea>
       </mat-form-field>
       <app-tariff-select class="grow min-w-[220px]" [control]="_form.controls.requiredTariffId" />
+      <app-reward-select class="grow min-w-[220px]" [control]="_form.controls.requiredRewardId" />
     </div>
 
     <div class="flex flex-col gap-2 border border-gray-300 dark:border-gray-600 rounded p-4">

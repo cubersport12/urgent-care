@@ -16,3 +16,4 @@ export * from './achievements-editor';
 export * from './rewards-editor';
 export * from './folder-properties/folder-properties.component';
 export * from './tariff-select/tariff-select.component';
+export * from './reward-select/reward-select.component';

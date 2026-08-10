@@ -238,6 +238,10 @@ export type ArticleCreate = {
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId?: string | null;
 };
 
 /**
@@ -288,6 +292,10 @@ export type ArticleOut = {
      * Requiredtariffid
      */
     requiredTariffId: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId: string | null;
 };
 
 /**
@@ -378,6 +386,10 @@ export type ArticleUpdate = {
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId?: string | null;
 };
 
 /**
@@ -501,6 +513,44 @@ export type BroadcastOut = {
 };
 
 /**
+ * CityOut
+ */
+export type CityOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Region
+     */
+    region: string;
+    /**
+     * Region Type
+     */
+    region_type?: string;
+    /**
+     * Area
+     */
+    area?: string;
+    /**
+     * Area Type
+     */
+    area_type?: string;
+    /**
+     * Address
+     */
+    address?: string;
+    /**
+     * Label
+     */
+    readonly label: string;
+};
+
+/**
  * FolderCreate
  */
 export type FolderCreate = {
@@ -524,6 +574,10 @@ export type FolderCreate = {
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId?: string | null;
 };
 
 /**
@@ -550,6 +604,10 @@ export type FolderOut = {
      * Requiredtariffid
      */
     requiredTariffId: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId: string | null;
 };
 
 /**
@@ -572,6 +630,10 @@ export type FolderUpdate = {
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId?: string | null;
 };
 
 /**
@@ -602,6 +664,58 @@ export type HttpValidationError = {
      * Detail
      */
     detail?: Array<ValidationError>;
+};
+
+/**
+ * LearningEventCreate
+ */
+export type LearningEventCreate = {
+    /**
+     * Entitytype
+     */
+    entityType: string;
+    /**
+     * Entityid
+     */
+    entityId: string;
+    /**
+     * Event
+     */
+    event: string;
+    /**
+     * Payload
+     */
+    payload?: {
+        [key: string]: unknown;
+    } | null;
+};
+
+/**
+ * LearningEventOut
+ */
+export type LearningEventOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Entitytype
+     */
+    entityType: string;
+    /**
+     * Entityid
+     */
+    entityId: string;
+    /**
+     * Event
+     */
+    event: string;
+    /**
+     * Payload
+     */
+    payload?: {
+        [key: string]: unknown;
+    } | null;
 };
 
 /**
@@ -743,6 +857,20 @@ export type PaymentOut = {
 };
 
 /**
+ * PushTokenUpsert
+ */
+export type PushTokenUpsert = {
+    /**
+     * Token
+     */
+    token: string;
+    /**
+     * Platform
+     */
+    platform?: string;
+};
+
+/**
  * RescueCreate
  */
 export type RescueCreate = {
@@ -780,6 +908,10 @@ export type RescueCreate = {
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId?: string | null;
 };
 
 /**
@@ -820,6 +952,10 @@ export type RescueOut = {
      * Requiredtariffid
      */
     requiredTariffId: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId: string | null;
 };
 
 /**
@@ -912,6 +1048,10 @@ export type RescueUpdate = {
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId?: string | null;
 };
 
 /**
@@ -933,9 +1073,9 @@ export type ResetPassword = {
  */
 export type RewardCreate = {
     /**
-     * Achievementid
+     * Achievementids
      */
-    achievementId: string;
+    achievementIds: Array<string>;
     /**
      * Title
      */
@@ -967,9 +1107,13 @@ export type RewardMeOut = {
      */
     id: string;
     /**
-     * Achievementid
+     * Achievementids
      */
-    achievementId: string;
+    achievementIds: Array<string>;
+    /**
+     * Achievementtitles
+     */
+    achievementTitles: Array<string>;
     /**
      * Title
      */
@@ -990,10 +1134,6 @@ export type RewardMeOut = {
      * Unlockedat
      */
     unlockedAt: string;
-    /**
-     * Achievementtitle
-     */
-    achievementTitle: string;
 };
 
 /**
@@ -1005,9 +1145,9 @@ export type RewardOut = {
      */
     id: string;
     /**
-     * Achievementid
+     * Achievementids
      */
-    achievementId: string;
+    achievementIds: Array<string>;
     /**
      * Title
      */
@@ -1035,9 +1175,9 @@ export type RewardOut = {
  */
 export type RewardUpdate = {
     /**
-     * Achievementid
+     * Achievementids
      */
-    achievementId?: string | null;
+    achievementIds?: Array<string> | null;
     /**
      * Title
      */
@@ -1410,6 +1550,10 @@ export type TestCreate = {
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId?: string | null;
 };
 
 /**
@@ -1484,6 +1628,10 @@ export type TestOut = {
      * Requiredtariffid
      */
     requiredTariffId: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId: string | null;
 };
 
 /**
@@ -1704,6 +1852,10 @@ export type TestUpdate = {
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
+    /**
+     * Requiredrewardid
+     */
+    requiredRewardId?: string | null;
 };
 
 /**
@@ -1794,20 +1946,6 @@ export type UserCreate = {
 };
 
 /**
- * CityOut
- */
-export type CityOut = {
-    id: string;
-    name: string;
-    region: string;
-    region_type?: string;
-    area?: string;
-    area_type?: string;
-    address?: string;
-    label: string;
-};
-
-/**
  * UserOut
  */
 export type UserOut = {
@@ -1827,9 +1965,6 @@ export type UserOut = {
      * City Id
      */
     city_id?: string | null;
-    /**
-     * City
-     */
     city?: CityOut | null;
     /**
      * Role
@@ -1875,6 +2010,98 @@ export type ValidationError = {
      * Error Type
      */
     type: string;
+};
+
+/**
+ * CityOut
+ */
+export type CityOutWritable = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Region
+     */
+    region: string;
+    /**
+     * Region Type
+     */
+    region_type?: string;
+    /**
+     * Area
+     */
+    area?: string;
+    /**
+     * Area Type
+     */
+    area_type?: string;
+    /**
+     * Address
+     */
+    address?: string;
+};
+
+/**
+ * Token
+ */
+export type TokenWritable = {
+    /**
+     * Access Token
+     */
+    access_token: string;
+    /**
+     * Refresh Token
+     */
+    refresh_token: string;
+    /**
+     * Token Type
+     */
+    token_type?: string;
+    /**
+     * Expires In
+     */
+    expires_in: number;
+    user: UserOutWritable;
+};
+
+/**
+ * UserOut
+ */
+export type UserOutWritable = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Full Name
+     */
+    full_name: string;
+    /**
+     * City Id
+     */
+    city_id?: string | null;
+    city?: CityOutWritable | null;
+    /**
+     * Role
+     */
+    role: string;
+    /**
+     * Is Active
+     */
+    is_active: boolean;
+    /**
+     * Created At
+     */
+    created_at: string;
 };
 
 export type AuthRegisterData = {
@@ -2067,6 +2294,42 @@ export type AuthResetPasswordResponses = {
 };
 
 export type AuthResetPasswordResponse = AuthResetPasswordResponses[keyof AuthResetPasswordResponses];
+
+export type CitiesListCitiesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/cities';
+};
+
+export type CitiesListCitiesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CitiesListCitiesError = CitiesListCitiesErrors[keyof CitiesListCitiesErrors];
+
+export type CitiesListCitiesResponses = {
+    /**
+     * Response Cities List Cities
+     *
+     * Successful Response
+     */
+    200: Array<CityOut>;
+};
+
+export type CitiesListCitiesResponse = CitiesListCitiesResponses[keyof CitiesListCitiesResponses];
 
 export type BillingListTariffsData = {
     body?: never;
@@ -2437,6 +2700,61 @@ export type NotificationsMarkReadResponses = {
 };
 
 export type NotificationsMarkReadResponse = NotificationsMarkReadResponses[keyof NotificationsMarkReadResponses];
+
+export type PushDeletePushTokenData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Token
+         */
+        token: string;
+    };
+    url: '/api/v1/push-tokens';
+};
+
+export type PushDeletePushTokenErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type PushDeletePushTokenError = PushDeletePushTokenErrors[keyof PushDeletePushTokenErrors];
+
+export type PushDeletePushTokenResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type PushDeletePushTokenResponse = PushDeletePushTokenResponses[keyof PushDeletePushTokenResponses];
+
+export type PushUpsertPushTokenData = {
+    body: PushTokenUpsert;
+    path?: never;
+    query?: never;
+    url: '/api/v1/push-tokens';
+};
+
+export type PushUpsertPushTokenErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type PushUpsertPushTokenError = PushUpsertPushTokenErrors[keyof PushUpsertPushTokenErrors];
+
+export type PushUpsertPushTokenResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type PushUpsertPushTokenResponse = PushUpsertPushTokenResponses[keyof PushUpsertPushTokenResponses];
 
 export type AchievementsListAchievementsMeData = {
     body?: never;
@@ -2828,6 +3146,31 @@ export type SupportPostAdminMessageResponses = {
 };
 
 export type SupportPostAdminMessageResponse = SupportPostAdminMessageResponses[keyof SupportPostAdminMessageResponses];
+
+export type LearningEventsCreateLearningEventData = {
+    body: LearningEventCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/learning-events';
+};
+
+export type LearningEventsCreateLearningEventErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type LearningEventsCreateLearningEventError = LearningEventsCreateLearningEventErrors[keyof LearningEventsCreateLearningEventErrors];
+
+export type LearningEventsCreateLearningEventResponses = {
+    /**
+     * Successful Response
+     */
+    201: LearningEventOut;
+};
+
+export type LearningEventsCreateLearningEventResponse = LearningEventsCreateLearningEventResponses[keyof LearningEventsCreateLearningEventResponses];
 
 export type FoldersListFoldersData = {
     body?: never;

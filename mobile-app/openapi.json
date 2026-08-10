@@ -310,6 +310,66 @@
         }
       }
     },
+    "/api/v1/cities": {
+      "get": {
+        "tags": [
+          "cities"
+        ],
+        "summary": "List Cities",
+        "operationId": "cities_list_cities",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CityOut"
+                  },
+                  "title": "Response Cities List Cities"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/billing/tariffs": {
       "get": {
         "tags": [
@@ -911,6 +971,85 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/push-tokens": {
+      "put": {
+        "tags": [
+          "push"
+        ],
+        "summary": "Upsert Push Token",
+        "operationId": "push_upsert_push_token",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushTokenUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "push"
+        ],
+        "summary": "Delete Push Token",
+        "operationId": "push_delete_push_token",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 255,
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -1591,6 +1730,52 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/learning-events": {
+      "post": {
+        "tags": [
+          "learning-events"
+        ],
+        "summary": "Create Learning Event",
+        "operationId": "learning-events_create_learning_event",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearningEventCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningEventOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/v1/folders": {
@@ -2809,7 +2994,6 @@
           "stats"
         ],
         "summary": "Upsert Test Stats",
-        "description": "Upsert by (clientId, testId) \u2014 matches mobile select\u2192insert/update flow.",
         "operationId": "stats_upsert_test_stats",
         "security": [
           {
@@ -3355,6 +3539,18 @@
             "title": "Rulethreshold",
             "default": 1
           },
+          "ruleTargetId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ruletargetid"
+          },
           "sortOrder": {
             "type": "integer",
             "title": "Sortorder",
@@ -3417,6 +3613,17 @@
           "ruleThreshold": {
             "type": "integer",
             "title": "Rulethreshold"
+          },
+          "ruleTargetId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ruletargetid"
           },
           "sortOrder": {
             "type": "integer",
@@ -3510,6 +3717,17 @@
           "ruleThreshold": {
             "type": "integer",
             "title": "Rulethreshold"
+          },
+          "ruleTargetId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ruletargetid"
           },
           "sortOrder": {
             "type": "integer",
@@ -3605,6 +3823,18 @@
               }
             ],
             "title": "Rulethreshold"
+          },
+          "ruleTargetId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ruletargetid"
           },
           "sortOrder": {
             "anyOf": [
@@ -3751,6 +3981,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -3871,6 +4113,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -3885,7 +4139,8 @@
           "hideWhileNotPrevComplete",
           "includeToStatistics",
           "linksToArticles",
-          "requiredTariffId"
+          "requiredTariffId",
+          "requiredRewardId"
         ],
         "title": "ArticleOut"
       },
@@ -4087,6 +4342,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -4305,6 +4572,56 @@
         ],
         "title": "BroadcastOut"
       },
+      "CityOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          },
+          "region_type": {
+            "type": "string",
+            "title": "Region Type",
+            "default": ""
+          },
+          "area": {
+            "type": "string",
+            "title": "Area",
+            "default": ""
+          },
+          "area_type": {
+            "type": "string",
+            "title": "Area Type",
+            "default": ""
+          },
+          "address": {
+            "type": "string",
+            "title": "Address",
+            "default": ""
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "readOnly": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "region",
+          "label"
+        ],
+        "title": "CityOut"
+      },
       "FolderCreate": {
         "properties": {
           "id": {
@@ -4355,6 +4672,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -4406,6 +4735,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -4414,7 +4755,8 @@
           "name",
           "order",
           "parentId",
-          "requiredTariffId"
+          "requiredTariffId",
+          "requiredRewardId"
         ],
         "title": "FolderOut"
       },
@@ -4464,6 +4806,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -4509,6 +4863,86 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "LearningEventCreate": {
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Entitytype"
+          },
+          "entityId": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Entityid"
+          },
+          "event": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Event"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entityType",
+          "entityId",
+          "event"
+        ],
+        "title": "LearningEventCreate"
+      },
+      "LearningEventOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "entityType": {
+            "type": "string",
+            "title": "Entitytype"
+          },
+          "entityId": {
+            "type": "string",
+            "title": "Entityid"
+          },
+          "event": {
+            "type": "string",
+            "title": "Event"
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "entityType",
+          "entityId",
+          "event"
+        ],
+        "title": "LearningEventOut"
       },
       "LinkToArticle": {
         "properties": {
@@ -4715,6 +5149,27 @@
         ],
         "title": "PaymentOut"
       },
+      "PushTokenUpsert": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 8,
+            "title": "Token"
+          },
+          "platform": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Platform",
+            "default": "unknown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "PushTokenUpsert"
+      },
       "RescueCreate": {
         "properties": {
           "id": {
@@ -4793,6 +5248,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -4865,6 +5332,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -4876,7 +5355,8 @@
           "createdAt",
           "description",
           "data",
-          "requiredTariffId"
+          "requiredTariffId",
+          "requiredRewardId"
         ],
         "title": "RescueOut"
       },
@@ -5067,6 +5547,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -5096,10 +5588,14 @@
       },
       "RewardCreate": {
         "properties": {
-          "achievementId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Achievementid"
+          "achievementIds": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Achievementids"
           },
           "title": {
             "type": "string",
@@ -5143,7 +5639,7 @@
         },
         "type": "object",
         "required": [
-          "achievementId",
+          "achievementIds",
           "title"
         ],
         "title": "RewardCreate"
@@ -5155,10 +5651,20 @@
             "format": "uuid",
             "title": "Id"
           },
-          "achievementId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Achievementid"
+          "achievementIds": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Achievementids"
+          },
+          "achievementTitles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Achievementtitles"
           },
           "title": {
             "type": "string",
@@ -5194,20 +5700,16 @@
             "type": "string",
             "format": "date-time",
             "title": "Unlockedat"
-          },
-          "achievementTitle": {
-            "type": "string",
-            "title": "Achievementtitle"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "achievementId",
+          "achievementIds",
+          "achievementTitles",
           "title",
           "sortOrder",
-          "unlockedAt",
-          "achievementTitle"
+          "unlockedAt"
         ],
         "title": "RewardMeOut"
       },
@@ -5218,10 +5720,13 @@
             "format": "uuid",
             "title": "Id"
           },
-          "achievementId": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Achievementid"
+          "achievementIds": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Achievementids"
           },
           "title": {
             "type": "string",
@@ -5261,7 +5766,7 @@
         "type": "object",
         "required": [
           "id",
-          "achievementId",
+          "achievementIds",
           "title",
           "sortOrder",
           "isActive"
@@ -5270,17 +5775,21 @@
       },
       "RewardUpdate": {
         "properties": {
-          "achievementId": {
+          "achievementIds": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array",
+                "minItems": 1
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Achievementid"
+            "title": "Achievementids"
           },
           "title": {
             "anyOf": [
@@ -6048,6 +6557,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -6233,6 +6754,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -6253,7 +6786,8 @@
           "questionsToShow",
           "questions",
           "accessabilityConditions",
-          "requiredTariffId"
+          "requiredTariffId",
+          "requiredRewardId"
         ],
         "title": "TestOut"
       },
@@ -6727,6 +7261,18 @@
               }
             ],
             "title": "Requiredtariffid"
+          },
+          "requiredRewardId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredrewardid"
           }
         },
         "type": "object",
@@ -6844,17 +7390,17 @@
             ],
             "title": "Name"
           },
-          "city": {
+          "city_id": {
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 120
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "City"
+            "title": "City Id"
           }
         },
         "type": "object",
@@ -6879,16 +7425,27 @@
             "type": "string",
             "title": "Full Name"
           },
-          "city": {
+          "city_id": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "City"
+            "title": "City Id"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CityOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "role": {
             "type": "string",
@@ -6929,17 +7486,17 @@
             ],
             "title": "Full Name"
           },
-          "city": {
+          "city_id": {
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 120
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "City"
+            "title": "City Id"
           }
         },
         "type": "object",

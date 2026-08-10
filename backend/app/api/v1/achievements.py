@@ -22,6 +22,11 @@ from app.schemas.achievements import (
     RewardOut,
     RewardUpdate,
 )
+from app.services.reward_unlock import (
+    is_reward_unlocked,
+    reward_achievement_ids,
+    reward_unlocked_at,
+)
 
 router = APIRouter(tags=["achievements"])
 
@@ -31,7 +36,15 @@ def _achievement_out(row: Achievement) -> AchievementOut:
 
 
 def _reward_out(row: Reward) -> RewardOut:
-    return RewardOut.model_validate(row)
+    return RewardOut(
+        id=row.id,
+        achievement_ids=reward_achievement_ids(row),
+        title=row.title,
+        description=row.description,
+        icon_path=row.icon_path,
+        sort_order=row.sort_order,
+        is_active=row.is_active,
+    )
 
 
 def _validate_rule_type(rule_type: str) -> None:
@@ -50,6 +63,25 @@ def _validate_rule_target(rule_type: str, rule_target_id: str | None) -> None:
         )
 
 
+async def _validate_achievement_ids(
+    repo: AchievementRepository, achievement_ids: list[UUID]
+) -> list[UUID]:
+    # Dedupe preserving order
+    seen: set[UUID] = set()
+    unique: list[UUID] = []
+    for aid in achievement_ids:
+        if aid in seen:
+            continue
+        seen.add(aid)
+        unique.append(aid)
+    if not unique:
+        raise HTTPException(status_code=400, detail="achievementIds must not be empty")
+    for aid in unique:
+        if not await repo.get_achievement(aid):
+            raise HTTPException(status_code=404, detail=f"Achievement not found: {aid}")
+    return unique
+
+
 # ── User (static paths before {id}) ─────────────────────────────────
 
 
@@ -61,16 +93,20 @@ async def list_achievements_me(
     from app.services.achievement_notify import sync_and_notify
 
     repo = AchievementRepository(db)
-    # Catch-up if user was offline when events fired.
     await sync_and_notify(db, user.id)
     achievements = await repo.list_achievements(active_only=True)
     unlocks = {u.achievement_id: u for u in await repo.list_user_unlocks(user.id)}
-    rewards = {r.achievement_id: r for r in await repo.list_rewards(active_only=True)}
+    rewards = await repo.list_rewards(active_only=True)
+    # Map achievement → first reward (by sort) that includes it
+    reward_by_ach: dict[UUID, Reward] = {}
+    for r in sorted(rewards, key=lambda x: (x.sort_order, x.title)):
+        for aid in reward_achievement_ids(r):
+            reward_by_ach.setdefault(aid, r)
     out: list[AchievementMeOut] = []
     for ach in achievements:
         unlock = unlocks.get(ach.id)
         progress = await repo.rule_progress(user.id, ach)
-        reward = rewards.get(ach.id)
+        reward = reward_by_ach.get(ach.id)
         out.append(
             AchievementMeOut(
                 id=ach.id,
@@ -98,25 +134,28 @@ async def list_rewards_me(
 ) -> list[RewardMeOut]:
     repo = AchievementRepository(db)
     unlocks = {u.achievement_id: u for u in await repo.list_user_unlocks(user.id)}
+    unlock_times = {u.achievement_id: u.unlocked_at for u in unlocks.values()}
+    unlocked_set = set(unlocks)
     achievements = {a.id: a for a in await repo.list_achievements(active_only=True)}
     out: list[RewardMeOut] = []
     for reward in await repo.list_rewards(active_only=True):
-        unlock = unlocks.get(reward.achievement_id)
-        if not unlock:
+        if not is_reward_unlocked(reward, unlocked_set):
             continue
-        ach = achievements.get(reward.achievement_id)
-        if not ach:
+        unlocked_at = reward_unlocked_at(reward, unlock_times)
+        if unlocked_at is None:
             continue
+        ids = reward_achievement_ids(reward)
+        titles = [achievements[aid].title for aid in ids if aid in achievements]
         out.append(
             RewardMeOut(
                 id=reward.id,
-                achievement_id=reward.achievement_id,
+                achievement_ids=ids,
+                achievement_titles=titles,
                 title=reward.title,
                 description=reward.description,
                 icon_path=reward.icon_path,
                 sort_order=reward.sort_order,
-                unlocked_at=unlock.unlocked_at,
-                achievement_title=ach.title,
+                unlocked_at=unlocked_at,
             )
         )
     out.sort(key=lambda r: (r.sort_order, r.title))
@@ -260,15 +299,9 @@ async def create_reward(
     _admin: Annotated[User, Depends(get_current_admin)],
 ) -> RewardOut:
     repo = AchievementRepository(db)
-    ach = await repo.get_achievement(payload.achievement_id)
-    if not ach:
-        raise HTTPException(status_code=404, detail="Achievement not found")
-    if await repo.get_reward_for_achievement(payload.achievement_id):
-        raise HTTPException(
-            status_code=400, detail="Reward already exists for this achievement"
-        )
+    aids = await _validate_achievement_ids(repo, payload.achievement_ids)
     row = await repo.create_reward(
-        achievement_id=payload.achievement_id,
+        achievement_ids=aids,
         title=payload.title.strip(),
         description=payload.description,
         icon_path=payload.icon_path,
@@ -290,18 +323,14 @@ async def update_reward(
     if not row:
         raise HTTPException(status_code=404, detail="Reward not found")
     data = payload.model_dump(exclude_unset=True)
-    if "achievement_id" in data and data["achievement_id"]:
-        ach = await repo.get_achievement(data["achievement_id"])
-        if not ach:
-            raise HTTPException(status_code=404, detail="Achievement not found")
-        other = await repo.get_reward_for_achievement(data["achievement_id"])
-        if other and other.id != row.id:
-            raise HTTPException(
-                status_code=400, detail="Reward already exists for this achievement"
-            )
+    achievement_ids = data.pop("achievement_ids", None)
+    if achievement_ids is not None:
+        achievement_ids = await _validate_achievement_ids(repo, achievement_ids)
     if "title" in data and data["title"]:
         data["title"] = data["title"].strip()
-    return _reward_out(await repo.update_reward(row, **data))
+    return _reward_out(
+        await repo.update_reward(row, achievement_ids=achievement_ids, **data)
+    )
 
 
 @router.delete("/rewards/{reward_id}", status_code=status.HTTP_204_NO_CONTENT)

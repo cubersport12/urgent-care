@@ -15,8 +15,8 @@
         <td mat-cell *matCellDef="let t">{{ t.title }}</td>
       </ng-container>
       <ng-container matColumnDef="achievement">
-        <th mat-header-cell *matHeaderCellDef>Достижение</th>
-        <td mat-cell *matCellDef="let t">{{ _achievementTitle(t.achievementId) }}</td>
+        <th mat-header-cell *matHeaderCellDef>Достижения</th>
+        <td mat-cell *matCellDef="let t">{{ _achievementTitles(t.achievementIds) }}</td>
       </ng-container>
       <ng-container matColumnDef="flags">
         <th mat-header-cell *matHeaderCellDef></th>
