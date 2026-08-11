@@ -69,6 +69,14 @@ class Settings(BaseSettings):
     yookassa_return_url: str = "https://trouble-dent.ru/mobile-app/"
     billing_enforcement: bool = True
 
+    # Embeddings (OpenAI-compatible — vsellm.ru / qwen3-embedding-8b), same as GymAI
+    embedding_api_key: str = ""
+    embedding_base_url: str = "https://api.vsellm.ru/v1"
+    embedding_model: str = "qwen/qwen3-embedding-8b"
+    embedding_dim: int = 4096
+    embedding_timeout_seconds: int = 60
+    embedding_max_retries: int = 4
+
     @property
     def yookassa_configured(self) -> bool:
         return bool(self.yookassa_shop_id and self.yookassa_secret_key)

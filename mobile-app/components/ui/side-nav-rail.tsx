@@ -19,12 +19,14 @@ import { ThemedText } from '@/components/themed-text';
 const TAB_ICONS: Partial<Record<string, IconSymbolName>> = {
   index: 'house.fill',
   stats: 'chart.bar.fill',
+  training: 'bolt.fill',
   profile: 'person.fill',
 };
 
 const TAB_LABELS: Record<string, string> = {
   index: 'Обучение',
   stats: 'Статистика',
+  training: 'Тренировка',
   profile: 'Профиль',
 };
 

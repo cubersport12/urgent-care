@@ -101,6 +101,18 @@ function TabsInner() {
         })}
       />
       <Tabs.Screen
+        name="training"
+        options={{
+          title: 'Тренировка',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={24} name="bolt.fill" color={color} />
+          ),
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => handleTabPressToRoot('/(tabs)/training', navigation, 'training', e),
+        })}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Профиль',

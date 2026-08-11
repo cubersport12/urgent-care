@@ -3315,6 +3315,36 @@
         ]
       }
     },
+    "/api/v1/training/me": {
+      "get": {
+        "tags": [
+          "training"
+        ],
+        "summary": "Training Me",
+        "operationId": "training_training_me",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TrainingTopicOut"
+                  },
+                  "type": "array",
+                  "title": "Response Training Training Me"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/media/{file_path}": {
       "get": {
         "tags": [
@@ -5169,6 +5199,24 @@
           "token"
         ],
         "title": "PushTokenUpsert"
+      },
+      "RecommendedArticleOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "RecommendedArticleOut"
       },
       "RescueCreate": {
         "properties": {
@@ -7346,6 +7394,32 @@
         ],
         "title": "TokenRefreshResponse"
       },
+      "TrainingTopicOut": {
+        "properties": {
+          "testId": {
+            "type": "string",
+            "title": "Testid"
+          },
+          "testName": {
+            "type": "string",
+            "title": "Testname"
+          },
+          "wrongQuestions": {
+            "items": {
+              "$ref": "#/components/schemas/WrongQuestionOut"
+            },
+            "type": "array",
+            "title": "Wrongquestions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "testId",
+          "testName",
+          "wrongQuestions"
+        ],
+        "title": "TrainingTopicOut"
+      },
       "UnreadCountOut": {
         "properties": {
           "count": {
@@ -7534,6 +7608,48 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WrongQuestionOut": {
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "title": "Questionid"
+          },
+          "questionText": {
+            "type": "string",
+            "title": "Questiontext"
+          },
+          "wrongCount": {
+            "type": "integer",
+            "title": "Wrongcount"
+          },
+          "lastWrongAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastwrongat"
+          },
+          "recommendedArticles": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendedArticleOut"
+            },
+            "type": "array",
+            "title": "Recommendedarticles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "questionId",
+          "questionText",
+          "wrongCount"
+        ],
+        "title": "WrongQuestionOut"
       }
     },
     "securitySchemes": {

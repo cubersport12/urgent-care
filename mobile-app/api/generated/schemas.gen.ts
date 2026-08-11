@@ -1710,6 +1710,25 @@ export const PushTokenUpsertSchema = {
     title: 'PushTokenUpsert'
 } as const;
 
+export const RecommendedArticleOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name'
+    ],
+    title: 'RecommendedArticleOut'
+} as const;
+
 export const RescueCreateSchema = {
     properties: {
         id: {
@@ -3916,6 +3935,33 @@ export const TokenRefreshResponseSchema = {
     title: 'TokenRefreshResponse'
 } as const;
 
+export const TrainingTopicOutSchema = {
+    properties: {
+        testId: {
+            type: 'string',
+            title: 'Testid'
+        },
+        testName: {
+            type: 'string',
+            title: 'Testname'
+        },
+        wrongQuestions: {
+            items: {
+                $ref: '#/components/schemas/WrongQuestionOut'
+            },
+            type: 'array',
+            title: 'Wrongquestions'
+        }
+    },
+    type: 'object',
+    required: [
+        'testId',
+        'testName',
+        'wrongQuestions'
+    ],
+    title: 'TrainingTopicOut'
+} as const;
+
 export const UnreadCountOutSchema = {
     properties: {
         count: {
@@ -4108,6 +4154,49 @@ export const ValidationErrorSchema = {
         'type'
     ],
     title: 'ValidationError'
+} as const;
+
+export const WrongQuestionOutSchema = {
+    properties: {
+        questionId: {
+            type: 'string',
+            title: 'Questionid'
+        },
+        questionText: {
+            type: 'string',
+            title: 'Questiontext'
+        },
+        wrongCount: {
+            type: 'integer',
+            title: 'Wrongcount'
+        },
+        lastWrongAt: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Lastwrongat'
+        },
+        recommendedArticles: {
+            items: {
+                $ref: '#/components/schemas/RecommendedArticleOut'
+            },
+            type: 'array',
+            title: 'Recommendedarticles'
+        }
+    },
+    type: 'object',
+    required: [
+        'questionId',
+        'questionText',
+        'wrongCount'
+    ],
+    title: 'WrongQuestionOut'
 } as const;
 
 export const CityOutWritableSchema = {
