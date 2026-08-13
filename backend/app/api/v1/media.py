@@ -38,6 +38,14 @@ def _normalize_key(file_path: str) -> str:
     return key
 
 
+def resolve_upload_key(file_name: str | None, original_filename: str | None) -> str:
+    """Prefer explicit file_name (article id.pdf); fall back to the upload's filename."""
+    name = (file_name or original_filename or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="fileName required")
+    return _normalize_key(name if name.startswith("public/") else f"public/{name}")
+
+
 @router.get("/{file_path:path}")
 async def download_media(
     file_path: str,
@@ -64,14 +72,13 @@ async def download_media(
 async def upload_media(
     _: Annotated[User, Depends(get_current_admin)],
     file: UploadFile = File(...),
-    file_name: str | None = Form(None, alias="fileName"),
+    # OpenAPI/generated client sends file_name; older clients may send fileName.
+    file_name: str | None = Form(None),
+    fileName: str | None = Form(None),
 ) -> MediaUploadOut:
-    name = file_name or file.filename
-    if not name:
-        raise HTTPException(status_code=400, detail="fileName required")
-    key = _normalize_key(name if name.startswith("public/") else f"public/{name}")
+    key = resolve_upload_key(file_name or fileName, file.filename)
     data = await file.read()
-    content_type = file.content_type or mimetypes.guess_type(name)[0] or "application/octet-stream"
+    content_type = file.content_type or mimetypes.guess_type(key)[0] or "application/octet-stream"
     s3 = get_s3_client()
     await s3.ensure_bucket()
     await s3.upload_bytes(data=data, key=key, content_type=content_type)

@@ -186,10 +186,14 @@ export class AppApi {
   }
 
   async uploadFile(fileName: string, blob: Blob): Promise<string> {
+    const named =
+      blob instanceof File && blob.name === fileName
+        ? blob
+        : new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
     const res = await apiCall(() =>
       mediaUploadMedia({
         body: {
-          file: blob as unknown as File,
+          file: named,
           file_name: fileName
         }
       })
