@@ -37,6 +37,11 @@ events = [
         created_at=t1,
         payload={"answers": [{"questionId": "q9", "isCorrect": True}]},
     ),
+    SimpleNamespace(
+        entity_id="test-c",
+        created_at=t1,
+        payload={"passed": False, "data": {"answers": [{"questionId": "q3", "isCorrect": False}]}},
+    ),
 ]
 
 weak = aggregate_wrong_answers(events)
@@ -52,6 +57,8 @@ assert by_q[("test-a", "q2")].wrong_count == 1
 assert by_q[("test-a", "q2")].total_count == 2
 
 assert ("test-b", "q9") not in by_q  # never wrong
+assert ("test-c", "q3") in by_q
+assert by_q[("test-c", "q3")].wrong_count == 1
 
 questions = [{"id": "q1", "questionText": "Что делать при X?"}]
 assert question_text_from_test(questions, "q1") == "Что делать при X?"

@@ -48,7 +48,7 @@ export default function TrainingScreen() {
             setError(e instanceof ApiError ? e.detail : 'Не удалось загрузить');
           }
         } finally {
-          if (!cancelled) setLoading(false);
+          setLoading(false);
         }
       })();
       return () => {

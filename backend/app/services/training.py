@@ -21,12 +21,28 @@ class WrongQuestionStat:
     last_wrong_at: datetime | None
 
 
+def _answers_from_payload(payload: dict[str, Any] | None) -> list[Any] | None:
+    if not isinstance(payload, dict):
+        return None
+    answers = payload.get("answers")
+    if isinstance(answers, list):
+        return answers
+    data = payload.get("data")
+    if isinstance(data, dict):
+        inner = data.get("answers")
+        if isinstance(inner, list):
+            return inner
+    if isinstance(data, list):
+        return data
+    return None
+
+
 def aggregate_wrong_answers(events: list[Any]) -> list[WrongQuestionStat]:
     """Pure: fold test/finished events with payload.answers into per-question stats."""
     stats: dict[tuple[str, str], WrongQuestionStat] = {}
     for ev in events:
         payload = getattr(ev, "payload", None) or {}
-        answers = payload.get("answers")
+        answers = _answers_from_payload(payload)
         if not isinstance(answers, list):
             continue
         test_id = str(getattr(ev, "entity_id", "") or "")

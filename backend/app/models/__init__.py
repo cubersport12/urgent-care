@@ -9,6 +9,7 @@ from app.models.billing import (
     UserSubscription,
 )
 from app.models.city import City
+from app.models.embedding_cache import EmbeddingCache
 from app.models.folder import Folder
 from app.models.learning_event import LearningEvent
 from app.models.notification import Notification
@@ -22,6 +23,7 @@ from app.models.user import User
 __all__ = [
     "User",
     "City",
+    "EmbeddingCache",
     "Folder",
     "LearningEvent",
     "Article",
