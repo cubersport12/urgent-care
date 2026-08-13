@@ -1,4 +1,5 @@
 import { useTest } from '@/contexts/test-context';
+import { persistTestCompletion, resetTestCompletionGuard } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useEffect, useRef, useState } from 'react';
@@ -27,6 +28,7 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
     startedAt,
     areAllQuestionsVisited,
     visitedQuestions,
+    processSkippedQuestions,
   } = useTest();
   const { deviceId } = useDeviceId();
 
@@ -47,6 +49,26 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(1);
+
+  useEffect(() => {
+    resetTestCompletionGuard();
+  }, [test?.id, startedAt]);
+
+  // «Далее» на последнем вопросе ставит isTestCompleted без POST /test-results.
+  useEffect(() => {
+    if (!isTestCompleted || !test) return;
+    const finalAnswers = processSkippedQuestions();
+    void persistTestCompletion({
+      testId: test.id,
+      minScore: test.minScore,
+      maxErrors: test.maxErrors,
+      answers: finalAnswers,
+      onStats:
+        deviceId && startedAt
+          ? (patch) => testStatsHook.addOrUpdate(patch)
+          : undefined,
+    }).catch((err) => console.error('Error persisting test completion:', err));
+  }, [isTestCompleted, test, deviceId, startedAt, processSkippedQuestions, testStatsHook]);
   
   // Обновляем статистику после каждого ответа - рассчитываем passed
   useEffect(() => {

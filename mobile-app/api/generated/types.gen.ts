@@ -871,6 +871,20 @@ export type PushTokenUpsert = {
 };
 
 /**
+ * RecommendedArticleOut
+ */
+export type RecommendedArticleOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * RescueCreate
  */
 export type RescueCreate = {
@@ -1910,6 +1924,24 @@ export type TokenRefreshResponse = {
 };
 
 /**
+ * TrainingTopicOut
+ */
+export type TrainingTopicOut = {
+    /**
+     * Testid
+     */
+    testId: string;
+    /**
+     * Testname
+     */
+    testName: string;
+    /**
+     * Wrongquestions
+     */
+    wrongQuestions: Array<WrongQuestionOut>;
+};
+
+/**
  * UnreadCountOut
  */
 export type UnreadCountOut = {
@@ -2010,6 +2042,32 @@ export type ValidationError = {
      * Error Type
      */
     type: string;
+};
+
+/**
+ * WrongQuestionOut
+ */
+export type WrongQuestionOut = {
+    /**
+     * Questionid
+     */
+    questionId: string;
+    /**
+     * Questiontext
+     */
+    questionText: string;
+    /**
+     * Wrongcount
+     */
+    wrongCount: number;
+    /**
+     * Lastwrongat
+     */
+    lastWrongAt?: string | null;
+    /**
+     * Recommendedarticles
+     */
+    recommendedArticles?: Array<RecommendedArticleOut>;
 };
 
 /**
@@ -4074,6 +4132,24 @@ export type StatsResetAllStatsResponses = {
 };
 
 export type StatsResetAllStatsResponse = StatsResetAllStatsResponses[keyof StatsResetAllStatsResponses];
+
+export type TrainingTrainingMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/training/me';
+};
+
+export type TrainingTrainingMeResponses = {
+    /**
+     * Response Training Training Me
+     *
+     * Successful Response
+     */
+    200: Array<TrainingTopicOut>;
+};
+
+export type TrainingTrainingMeResponse = TrainingTrainingMeResponses[keyof TrainingTrainingMeResponses];
 
 export type MediaDeleteMediaData = {
     body?: never;

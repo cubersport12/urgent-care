@@ -3,10 +3,12 @@ from __future__ import annotations
 
 import uuid
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import Boolean, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.config import settings
 from app.db.base import Base
 
 
@@ -31,4 +33,7 @@ class Article(Base):
         ForeignKey("rewards.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
+    )
+    embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(settings.embedding_dim), nullable=True
     )

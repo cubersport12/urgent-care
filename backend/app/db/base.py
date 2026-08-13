@@ -51,6 +51,7 @@ from app.models.billing import (  # noqa: E402, F401
     UserSubscription,
 )
 from app.models.city import City  # noqa: E402, F401
+from app.models.embedding_cache import EmbeddingCache  # noqa: E402, F401
 from app.models.folder import Folder  # noqa: E402, F401
 from app.models.learning_event import LearningEvent  # noqa: E402, F401
 from app.models.push_token import PushToken  # noqa: E402, F401

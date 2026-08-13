@@ -14,6 +14,7 @@ from app.api.v1._content_helpers import dump_create, dump_update, new_id, not_fo
 from app.db.repositories.content import ArticleRepository
 from app.models.user import User
 from app.schemas.content import ArticleCreate, ArticleOut, ArticleUpdate
+from app.services.article_embeddings import refresh_article_embedding_safe
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 
@@ -50,7 +51,9 @@ async def create_article(
     _: Annotated[User, Depends(get_current_admin)],
 ):
     fields = await with_default_tariff(db, dump_create(payload))
-    return await ArticleRepository(db).create(id=new_id(payload.id), **fields)
+    item = await ArticleRepository(db).create(id=new_id(payload.id), **fields)
+    await refresh_article_embedding_safe(db, item)
+    return item
 
 
 @router.patch("/{item_id}", response_model=ArticleOut)
@@ -63,6 +66,7 @@ async def update_article(
     item = await ArticleRepository(db).update(item_id, **dump_update(payload))
     if not item:
         raise not_found("Article")
+    await refresh_article_embedding_safe(db, item)
     return item
 
 

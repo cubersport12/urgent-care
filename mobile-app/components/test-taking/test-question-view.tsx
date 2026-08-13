@@ -2,7 +2,7 @@ import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTest } from '@/contexts/test-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
-import { saveTestResult } from '@/hooks/api/useTestResults';
+import { persistTestCompletion } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
@@ -140,39 +140,18 @@ export function TestQuestionView({
   const handleFinish = async () => {
     if (!test) return;
 
-    // Обрабатываем пропущенные вопросы как ошибочные и получаем финальные ответы
     const finalAnswers = processSkippedQuestions();
-
-    // Рассчитываем итоговые результаты на основе финальных ответов
-    const totalScore = finalAnswers.reduce((sum, answer) => sum + answer.score, 0);
-    const totalErrors = finalAnswers.filter(answer => !answer.isCorrect).length;
-    const isPassed =
-      (test.minScore === undefined || test.minScore === null || totalScore >= test.minScore) &&
-      (test.maxErrors === undefined || test.maxErrors === null || totalErrors <= test.maxErrors);
-
     try {
-      await saveTestResult({
+      await persistTestCompletion({
         testId: test.id,
-        totalScore,
-        totalErrors,
-        isPassed,
+        minScore: test.minScore,
+        maxErrors: test.maxErrors,
         answers: finalAnswers,
+        onStats:
+          deviceId && startedAt
+            ? (patch) => testStatsHook.addOrUpdate(patch)
+            : undefined,
       });
-      
-      // Сохраняем completedAt и passed в статистику
-      if (deviceId && startedAt && test) {
-        try {
-          const completedAt = new Date().toISOString();
-          await testStatsHook.addOrUpdate({
-            completedAt,
-            passed: isPassed,
-          });
-        } catch (error) {
-          console.error('Error saving test stats on finish:', error);
-          // Не блокируем завершение теста при ошибке сохранения статистики
-        }
-      }
-      
       finishTest();
       onFinish();
     } catch (error) {
