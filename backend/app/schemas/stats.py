@@ -80,6 +80,7 @@ class TestResultOut(CamelModel):
     total_score: int = Field(alias="totalScore")
     total_errors: int = Field(alias="totalErrors")
     is_passed: bool = Field(alias="isPassed")
+    completion_type: str | None = Field(None, alias="completionType")
     answers: Any | None = None
     completed_at: datetime | None = Field(None, alias="completedAt")
 
@@ -89,5 +90,6 @@ class TestResultCreate(CamelModel):
     total_score: int = Field(alias="totalScore")
     total_errors: int = Field(alias="totalErrors")
     is_passed: bool = Field(alias="isPassed")
+    completion_type: str | None = Field(None, alias="completionType")
     answers: Any | None = None
     completed_at: datetime | None = Field(None, alias="completedAt")

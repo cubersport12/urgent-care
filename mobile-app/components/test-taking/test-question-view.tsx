@@ -147,12 +147,13 @@ export function TestQuestionView({
         minScore: test.minScore,
         maxErrors: test.maxErrors,
         answers: finalAnswers,
+        finishReason: 'user',
         onStats:
           deviceId && startedAt
             ? (patch) => testStatsHook.addOrUpdate(patch)
             : undefined,
       });
-      finishTest();
+      finishTest('user');
       onFinish();
     } catch (error) {
       const errorMessage = 'Не удалось сохранить результаты теста. Попробуйте еще раз.';

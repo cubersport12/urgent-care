@@ -1,5 +1,5 @@
 import { useTest } from '@/contexts/test-context';
-import { persistTestCompletion, resetTestCompletionGuard } from '@/hooks/api/useTestResults';
+import { computeTestOutcome, persistTestCompletion, resetTestCompletionGuard } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useEffect, useRef, useState } from 'react';
@@ -17,6 +17,7 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
     test,
     currentQuestionIndex,
     isTestCompleted,
+    finishReason,
     getCurrentQuestion,
     submitAnswer,
     nextQuestion,
@@ -63,26 +64,33 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
       minScore: test.minScore,
       maxErrors: test.maxErrors,
       answers: finalAnswers,
+      finishReason,
       onStats:
         deviceId && startedAt
           ? (patch) => testStatsHook.addOrUpdate(patch)
           : undefined,
     }).catch((err) => console.error('Error persisting test completion:', err));
-  }, [isTestCompleted, test, deviceId, startedAt, processSkippedQuestions, testStatsHook]);
-  
+  }, [isTestCompleted, test, deviceId, startedAt, finishReason, processSkippedQuestions, testStatsHook]);
+
+  // Автозавершение теста при превышении лимита ошибок (ошибок стало больше maxErrors)
+  useEffect(() => {
+    if (!test || isTestCompleted) return;
+    if (test.maxErrors != null && getTotalErrors() > test.maxErrors) {
+      finishTest('autoMaxErrors');
+    }
+  }, [test, isTestCompleted, answers, finishTest, getTotalErrors]);
+
   // Обновляем статистику после каждого ответа - рассчитываем passed
   useEffect(() => {
     if (test && deviceId && startedAt && testStatsHook && answers.length !== previousAnswersLengthRef.current) {
       previousAnswersLengthRef.current = answers.length;
-      
-      const totalScore = getTotalScore();
-      const totalErrors = getTotalErrors();
-      
-      // Рассчитываем passed на основе текущих результатов
-      const isPassed =
-        (test.minScore === undefined || test.minScore === null || totalScore >= test.minScore) &&
-        (test.maxErrors === undefined || test.maxErrors === null || totalErrors <= test.maxErrors);
-      
+
+      const { isPassed } = computeTestOutcome({
+        answers,
+        minScore: test.minScore,
+        maxErrors: test.maxErrors,
+      });
+
       // Обновляем статистику с текущим значением passed
       const updateStats = async () => {
         try {

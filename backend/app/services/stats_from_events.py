@@ -267,6 +267,7 @@ async def project_test_results(
                 total_score=int(score or 0),
                 total_errors=int(errors or 0),
                 is_passed=bool(p.get("passed", p.get("is_passed", False))),
+                completion_type=p.get("completion_type", p.get("completionType")),
                 answers=p.get("answers"),
                 completed_at=ev.created_at,
             )
@@ -283,6 +284,7 @@ async def create_test_result(
     total_errors: int,
     is_passed: bool,
     answers: Any | None,
+    completion_type: str | None = None,
 ) -> TestResultOut:
     row = await record_learning_event(
         session,
@@ -294,6 +296,7 @@ async def create_test_result(
             "score": total_score,
             "errors": total_errors,
             "passed": bool(is_passed),
+            "completion_type": completion_type,
             "answers": answers,
         },
     )
@@ -305,6 +308,7 @@ async def create_test_result(
         total_score=total_score,
         total_errors=total_errors,
         is_passed=is_passed,
+        completion_type=completion_type,
         answers=answers,
         completed_at=row.created_at,
     )

@@ -33,3 +33,8 @@ class TrainingTopicOut(CamelModel):
     test_id: str = Field(alias="testId")
     test_name: str = Field(alias="testName")
     wrong_questions: list[WrongQuestionOut] = Field(alias="wrongQuestions")
+
+
+class TestRecommendationsCreate(CamelModel):
+    test_id: str = Field(alias="testId")
+    wrong_question_ids: list[str] | None = Field(None, alias="wrongQuestionIds")

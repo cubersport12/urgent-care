@@ -1072,6 +1072,17 @@ export const Body_media_upload_mediaSchema = {
                 }
             ],
             title: 'File Name'
+        },
+        fileName: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Filename'
         }
     },
     type: 'object',
@@ -1710,6 +1721,125 @@ export const PushTokenUpsertSchema = {
     title: 'PushTokenUpsert'
 } as const;
 
+export const QrProfileOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        fullName: {
+            type: 'string',
+            title: 'Fullname'
+        },
+        city: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'City'
+        },
+        achievementsCount: {
+            type: 'integer',
+            title: 'Achievementscount',
+            default: 0
+        },
+        rewards: {
+            items: {
+                $ref: '#/components/schemas/QrRewardOut'
+            },
+            type: 'array',
+            title: 'Rewards',
+            default: []
+        },
+        stats: {
+            $ref: '#/components/schemas/QrStatsOut',
+            default: {
+                articlesRead: 0,
+                testsPassed: 0,
+                rescuesPassed: 0
+            }
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'fullName'
+    ],
+    title: 'QrProfileOut'
+} as const;
+
+export const QrRewardOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'title'
+    ],
+    title: 'QrRewardOut'
+} as const;
+
+export const QrStatsOutSchema = {
+    properties: {
+        articlesRead: {
+            type: 'integer',
+            title: 'Articlesread',
+            default: 0
+        },
+        testsPassed: {
+            type: 'integer',
+            title: 'Testspassed',
+            default: 0
+        },
+        rescuesPassed: {
+            type: 'integer',
+            title: 'Rescuespassed',
+            default: 0
+        }
+    },
+    type: 'object',
+    title: 'QrStatsOut'
+} as const;
+
 export const RecommendedArticleOutSchema = {
     properties: {
         id: {
@@ -2191,6 +2321,20 @@ export const RewardCreateSchema = {
             ],
             title: 'Iconpath'
         },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files'
+        },
         sortOrder: {
             type: 'integer',
             title: 'Sortorder',
@@ -2258,6 +2402,20 @@ export const RewardMeOutSchema = {
             ],
             title: 'Iconpath'
         },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files'
+        },
         sortOrder: {
             type: 'integer',
             title: 'Sortorder'
@@ -2320,6 +2478,20 @@ export const RewardOutSchema = {
                 }
             ],
             title: 'Iconpath'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files'
         },
         sortOrder: {
             type: 'integer',
@@ -2394,6 +2566,20 @@ export const RewardUpdateSchema = {
                 }
             ],
             title: 'Iconpath'
+        },
+        files: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Files'
         },
         sortOrder: {
             anyOf: [
@@ -3371,6 +3557,34 @@ export const TestOutSchema = {
     title: 'TestOut'
 } as const;
 
+export const TestRecommendationsCreateSchema = {
+    properties: {
+        testId: {
+            type: 'string',
+            title: 'Testid'
+        },
+        wrongQuestionIds: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Wrongquestionids'
+        }
+    },
+    type: 'object',
+    required: [
+        'testId'
+    ],
+    title: 'TestRecommendationsCreate'
+} as const;
+
 export const TestResultCreateSchema = {
     properties: {
         testId: {
@@ -3388,6 +3602,17 @@ export const TestResultCreateSchema = {
         isPassed: {
             type: 'boolean',
             title: 'Ispassed'
+        },
+        completionType: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Completiontype'
         },
         answers: {
             anyOf: [
@@ -3461,6 +3686,17 @@ export const TestResultOutSchema = {
         isPassed: {
             type: 'boolean',
             title: 'Ispassed'
+        },
+        completionType: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Completiontype'
         },
         answers: {
             anyOf: [

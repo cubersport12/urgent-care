@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, Injectable, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -15,6 +15,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltip } from '@angular/material/tooltip';
+import { forkJoin } from 'rxjs';
 import {
   AppAchievementsStorageService,
   AppFilesStorageService,
@@ -51,6 +52,7 @@ export class RewardsEditorService {
     MatSelectModule,
     MatCheckbox,
     MatButton,
+    MatIconButton,
     MatIcon
   ],
   template: `
@@ -81,6 +83,37 @@ export class RewardsEditorService {
           <button mat-stroked-button type="button" (click)="_file.click()">Загрузить</button>
           <input #_file type="file" accept="image/*" class="hidden" (change)="_onFile($event)" />
         </div>
+        <div class="flex flex-col gap-1">
+          <div class="flex gap-2 items-center">
+            <span class="text-sm text-slate-600">Файлы (сертификаты)</span>
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="_uploadingFiles()"
+              (click)="_filesInput.click()"
+            >
+              {{ _uploadingFiles() ? 'Загрузка…' : 'Прикрепить' }}
+            </button>
+            <input
+              #_filesInput
+              type="file"
+              multiple
+              class="hidden"
+              (change)="_onFiles($event)"
+            />
+          </div>
+          @for (f of _attached(); track f) {
+            <div class="flex items-center gap-2">
+              @if (_thumbs()[f]) {
+                <img [src]="_thumbs()[f]" alt="" class="h-8 w-8 rounded object-cover" />
+              }
+              <span class="text-xs text-slate-600 grow truncate">{{ _displayName(f) }}</span>
+              <button mat-icon-button type="button" (click)="_removeFile(f)" matTooltip="Убрать">
+                <mat-icon svgIcon="trash" />
+              </button>
+            </div>
+          }
+        </div>
         <mat-form-field appearance="fill">
           <mat-label>Порядок</mat-label>
           <input matInput type="number" formControlName="sortOrder" />
@@ -102,8 +135,12 @@ export class RewardEditDialogComponent {
   protected readonly _data = inject<RewardEditData>(MAT_DIALOG_DATA);
   protected readonly _ref = inject(MatDialogRef<RewardEditDialogComponent, RewardCreate | null>);
   private readonly _files = inject(AppFilesStorageService);
+  private readonly _destroyRef = inject(DestroyRef);
 
   protected readonly _uploading = signal(false);
+  protected readonly _uploadingFiles = signal(false);
+  protected readonly _attached = signal<string[]>(this._data.reward?.files ?? []);
+  protected readonly _thumbs = signal<Record<string, string>>({});
 
   protected readonly _form = new FormGroup({
     achievementIds: new FormControl<string[]>([], {
@@ -131,6 +168,22 @@ export class RewardEditDialogComponent {
     } else if (this._data.achievements[0]) {
       this._form.controls.achievementIds.setValue([this._data.achievements[0].id]);
     }
+
+    effect(() => {
+      for (const path of this._attached()) {
+        if (this._thumbs()[path] || !/\.(png|jpe?g|gif|webp|bmp)$/i.test(path)) continue;
+        this._files.downloadFile(path).subscribe({
+          next: (blob) => {
+            const url = URL.createObjectURL(blob);
+            this._thumbs.update((t) => ({ ...t, [path]: url }));
+          },
+          error: () => undefined
+        });
+      }
+    });
+    this._destroyRef.onDestroy(() => {
+      for (const url of Object.values(this._thumbs())) URL.revokeObjectURL(url);
+    });
   }
 
   protected _onFile(event: Event): void {
@@ -149,6 +202,45 @@ export class RewardEditDialogComponent {
     });
   }
 
+  protected _onFiles(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    if (!files.length) return;
+    this._uploadingFiles.set(true);
+    forkJoin(
+      files.map((file) => {
+        const dot = file.name.lastIndexOf('.');
+        const ext = dot > 0 ? file.name.slice(dot + 1) : 'bin';
+        // Читаемое имя кодируем в ключ ({guid}--{имя}.{ext}) — мобильное приложение показывает его,
+        // guid до '--' гарантирует уникальность ключа.
+        const base =
+          (dot > 0 ? file.name.slice(0, dot) : file.name)
+            .replace(/[^\p{L}\p{N} ._-]/gu, '')
+            .trim()
+            .slice(0, 80) || 'file';
+        return this._files.uploadFile(`public/rewards/${generateGUID()}--${base}.${ext}`, file);
+      })
+    ).subscribe({
+      next: (paths) => {
+        this._attached.update((list) => [...list, ...paths]);
+        this._uploadingFiles.set(false);
+      },
+      error: () => this._uploadingFiles.set(false)
+    });
+  }
+
+  /** Имя файла для показа: часть после '{guid}--' в ключе. */
+  protected _displayName(path: string): string {
+    const base = path.split('/').pop() ?? path;
+    const match = base.match(/^[0-9a-f-]{36}--(.+)$/i);
+    return match ? match[1] : base;
+  }
+
+  protected _removeFile(path: string): void {
+    this._attached.update((list) => list.filter((f) => f !== path));
+  }
+
   protected _save(): void {
     if (this._form.invalid) return;
     const v = this._form.getRawValue();
@@ -157,6 +249,7 @@ export class RewardEditDialogComponent {
       title: v.title.trim(),
       description: v.description?.trim() || null,
       iconPath: v.iconPath?.trim() || null,
+      files: this._attached().length ? this._attached() : null,
       sortOrder: Number(v.sortOrder),
       isActive: v.isActive
     });

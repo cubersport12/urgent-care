@@ -1,7 +1,12 @@
 import { statsCreateTestResult } from '@/api/generated/sdk.gen';
 import { apiCall } from '@/api/utils';
-import { TestAnswer } from '@/contexts/test-context';
+import { TestAnswer, TestFinishReason } from '@/contexts/test-context';
+import { computeTestOutcome } from '@/lib/test-outcome';
+import type { TestCompletionType } from '@/lib/test-outcome';
 import { apiGetList } from '@/lib/api';
+
+export type { TestCompletionType, TestOutcome } from '@/lib/test-outcome';
+export { computeTestOutcome } from '@/lib/test-outcome';
 
 export type TestResult = {
   id?: string;
@@ -9,6 +14,7 @@ export type TestResult = {
   totalScore: number;
   totalErrors: number;
   isPassed: boolean;
+  completionType?: TestCompletionType | null;
   answers: TestAnswer[];
   completedAt?: string;
 };
@@ -21,6 +27,7 @@ export const saveTestResult = async (result: TestResult) => {
         totalScore: result.totalScore,
         totalErrors: result.totalErrors,
         isPassed: result.isPassed,
+        completionType: result.completionType ?? null,
         answers: result.answers,
         completedAt: new Date().toISOString(),
       },
@@ -39,32 +46,35 @@ export async function persistTestCompletion(params: {
   minScore?: number | null;
   maxErrors?: number | null;
   answers: TestAnswer[];
+  finishReason?: TestFinishReason;
   onStats?: (patch: {
     completedAt: string;
     passed: boolean;
-    data: { answers: TestAnswer[] };
+    data: { answers: TestAnswer[]; completionType: TestCompletionType };
   }) => Promise<unknown>;
 }): Promise<void> {
   const key = `${params.testId}:${params.answers.map((a) => `${a.questionId}:${a.isCorrect}`).join('|')}`;
   if (_persistedKey === key) return;
   _persistedKey = key;
-  const totalScore = params.answers.reduce((sum, a) => sum + a.score, 0);
-  const totalErrors = params.answers.filter((a) => !a.isCorrect).length;
-  const isPassed =
-    (params.minScore == null || totalScore >= params.minScore) &&
-    (params.maxErrors == null || totalErrors <= params.maxErrors);
+  const outcome = computeTestOutcome({
+    answers: params.answers,
+    minScore: params.minScore,
+    maxErrors: params.maxErrors,
+    finishReason: params.finishReason,
+  });
   try {
     await saveTestResult({
       testId: params.testId,
-      totalScore,
-      totalErrors,
-      isPassed,
+      totalScore: outcome.totalScore,
+      totalErrors: outcome.totalErrors,
+      isPassed: outcome.isPassed,
+      completionType: outcome.completionType,
       answers: params.answers,
     });
     await params.onStats?.({
       completedAt: new Date().toISOString(),
-      passed: isPassed,
-      data: { answers: params.answers },
+      passed: outcome.isPassed,
+      data: { answers: params.answers, completionType: outcome.completionType },
     });
   } catch (e) {
     _persistedKey = null;

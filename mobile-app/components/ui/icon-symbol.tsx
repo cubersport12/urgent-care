@@ -57,6 +57,10 @@ const MAPPING = {
   'bubble.left.and.bubble.right.fill': 'forum',
   'magnifyingglass': 'search',
   'chevron.down': 'expand-more',
+  'square.and.arrow.up.fill': 'share',
+  'square.and.arrow.down.fill': 'download',
+  'photo.fill': 'image',
+  'qrcode': 'qr-code',
 } as IconMapping;
 
 /**

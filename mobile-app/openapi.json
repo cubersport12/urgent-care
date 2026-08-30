@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Urgent Care API",
-    "description": "Urgent Care API \u2014 content CMS, learning stats, auth, media. OpenAPI: `/openapi.json` \u00b7 Swagger UI: `/docs` \u00b7 ReDoc: `/redoc`.",
+    "description": "Urgent Care API — content CMS, learning stats, auth, media. OpenAPI: `/openapi.json` · Swagger UI: `/docs` · ReDoc: `/redoc`.",
     "version": "1.0.0"
   },
   "paths": {
@@ -247,7 +247,7 @@
           "auth"
         ],
         "summary": "Forgot Password",
-        "description": "Always 204 \u2014 do not reveal whether the email exists.",
+        "description": "Always 204 — do not reveal whether the email exists.",
         "operationId": "auth_forgot_password",
         "requestBody": {
           "content": {
@@ -3345,6 +3345,105 @@
         ]
       }
     },
+    "/api/v1/training/test-recommendations": {
+      "post": {
+        "tags": [
+          "training"
+        ],
+        "summary": "Test Recommendations",
+        "description": "Articles to read after finishing a test, picked by embedding similarity\nto the test name and wrongly answered questions.",
+        "operationId": "training_test_recommendations",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRecommendationsCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecommendedArticleOut"
+                  },
+                  "type": "array",
+                  "title": "Response Training Test Recommendations"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}/qr-profile": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get User Qr Profile",
+        "operationId": "users_get_user_qr_profile",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QrProfileOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/media/{file_path}": {
       "get": {
         "tags": [
@@ -4581,6 +4680,17 @@
               }
             ],
             "title": "File Name"
+          },
+          "fileName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
           }
         },
         "type": "object",
@@ -5200,6 +5310,122 @@
         ],
         "title": "PushTokenUpsert"
       },
+      "QrProfileOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "fullName": {
+            "type": "string",
+            "title": "Fullname"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "achievementsCount": {
+            "type": "integer",
+            "title": "Achievementscount",
+            "default": 0
+          },
+          "rewards": {
+            "items": {
+              "$ref": "#/components/schemas/QrRewardOut"
+            },
+            "type": "array",
+            "title": "Rewards",
+            "default": []
+          },
+          "stats": {
+            "$ref": "#/components/schemas/QrStatsOut",
+            "default": {
+              "articlesRead": 0,
+              "testsPassed": 0,
+              "rescuesPassed": 0
+            }
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fullName"
+        ],
+        "title": "QrProfileOut"
+      },
+      "QrRewardOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "QrRewardOut"
+      },
+      "QrStatsOut": {
+        "properties": {
+          "articlesRead": {
+            "type": "integer",
+            "title": "Articlesread",
+            "default": 0
+          },
+          "testsPassed": {
+            "type": "integer",
+            "title": "Testspassed",
+            "default": 0
+          },
+          "rescuesPassed": {
+            "type": "integer",
+            "title": "Rescuespassed",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "QrStatsOut"
+      },
       "RecommendedArticleOut": {
         "properties": {
           "id": {
@@ -5674,6 +5900,20 @@
             ],
             "title": "Iconpath"
           },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
+          },
           "sortOrder": {
             "type": "integer",
             "title": "Sortorder",
@@ -5740,6 +5980,20 @@
             ],
             "title": "Iconpath"
           },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
+          },
           "sortOrder": {
             "type": "integer",
             "title": "Sortorder"
@@ -5801,6 +6055,20 @@
               }
             ],
             "title": "Iconpath"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
           },
           "sortOrder": {
             "type": "integer",
@@ -5874,6 +6142,20 @@
               }
             ],
             "title": "Iconpath"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
           },
           "sortOrder": {
             "anyOf": [
@@ -6839,6 +7121,33 @@
         ],
         "title": "TestOut"
       },
+      "TestRecommendationsCreate": {
+        "properties": {
+          "testId": {
+            "type": "string",
+            "title": "Testid"
+          },
+          "wrongQuestionIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wrongquestionids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "testId"
+        ],
+        "title": "TestRecommendationsCreate"
+      },
       "TestResultCreate": {
         "properties": {
           "testId": {
@@ -6856,6 +7165,17 @@
           "isPassed": {
             "type": "boolean",
             "title": "Ispassed"
+          },
+          "completionType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completiontype"
           },
           "answers": {
             "anyOf": [
@@ -6928,6 +7248,17 @@
           "isPassed": {
             "type": "boolean",
             "title": "Ispassed"
+          },
+          "completionType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completiontype"
           },
           "answers": {
             "anyOf": [

@@ -42,6 +42,7 @@ def _reward_out(row: Reward) -> RewardOut:
         title=row.title,
         description=row.description,
         icon_path=row.icon_path,
+        files=row.files,
         sort_order=row.sort_order,
         is_active=row.is_active,
     )
@@ -154,6 +155,7 @@ async def list_rewards_me(
                 title=reward.title,
                 description=reward.description,
                 icon_path=reward.icon_path,
+                files=reward.files,
                 sort_order=reward.sort_order,
                 unlocked_at=unlocked_at,
             )
@@ -305,6 +307,7 @@ async def create_reward(
         title=payload.title.strip(),
         description=payload.description,
         icon_path=payload.icon_path,
+        files=payload.files,
         sort_order=payload.sort_order,
         is_active=payload.is_active,
     )
