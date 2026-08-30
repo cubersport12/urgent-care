@@ -397,6 +397,14 @@ export default function ProfileScreen() {
           </ThemedText>
           <GlassCard padding={0} borderRadius={16}>
             <ProfileRow
+              icon="qrcode"
+              iconBg="rgba(59, 130, 246, 0.1)"
+              iconColor="#3B82F6"
+              label="QR-код"
+              onPress={() => router.push('/(tabs)/profile/qr-code')}
+              isLast={false}
+            />
+            <ProfileRow
               icon="trophy.fill"
               iconBg="rgba(245, 158, 11, 0.1)"
               iconColor="#F59E0B"

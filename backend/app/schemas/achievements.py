@@ -83,6 +83,7 @@ class RewardOut(CamelModel):
     title: str
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath")
+    files: list[str] | None = None
     sort_order: int = Field(alias="sortOrder")
     is_active: bool = Field(alias="isActive")
 
@@ -92,6 +93,7 @@ class RewardCreate(CamelModel):
     title: str = Field(min_length=1, max_length=200)
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath", max_length=512)
+    files: list[str] | None = None
     sort_order: int = Field(0, alias="sortOrder")
     is_active: bool = Field(True, alias="isActive")
 
@@ -101,6 +103,7 @@ class RewardUpdate(CamelModel):
     title: str | None = Field(None, min_length=1, max_length=200)
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath", max_length=512)
+    files: list[str] | None = None
     sort_order: int | None = Field(None, alias="sortOrder")
     is_active: bool | None = Field(None, alias="isActive")
 
@@ -128,6 +131,7 @@ class RewardMeOut(CamelModel):
     title: str
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath")
+    files: list[str] | None = None
     sort_order: int = Field(alias="sortOrder")
     unlocked_at: datetime = Field(alias="unlockedAt")
 

@@ -50,14 +50,27 @@ async function tryRefresh(): Promise<boolean> {
 
 function createAuthFetch(baseFetch: typeof fetch = globalThis.fetch.bind(globalThis)): typeof fetch {
   return async (input, init) => {
-    let response = await baseFetch(input, init);
+    // Полный набор заголовков: из init, из самого Request (hey-api передаёт fetch(request))
+    // и Authorization. Нельзя передавать только {Authorization} — по спецификации
+    // init.headers ЗАМЕНЯЕТ заголовки Request, и запрос теряет Content-Type.
+    const headers = new Headers(init?.headers);
+    if (input instanceof Request) {
+      input.headers.forEach((value, key) => {
+        if (!headers.has(key)) headers.set(key, value);
+      });
+    }
+    if (!headers.has('Authorization') && !isAuthEndpoint(input)) {
+      const token = getAccessToken();
+      if (token) headers.set('Authorization', `Bearer ${token}`);
+    }
+    const requestInit = { ...(init ?? {}), headers };
+    let response = await baseFetch(input, requestInit);
     if (response.status === 401 && !isAuthEndpoint(input)) {
       const refreshed = await tryRefresh();
       if (refreshed) {
         const token = getAccessToken();
-        const headers = new Headers(init?.headers);
         if (token) headers.set('Authorization', `Bearer ${token}`);
-        response = await baseFetch(input, { ...init, headers });
+        response = await baseFetch(input, requestInit);
       } else {
         await clearAuth();
       }

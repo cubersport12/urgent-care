@@ -1,5 +1,6 @@
 import { achievementsApi, type AchievementMe, type RewardMe } from '@/api/achievements';
 import { ApiError } from '@/api/utils';
+import { friendlyFileName, RewardFileViewer } from '@/components/reward-file-viewer';
 import { ThemedText } from '@/components/themed-text';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -78,6 +79,7 @@ export default function AchievementsScreen() {
   const [rewards, setRewards] = useState<RewardMe[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [openFiles, setOpenFiles] = useState<{ files: string[]; index: number } | null>(null);
 
   const refresh = useCallback(async () => {
     const [a, r] = await Promise.all([
@@ -196,34 +198,67 @@ export default function AchievementsScreen() {
             </GlassCard>
           ) : (
             <GlassCard padding={0} borderRadius={16}>
-              {rewards.map((r, idx) => (
-                <View key={r.id}>
-                  <View style={styles.row}>
-                    <MediaIcon path={r.iconPath} />
-                    <View style={styles.rowBody}>
-                      <ThemedText style={[styles.rowTitle, { color: text }]} numberOfLines={1}>
-                        {r.title}
-                      </ThemedText>
-                      {r.description ? (
-                        <ThemedText type="caption" style={{ color: neutralSoft }} numberOfLines={2}>
-                          {r.description}
+              {rewards.map((r, idx) => {
+                const files = r.files ?? [];
+                return (
+                  <View key={r.id}>
+                    <View style={styles.row}>
+                      <MediaIcon path={r.iconPath} />
+                      <View style={styles.rowBody}>
+                        <ThemedText style={[styles.rowTitle, { color: text }]} numberOfLines={1}>
+                          {r.title}
                         </ThemedText>
-                      ) : null}
-                      <ThemedText type="caption" style={{ color: neutralSoft }}>
-                        За: {r.achievementTitles.join(', ')}
-                      </ThemedText>
+                        {r.description ? (
+                          <ThemedText type="caption" style={{ color: neutralSoft }} numberOfLines={2}>
+                            {r.description}
+                          </ThemedText>
+                        ) : null}
+                        <ThemedText type="caption" style={{ color: neutralSoft }}>
+                          За: {r.achievementTitles.join(', ')}
+                        </ThemedText>
+                      </View>
+                      <IconSymbol name="star.fill" size={18} color="#F59E0B" />
                     </View>
-                    <IconSymbol name="star.fill" size={18} color="#F59E0B" />
+                    {files.length > 0 ? (
+                      <View style={styles.attachments}>
+                        {files.map((f, fIdx) => (
+                          <Pressable
+                            key={f}
+                            style={[styles.attachmentChip, { borderColor: 'rgba(128,128,128,0.25)' }]}
+                            onPress={() => setOpenFiles({ files, index: fIdx })}
+                          >
+                            <IconSymbol
+                              name={/\.pdf$/i.test(f) ? 'doc.fill' : 'photo.fill'}
+                              size={14}
+                              color={primary}
+                            />
+                            <ThemedText
+                              type="caption"
+                              style={{ color: primary }}
+                              numberOfLines={1}
+                            >
+                              {friendlyFileName(f)}
+                            </ThemedText>
+                          </Pressable>
+                        ))}
+                      </View>
+                    ) : null}
+                    {idx < rewards.length - 1 ? (
+                      <View style={[styles.divider, { backgroundColor: 'rgba(128,128,128,0.12)' }]} />
+                    ) : null}
                   </View>
-                  {idx < rewards.length - 1 ? (
-                    <View style={[styles.divider, { backgroundColor: 'rgba(128,128,128,0.12)' }]} />
-                  ) : null}
-                </View>
-              ))}
+                );
+              })}
             </GlassCard>
           )}
         </ScrollView>
       )}
+
+      <RewardFileViewer
+        files={openFiles?.files ?? []}
+        index={openFiles?.index ?? null}
+        onClose={() => setOpenFiles(null)}
+      />
     </ScreenBackground>
   );
 }
@@ -286,6 +321,24 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginLeft: 70,
     marginRight: 14,
+  },
+  attachments: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+    paddingLeft: 70,
+  },
+  attachmentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    maxWidth: '100%',
   },
   retryBtn: {
     paddingHorizontal: 20,

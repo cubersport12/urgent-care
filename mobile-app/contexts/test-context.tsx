@@ -1,5 +1,5 @@
 import { AppTestQuestionActivationConditionKind, AppTestQuestionVm, AppTestVm } from '@/hooks/api/types';
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useRef, useState } from 'react';
 
 export type TestAnswer = {
   questionId: string;
@@ -8,6 +8,8 @@ export type TestAnswer = {
   score: number;
 };
 
+export type TestFinishReason = 'user' | 'autoMaxErrors' | null;
+
 type TestContextType = {
   test: AppTestVm | null;
   currentQuestionIndex: number;
@@ -15,6 +17,7 @@ type TestContextType = {
   visitedQuestions: Set<string>; // Множество ID посещенных вопросов
   isTestStarted: boolean;
   isTestCompleted: boolean;
+  finishReason: TestFinishReason; // Как был завершён тест: вручную или по лимиту ошибок
   totalScoreAccumulated: number; // Накопленный счетчик баллов с начала теста
   startedAt: string | null; // Время начала теста
   startTest: (test: AppTestVm) => void;
@@ -22,13 +25,13 @@ type TestContextType = {
   nextQuestion: () => void;
   previousQuestion: () => void;
   goToQuestion: (questionId: string) => void;
-  finishTest: () => void;
+  finishTest: (reason?: Exclude<TestFinishReason, null>) => void;
   resetTest: () => void;
   getCurrentQuestion: () => AppTestQuestionVm | null;
   getTotalScore: () => number;
   getTotalErrors: () => number;
   areAllQuestionsVisited: () => boolean;
-  processSkippedQuestions: () => TestAnswer[]; // Обрабатывает пропущенные вопросы как ошибочные и возвращает финальные ответы
+  processSkippedQuestions: () => TestAnswer[]; // Обрабатывает неотвеченные вопросы как ошибочные и возвращает финальные ответы
 };
 
 const TestContext = createContext<TestContextType | undefined>(undefined);
@@ -40,8 +43,12 @@ export function TestProvider({ children }: { children: ReactNode }) {
   const [visitedQuestions, setVisitedQuestions] = useState<Set<string>>(new Set());
   const [isTestStarted, setIsTestStarted] = useState(false);
   const [isTestCompleted, setIsTestCompleted] = useState(false);
+  const [finishReason, setFinishReason] = useState<TestFinishReason>(null);
   const [totalScoreAccumulated, setTotalScoreAccumulated] = useState(0); // Накопленный счетчик баллов
   const [startedAt, setStartedAt] = useState<string | null>(null); // Время начала теста
+  // Синхронное зеркало answers: processSkippedQuestions вызывается сразу после submitAnswer,
+  // когда state ещё не обновлён — без ref только что данный ответ терялся.
+  const answersRef = useRef<TestAnswer[]>([]);
 
   const startTest = (testData: AppTestVm) => {
     let questions = [...(testData.questions ?? [])];
@@ -58,12 +65,14 @@ export function TestProvider({ children }: { children: ReactNode }) {
     }
     setTest({ ...testData, questions });
     setCurrentQuestionIndex(0);
+    answersRef.current = [];
     setAnswers([]);
     setVisitedQuestions(new Set());
     setTotalScoreAccumulated(0); // Сбрасываем счетчик баллов
     setStartedAt(new Date().toISOString()); // Сохраняем время начала теста
     setIsTestStarted(true);
     setIsTestCompleted(false);
+    setFinishReason(null);
   };
 
   const submitAnswer = (questionId: string, answerIds: number[] | string[]) => {
@@ -98,21 +107,22 @@ export function TestProvider({ children }: { children: ReactNode }) {
       score,
     };
 
-    setAnswers(prev => {
-      const existingIndex = prev.findIndex(a => a.questionId === questionId);
-      if (existingIndex >= 0) {
-        // Если ответ уже был дан, вычитаем старые баллы и добавляем новые
-        const oldAnswer = prev[existingIndex];
-        setTotalScoreAccumulated(current => current - oldAnswer.score + score);
-        const updated = [...prev];
-        updated[existingIndex] = newAnswer;
-        return updated;
-      } else {
-        // Если это новый ответ, добавляем баллы к счетчику
-        setTotalScoreAccumulated(current => current + score);
-        return [...prev, newAnswer];
-      }
-    });
+    const prev = answersRef.current;
+    const existingIndex = prev.findIndex(a => a.questionId === questionId);
+    if (existingIndex >= 0) {
+      // Если ответ уже был дан, вычитаем старые баллы и добавляем новые
+      const updated = [...prev];
+      updated[existingIndex] = newAnswer;
+      answersRef.current = updated;
+      setTotalScoreAccumulated(current => current - prev[existingIndex].score + score);
+      setAnswers(updated);
+    } else {
+      // Если это новый ответ, добавляем баллы к счетчику
+      const next = [...prev, newAnswer];
+      answersRef.current = next;
+      setTotalScoreAccumulated(current => current + score);
+      setAnswers(next);
+    }
   };
 
   // Проверяет условие активации вопроса
@@ -258,19 +268,22 @@ export function TestProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const finishTest = () => {
+  const finishTest = (reason: Exclude<TestFinishReason, null> = 'user') => {
+    setFinishReason(reason);
     setIsTestCompleted(true);
   };
 
   const resetTest = () => {
     setTest(null);
     setCurrentQuestionIndex(0);
+    answersRef.current = [];
     setAnswers([]);
     setVisitedQuestions(new Set());
     setTotalScoreAccumulated(0);
     setStartedAt(null);
     setIsTestStarted(false);
     setIsTestCompleted(false);
+    setFinishReason(null);
   };
 
   const areAllQuestionsVisited = (): boolean => {
@@ -291,42 +304,25 @@ export function TestProvider({ children }: { children: ReactNode }) {
     return answers.filter(answer => !answer.isCorrect).length;
   };
 
-  // Обрабатывает пропущенные вопросы (посещенные, но не отвеченные) как ошибочные
-  // Возвращает финальный массив ответов, включая пропущенные вопросы
+  // Обрабатывает неотвеченные вопросы как ошибочные (независимо от того, посещал ли их пользователь).
+  // Возвращает финальный массив ответов, включая неотвеченные вопросы.
   const processSkippedQuestions = (): TestAnswer[] => {
-    if (!test || !test.questions) return answers;
+    if (!test || !test.questions) return answersRef.current;
 
-    // Находим все пропущенные вопросы (посещенные, но не отвеченные)
-    const skippedQuestions = test.questions.filter(
-      question => visitedQuestions.has(question.id) && !answers.find(a => a.questionId === question.id)
-    );
+    const current = answersRef.current;
+    const skippedAnswers: TestAnswer[] = test.questions
+      .filter(question => !current.find(a => a.questionId === question.id))
+      .map(question => ({
+        questionId: question.id,
+        answerIds: [], // Пустой массив - вопрос не был отвечен
+        isCorrect: false, // Неотвеченный вопрос считается ошибочным
+        score: 0, // Неотвеченный вопрос не дает баллов
+      }));
 
-    // Создаем ошибочные ответы для пропущенных вопросов
-    const skippedAnswers: TestAnswer[] = skippedQuestions.map(question => ({
-      questionId: question.id,
-      answerIds: [], // Пустой массив - вопрос не был отвечен
-      isCorrect: false, // Пропущенный вопрос считается ошибочным
-      score: 0, // Пропущенный вопрос не дает баллов
-    }));
-
-    // Обновляем состояние для отображения
-    if (skippedAnswers.length > 0) {
-      setAnswers(prev => {
-        const finalAnswers = [...prev];
-        skippedAnswers.forEach(skippedAnswer => {
-          // Проверяем, нет ли уже ответа на этот вопрос
-          const existingIndex = finalAnswers.findIndex(a => a.questionId === skippedAnswer.questionId);
-          if (existingIndex < 0) {
-            // Добавляем новый ошибочный ответ
-            finalAnswers.push(skippedAnswer);
-          }
-        });
-        return finalAnswers;
-      });
-    }
-
-    // Возвращаем финальный массив ответов (включая пропущенные)
-    return [...answers, ...skippedAnswers];
+    const finalAnswers = skippedAnswers.length > 0 ? [...current, ...skippedAnswers] : current;
+    answersRef.current = finalAnswers;
+    setAnswers(finalAnswers);
+    return finalAnswers;
   };
 
   return (
@@ -338,6 +334,7 @@ export function TestProvider({ children }: { children: ReactNode }) {
         visitedQuestions,
         isTestStarted,
         isTestCompleted,
+        finishReason,
         totalScoreAccumulated,
         startedAt,
         startTest,

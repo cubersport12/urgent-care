@@ -500,6 +500,10 @@ export type BodyMediaUploadMedia = {
      * File Name
      */
     file_name?: string | null;
+    /**
+     * Filename
+     */
+    fileName?: string | null;
 };
 
 /**
@@ -871,6 +875,87 @@ export type PushTokenUpsert = {
 };
 
 /**
+ * QrProfileOut
+ */
+export type QrProfileOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Fullname
+     */
+    fullName: string;
+    /**
+     * City
+     */
+    city?: string | null;
+    /**
+     * Achievementscount
+     */
+    achievementsCount?: number;
+    /**
+     * Rewards
+     */
+    rewards?: Array<QrRewardOut>;
+    stats?: QrStatsOut;
+};
+
+/**
+ * QrRewardOut
+ */
+export type QrRewardOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Files
+     */
+    files?: Array<string> | null;
+};
+
+/**
+ * QrStatsOut
+ */
+export type QrStatsOut = {
+    /**
+     * Articlesread
+     */
+    articlesRead?: number;
+    /**
+     * Testspassed
+     */
+    testsPassed?: number;
+    /**
+     * Rescuespassed
+     */
+    rescuesPassed?: number;
+};
+
+/**
+ * RecommendedArticleOut
+ */
+export type RecommendedArticleOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * RescueCreate
  */
 export type RescueCreate = {
@@ -1089,6 +1174,10 @@ export type RewardCreate = {
      */
     iconPath?: string | null;
     /**
+     * Files
+     */
+    files?: Array<string> | null;
+    /**
      * Sortorder
      */
     sortOrder?: number;
@@ -1127,6 +1216,10 @@ export type RewardMeOut = {
      */
     iconPath?: string | null;
     /**
+     * Files
+     */
+    files?: Array<string> | null;
+    /**
      * Sortorder
      */
     sortOrder: number;
@@ -1161,6 +1254,10 @@ export type RewardOut = {
      */
     iconPath?: string | null;
     /**
+     * Files
+     */
+    files?: Array<string> | null;
+    /**
      * Sortorder
      */
     sortOrder: number;
@@ -1190,6 +1287,10 @@ export type RewardUpdate = {
      * Iconpath
      */
     iconPath?: string | null;
+    /**
+     * Files
+     */
+    files?: Array<string> | null;
     /**
      * Sortorder
      */
@@ -1635,6 +1736,20 @@ export type TestOut = {
 };
 
 /**
+ * TestRecommendationsCreate
+ */
+export type TestRecommendationsCreate = {
+    /**
+     * Testid
+     */
+    testId: string;
+    /**
+     * Wrongquestionids
+     */
+    wrongQuestionIds?: Array<string> | null;
+};
+
+/**
  * TestResultCreate
  */
 export type TestResultCreate = {
@@ -1654,6 +1769,10 @@ export type TestResultCreate = {
      * Ispassed
      */
     isPassed: boolean;
+    /**
+     * Completiontype
+     */
+    completionType?: string | null;
     /**
      * Answers
      */
@@ -1692,6 +1811,10 @@ export type TestResultOut = {
      * Ispassed
      */
     isPassed: boolean;
+    /**
+     * Completiontype
+     */
+    completionType?: string | null;
     /**
      * Answers
      */
@@ -1910,6 +2033,24 @@ export type TokenRefreshResponse = {
 };
 
 /**
+ * TrainingTopicOut
+ */
+export type TrainingTopicOut = {
+    /**
+     * Testid
+     */
+    testId: string;
+    /**
+     * Testname
+     */
+    testName: string;
+    /**
+     * Wrongquestions
+     */
+    wrongQuestions: Array<WrongQuestionOut>;
+};
+
+/**
  * UnreadCountOut
  */
 export type UnreadCountOut = {
@@ -2010,6 +2151,32 @@ export type ValidationError = {
      * Error Type
      */
     type: string;
+};
+
+/**
+ * WrongQuestionOut
+ */
+export type WrongQuestionOut = {
+    /**
+     * Questionid
+     */
+    questionId: string;
+    /**
+     * Questiontext
+     */
+    questionText: string;
+    /**
+     * Wrongcount
+     */
+    wrongCount: number;
+    /**
+     * Lastwrongat
+     */
+    lastWrongAt?: string | null;
+    /**
+     * Recommendedarticles
+     */
+    recommendedArticles?: Array<RecommendedArticleOut>;
 };
 
 /**
@@ -4074,6 +4241,81 @@ export type StatsResetAllStatsResponses = {
 };
 
 export type StatsResetAllStatsResponse = StatsResetAllStatsResponses[keyof StatsResetAllStatsResponses];
+
+export type TrainingTrainingMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/training/me';
+};
+
+export type TrainingTrainingMeResponses = {
+    /**
+     * Response Training Training Me
+     *
+     * Successful Response
+     */
+    200: Array<TrainingTopicOut>;
+};
+
+export type TrainingTrainingMeResponse = TrainingTrainingMeResponses[keyof TrainingTrainingMeResponses];
+
+export type TrainingTestRecommendationsData = {
+    body: TestRecommendationsCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/training/test-recommendations';
+};
+
+export type TrainingTestRecommendationsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TrainingTestRecommendationsError = TrainingTestRecommendationsErrors[keyof TrainingTestRecommendationsErrors];
+
+export type TrainingTestRecommendationsResponses = {
+    /**
+     * Response Training Test Recommendations
+     *
+     * Successful Response
+     */
+    200: Array<RecommendedArticleOut>;
+};
+
+export type TrainingTestRecommendationsResponse = TrainingTestRecommendationsResponses[keyof TrainingTestRecommendationsResponses];
+
+export type UsersGetUserQrProfileData = {
+    body?: never;
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{user_id}/qr-profile';
+};
+
+export type UsersGetUserQrProfileErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UsersGetUserQrProfileError = UsersGetUserQrProfileErrors[keyof UsersGetUserQrProfileErrors];
+
+export type UsersGetUserQrProfileResponses = {
+    /**
+     * Successful Response
+     */
+    200: QrProfileOut;
+};
+
+export type UsersGetUserQrProfileResponse = UsersGetUserQrProfileResponses[keyof UsersGetUserQrProfileResponses];
 
 export type MediaDeleteMediaData = {
     body?: never;

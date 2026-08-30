@@ -84,6 +84,7 @@ class AchievementRepository:
         title: str,
         description: str | None,
         icon_path: str | None,
+        files: list[str] | None = None,
         sort_order: int,
         is_active: bool,
     ) -> Reward:
@@ -92,6 +93,7 @@ class AchievementRepository:
             title=title,
             description=description,
             icon_path=icon_path,
+            files=files,
             sort_order=sort_order,
             is_active=is_active,
         )

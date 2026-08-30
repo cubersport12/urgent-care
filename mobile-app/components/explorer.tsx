@@ -16,12 +16,13 @@ import { useRescueItems } from '@/hooks/api/useRescueItems';
 import { useAddOrUpdateRescueStats, useRescuesStats } from '@/hooks/api/useRescueStats';
 import { useTests } from '@/hooks/api/useTests';
 import { useAddOrUpdateTestStats, useTestsStats } from '@/hooks/api/useTestStats';
+import { areTestActivationConditionsMet } from '@/lib/test-activation';
 import { apiFetchRelation } from '@/hooks/api/useApiFetch';
 import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-completion';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useNavigation } from '@react-navigation/native';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
@@ -166,6 +167,19 @@ export function Explorer() {
     }
     return map;
   }, [rescueStatsList.data]);
+
+  // Возврат в список из теста/статьи/режима — обновляем всю статистику,
+  // чтобы бейджи статуса отражали последнюю попытку, а не устаревший снимок.
+  const wasInListRef = useRef(true);
+  useEffect(() => {
+    const inList = !selectedArticle && !selectedTest && !selectedRescueItem && !isRescueStarted;
+    if (inList && !wasInListRef.current) {
+      void articlesStatsResponse.fetchData?.();
+      void testsStatsResponse.fetchData?.();
+      void rescueStatsList.fetchData();
+    }
+    wasInListRef.current = inList;
+  }, [selectedArticle, selectedTest, selectedRescueItem, isRescueStarted, articlesStatsResponse, testsStatsResponse, rescueStatsList]);
 
   // Отслеживаем изменение currentFolderId для показа спиннера и анимации
   useEffect(() => {
@@ -354,24 +368,46 @@ export function Explorer() {
     // Проверяем только статьи и тесты
     if (item.type === 'folder') return false;
 
+    // Правила активации теста (accessabilityConditions из конструктора):
+    // тест неактивен, пока условия не выполнены (например, документ не прочитан)
+    if (item.type === 'test') {
+      const test = item.data as AppTestVm;
+      const conditions = test.accessabilityConditions ?? [];
+      if (conditions.length === 0) return false;
+      return !areTestActivationConditionsMet(conditions, {
+        isArticleRead: (articleId) => readArticlesMap.get(articleId) === true,
+        getTestOutcome: (testId) => {
+          const stat = testsStatsMap.get(testId);
+          if (!stat) return null;
+          const answers = Array.isArray((stat.data as { answers?: { score?: number }[] } | null)?.answers)
+            ? ((stat.data as { answers: { score?: number }[] }).answers)
+            : [];
+          return {
+            passed: stat.passed,
+            totalScore: answers.reduce((sum, a) => sum + (a.score ?? 0), 0),
+          };
+        },
+      });
+    }
+
     // Проверяем флаг disableWhileNotPrevComplete
-    const disableFlag = item.type === 'article' 
-      ? (item.data as AppArticleVm).disableWhileNotPrevComplete 
-      : false; // Для тестов пока не поддерживаем
+    const disableFlag = item.type === 'article'
+      ? (item.data as AppArticleVm).disableWhileNotPrevComplete
+      : false;
 
     if (!disableFlag) return false;
 
     // Ищем предыдущий текстовый документ (статью)
     for (let i = itemIndex - 1; i >= 0; i--) {
       const prevItem = items[i];
-      
+
       // Пропускаем папки
       if (prevItem.type === 'folder') continue;
 
       // Если нашли статью
       if (prevItem.type === 'article') {
         const prevArticle = prevItem.data as AppArticleVm;
-        
+
         // Проверяем, включена ли статистика для предыдущей статьи
         if (prevArticle.includeToStatistics) {
           // Проверяем, прочитана ли предыдущая статья
@@ -384,7 +420,7 @@ export function Explorer() {
 
     // Если предыдущего текстового документа нет или он не включен в статистику, не блокируем
     return false;
-  }, [items, readArticlesMap]);
+  }, [items, readArticlesMap, testsStatsMap]);
 
   const handleItemPress = (item: ExplorerItem) => {
     // Не обрабатываем нажатия на disabled элементы
@@ -427,10 +463,6 @@ export function Explorer() {
   const handleBackToFolder = () => {
     // Всегда выходим в папку, независимо от истории навигации
     if (selectedArticle) {
-      // Перезапрашиваем статистику для обновления списка
-      if (articlesStatsResponse.fetchData) {
-        void articlesStatsResponse.fetchData();
-      }
       setArticleNavigationHistory([]);
     }
     setSelectedArticle(null);
@@ -726,6 +758,64 @@ export function Explorer() {
     (overallStats.data?.counts.testsPassed ?? 0) +
     (overallStats.data?.counts.rescuesPassed ?? 0);
 
+  // Единый рендер элемента списка: бейджи статуса (прочитано / пройден / не пройден)
+  // строятся из статистики тестов и режимов спасения.
+  const renderMaterialItem = (
+    { item, index }: { item: ExplorerItem; index: number },
+    listIndex: number,
+  ) => {
+    const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
+    const isDisabled = isItemDisabled(item, index);
+    const testStats = item.type === 'test' ? testsStatsMap.get(item.data.id) : undefined;
+    const rescueStatsVm =
+      item.type === 'rescue' ? rescueStatsMap.get(item.data.id) : undefined;
+
+    let description: string | undefined;
+    if (item.type === 'test' && testStats) {
+      if (testStats.completedAt) {
+        description = new Date(testStats.completedAt).toLocaleString();
+      } else if (testStats.startedAt) {
+        description = new Date(testStats.startedAt).toLocaleString();
+      }
+    } else if (item.type === 'rescue' && rescueStatsVm) {
+      if (rescueStatsVm.completedAt) {
+        description = new Date(rescueStatsVm.completedAt).toLocaleString();
+      } else if (rescueStatsVm.startedAt) {
+        description = new Date(rescueStatsVm.startedAt).toLocaleString();
+      }
+    }
+
+    return (
+      <ExplorerItemComponent
+        key={`${item.type}-${item.data.id}`}
+        item={item}
+        index={listIndex}
+        onPress={() => handleItemPress(item)}
+        isRead={isRead}
+        isDisabled={isDisabled}
+        testStats={
+          testStats
+            ? {
+                passed: testStats.passed,
+                completedAt: testStats.completedAt,
+                startedAt: testStats.startedAt,
+              }
+            : undefined
+        }
+        rescueStats={
+          rescueStatsVm
+            ? {
+                passed: rescueStatsVm.passed,
+                completedAt: rescueStatsVm.completedAt,
+                startedAt: rescueStatsVm.startedAt,
+              }
+            : undefined
+        }
+        description={description}
+      />
+    );
+  };
+
   return (
     <ScreenBackground variant={isRootView ? 'study' : 'default'} style={styles.container}>
       {currentFolderId !== undefined && (
@@ -843,14 +933,9 @@ export function Explorer() {
                       {filteredItems
                         .filter(({ item }) => item.type !== 'folder')
                         .map(({ item, index }, listIndex) => (
-                          <ExplorerItemComponent
-                            key={`${item.type}-${item.data.id}`}
-                            item={item}
-                            index={listIndex}
-                            onPress={() => handleItemPress(item)}
-                            isRead={item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false}
-                            isDisabled={isItemDisabled(item, index)}
-                          />
+                          <Fragment key={`${item.type}-${item.data.id}`}>
+                            {renderMaterialItem({ item, index }, listIndex)}
+                          </Fragment>
                         ))}
                     </View>
                   )}
@@ -907,58 +992,11 @@ export function Explorer() {
                     </ThemedText>
                   </Pressable>
                 )}
-                {filteredItems.map(({ item, index }, listIndex) => {
-                  const isRead = item.type === 'article' ? readArticlesMap.get(item.data.id) || false : false;
-                  const isDisabled = isItemDisabled(item, index);
-                  const testStats = item.type === 'test' ? testsStatsMap.get(item.data.id) : undefined;
-                  const rescueStatsVm =
-                    item.type === 'rescue' ? rescueStatsMap.get(item.data.id) : undefined;
-
-                  let description: string | undefined;
-                  if (item.type === 'test' && testStats) {
-                    if (testStats.completedAt) {
-                      description = new Date(testStats.completedAt).toLocaleString();
-                    } else if (testStats.startedAt) {
-                      description = new Date(testStats.startedAt).toLocaleString();
-                    }
-                  } else if (item.type === 'rescue' && rescueStatsVm) {
-                    if (rescueStatsVm.completedAt) {
-                      description = new Date(rescueStatsVm.completedAt).toLocaleString();
-                    } else if (rescueStatsVm.startedAt) {
-                      description = new Date(rescueStatsVm.startedAt).toLocaleString();
-                    }
-                  }
-
-                  return (
-                    <ExplorerItemComponent
-                      key={`${item.type}-${item.data.id}`}
-                      item={item}
-                      index={listIndex}
-                      onPress={() => handleItemPress(item)}
-                      isRead={isRead}
-                      isDisabled={isDisabled}
-                      testStats={
-                        testStats
-                          ? {
-                              passed: testStats.passed,
-                              completedAt: testStats.completedAt,
-                              startedAt: testStats.startedAt,
-                            }
-                          : undefined
-                      }
-                      rescueStats={
-                        rescueStatsVm
-                          ? {
-                              passed: rescueStatsVm.passed,
-                              completedAt: rescueStatsVm.completedAt,
-                              startedAt: rescueStatsVm.startedAt,
-                            }
-                          : undefined
-                      }
-                      description={description}
-                    />
-                  );
-                })}
+                {filteredItems.map(({ item, index }, listIndex) => (
+                  <Fragment key={`${item.type}-${item.data.id}`}>
+                    {renderMaterialItem({ item, index }, listIndex)}
+                  </Fragment>
+                ))}
               </>
             );
           })()}

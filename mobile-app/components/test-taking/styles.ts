@@ -341,6 +341,14 @@ function buildTestTakingStyles(theme: ThemeColors, glass: GlassColors) {
   },
   summaryTitle: { marginBottom: 16, fontSize: 18, color: theme.text },
   summaryItem: { marginBottom: 12, fontSize: 16, lineHeight: 24, color: theme.text },
+  recBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: Radius.md,
+  },
   questionResultCard: {
     padding: 20,
     borderRadius: Radius.xl,

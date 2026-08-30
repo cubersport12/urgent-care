@@ -174,6 +174,7 @@ async def create_test_result(
         total_score=payload.total_score,
         total_errors=payload.total_errors,
         is_passed=payload.is_passed,
+        completion_type=payload.completion_type,
         answers=answers,
     )
 
