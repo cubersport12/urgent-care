@@ -4,6 +4,7 @@ import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTest } from '@/contexts/test-context';
 import {
   AppArticleVm,
+  AppFolderMaterialCountVm,
   AppRescueItemVm,
   AppRescueStatsVm,
   type RescueScheneChoiceImplicationVm,
@@ -11,7 +12,7 @@ import {
   AppTestVm,
 } from '@/hooks/api/types';
 import { fetchArticle, useArticles, useArticlesStats } from '@/hooks/api/useArticles';
-import { useFolders } from '@/hooks/api/useFolders';
+import { useFolders, useFoldersMaterialCounts } from '@/hooks/api/useFolders';
 import { useRescueItems } from '@/hooks/api/useRescueItems';
 import { useAddOrUpdateRescueStats, useRescuesStats } from '@/hooks/api/useRescueStats';
 import { useTests } from '@/hooks/api/useTests';
@@ -27,7 +28,7 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } 
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
 import { BackButton } from './explorer/back-button';
-import { ExplorerItemComponent } from './explorer/explorer-item';
+import { ExplorerItemComponent, rescueDisplayName } from './explorer/explorer-item';
 import { StudyFolderCard } from './explorer/study-folder-card';
 import { BreadcrumbItem, ExplorerItem } from './explorer/types';
 import { RescueComplete } from './rescue/rescue-complete';
@@ -107,6 +108,16 @@ export function Explorer() {
   const articlesResponse = useArticles(currentFolderId);
   const testsResponse = useTests(currentFolderId);
   const rescueItemsResponse = useRescueItems(currentFolderId);
+
+  // Счётчики материалов корневых папок (descendants) и их завершённость — с API
+  const folderMaterialCountsResponse = useFoldersMaterialCounts();
+  const folderMaterialCountsMap = useMemo(() => {
+    const map = new Map<string, AppFolderMaterialCountVm>();
+    if (folderMaterialCountsResponse.data) {
+      folderMaterialCountsResponse.data.forEach((fc) => map.set(fc.folderId, fc));
+    }
+    return map;
+  }, [folderMaterialCountsResponse.data]);
   
   // Получаем статистику для статей
   const articlesIds = useMemo(() => {
@@ -732,9 +743,19 @@ export function Explorer() {
 
   // Если выбран rescue элемент, показываем RescueStart
   if (selectedRescueItem) {
+    // Название маскируется так же, как в списке: до первой попытки диагноз скрыт
+    const rescueIndex = items.findIndex(
+      (i) => i.type === 'rescue' && i.data.id === selectedRescueItem.id,
+    );
+    const rescueAttempted = rescueStatsMap.has(selectedRescueItem.id);
     return (
       <RescueStart
         rescueItem={selectedRescueItem}
+        displayName={rescueDisplayName(
+          selectedRescueItem.name,
+          rescueAttempted,
+          rescueIndex < 0 ? 0 : rescueIndex,
+        )}
         onBack={handleBackFromItem}
         onRescueSessionStarted={() => void rescueStatsList.fetchData()}
         onStart={() => {
@@ -900,27 +921,18 @@ export function Explorer() {
                   <View style={styles.folderGrid}>
                     {folderOnlyItems.map((folderItem, i) => {
                       const folderId = folderItem.data.id;
-                      
-                      // Filter materials belonging to this folder
-                      const folderArticles = allArticles.filter(a => a.parentId === folderId);
-                      const folderTests = allTests.filter(t => t.parentId === folderId);
-                      const folderRescues = allRescues.filter(r => r.parentId === folderId);
-                      
-                      const totalCount = folderArticles.length + folderTests.length + folderRescues.length;
-                      
-                      // Calculate completed materials
-                      const completedArticles = folderArticles.filter(a => readArticlesMap.get(a.id)).length;
-                      const completedTests = folderTests.filter(t => testsStatsMap.get(t.id)?.passed === true).length;
-                      const completedRescues = folderRescues.filter(r => rescueStatsMap.get(r.id)?.passed === true).length;
-                      
-                      const completedCount = completedArticles + completedTests + completedRescues;
-                      const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-                      
+                      // Счётчики (вся вложенность) и завершённость приходят с API
+                      const counts = folderMaterialCountsMap.get(folderId);
+                      const progressPercent =
+                        counts && counts.total > 0
+                          ? Math.round((counts.completed / counts.total) * 100)
+                          : 0;
+
                       return (
                         <StudyFolderCard
                           key={folderId}
                           name={folderItem.data.name}
-                          materialCount={totalCount || 0}
+                          materialCount={counts?.total ?? 0}
                           progressPercent={progressPercent}
                           index={i}
                           onPress={() => handleItemPress(folderItem)}

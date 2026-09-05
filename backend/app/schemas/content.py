@@ -199,3 +199,11 @@ class RescueUpdate(CamelModel):
     data: dict[str, Any] | None = None
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
+
+
+class FolderMaterialCountOut(CamelModel):
+    """Материалы папки с учётом всех вложенных подпапок (descendants)."""
+
+    folder_id: str = Field(alias="folderId")
+    total: int = 0
+    completed: int = 0

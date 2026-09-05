@@ -34,3 +34,17 @@ class QrProfileOut(CamelModel):
     achievements_count: int = Field(0, alias="achievementsCount")
     rewards: list[QrRewardOut] = []
     stats: QrStatsOut = QrStatsOut()
+
+
+class UserListItemOut(CamelModel):
+    id: UUID
+    email: str
+    full_name: str = Field(alias="fullName")
+
+
+class ResetStatsRequest(CamelModel):
+    user_ids: list[UUID] = Field(alias="userIds", min_length=1)
+
+
+class ResetStatsOut(CamelModel):
+    users_count: int = Field(alias="usersCount")

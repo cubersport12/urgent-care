@@ -29,6 +29,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme-context';
+import { CookieConsentBanner } from '@/components/cookie-consent-banner';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -111,6 +112,7 @@ export default function RootLayout() {
                 <AchievementsProvider>
                   <RootStack />
                   <GlobalNotificationBanner />
+                  <CookieConsentBanner />
                 </AchievementsProvider>
               </NotificationsProvider>
             </ImmersiveProvider>

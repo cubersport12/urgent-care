@@ -8,6 +8,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="notifications" />
       <Stack.Screen name="achievements" />
       <Stack.Screen name="qr-code" />
+      <Stack.Screen name="legal" />
       <Stack.Screen name="support" />
       <Stack.Screen name="about" />
     </Stack>

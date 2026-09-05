@@ -8,6 +8,7 @@ from app.api.v1.billing import router as billing_router
 from app.api.v1.cities import router as cities_router
 from app.api.v1.folders import router as folders_router
 from app.api.v1.learning_events import router as learning_events_router
+from app.api.v1.legal import router as legal_router
 from app.api.v1.media import router as media_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.push import router as push_router
@@ -34,4 +35,5 @@ api_router.include_router(rescue_router)
 api_router.include_router(stats_router)
 api_router.include_router(training_router)
 api_router.include_router(users_router)
+api_router.include_router(legal_router)
 api_router.include_router(media_router)

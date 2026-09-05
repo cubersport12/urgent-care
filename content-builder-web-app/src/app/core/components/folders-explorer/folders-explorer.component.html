@@ -87,6 +87,22 @@
       <button
         type="button"
         mat-icon-button
+        (click)="_openStatsReset()"
+        matTooltip="Сбросить статистику"
+      >
+        <mat-icon svgIcon="trash" />
+      </button>
+      <button
+        type="button"
+        mat-icon-button
+        (click)="_openLegalDocs()"
+        matTooltip="Нормативные документы"
+      >
+        <mat-icon svgIcon="file-contract" />
+      </button>
+      <button
+        type="button"
+        mat-icon-button
         (click)="_sendTestNotification()"
         matTooltip="Тестовое уведомление"
       >

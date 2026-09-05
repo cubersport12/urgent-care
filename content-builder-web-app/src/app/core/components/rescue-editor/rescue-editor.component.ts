@@ -544,8 +544,10 @@ export class RescueEditorComponent {
       parentId: base.parentId ?? null,
       order: base.order ?? null,
       createdAt: base.createdAt ?? new Date().toISOString(),
-      requiredTariffId: raw.requiredTariffId ?? base.requiredTariffId ?? null,
-      requiredRewardId: raw.requiredRewardId ?? base.requiredRewardId ?? null,
+      // Форма инициализируется значениями диалога при открытии, поэтому
+      // явный null («Нет») должен сохраниться как null, а не откатываться к старому значению
+      requiredTariffId: raw.requiredTariffId ?? null,
+      requiredRewardId: raw.requiredRewardId ?? null,
       data: {
         parameters: parametersList,
         scenes: scenesList,

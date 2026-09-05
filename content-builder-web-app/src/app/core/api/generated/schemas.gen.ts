@@ -1228,6 +1228,33 @@ export const FolderCreateSchema = {
     title: 'FolderCreate'
 } as const;
 
+export const FolderMaterialCountOutSchema = {
+    properties: {
+        folderId: {
+            type: 'string',
+            title: 'Folderid'
+        },
+        total: {
+            type: 'integer',
+            title: 'Total',
+            default: 0
+        },
+        completed: {
+            type: 'integer',
+            title: 'Completed',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: [
+        'folderId',
+        'total',
+        'completed'
+    ],
+    title: 'FolderMaterialCountOut',
+    description: 'Материалы папки с учётом всех вложенных подпапок (descendants).'
+} as const;
+
 export const FolderOutSchema = {
     properties: {
         id: {
@@ -1485,6 +1512,30 @@ export const LearningEventOutSchema = {
         'event'
     ],
     title: 'LearningEventOut'
+} as const;
+
+export const LegalDocumentOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        available: {
+            type: 'boolean',
+            title: 'Available',
+            default: false
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'title'
+    ],
+    title: 'LegalDocumentOut'
 } as const;
 
 export const LinkToArticleSchema = {
@@ -2279,6 +2330,39 @@ export const ResetPasswordSchema = {
         'password'
     ],
     title: 'ResetPassword'
+} as const;
+
+export const ResetStatsOutSchema = {
+    properties: {
+        usersCount: {
+            type: 'integer',
+            title: 'Userscount'
+        }
+    },
+    type: 'object',
+    required: [
+        'usersCount'
+    ],
+    title: 'ResetStatsOut'
+} as const;
+
+export const ResetStatsRequestSchema = {
+    properties: {
+        userIds: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            minItems: 1,
+            title: 'Userids'
+        }
+    },
+    type: 'object',
+    required: [
+        'userIds'
+    ],
+    title: 'ResetStatsRequest'
 } as const;
 
 export const RewardCreateSchema = {
@@ -4262,6 +4346,31 @@ export const UserCreateSchema = {
         'password'
     ],
     title: 'UserCreate'
+} as const;
+
+export const UserListItemOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        email: {
+            type: 'string',
+            title: 'Email'
+        },
+        fullName: {
+            type: 'string',
+            title: 'Fullname'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'email',
+        'fullName'
+    ],
+    title: 'UserListItemOut'
 } as const;
 
 export const UserOutSchema = {
