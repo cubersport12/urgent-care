@@ -36,6 +36,8 @@ import { RescueEditorService } from '../rescue-editor';
 import { TariffsEditorService } from '../tariffs-editor';
 import { AchievementsEditorService } from '../achievements-editor';
 import { RewardsEditorService } from '../rewards-editor';
+import { StatsResetEditorService } from '../stats-reset-editor/stats-reset-editor.component';
+import { LegalDocsEditorService } from '../legal-docs-editor/legal-docs-editor.component';
 import { FolderPropertiesService } from '../folder-properties/folder-properties.component';
 import { SetItemTariffService } from '../set-item-tariff/set-item-tariff.component';
 import { AppFilesStorageService, AppFoldersStorageService, AppTariffsStorageService } from '@/core/api';
@@ -88,6 +90,8 @@ export class FoldersExplorerComponent {
   private readonly _tariffsEditor = inject(TariffsEditorService);
   private readonly _achievementsEditor = inject(AchievementsEditorService);
   private readonly _rewardsEditor = inject(RewardsEditorService);
+  private readonly _statsResetEditor = inject(StatsResetEditorService);
+  private readonly _legalDocsEditor = inject(LegalDocsEditorService);
   private readonly _folderProperties = inject(FolderPropertiesService);
   private readonly _setItemTariff = inject(SetItemTariffService);
   private readonly _tariffsStorage = inject(AppTariffsStorageService);
@@ -490,6 +494,14 @@ export class FoldersExplorerComponent {
 
   protected _openRewards(): void {
     this._rewardsEditor.open();
+  }
+
+  protected _openStatsReset(): void {
+    this._statsResetEditor.open();
+  }
+
+  protected _openLegalDocs(): void {
+    this._legalDocsEditor.open();
   }
 
   protected _sendTestNotification(): void {

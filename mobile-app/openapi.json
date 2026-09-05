@@ -1890,6 +1890,37 @@
         }
       }
     },
+    "/api/v1/folders/material-counts": {
+      "get": {
+        "tags": [
+          "folders"
+        ],
+        "summary": "Folders Material Counts",
+        "description": "По каждой папке: количество материалов (документы, тесты, режимы спасения)\nво всей вложенности — сама папка + все подпапки (descendants), и сколько из них\nзавершено текущим пользователем (документ прочитан, тест/режим пройден успешно).",
+        "operationId": "folders_folders_material_counts",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FolderMaterialCountOut"
+                  },
+                  "type": "array",
+                  "title": "Response Folders Folders Material Counts"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/folders/{item_id}": {
       "get": {
         "tags": [
@@ -3396,6 +3427,83 @@
         ]
       }
     },
+    "/api/v1/users": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "List Users",
+        "operationId": "users_list_users",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserListItemOut"
+                  },
+                  "type": "array",
+                  "title": "Response Users List Users"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/reset-stats": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Reset Users Stats",
+        "description": "Полный сброс статистики и прогресса: события обучения (аналитика,\nстатистика тестов/статей/режимов) и записи о полученных достижениях.",
+        "operationId": "users_reset_users_stats",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetStatsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetStatsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/{user_id}/qr-profile": {
       "get": {
         "tags": [
@@ -3428,6 +3536,71 @@
                 "schema": {
                   "$ref": "#/components/schemas/QrProfileOut"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/legal/documents": {
+      "get": {
+        "tags": [
+          "legal"
+        ],
+        "summary": "List Legal Documents",
+        "operationId": "legal_list_legal_documents",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Legal List Legal Documents"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/legal/documents/{doc_id}/file": {
+      "get": {
+        "tags": [
+          "legal"
+        ],
+        "summary": "Get Legal Document File",
+        "operationId": "legal_get_legal_document_file",
+        "parameters": [
+          {
+            "name": "doc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Doc Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -4832,6 +5005,32 @@
         ],
         "title": "FolderCreate"
       },
+      "FolderMaterialCountOut": {
+        "properties": {
+          "folderId": {
+            "type": "string",
+            "title": "Folderid"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "completed": {
+            "type": "integer",
+            "title": "Completed",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "folderId",
+          "total",
+          "completed"
+        ],
+        "title": "FolderMaterialCountOut",
+        "description": "Материалы папки с учётом всех вложенных подпапок (descendants)."
+      },
       "FolderOut": {
         "properties": {
           "id": {
@@ -5859,6 +6058,37 @@
           "password"
         ],
         "title": "ResetPassword"
+      },
+      "ResetStatsOut": {
+        "properties": {
+          "usersCount": {
+            "type": "integer",
+            "title": "Userscount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usersCount"
+        ],
+        "title": "ResetStatsOut"
+      },
+      "ResetStatsRequest": {
+        "properties": {
+          "userIds": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Userids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "userIds"
+        ],
+        "title": "ResetStatsRequest"
       },
       "RewardCreate": {
         "properties": {
@@ -7814,6 +8044,30 @@
           "password"
         ],
         "title": "UserCreate"
+      },
+      "UserListItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "fullName": {
+            "type": "string",
+            "title": "Fullname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "fullName"
+        ],
+        "title": "UserListItemOut"
       },
       "UserOut": {
         "properties": {

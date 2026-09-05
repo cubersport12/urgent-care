@@ -6,7 +6,9 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { register } from '@/lib/auth-api';
+import { legalDocFileUrl } from '@/lib/legal-docs';
 import { Link, useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useState } from 'react';
 import {
   Alert,
@@ -101,6 +103,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [consentAccepted, setConsentAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleRegister = async () => {
@@ -112,6 +115,13 @@ export default function RegisterScreen() {
     }
     if (!city) {
       Alert.alert('Ошибка', 'Укажите город');
+      return;
+    }
+    if (!consentAccepted) {
+      Alert.alert(
+        'Требуется согласие',
+        'Необходимо согласие на обработку персональных данных',
+      );
       return;
     }
     if (password !== confirm) {
@@ -205,6 +215,33 @@ export default function RegisterScreen() {
               onChangeText={setConfirm}
               secureTextEntry
             />
+
+            <Pressable
+              onPress={() => setConsentAccepted((v) => !v)}
+              style={styles.consentRow}
+            >
+              <View
+                style={[
+                  styles.checkbox,
+                  consentAccepted && { backgroundColor: tintColor, borderColor: tintColor },
+                ]}
+              >
+                {consentAccepted ? (
+                  <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+                ) : null}
+              </View>
+              <ThemedText style={styles.consentText}>
+                Я даю согласие на обработку персональных данных
+              </ThemedText>
+            </Pressable>
+            <Pressable
+              onPress={() => Linking.openURL(legalDocFileUrl('pdn'))}
+              style={styles.consentLinkWrap}
+            >
+              <ThemedText style={[styles.consentLink, { color: tintColor }]}>
+                Политика обработки персональных данных
+              </ThemedText>
+            </Pressable>
 
             <View style={styles.buttonContainer}>
               <Button
@@ -303,6 +340,37 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 12,
     width: '100%',
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginTop: 6,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: 'rgba(128,128,128,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  consentText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    opacity: 0.85,
+  },
+  consentLinkWrap: {
+    marginLeft: 32,
+    marginTop: 2,
+    alignSelf: 'flex-start',
+  },
+  consentLink: {
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
   linkWrap: {
     marginTop: 24,

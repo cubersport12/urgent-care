@@ -585,6 +585,26 @@ export type FolderCreate = {
 };
 
 /**
+ * FolderMaterialCountOut
+ *
+ * Материалы папки с учётом всех вложенных подпапок (descendants).
+ */
+export type FolderMaterialCountOut = {
+    /**
+     * Folderid
+     */
+    folderId: string;
+    /**
+     * Total
+     */
+    total: number;
+    /**
+     * Completed
+     */
+    completed: number;
+};
+
+/**
  * FolderOut
  */
 export type FolderOut = {
@@ -1151,6 +1171,26 @@ export type ResetPassword = {
      * Password
      */
     password: string;
+};
+
+/**
+ * ResetStatsOut
+ */
+export type ResetStatsOut = {
+    /**
+     * Userscount
+     */
+    usersCount: number;
+};
+
+/**
+ * ResetStatsRequest
+ */
+export type ResetStatsRequest = {
+    /**
+     * Userids
+     */
+    userIds: Array<string>;
 };
 
 /**
@@ -2084,6 +2124,24 @@ export type UserCreate = {
      * City Id
      */
     city_id?: string | null;
+};
+
+/**
+ * UserListItemOut
+ */
+export type UserListItemOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Fullname
+     */
+    fullName: string;
 };
 
 /**
@@ -3400,6 +3458,24 @@ export type FoldersCreateFolderResponses = {
 
 export type FoldersCreateFolderResponse = FoldersCreateFolderResponses[keyof FoldersCreateFolderResponses];
 
+export type FoldersFoldersMaterialCountsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/folders/material-counts';
+};
+
+export type FoldersFoldersMaterialCountsResponses = {
+    /**
+     * Response Folders Folders Material Counts
+     *
+     * Successful Response
+     */
+    200: Array<FolderMaterialCountOut>;
+};
+
+export type FoldersFoldersMaterialCountsResponse = FoldersFoldersMaterialCountsResponses[keyof FoldersFoldersMaterialCountsResponses];
+
 export type FoldersDeleteFolderData = {
     body?: never;
     path: {
@@ -4287,6 +4363,49 @@ export type TrainingTestRecommendationsResponses = {
 
 export type TrainingTestRecommendationsResponse = TrainingTestRecommendationsResponses[keyof TrainingTestRecommendationsResponses];
 
+export type UsersListUsersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/users';
+};
+
+export type UsersListUsersResponses = {
+    /**
+     * Response Users List Users
+     *
+     * Successful Response
+     */
+    200: Array<UserListItemOut>;
+};
+
+export type UsersListUsersResponse = UsersListUsersResponses[keyof UsersListUsersResponses];
+
+export type UsersResetUsersStatsData = {
+    body: ResetStatsRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/users/reset-stats';
+};
+
+export type UsersResetUsersStatsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UsersResetUsersStatsError = UsersResetUsersStatsErrors[keyof UsersResetUsersStatsErrors];
+
+export type UsersResetUsersStatsResponses = {
+    /**
+     * Successful Response
+     */
+    200: ResetStatsOut;
+};
+
+export type UsersResetUsersStatsResponse = UsersResetUsersStatsResponses[keyof UsersResetUsersStatsResponses];
+
 export type UsersGetUserQrProfileData = {
     body?: never;
     path: {
@@ -4316,6 +4435,54 @@ export type UsersGetUserQrProfileResponses = {
 };
 
 export type UsersGetUserQrProfileResponse = UsersGetUserQrProfileResponses[keyof UsersGetUserQrProfileResponses];
+
+export type LegalListLegalDocumentsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/legal/documents';
+};
+
+export type LegalListLegalDocumentsResponses = {
+    /**
+     * Response Legal List Legal Documents
+     *
+     * Successful Response
+     */
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type LegalListLegalDocumentsResponse = LegalListLegalDocumentsResponses[keyof LegalListLegalDocumentsResponses];
+
+export type LegalGetLegalDocumentFileData = {
+    body?: never;
+    path: {
+        /**
+         * Doc Id
+         */
+        doc_id: string;
+    };
+    query?: never;
+    url: '/api/v1/legal/documents/{doc_id}/file';
+};
+
+export type LegalGetLegalDocumentFileErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type LegalGetLegalDocumentFileError = LegalGetLegalDocumentFileErrors[keyof LegalGetLegalDocumentFileErrors];
+
+export type LegalGetLegalDocumentFileResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type MediaDeleteMediaData = {
     body?: never;

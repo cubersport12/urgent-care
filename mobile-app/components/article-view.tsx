@@ -8,7 +8,13 @@ import { useAppTheme } from '@/hooks/use-theme-color';
 import { apiFetch } from '@/lib/api';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PdfView } from './pdf-view/pdf-view';
 import { ThemedText } from './themed-text';
@@ -83,7 +89,7 @@ const ArticleViewContent = memo(({
   isLoading, 
   article, 
   onBack, 
-  markAsReadRef,
+  onScrolledToEndRef,
   tintColorRef,
   onScrollProgressRef,
 }: {
@@ -91,7 +97,7 @@ const ArticleViewContent = memo(({
   isLoading: boolean;
   article: AppArticleVm;
   onBack: () => void;
-  markAsReadRef: React.MutableRefObject<() => Promise<void>>;
+  onScrolledToEndRef: React.MutableRefObject<() => void>;
   tintColorRef: React.MutableRefObject<string>;
   onScrollProgressRef: React.MutableRefObject<(percent: number) => void>;
 }) => {
@@ -110,16 +116,6 @@ const ArticleViewContent = memo(({
   const { border: borderColor } = useAppTheme();
   const { isWide } = useNavRail();
   useChromeBack(onBack);
-
-  // Состояние для отслеживания прочтения PDF (legacy page API — не используется с WebView)
-  const isMarkedAsReadRef = useRef(false);
-
-  const markAsReadIfNeeded = useCallback(() => {
-    if (!isMarkedAsReadRef.current) {
-      isMarkedAsReadRef.current = true;
-      void markAsReadRef.current();
-    }
-  }, [markAsReadRef]);
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
@@ -146,7 +142,7 @@ const ArticleViewContent = memo(({
           <PdfView
             key={pdfUri}
             source={pdfUri}
-            onScrollToEnd={markAsReadIfNeeded}
+            onScrollToEnd={() => onScrolledToEndRef.current()}
             onScrollProgress={(pct) => onScrollProgressRef.current(pct)}
             onError={(error) => {
               console.error('PDF error:', error);
@@ -173,6 +169,8 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   const { response: pdfUri, isLoading } = useFilePdf(`${article.id}.pdf`);
   const insets = useSafeAreaInsets();
   const { isWide, contentPaddingLeft } = useNavRail();
+  // Высота нижнего таб-бара (он absolute и перекрывает контент); на широком лейауте — боковой рельс
+  const tabBarHeight = useBottomTabBarHeight();
 
   // Все остальные хуки - данные хранятся в refs, чтобы не вызывать перерисовку
   const { deviceId } = useDeviceId();
@@ -192,6 +190,24 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   const isMarkedAsReadRef = useRef(false);
   const isReadRef = useRef(false);
   const progressSentRef = useRef<Set<number>>(new Set());
+
+  // Кнопка «Я все прочитал»: появляется после доскролла до конца.
+  // Пока пользователь на конце документа — сверху; начал скроллить — уезжает вниз.
+  const [reachedEnd, setReachedEnd] = useState(false);
+  const [atEnd, setAtEnd] = useState(false);
+  const [buttonLayerHeight, setButtonLayerHeight] = useState(0);
+  useEffect(() => {
+    setReachedEnd(false);
+    setAtEnd(false);
+  }, [article.id]);
+
+  const onScrolledToEndRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    onScrolledToEndRef.current = () => {
+      setReachedEnd(true);
+      setAtEnd(true);
+    };
+  }, []);
 
   useEffect(() => {
     progressSentRef.current = new Set();
@@ -222,8 +238,11 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
         event: 'progress',
         payload: { percent },
       });
+      // Позиция кнопки: на конце документа — сверху, отскроллил вниз-обратно — снизу
+      if (!reachedEnd) return;
+      setAtEnd((prev) => (percent >= 98 ? true : percent <= 90 ? false : prev));
     };
-  }, [article.id]);
+  }, [article.id, reachedEnd]);
   
   // Мемоизируем массив article.id, чтобы избежать бесконечных запросов
   const articleIds = useMemo(() => [article.id], [article.id]);
@@ -279,11 +298,6 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     }
   }, [article.id]);
 
-  const markAsReadRef = useRef(markAsRead);
-  useEffect(() => {
-    markAsReadRef.current = markAsRead;
-  }, [markAsRead]);
-
   // Состояние для кнопок навигации - обновляется отдельно
   // Кнопки показываются, если документ прочитан (из БД) или прокручен до конца
   const [isRead, setIsRead] = useState(false);
@@ -308,10 +322,40 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     await markAsRead();
   }, [markAsRead]);
 
-  const markAsReadRefWithUpdate = useRef(markAsReadWithUpdate);
+  // «Я все прочитал»: отметить прочитанным и автоматически закрыть документ
+  const handleMarkReadPressed = useCallback(async () => {
+    await markAsReadWithUpdate();
+    onBack();
+  }, [markAsReadWithUpdate, onBack]);
+
+  // Позиция кнопки «Я все прочитал»: анимированный переезд верх ↔ низ
+  const READ_BUTTON_HEIGHT = 52;
+  const readButtonTop = useSharedValue(0);
+  const readButtonOpacity = useSharedValue(0);
   useEffect(() => {
-    markAsReadRefWithUpdate.current = markAsReadWithUpdate;
-  }, [markAsReadWithUpdate]);
+    if (buttonLayerHeight <= 0) return;
+    // Верхняя позиция — сразу под шапкой с кнопкой «Назад» (высота шапки ~68 + safe-area)
+    const topPos = insets.top + (isWide ? 0 : 68) + 12;
+    const bottomPos = Math.max(
+      topPos,
+      buttonLayerHeight -
+        (isWide ? 0 : tabBarHeight) -
+        Math.max(insets.bottom, 0) +
+        4 -
+        READ_BUTTON_HEIGHT,
+    );
+    readButtonTop.value = withSpring(atEnd ? topPos : bottomPos, {
+      damping: 18,
+      stiffness: 170,
+    });
+  }, [atEnd, buttonLayerHeight, isWide, tabBarHeight, insets.top, insets.bottom]);
+  useEffect(() => {
+    readButtonOpacity.value = withTiming(reachedEnd ? 1 : 0, { duration: 200 });
+  }, [reachedEnd]);
+  const readButtonAnimatedStyle = useAnimatedStyle(() => ({
+    top: readButtonTop.value,
+    opacity: readButtonOpacity.value,
+  }));
 
   return (
     <Animated.View
@@ -331,10 +375,29 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
         isLoading={isLoading}
         article={article}
         onBack={onBack}
-        markAsReadRef={markAsReadRefWithUpdate}
+        onScrolledToEndRef={onScrolledToEndRef}
         tintColorRef={tintColorRef}
         onScrollProgressRef={onScrollProgressRef}
       />
+      {!isRead && reachedEnd ? (
+        <View
+          pointerEvents="box-none"
+          style={styles.readButtonLayer}
+          onLayout={(e) => setButtonLayerHeight(e.nativeEvent.layout.height)}
+        >
+          <Animated.View
+            pointerEvents="auto"
+            style={[styles.readButtonWrap, readButtonAnimatedStyle]}
+          >
+            <Button
+              title="Я все прочитал"
+              onPress={handleMarkReadPressed}
+              fullWidth
+              size="large"
+            />
+          </Animated.View>
+        </View>
+      ) : null}
       <View pointerEvents="box-none" style={styles.navButtonsLayer}>
         <NavigationButtons
           isRead={isRead}
@@ -422,6 +485,16 @@ const styles = StyleSheet.create({
   navButtonsLayer: {
     ...StyleSheet.absoluteFillObject,
     pointerEvents: 'box-none',
+  },
+  readButtonLayer: {
+    ...StyleSheet.absoluteFillObject,
+    pointerEvents: 'box-none',
+    justifyContent: 'flex-end',
+  },
+  readButtonWrap: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
   },
   pdfContainer: {
     flex: 1,

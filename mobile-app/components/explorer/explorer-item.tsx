@@ -29,7 +29,8 @@ function getStatus(
   rescueStats?: ExplorerItemComponentProps['rescueStats'],
 ): StatusType | undefined {
   if (item.type === 'article') {
-    return isRead ? 'read' : 'unread';
+    // Бейдж только для прочитанных; непрочитанные — без пометки
+    return isRead ? 'read' : undefined;
   }
   if (item.type === 'test' && testStats) {
     if (testStats.passed === true) return 'success';
@@ -47,6 +48,14 @@ function getStatus(
 
 function getKind(item: ExplorerItem): MaterialKind {
   return item.type;
+}
+
+/**
+ * Название для показа: в имени нераскрытого режима спасения часто скрыт диагноз,
+ * поэтому до первой попытки показывается нейтральное «Режим спасения · N».
+ */
+export function rescueDisplayName(name: string, attempted: boolean, index: number): string {
+  return attempted ? name : `Режим спасения · ${index + 1}`;
 }
 
 export function ExplorerItemComponent({
@@ -83,9 +92,18 @@ export function ExplorerItemComponent({
           ? 'Тест'
           : 'Режим спасения';
 
+  // В названии режима спасения часто скрыт диагноз — маскируем только его:
+  // до первой попытки (и пока недоступен) — «Режим спасения · N».
+  // Тесты и документы всегда с настоящими названиями.
+  const showRealName = !isDisabled && rescueStats != null;
+
   return (
     <ContentCard
-      title={item.data.name}
+      title={
+        item.type === 'rescue'
+          ? rescueDisplayName(item.data.name, showRealName, index)
+          : item.data.name
+      }
       description={`${descriptionPrefix}${description ?? defaultDescription}`}
       kind={getKind(item)}
       status={status}

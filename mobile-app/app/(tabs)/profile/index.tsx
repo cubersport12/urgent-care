@@ -442,6 +442,15 @@ export default function ProfileScreen() {
               icon="info.circle.fill"
               iconBg="rgba(107, 114, 128, 0.1)"
               iconColor="#6B7280"
+              label="Нормативные документы"
+              onPress={() => router.push('/(tabs)/profile/legal')}
+              isLast={false}
+            />
+
+            <ProfileRow
+              icon="info.circle.fill"
+              iconBg="rgba(107, 114, 128, 0.1)"
+              iconColor="#6B7280"
               label="О приложении"
               onPress={() => router.push('/(tabs)/profile/about')}
               isLast={false}

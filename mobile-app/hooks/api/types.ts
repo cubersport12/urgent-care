@@ -4,6 +4,7 @@
 import type {
   ArticleOut,
   ArticleStatsOut,
+  FolderMaterialCountOut,
   FolderOut,
   LinkToArticle,
   RescueOut,
@@ -25,6 +26,8 @@ export type AppBaseVm = {
 
 /** @deprecated prefer FolderOut from OpenAPI */
 export type AppFolderVm = FolderOut;
+
+export type AppFolderMaterialCountVm = FolderMaterialCountOut;
 
 export type AppLinkToArticleVm = LinkToArticle;
 

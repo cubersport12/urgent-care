@@ -19,6 +19,8 @@ import { ScreenBackground } from '../ui/screen-background';
 
 type RescueStartProps = {
   rescueItem: AppRescueItemVm;
+  /** Название для показа: explorer маскирует диагноз у непройденных режимов */
+  displayName?: string;
   onBack: () => void;
   /** После перехода к сценам (статистика старта уже записана в rescue_stats) */
   onStart: () => void | Promise<void>;
@@ -26,7 +28,7 @@ type RescueStartProps = {
   onRescueSessionStarted?: () => void;
 };
 
-export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarted }: RescueStartProps) {
+export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescueSessionStarted }: RescueStartProps) {
   const { deviceId } = useDeviceId();
   const insets = useSafeAreaInsets();
   const { isWide } = useNavRail();
@@ -96,7 +98,7 @@ export function RescueStart({ rescueItem, onBack, onStart, onRescueSessionStarte
           showsVerticalScrollIndicator={false}
         >
           <ThemedText type="h1" style={styles.title}>
-            {rescueItem.name}
+            {displayName ?? rescueItem.name}
           </ThemedText>
 
           {rescueItem.createdAt && (
