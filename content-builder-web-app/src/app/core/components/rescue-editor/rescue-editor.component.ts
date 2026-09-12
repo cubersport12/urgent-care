@@ -9,6 +9,7 @@ import {
   RescueChoiceParameterChangeVm,
   RescueParameterSeverityVm,
   RescueSceneChoiceVm,
+  RescueSceneDocumentVm,
   RescueSceneVm,
   RescueScheneChoiceImplicationVm,
   RescueTimerParameterVm
@@ -149,7 +150,8 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
     text: new FormControl<string>(s?.text ?? '', Validators.required),
     hidden: new FormControl<boolean>(s?.hidden ?? false, { nonNullable: true }),
     isReviewed: new FormControl<boolean>(s?.isReviewed ?? false, { nonNullable: true }),
-    choices: new FormArray(choices)
+    choices: new FormArray(choices),
+    documents: new FormControl<RescueSceneDocumentVm[]>(s?.documents ?? [], { nonNullable: true })
   });
 }
 
@@ -446,7 +448,8 @@ export class RescueEditorComponent {
               background: result.background,
               text: result.text,
               hidden: result.hidden,
-              isReviewed: result.isReviewed
+              isReviewed: result.isReviewed,
+              documents: result.documents ?? []
             });
             const choicesArr = sceneControl.get('choices') as FormArray;
             choicesArr.clear();
@@ -514,6 +517,7 @@ export class RescueEditorComponent {
       text: (s['text'] as string) ?? '',
       hidden: (s['hidden'] as boolean) ?? false,
       isReviewed: (s['isReviewed'] as boolean) ?? false,
+      documents: (s['documents'] as RescueSceneDocumentVm[]) ?? [],
       choices: ((s['choices'] ?? []) as Array<Record<string, unknown>>).map((ch: Record<string, unknown>) => ({
         id: ch['id'] as string,
         text: (ch['text'] as string) ?? '',

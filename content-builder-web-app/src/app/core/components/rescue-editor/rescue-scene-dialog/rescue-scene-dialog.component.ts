@@ -2,9 +2,10 @@ import {
   generateGUID,
   NullableValue,
   RescueSceneChoiceVm,
+  RescueSceneDocumentVm,
   RescueSceneVm
 } from '@/core/utils';
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -13,11 +14,18 @@ import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableModule } from '@angular/material/table';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { Store } from '@ngxs/store';
 import { openFile } from '@/core/utils';
+import { ArticlesState, ArticlesActions } from '@/core/store';
 import { RescueChoiceDialogComponent, RescueChoiceDialogData, SceneOption } from '../rescue-choice-dialog/rescue-choice-dialog.component';
+import {
+  RescueSceneDocumentDialogComponent,
+  RescueSceneDocumentDialogData
+} from '../rescue-scene-document-dialog/rescue-scene-document-dialog.component';
 import { take } from 'rxjs';
 
 export type ParameterOption = { id: string; name: string };
+export type ArticleOption = { id: string; name: string };
 
 export type RescueSceneDialogData = {
   scene: RescueSceneVm | null;
@@ -52,12 +60,36 @@ export class RescueSceneDialogComponent {
   private readonly _ref = inject(MatDialogRef<RescueSceneDialogComponent, RescueSceneVm>);
   private readonly _dialog = inject(MatDialog);
 
+  constructor() {
+    // Подтягиваем все статьи базы для выпадайки документов
+    this._store.dispatch(new ArticlesActions.FetchAllArticles());
+  }
+
   /** Варианты выбора сцены (редактируются внутри диалога) */
   protected readonly _choicesList = signal<RescueSceneChoiceVm[]>(
     this._dialogData.scene?.choices ?? []
   );
 
   protected readonly _choicesDisplayedColumns: string[] = ['text', 'nextScene', 'actions'];
+
+  /** Документы сцены (редактируются внутри диалога) */
+  protected readonly _documentsList = signal<RescueSceneDocumentVm[]>(
+    this._dialogData.scene?.documents ?? []
+  );
+
+  protected readonly _documentsDisplayedColumns: string[] = ['name', 'article', 'actions'];
+
+  private readonly _store = inject(Store);
+
+  /** Все статьи базы — для выпадайки в диалоге документа */
+  protected readonly _allArticles = computed(
+    () => this._store.selectSignal(ArticlesState.getAllArticles)() ?? []
+  );
+
+  protected _getArticleNameById(articleId: NullableValue<string>): string {
+    const article = this._allArticles().find(a => a.id === articleId);
+    return article?.name ?? articleId ?? '—';
+  }
 
   /** id генерируется автоматически при создании */
   protected readonly _form = new FormGroup({
@@ -157,6 +189,54 @@ export class RescueSceneDialogComponent {
     this._choicesList.set(list.filter((_, i) => i !== index));
   }
 
+  protected _openDocumentDialog(document: RescueSceneDocumentVm | null): void {
+    this._dialog
+      .open(RescueSceneDocumentDialogComponent, {
+        data: {
+          document,
+          articleOptions: this._allArticles().map(a => ({ id: a.id, name: a.name }))
+        } satisfies RescueSceneDocumentDialogData,
+        width: '480px',
+        disableClose: false
+      })
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe((result: RescueSceneDocumentVm | undefined) => {
+        if (result == null) {
+          return;
+        }
+        const list = this._documentsList();
+        if (document == null) {
+          this._documentsList.set([...list, result]);
+        }
+        else {
+          const idx = list.findIndex(d => d.id === document.id);
+          if (idx !== -1) {
+            const next = [...list];
+            next[idx] = result;
+            this._documentsList.set(next);
+          }
+        }
+      });
+  }
+
+  protected _addDocument(): void {
+    this._openDocumentDialog(null);
+  }
+
+  protected _editDocument(index: number): void {
+    const list = this._documentsList();
+    const document = list[index];
+    if (document) {
+      this._openDocumentDialog(document);
+    }
+  }
+
+  protected _removeDocument(index: number): void {
+    const list = this._documentsList();
+    this._documentsList.set(list.filter((_, i) => i !== index));
+  }
+
   protected _submit(): void {
     if (this._form.invalid) {
       return;
@@ -167,6 +247,7 @@ export class RescueSceneDialogComponent {
       background: v.background ?? '',
       text: v.text ?? '',
       choices: this._choicesList(),
+      documents: this._documentsList(),
       hidden: v.hidden ?? false,
       isReviewed: v.isReviewed ?? false
     });

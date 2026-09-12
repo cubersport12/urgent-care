@@ -185,12 +185,19 @@ export type RescueSceneChoiceVm = {
   implications?: NullableValue<RescueScheneChoiceImplicationVm[]>;
 };
 
+export type RescueSceneDocumentVm = {
+  id: string;
+  name: string;
+  articleId: string;
+};
+
 export type RescueSceneVm = {
   id: string;
   order?: number;
   background?: string;
   text: string;
   choices: RescueSceneChoiceVm[];
+  documents?: RescueSceneDocumentVm[];
   hidden?: NullableValue<boolean>;
   isReviewed?: NullableValue<boolean>;
 };
