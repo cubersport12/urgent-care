@@ -220,6 +220,5 @@ export type {
   RescueStatsOut,
   TestResultOut,
   UserOut,
-  Token,
   LinkToArticle,
 } from '@/api/generated/types.gen';

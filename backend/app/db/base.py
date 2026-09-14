@@ -43,6 +43,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 # Register models on metadata
 from app.models.article import Article  # noqa: E402, F401
+from app.models.auth_session import AuthSession  # noqa: E402, F401
 from app.models.billing import (  # noqa: E402, F401
     Payment,
     PaymentMethod,

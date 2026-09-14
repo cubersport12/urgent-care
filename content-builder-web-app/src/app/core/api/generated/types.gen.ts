@@ -459,33 +459,13 @@ export type BillingMeOut = {
 };
 
 /**
- * Body_auth_login
+ * Body_auth_upload_avatar
  */
-export type BodyAuthLogin = {
+export type BodyAuthUploadAvatar = {
     /**
-     * Grant Type
+     * File
      */
-    grant_type?: string | null;
-    /**
-     * Username
-     */
-    username: string;
-    /**
-     * Password
-     */
-    password: string;
-    /**
-     * Scope
-     */
-    scope?: string;
-    /**
-     * Client Id
-     */
-    client_id?: string | null;
-    /**
-     * Client Secret
-     */
-    client_secret?: string | null;
+    file: Blob | File;
 };
 
 /**
@@ -552,6 +532,16 @@ export type CityOut = {
      * Label
      */
     readonly label: string;
+};
+
+/**
+ * DeleteAccount
+ */
+export type DeleteAccount = {
+    /**
+     * Password
+     */
+    password: string;
 };
 
 /**
@@ -786,6 +776,10 @@ export type LoginJson = {
      * Password
      */
     password: string;
+    /**
+     * Device Name
+     */
+    device_name?: string | null;
 };
 
 /**
@@ -1357,6 +1351,53 @@ export type RewardUpdate = {
      * Isactive
      */
     isActive?: boolean | null;
+};
+
+/**
+ * SessionCreated
+ */
+export type SessionCreated = {
+    /**
+     * Session Id
+     */
+    session_id: string;
+    user: UserOut;
+};
+
+/**
+ * SessionLogout
+ */
+export type SessionLogout = {
+    /**
+     * Session Id
+     */
+    session_id: string;
+};
+
+/**
+ * SessionOut
+ */
+export type SessionOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Device Name
+     */
+    device_name?: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Last Active At
+     */
+    last_active_at: string;
+    /**
+     * Expires At
+     */
+    expires_at: string;
 };
 
 /**
@@ -2040,57 +2081,6 @@ export type TestUpdate = {
 };
 
 /**
- * Token
- */
-export type Token = {
-    /**
-     * Access Token
-     */
-    access_token: string;
-    /**
-     * Refresh Token
-     */
-    refresh_token: string;
-    /**
-     * Token Type
-     */
-    token_type?: string;
-    /**
-     * Expires In
-     */
-    expires_in: number;
-    user: UserOut;
-};
-
-/**
- * TokenRefresh
- */
-export type TokenRefresh = {
-    /**
-     * Refresh Token
-     */
-    refresh_token: string;
-};
-
-/**
- * TokenRefreshResponse
- */
-export type TokenRefreshResponse = {
-    /**
-     * Access Token
-     */
-    access_token: string;
-    /**
-     * Token Type
-     */
-    token_type?: string;
-    /**
-     * Expires In
-     */
-    expires_in: number;
-};
-
-/**
  * TrainingTopicOut
  */
 export type TrainingTopicOut = {
@@ -2130,14 +2120,6 @@ export type UserCreate = {
      * Password
      */
     password: string;
-    /**
-     * Full Name
-     */
-    full_name?: string;
-    /**
-     * Name
-     */
-    name?: string | null;
     /**
      * City Id
      */
@@ -2184,6 +2166,18 @@ export type UserOut = {
     city_id?: string | null;
     city?: CityOut | null;
     /**
+     * Avatar Key
+     */
+    avatar_key?: string | null;
+    /**
+     * Birth Year
+     */
+    birth_year?: number | null;
+    /**
+     * Occupation
+     */
+    occupation?: string | null;
+    /**
      * Role
      */
     role: string;
@@ -2209,6 +2203,14 @@ export type UserUpdate = {
      * City Id
      */
     city_id?: string | null;
+    /**
+     * Birth Year
+     */
+    birth_year?: number | null;
+    /**
+     * Occupation
+     */
+    occupation?: string | null;
 };
 
 /**
@@ -2290,25 +2292,13 @@ export type CityOutWritable = {
 };
 
 /**
- * Token
+ * SessionCreated
  */
-export type TokenWritable = {
+export type SessionCreatedWritable = {
     /**
-     * Access Token
+     * Session Id
      */
-    access_token: string;
-    /**
-     * Refresh Token
-     */
-    refresh_token: string;
-    /**
-     * Token Type
-     */
-    token_type?: string;
-    /**
-     * Expires In
-     */
-    expires_in: number;
+    session_id: string;
     user: UserOutWritable;
 };
 
@@ -2333,6 +2323,18 @@ export type UserOutWritable = {
      */
     city_id?: string | null;
     city?: CityOutWritable | null;
+    /**
+     * Avatar Key
+     */
+    avatar_key?: string | null;
+    /**
+     * Birth Year
+     */
+    birth_year?: number | null;
+    /**
+     * Occupation
+     */
+    occupation?: string | null;
     /**
      * Role
      */
@@ -2367,35 +2369,10 @@ export type AuthRegisterResponses = {
     /**
      * Successful Response
      */
-    201: Token;
+    201: SessionCreated;
 };
 
 export type AuthRegisterResponse = AuthRegisterResponses[keyof AuthRegisterResponses];
-
-export type AuthLoginData = {
-    body: BodyAuthLogin;
-    path?: never;
-    query?: never;
-    url: '/api/v1/auth/login';
-};
-
-export type AuthLoginErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type AuthLoginError = AuthLoginErrors[keyof AuthLoginErrors];
-
-export type AuthLoginResponses = {
-    /**
-     * Successful Response
-     */
-    200: Token;
-};
-
-export type AuthLoginResponse = AuthLoginResponses[keyof AuthLoginResponses];
 
 export type AuthLoginJsonData = {
     body: LoginJson;
@@ -2417,42 +2394,121 @@ export type AuthLoginJsonResponses = {
     /**
      * Successful Response
      */
-    200: Token;
+    200: SessionCreated;
 };
 
 export type AuthLoginJsonResponse = AuthLoginJsonResponses[keyof AuthLoginJsonResponses];
 
-export type AuthRefreshData = {
-    body: TokenRefresh;
+export type AuthLogoutData = {
+    body: SessionLogout;
     path?: never;
     query?: never;
-    url: '/api/v1/auth/refresh';
+    url: '/api/v1/auth/logout';
 };
 
-export type AuthRefreshErrors = {
+export type AuthLogoutErrors = {
     /**
      * Validation Error
      */
     422: HttpValidationError;
 };
 
-export type AuthRefreshError = AuthRefreshErrors[keyof AuthRefreshErrors];
+export type AuthLogoutError = AuthLogoutErrors[keyof AuthLogoutErrors];
 
-export type AuthRefreshResponses = {
+export type AuthLogoutResponses = {
     /**
      * Successful Response
      */
-    200: TokenRefreshResponse;
+    204: void;
 };
 
-export type AuthRefreshResponse = AuthRefreshResponses[keyof AuthRefreshResponses];
+export type AuthLogoutResponse = AuthLogoutResponses[keyof AuthLogoutResponses];
 
-export type AuthMeData = {
+export type AuthListSessionsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/sessions';
+};
+
+export type AuthListSessionsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthListSessionsError = AuthListSessionsErrors[keyof AuthListSessionsErrors];
+
+export type AuthListSessionsResponses = {
+    /**
+     * Response Auth List Sessions
+     *
+     * Successful Response
+     */
+    200: Array<SessionOut>;
+};
+
+export type AuthListSessionsResponse = AuthListSessionsResponses[keyof AuthListSessionsResponses];
+
+export type AuthDeleteMeData = {
+    body: DeleteAccount;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/auth/me';
 };
+
+export type AuthDeleteMeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthDeleteMeError = AuthDeleteMeErrors[keyof AuthDeleteMeErrors];
+
+export type AuthDeleteMeResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AuthDeleteMeResponse = AuthDeleteMeResponses[keyof AuthDeleteMeResponses];
+
+export type AuthMeData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/me';
+};
+
+export type AuthMeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthMeError = AuthMeErrors[keyof AuthMeErrors];
 
 export type AuthMeResponses = {
     /**
@@ -2465,6 +2521,12 @@ export type AuthMeResponse = AuthMeResponses[keyof AuthMeResponses];
 
 export type AuthUpdateMeData = {
     body: UserUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/auth/me';
@@ -2487,6 +2549,68 @@ export type AuthUpdateMeResponses = {
 };
 
 export type AuthUpdateMeResponse = AuthUpdateMeResponses[keyof AuthUpdateMeResponses];
+
+export type AuthDeleteAvatarData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/me/avatar';
+};
+
+export type AuthDeleteAvatarErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthDeleteAvatarError = AuthDeleteAvatarErrors[keyof AuthDeleteAvatarErrors];
+
+export type AuthDeleteAvatarResponses = {
+    /**
+     * Successful Response
+     */
+    200: UserOut;
+};
+
+export type AuthDeleteAvatarResponse = AuthDeleteAvatarResponses[keyof AuthDeleteAvatarResponses];
+
+export type AuthUploadAvatarData = {
+    body: BodyAuthUploadAvatar;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/me/avatar';
+};
+
+export type AuthUploadAvatarErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthUploadAvatarError = AuthUploadAvatarErrors[keyof AuthUploadAvatarErrors];
+
+export type AuthUploadAvatarResponses = {
+    /**
+     * Successful Response
+     */
+    200: UserOut;
+};
+
+export type AuthUploadAvatarResponse = AuthUploadAvatarResponses[keyof AuthUploadAvatarResponses];
 
 export type AuthForgotPasswordData = {
     body: ForgotPassword;
@@ -2594,6 +2718,12 @@ export type BillingListTariffsResponse = BillingListTariffsResponses[keyof Billi
 
 export type BillingCreateTariffData = {
     body: TariffCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/billing/tariffs';
@@ -2619,10 +2749,25 @@ export type BillingCreateTariffResponse = BillingCreateTariffResponses[keyof Bil
 
 export type BillingListTariffsAdminData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/billing/tariffs/all';
 };
+
+export type BillingListTariffsAdminErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingListTariffsAdminError = BillingListTariffsAdminErrors[keyof BillingListTariffsAdminErrors];
 
 export type BillingListTariffsAdminResponses = {
     /**
@@ -2637,6 +2782,12 @@ export type BillingListTariffsAdminResponse = BillingListTariffsAdminResponses[k
 
 export type BillingDeleteTariffData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Tariff Id
@@ -2667,6 +2818,12 @@ export type BillingDeleteTariffResponse = BillingDeleteTariffResponses[keyof Bil
 
 export type BillingUpdateTariffData = {
     body: TariffUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Tariff Id
@@ -2697,10 +2854,25 @@ export type BillingUpdateTariffResponse = BillingUpdateTariffResponses[keyof Bil
 
 export type BillingBillingMeData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/billing/me';
 };
+
+export type BillingBillingMeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingBillingMeError = BillingBillingMeErrors[keyof BillingBillingMeErrors];
 
 export type BillingBillingMeResponses = {
     /**
@@ -2713,6 +2885,12 @@ export type BillingBillingMeResponse = BillingBillingMeResponses[keyof BillingBi
 
 export type BillingSubscribeData = {
     body: SubscribeRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/billing/subscribe';
@@ -2738,10 +2916,25 @@ export type BillingSubscribeResponse = BillingSubscribeResponses[keyof BillingSu
 
 export type BillingCancelSubscriptionData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/billing/subscription/cancel';
 };
+
+export type BillingCancelSubscriptionErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingCancelSubscriptionError = BillingCancelSubscriptionErrors[keyof BillingCancelSubscriptionErrors];
 
 export type BillingCancelSubscriptionResponses = {
     /**
@@ -2754,10 +2947,25 @@ export type BillingCancelSubscriptionResponse = BillingCancelSubscriptionRespons
 
 export type BillingListPaymentsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/billing/payments';
 };
+
+export type BillingListPaymentsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingListPaymentsError = BillingListPaymentsErrors[keyof BillingListPaymentsErrors];
 
 export type BillingListPaymentsResponses = {
     /**
@@ -2772,6 +2980,12 @@ export type BillingListPaymentsResponse = BillingListPaymentsResponses[keyof Bil
 
 export type BillingSyncPaymentData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Payment Id
@@ -2802,6 +3016,12 @@ export type BillingSyncPaymentResponse = BillingSyncPaymentResponses[keyof Billi
 
 export type NotificationsListNotificationsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: {
         /**
@@ -2834,6 +3054,12 @@ export type NotificationsListNotificationsResponse = NotificationsListNotificati
 
 export type NotificationsCreateNotificationData = {
     body: NotificationCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/notifications';
@@ -2859,10 +3085,25 @@ export type NotificationsCreateNotificationResponse = NotificationsCreateNotific
 
 export type NotificationsUnreadCountData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/notifications/unread-count';
 };
+
+export type NotificationsUnreadCountErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type NotificationsUnreadCountError = NotificationsUnreadCountErrors[keyof NotificationsUnreadCountErrors];
 
 export type NotificationsUnreadCountResponses = {
     /**
@@ -2875,10 +3116,25 @@ export type NotificationsUnreadCountResponse = NotificationsUnreadCountResponses
 
 export type NotificationsMarkAllReadData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/notifications/read-all';
 };
+
+export type NotificationsMarkAllReadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type NotificationsMarkAllReadError = NotificationsMarkAllReadErrors[keyof NotificationsMarkAllReadErrors];
 
 export type NotificationsMarkAllReadResponses = {
     /**
@@ -2891,6 +3147,12 @@ export type NotificationsMarkAllReadResponse = NotificationsMarkAllReadResponses
 
 export type NotificationsBroadcastNotificationData = {
     body: NotificationBroadcast;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/notifications/broadcast';
@@ -2916,6 +3178,12 @@ export type NotificationsBroadcastNotificationResponse = NotificationsBroadcastN
 
 export type NotificationsMarkReadData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Notification Id
@@ -2946,6 +3214,12 @@ export type NotificationsMarkReadResponse = NotificationsMarkReadResponses[keyof
 
 export type PushDeletePushTokenData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query: {
         /**
@@ -2976,6 +3250,12 @@ export type PushDeletePushTokenResponse = PushDeletePushTokenResponses[keyof Pus
 
 export type PushUpsertPushTokenData = {
     body: PushTokenUpsert;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/push-tokens';
@@ -3001,10 +3281,25 @@ export type PushUpsertPushTokenResponse = PushUpsertPushTokenResponses[keyof Pus
 
 export type AchievementsListAchievementsMeData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/achievements/me';
 };
+
+export type AchievementsListAchievementsMeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsListAchievementsMeError = AchievementsListAchievementsMeErrors[keyof AchievementsListAchievementsMeErrors];
 
 export type AchievementsListAchievementsMeResponses = {
     /**
@@ -3019,10 +3314,25 @@ export type AchievementsListAchievementsMeResponse = AchievementsListAchievement
 
 export type AchievementsListRewardsMeData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/rewards/me';
 };
+
+export type AchievementsListRewardsMeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsListRewardsMeError = AchievementsListRewardsMeErrors[keyof AchievementsListRewardsMeErrors];
 
 export type AchievementsListRewardsMeResponses = {
     /**
@@ -3037,10 +3347,25 @@ export type AchievementsListRewardsMeResponse = AchievementsListRewardsMeRespons
 
 export type AchievementsListAchievementsAdminData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/achievements';
 };
+
+export type AchievementsListAchievementsAdminErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsListAchievementsAdminError = AchievementsListAchievementsAdminErrors[keyof AchievementsListAchievementsAdminErrors];
 
 export type AchievementsListAchievementsAdminResponses = {
     /**
@@ -3055,6 +3380,12 @@ export type AchievementsListAchievementsAdminResponse = AchievementsListAchievem
 
 export type AchievementsCreateAchievementData = {
     body: AchievementCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/achievements';
@@ -3080,6 +3411,12 @@ export type AchievementsCreateAchievementResponse = AchievementsCreateAchievemen
 
 export type AchievementsDeleteAchievementData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Achievement Id
@@ -3110,6 +3447,12 @@ export type AchievementsDeleteAchievementResponse = AchievementsDeleteAchievemen
 
 export type AchievementsUpdateAchievementData = {
     body: AchievementUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Achievement Id
@@ -3140,6 +3483,12 @@ export type AchievementsUpdateAchievementResponse = AchievementsUpdateAchievemen
 
 export type AchievementsGrantAchievementData = {
     body: GrantAchievementRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Achievement Id
@@ -3170,10 +3519,25 @@ export type AchievementsGrantAchievementResponse = AchievementsGrantAchievementR
 
 export type AchievementsListRewardsAdminData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/rewards';
 };
+
+export type AchievementsListRewardsAdminErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsListRewardsAdminError = AchievementsListRewardsAdminErrors[keyof AchievementsListRewardsAdminErrors];
 
 export type AchievementsListRewardsAdminResponses = {
     /**
@@ -3188,6 +3552,12 @@ export type AchievementsListRewardsAdminResponse = AchievementsListRewardsAdminR
 
 export type AchievementsCreateRewardData = {
     body: RewardCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/rewards';
@@ -3213,6 +3583,12 @@ export type AchievementsCreateRewardResponse = AchievementsCreateRewardResponses
 
 export type AchievementsDeleteRewardData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Reward Id
@@ -3243,6 +3619,12 @@ export type AchievementsDeleteRewardResponse = AchievementsDeleteRewardResponses
 
 export type AchievementsUpdateRewardData = {
     body: RewardUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Reward Id
@@ -3273,10 +3655,25 @@ export type AchievementsUpdateRewardResponse = AchievementsUpdateRewardResponses
 
 export type SupportGetMyThreadData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/support/me';
 };
+
+export type SupportGetMyThreadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SupportGetMyThreadError = SupportGetMyThreadErrors[keyof SupportGetMyThreadErrors];
 
 export type SupportGetMyThreadResponses = {
     /**
@@ -3289,6 +3686,12 @@ export type SupportGetMyThreadResponse = SupportGetMyThreadResponses[keyof Suppo
 
 export type SupportPostMyMessageData = {
     body: SupportMessageCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/support/me/messages';
@@ -3314,10 +3717,25 @@ export type SupportPostMyMessageResponse = SupportPostMyMessageResponses[keyof S
 
 export type SupportListThreadsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/support/threads';
 };
+
+export type SupportListThreadsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SupportListThreadsError = SupportListThreadsErrors[keyof SupportListThreadsErrors];
 
 export type SupportListThreadsResponses = {
     /**
@@ -3332,6 +3750,12 @@ export type SupportListThreadsResponse = SupportListThreadsResponses[keyof Suppo
 
 export type SupportGetThreadData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Thread Id
@@ -3362,6 +3786,12 @@ export type SupportGetThreadResponse = SupportGetThreadResponses[keyof SupportGe
 
 export type SupportPostAdminMessageData = {
     body: SupportMessageCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Thread Id
@@ -3392,6 +3822,12 @@ export type SupportPostAdminMessageResponse = SupportPostAdminMessageResponses[k
 
 export type LearningEventsCreateLearningEventData = {
     body: LearningEventCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/learning-events';
@@ -3417,6 +3853,12 @@ export type LearningEventsCreateLearningEventResponse = LearningEventsCreateLear
 
 export type FoldersListFoldersData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: {
         /**
@@ -3453,6 +3895,12 @@ export type FoldersListFoldersResponse = FoldersListFoldersResponses[keyof Folde
 
 export type FoldersCreateFolderData = {
     body: FolderCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/folders';
@@ -3478,10 +3926,25 @@ export type FoldersCreateFolderResponse = FoldersCreateFolderResponses[keyof Fol
 
 export type FoldersFoldersMaterialCountsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/folders/material-counts';
 };
+
+export type FoldersFoldersMaterialCountsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type FoldersFoldersMaterialCountsError = FoldersFoldersMaterialCountsErrors[keyof FoldersFoldersMaterialCountsErrors];
 
 export type FoldersFoldersMaterialCountsResponses = {
     /**
@@ -3496,6 +3959,12 @@ export type FoldersFoldersMaterialCountsResponse = FoldersFoldersMaterialCountsR
 
 export type FoldersDeleteFolderData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -3526,6 +3995,12 @@ export type FoldersDeleteFolderResponse = FoldersDeleteFolderResponses[keyof Fol
 
 export type FoldersGetFolderData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -3556,6 +4031,12 @@ export type FoldersGetFolderResponse = FoldersGetFolderResponses[keyof FoldersGe
 
 export type FoldersUpdateFolderData = {
     body: FolderUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -3586,6 +4067,12 @@ export type FoldersUpdateFolderResponse = FoldersUpdateFolderResponses[keyof Fol
 
 export type ArticlesListArticlesData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: {
         /**
@@ -3622,6 +4109,12 @@ export type ArticlesListArticlesResponse = ArticlesListArticlesResponses[keyof A
 
 export type ArticlesCreateArticleData = {
     body: ArticleCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/articles';
@@ -3647,6 +4140,12 @@ export type ArticlesCreateArticleResponse = ArticlesCreateArticleResponses[keyof
 
 export type ArticlesDeleteArticleData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -3677,6 +4176,12 @@ export type ArticlesDeleteArticleResponse = ArticlesDeleteArticleResponses[keyof
 
 export type ArticlesGetArticleData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -3707,6 +4212,12 @@ export type ArticlesGetArticleResponse = ArticlesGetArticleResponses[keyof Artic
 
 export type ArticlesUpdateArticleData = {
     body: ArticleUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -3737,6 +4248,12 @@ export type ArticlesUpdateArticleResponse = ArticlesUpdateArticleResponses[keyof
 
 export type TestsListTestsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: {
         /**
@@ -3773,6 +4290,12 @@ export type TestsListTestsResponse = TestsListTestsResponses[keyof TestsListTest
 
 export type TestsCreateTestData = {
     body: TestCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/tests';
@@ -3798,6 +4321,12 @@ export type TestsCreateTestResponse = TestsCreateTestResponses[keyof TestsCreate
 
 export type TestsDeleteTestData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -3828,6 +4357,12 @@ export type TestsDeleteTestResponse = TestsDeleteTestResponses[keyof TestsDelete
 
 export type TestsGetTestData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -3858,6 +4393,12 @@ export type TestsGetTestResponse = TestsGetTestResponses[keyof TestsGetTestRespo
 
 export type TestsUpdateTestData = {
     body: TestUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -3888,6 +4429,12 @@ export type TestsUpdateTestResponse = TestsUpdateTestResponses[keyof TestsUpdate
 
 export type RescueListRescueData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: {
         /**
@@ -3924,6 +4471,12 @@ export type RescueListRescueResponse = RescueListRescueResponses[keyof RescueLis
 
 export type RescueCreateRescueData = {
     body: RescueCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/rescue';
@@ -3949,6 +4502,12 @@ export type RescueCreateRescueResponse = RescueCreateRescueResponses[keyof Rescu
 
 export type RescueDeleteRescueData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -3979,6 +4538,12 @@ export type RescueDeleteRescueResponse = RescueDeleteRescueResponses[keyof Rescu
 
 export type RescueGetRescueData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -4009,6 +4574,12 @@ export type RescueGetRescueResponse = RescueGetRescueResponses[keyof RescueGetRe
 
 export type RescueUpdateRescueData = {
     body: RescueUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Item Id
@@ -4039,6 +4610,12 @@ export type RescueUpdateRescueResponse = RescueUpdateRescueResponses[keyof Rescu
 
 export type StatsListArticleStatsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: {
         /**
@@ -4071,6 +4648,12 @@ export type StatsListArticleStatsResponse = StatsListArticleStatsResponses[keyof
 
 export type StatsUpsertArticleStatsData = {
     body: ArticleStatsUpsert;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/articles-stats';
@@ -4096,6 +4679,12 @@ export type StatsUpsertArticleStatsResponse = StatsUpsertArticleStatsResponses[k
 
 export type StatsListTestStatsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: {
         /**
@@ -4128,6 +4717,12 @@ export type StatsListTestStatsResponse = StatsListTestStatsResponses[keyof Stats
 
 export type StatsCreateTestStatsData = {
     body: TestStatsCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/tests-stats';
@@ -4153,6 +4748,12 @@ export type StatsCreateTestStatsResponse = StatsCreateTestStatsResponses[keyof S
 
 export type StatsUpsertTestStatsData = {
     body: TestStatsCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/tests-stats';
@@ -4178,6 +4779,12 @@ export type StatsUpsertTestStatsResponse = StatsUpsertTestStatsResponses[keyof S
 
 export type StatsUpdateTestStatsData = {
     body: TestStatsUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * Stats Id
@@ -4208,6 +4815,12 @@ export type StatsUpdateTestStatsResponse = StatsUpdateTestStatsResponses[keyof S
 
 export type StatsListRescueStatsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: {
         /**
@@ -4240,6 +4853,12 @@ export type StatsListRescueStatsResponse = StatsListRescueStatsResponses[keyof S
 
 export type StatsUpsertRescueStatsData = {
     body: RescueStatsUpsert;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/rescue-stats';
@@ -4265,6 +4884,12 @@ export type StatsUpsertRescueStatsResponse = StatsUpsertRescueStatsResponses[key
 
 export type StatsListTestResultsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: {
         /**
@@ -4297,6 +4922,12 @@ export type StatsListTestResultsResponse = StatsListTestResultsResponses[keyof S
 
 export type StatsCreateTestResultData = {
     body: TestResultCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/test-results';
@@ -4322,10 +4953,25 @@ export type StatsCreateTestResultResponse = StatsCreateTestResultResponses[keyof
 
 export type StatsResetAllStatsData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/stats';
 };
+
+export type StatsResetAllStatsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type StatsResetAllStatsError = StatsResetAllStatsErrors[keyof StatsResetAllStatsErrors];
 
 export type StatsResetAllStatsResponses = {
     /**
@@ -4338,10 +4984,25 @@ export type StatsResetAllStatsResponse = StatsResetAllStatsResponses[keyof Stats
 
 export type TrainingTrainingMeData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/training/me';
 };
+
+export type TrainingTrainingMeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TrainingTrainingMeError = TrainingTrainingMeErrors[keyof TrainingTrainingMeErrors];
 
 export type TrainingTrainingMeResponses = {
     /**
@@ -4356,6 +5017,12 @@ export type TrainingTrainingMeResponse = TrainingTrainingMeResponses[keyof Train
 
 export type TrainingTestRecommendationsData = {
     body: TestRecommendationsCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/training/test-recommendations';
@@ -4383,10 +5050,25 @@ export type TrainingTestRecommendationsResponse = TrainingTestRecommendationsRes
 
 export type UsersListUsersData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/users';
 };
+
+export type UsersListUsersErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UsersListUsersError = UsersListUsersErrors[keyof UsersListUsersErrors];
 
 export type UsersListUsersResponses = {
     /**
@@ -4401,6 +5083,12 @@ export type UsersListUsersResponse = UsersListUsersResponses[keyof UsersListUser
 
 export type UsersResetUsersStatsData = {
     body: ResetStatsRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/users/reset-stats';
@@ -4426,6 +5114,12 @@ export type UsersResetUsersStatsResponse = UsersResetUsersStatsResponses[keyof U
 
 export type UsersGetUserQrProfileData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * User Id
@@ -4502,6 +5196,12 @@ export type LegalGetLegalDocumentFileResponses = {
 
 export type MediaDeleteMediaData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * File Path
@@ -4532,6 +5232,12 @@ export type MediaDeleteMediaResponse = MediaDeleteMediaResponses[keyof MediaDele
 
 export type MediaDownloadMediaData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * File Path
@@ -4560,6 +5266,12 @@ export type MediaDownloadMediaResponses = {
 
 export type MediaUploadMediaData = {
     body: BodyMediaUploadMedia;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path?: never;
     query?: never;
     url: '/api/v1/media';

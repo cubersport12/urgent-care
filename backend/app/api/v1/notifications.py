@@ -6,8 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSock
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_current_user, get_db
-from app.core.security import decode_token
-from app.db.base import AsyncSessionLocal
+from app.api.deps import get_user_by_session
 from app.db.repositories.notifications import NotificationRepository
 from app.db.repositories.user import UserRepository
 from app.models.notification import Notification
@@ -122,24 +121,14 @@ async def create_notification(
 
 
 @router.websocket("/ws")
-async def notifications_ws(websocket: WebSocket, token: str = Query(...)) -> None:
-    """Auth via access JWT query `token` (Bearer is not available on WS handshake)."""
-    try:
-        payload = decode_token(token)
-        if payload.get("type") != "access":
-            await websocket.close(code=4401)
-            return
-        user_id = UUID(payload["sub"])
-    except Exception:
+async def notifications_ws(websocket: WebSocket, db = Depends(get_db), session_id: str = Query(...)) -> None:
+    """Auth via session id query param (custom headers are not available on WS handshake)."""
+    user = await get_user_by_session(db, session_id)
+    if not user:
         await websocket.close(code=4401)
         return
 
-    async with AsyncSessionLocal() as db:
-        user = await UserRepository(db).get(user_id)
-        if not user or not user.is_active:
-            await websocket.close(code=4401)
-            return
-
+    user_id = user.id
     await notification_hub.connect(user_id, websocket)
     try:
         while True:

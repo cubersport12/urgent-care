@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { UserOut } from '@/api/generated/types.gen';
 
-const ACCESS_KEY = 'uc_access_token';
-const REFRESH_KEY = 'uc_refresh_token';
+// Храним только идентификатор сессии + кэш юзера; access-токенов больше нет —
+// авторизация идёт заголовком X-Session-Id на каждый запрос.
+const SESSION_KEY = 'uc_session_id';
 const USER_KEY = 'uc_user';
 
-let accessToken: string | null = null;
-let refreshToken: string | null = null;
+let sessionId: string | null = null;
 let cachedUser: UserOut | null = null;
 
 type AuthListener = (user: UserOut | null) => void;
@@ -23,13 +23,8 @@ function notifyAuth() {
 
 export async function loadStoredAuth(): Promise<UserOut | null> {
   try {
-    const [a, r, u] = await Promise.all([
-      AsyncStorage.getItem(ACCESS_KEY),
-      AsyncStorage.getItem(REFRESH_KEY),
-      AsyncStorage.getItem(USER_KEY),
-    ]);
-    accessToken = a;
-    refreshToken = r;
+    const [s, u] = await Promise.all([AsyncStorage.getItem(SESSION_KEY), AsyncStorage.getItem(USER_KEY)]);
+    sessionId = s;
     cachedUser = u ? (JSON.parse(u) as UserOut) : null;
     if (cachedUser) cachedUser = { ...cachedUser, id: String(cachedUser.id) };
     return cachedUser;
@@ -39,24 +34,16 @@ export async function loadStoredAuth(): Promise<UserOut | null> {
 }
 
 export async function persistAuth(tokens: {
-  access_token: string;
-  refresh_token: string;
+  session_id: string;
   user: UserOut;
 }): Promise<void> {
-  accessToken = tokens.access_token;
-  refreshToken = tokens.refresh_token;
+  sessionId = tokens.session_id;
   cachedUser = { ...tokens.user, id: String(tokens.user.id) };
   await Promise.all([
-    AsyncStorage.setItem(ACCESS_KEY, accessToken),
-    AsyncStorage.setItem(REFRESH_KEY, refreshToken),
+    AsyncStorage.setItem(SESSION_KEY, sessionId),
     AsyncStorage.setItem(USER_KEY, JSON.stringify(cachedUser)),
   ]);
   notifyAuth();
-}
-
-export async function persistAccessToken(token: string): Promise<void> {
-  accessToken = token;
-  await AsyncStorage.setItem(ACCESS_KEY, token);
 }
 
 export async function persistUser(user: UserOut): Promise<void> {
@@ -66,23 +53,14 @@ export async function persistUser(user: UserOut): Promise<void> {
 }
 
 export async function clearAuth(): Promise<void> {
-  accessToken = null;
-  refreshToken = null;
+  sessionId = null;
   cachedUser = null;
-  await Promise.all([
-    AsyncStorage.removeItem(ACCESS_KEY),
-    AsyncStorage.removeItem(REFRESH_KEY),
-    AsyncStorage.removeItem(USER_KEY),
-  ]);
+  await Promise.all([AsyncStorage.removeItem(SESSION_KEY), AsyncStorage.removeItem(USER_KEY)]);
   notifyAuth();
 }
 
-export function getAccessToken(): string | null {
-  return accessToken;
-}
-
-export function getRefreshToken(): string | null {
-  return refreshToken;
+export function getSessionId(): string | null {
+  return sessionId;
 }
 
 export function getCurrentUser(): UserOut | null {

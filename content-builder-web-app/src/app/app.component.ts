@@ -3,7 +3,7 @@ import { AppApi, AppIconsRegistry, NullableValue } from '@/core/utils';
 import { ToggleLightDarkButtonComponent } from '@/core/components';
 import { Store } from '@ngxs/store';
 import { FoldersActions, FoldersState } from '@/core/store';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +20,7 @@ import { RouterOutlet } from '@angular/router';
 })
 export class AppComponent {
   private readonly _store = inject(Store);
+  private readonly _router = inject(Router);
   private readonly _iconsRegistry = inject(AppIconsRegistry);
   protected readonly _api = inject(AppApi);
 
@@ -35,7 +36,13 @@ export class AppComponent {
   }
 
   private async _initialize() {
-    await this._api.ensureAuthenticated();
+    // На форме входа проверять сессию не нужно
+    if (this._router.url === '/login') return;
+    try {
+      await this._api.ensureAuthenticated();
+    } catch {
+      // ensureAuthenticated уже перенаправил на /login
+    }
   }
 
   protected _handleAdd(): void {

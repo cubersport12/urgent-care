@@ -12,14 +12,16 @@ import { useNotifications } from '@/contexts/notifications-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
 import { staggerEnter } from '@/hooks/use-enter-animation';
-import { useAppTheme, useGlass, useGlow } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlow } from '@/hooks/use-theme-color';
 import { updateMe } from '@/lib/auth-api';
+import { useFileImage } from '@/hooks/api/useFileImage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -121,6 +123,7 @@ export default function ProfileScreen() {
   };
 
   const initials = getInitials(accountName);
+  const { response: avatarUri } = useFileImage(user?.avatar_key ?? '');
 
   useEffect(() => {
     void fetchData();
@@ -172,7 +175,9 @@ export default function ProfileScreen() {
           <GlassCard padding={16} borderRadius={16}>
             <View style={styles.profileHeaderRow}>
               <View style={[styles.avatar, { borderColor: primary }]}>
-                {initials ? (
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                ) : initials ? (
                   <ThemedText style={[styles.avatarText, { color: primary }]}>
                     {initials}
                   </ThemedText>
@@ -188,6 +193,12 @@ export default function ProfileScreen() {
                 {user?.city ? (
                   <ThemedText style={[styles.subtitle, { color: neutralSoft }]}>
                     {user.city.label || user.city.name}
+                  </ThemedText>
+                ) : null}
+                {user?.occupation ? (
+                  <ThemedText style={[styles.subtitle, { color: neutralSoft }]}>
+                    {user.occupation}
+                    {user.birth_year ? `, ${new Date().getFullYear() - user.birth_year} лет` : ''}
                   </ThemedText>
                 ) : null}
                 
@@ -269,6 +280,31 @@ export default function ProfileScreen() {
               label="Мой тарифный план"
               value={billing?.tariffTitle ?? 'Загрузка…'}
               onPress={() => router.push('/(tabs)/profile/subscription')}
+              isLast={true}
+            />
+          </GlassCard>
+        </Animated.View>
+
+        {/* Section: АККАУНТ */}
+        <Animated.View entering={staggerEnter(4)} style={styles.section}>
+          <ThemedText type="caption" style={[styles.sectionHeader, { color: neutralSoft }]}>
+            АККАУНТ
+          </ThemedText>
+          <GlassCard padding={0} borderRadius={16}>
+            <ProfileRow
+              icon="person.fill"
+              iconBg="rgba(59, 130, 246, 0.1)"
+              iconColor="#3B82F6"
+              label="Редактировать профиль"
+              onPress={() => router.push('/(tabs)/profile/edit')}
+              isLast={false}
+            />
+            <ProfileRow
+              icon="shield.fill"
+              iconBg="rgba(16, 185, 129, 0.1)"
+              iconColor="#10B981"
+              label="Активные сессии"
+              onPress={() => router.push('/(tabs)/profile/sessions')}
               isLast={true}
             />
           </GlassCard>
@@ -457,6 +493,16 @@ export default function ProfileScreen() {
             />
 
             <ProfileRow
+              icon="trash.fill"
+              iconBg="rgba(239, 68, 68, 0.1)"
+              iconColor={dangerColor}
+              label="Удалить аккаунт"
+              onPress={() => router.push('/(tabs)/profile/delete-account')}
+              textColor={dangerColor}
+              isLast={false}
+            />
+
+            <ProfileRow
               icon="rectangle.portrait.and.arrow.right"
               iconBg="rgba(239, 68, 68, 0.1)"
               iconColor={dangerColor}
@@ -496,6 +542,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   avatarText: {
     fontSize: 20,

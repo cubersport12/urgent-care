@@ -8,8 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_current_user, get_db
 from app.core.config import settings
-from app.core.security import decode_token
-from app.db.base import AsyncSessionLocal
+from app.api.deps import get_user_by_session
 from app.db.repositories.support import SupportRepository
 from app.db.repositories.user import UserRepository
 from app.models.support import SupportMessage
@@ -176,25 +175,16 @@ async def post_admin_message(
 
 
 @router.websocket("/ws")
-async def support_ws(websocket: WebSocket, token: str = Query(...)) -> None:
-    try:
-        payload = decode_token(token)
-        if payload.get("type") != "access":
-            await websocket.close(code=4401)
-            return
-        user_id = UUID(payload["sub"])
-    except Exception:
+async def support_ws(websocket: WebSocket, db = Depends(get_db), session_id: str = Query(...)) -> None:
+    user = await get_user_by_session(db, session_id)
+    if not user:
         await websocket.close(code=4401)
         return
 
-    async with AsyncSessionLocal() as db:
-        user = await UserRepository(db).get(user_id)
-        if not user or not user.is_active:
-            await websocket.close(code=4401)
-            return
-        is_admin = user.role == "admin"
+    is_admin = user.role == "admin"
 
     hub = admin_support_hub if is_admin else support_hub
+    user_id = user.id
     await hub.connect(user_id, websocket)
     try:
         while True:

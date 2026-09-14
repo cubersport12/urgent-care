@@ -1,6 +1,6 @@
 import type { AppNotification } from '@/api/notifications';
 import { API_BASE_URL } from '@/api/client';
-import { getAccessToken } from '@/lib/auth-storage';
+import { getSessionId } from '@/lib/auth-storage';
 
 export type AchievementUnlockPayload = {
   notification: AppNotification;
@@ -73,8 +73,8 @@ export function disconnectNotificationsWs() {
 export async function connectNotificationsWs() {
   stopped = false;
   clearReconnect();
-  const token = getAccessToken();
-  if (!token) return;
+  const sessionId = getSessionId();
+  if (!sessionId) return;
 
   if (
     socket &&
@@ -83,7 +83,7 @@ export async function connectNotificationsWs() {
     return;
   }
 
-  const url = `${wsBase()}/api/v1/notifications/ws?token=${encodeURIComponent(token)}`;
+  const url = `${wsBase()}/api/v1/notifications/ws?session_id=${encodeURIComponent(sessionId)}`;
   const ws = new WebSocket(url);
   socket = ws;
 

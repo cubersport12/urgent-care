@@ -259,7 +259,6 @@ export type {
   TestOut,
   LinkToArticle,
   UserOut,
-  Token,
   TariffOut,
   TariffCreate,
   TariffUpdate,

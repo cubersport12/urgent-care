@@ -29,48 +29,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Token"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/login": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Login",
-        "operationId": "auth_login",
-        "requestBody": {
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_auth_login"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Token"
+                  "$ref": "#/components/schemas/SessionCreated"
                 }
               }
             }
@@ -112,7 +71,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Token"
+                  "$ref": "#/components/schemas/SessionCreated"
                 }
               }
             }
@@ -130,30 +89,78 @@
         }
       }
     },
-    "/api/v1/auth/refresh": {
+    "/api/v1/auth/logout": {
       "post": {
         "tags": [
           "auth"
         ],
-        "summary": "Refresh",
-        "operationId": "auth_refresh",
+        "summary": "Logout",
+        "description": "Явный разлогин устройства: закрываем сессию по её id.",
+        "operationId": "auth_logout",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TokenRefresh"
+                "$ref": "#/components/schemas/SessionLogout"
               }
             }
           },
           "required": true
         },
         "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sessions": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "List Sessions",
+        "operationId": "auth_list_sessions",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenRefreshResponse"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessionOut"
+                  },
+                  "title": "Response Auth List Sessions"
                 }
               }
             }
@@ -178,6 +185,25 @@
         ],
         "summary": "Me",
         "operationId": "auth_me",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -188,13 +214,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       },
       "patch": {
         "tags": [
@@ -202,15 +233,34 @@
         ],
         "summary": "Update Me",
         "operationId": "auth_update_me",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UserUpdate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -233,12 +283,167 @@
               }
             }
           }
-        },
-        "security": [
+        }
+      },
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Delete Me",
+        "description": "152-ФЗ: полное удаление аккаунта и всех связанных данных (каскад по FK).",
+        "operationId": "auth_delete_me",
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccount"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me/avatar": {
+      "put": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Upload Avatar",
+        "operationId": "auth_upload_avatar",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_auth_upload_avatar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Delete Avatar",
+        "operationId": "auth_delete_avatar",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/auth/forgot-password": {
@@ -383,10 +588,10 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/TariffOut"
                   },
-                  "type": "array",
                   "title": "Response Billing List Tariffs"
                 }
               }
@@ -400,15 +605,34 @@
         ],
         "summary": "Create Tariff",
         "operationId": "billing_create_tariff",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TariffCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -431,12 +655,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/billing/tariffs/all": {
@@ -446,27 +665,51 @@
         ],
         "summary": "List Tariffs Admin",
         "operationId": "billing_list_tariffs_admin",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/TariffOut"
                   },
-                  "type": "array",
                   "title": "Response Billing List Tariffs Admin"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/billing/tariffs/{tariff_id}": {
@@ -476,11 +719,6 @@
         ],
         "summary": "Update Tariff",
         "operationId": "billing_update_tariff",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "tariff_id",
@@ -490,6 +728,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Tariff Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -532,11 +787,6 @@
         ],
         "summary": "Delete Tariff",
         "operationId": "billing_delete_tariff",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "tariff_id",
@@ -546,6 +796,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Tariff Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -573,6 +840,25 @@
         ],
         "summary": "Billing Me",
         "operationId": "billing_billing_me",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -583,13 +869,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/billing/subscribe": {
@@ -599,15 +890,34 @@
         ],
         "summary": "Subscribe",
         "operationId": "billing_subscribe",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SubscribeRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -630,12 +940,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/billing/subscription/cancel": {
@@ -645,6 +950,25 @@
         ],
         "summary": "Cancel Subscription",
         "operationId": "billing_cancel_subscription",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -655,13 +979,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/billing/payments": {
@@ -671,27 +1000,51 @@
         ],
         "summary": "List Payments",
         "operationId": "billing_list_payments",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/PaymentOut"
                   },
-                  "type": "array",
                   "title": "Response Billing List Payments"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/billing/payments/{payment_id}/sync": {
@@ -701,11 +1054,6 @@
         ],
         "summary": "Sync Payment",
         "operationId": "billing_sync_payment",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "payment_id",
@@ -715,6 +1063,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Payment Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -749,11 +1114,6 @@
         ],
         "summary": "List Notifications",
         "operationId": "notifications_list_notifications",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "unreadOnly",
@@ -763,6 +1123,23 @@
               "type": "boolean",
               "default": false,
               "title": "Unreadonly"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -799,9 +1176,23 @@
         ],
         "summary": "Create Notification",
         "operationId": "notifications_create_notification",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -845,6 +1236,25 @@
         ],
         "summary": "Unread Count",
         "operationId": "notifications_unread_count",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -855,13 +1265,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/notifications/read-all": {
@@ -871,6 +1286,25 @@
         ],
         "summary": "Mark All Read",
         "operationId": "notifications_mark_all_read",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -881,13 +1315,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/notifications/broadcast": {
@@ -898,15 +1337,34 @@
         "summary": "Broadcast Notification",
         "description": "Create the same notification for every active user and push over WS.",
         "operationId": "notifications_broadcast_notification",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/NotificationBroadcast"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -929,12 +1387,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/notifications/{notification_id}/read": {
@@ -944,11 +1397,6 @@
         ],
         "summary": "Mark Read",
         "operationId": "notifications_mark_read",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "notification_id",
@@ -958,6 +1406,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Notification Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -992,9 +1457,23 @@
         ],
         "summary": "Upsert Push Token",
         "operationId": "push_upsert_push_token",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -1029,11 +1508,6 @@
         ],
         "summary": "Delete Push Token",
         "operationId": "push_delete_push_token",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "token",
@@ -1044,6 +1518,23 @@
               "minLength": 8,
               "maxLength": 255,
               "title": "Token"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -1071,27 +1562,51 @@
         ],
         "summary": "List Achievements Me",
         "operationId": "achievements_list_achievements_me",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/AchievementMeOut"
                   },
-                  "type": "array",
                   "title": "Response Achievements List Achievements Me"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/rewards/me": {
@@ -1101,27 +1616,51 @@
         ],
         "summary": "List Rewards Me",
         "operationId": "achievements_list_rewards_me",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/RewardMeOut"
                   },
-                  "type": "array",
                   "title": "Response Achievements List Rewards Me"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/achievements": {
@@ -1131,27 +1670,51 @@
         ],
         "summary": "List Achievements Admin",
         "operationId": "achievements_list_achievements_admin",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/AchievementOut"
                   },
-                  "type": "array",
                   "title": "Response Achievements List Achievements Admin"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -1159,15 +1722,34 @@
         ],
         "summary": "Create Achievement",
         "operationId": "achievements_create_achievement",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AchievementCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -1190,12 +1772,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/achievements/{achievement_id}": {
@@ -1205,11 +1782,6 @@
         ],
         "summary": "Update Achievement",
         "operationId": "achievements_update_achievement",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "achievement_id",
@@ -1219,6 +1791,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Achievement Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -1261,11 +1850,6 @@
         ],
         "summary": "Delete Achievement",
         "operationId": "achievements_delete_achievement",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "achievement_id",
@@ -1275,6 +1859,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Achievement Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -1302,11 +1903,6 @@
         ],
         "summary": "Grant Achievement",
         "operationId": "achievements_grant_achievement",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "achievement_id",
@@ -1316,6 +1912,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Achievement Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -1360,27 +1973,51 @@
         ],
         "summary": "List Rewards Admin",
         "operationId": "achievements_list_rewards_admin",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/RewardOut"
                   },
-                  "type": "array",
                   "title": "Response Achievements List Rewards Admin"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -1388,15 +2025,34 @@
         ],
         "summary": "Create Reward",
         "operationId": "achievements_create_reward",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RewardCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -1419,12 +2075,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/rewards/{reward_id}": {
@@ -1434,11 +2085,6 @@
         ],
         "summary": "Update Reward",
         "operationId": "achievements_update_reward",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "reward_id",
@@ -1448,6 +2094,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Reward Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -1490,11 +2153,6 @@
         ],
         "summary": "Delete Reward",
         "operationId": "achievements_delete_reward",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "reward_id",
@@ -1504,6 +2162,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Reward Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -1531,6 +2206,25 @@
         ],
         "summary": "Get My Thread",
         "operationId": "support_get_my_thread",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1541,13 +2235,18 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/support/me/messages": {
@@ -1557,15 +2256,34 @@
         ],
         "summary": "Post My Message",
         "operationId": "support_post_my_message",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SupportMessageCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -1588,12 +2306,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/support/threads": {
@@ -1603,27 +2316,51 @@
         ],
         "summary": "List Threads",
         "operationId": "support_list_threads",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/SupportThreadOut"
                   },
-                  "type": "array",
                   "title": "Response Support List Threads"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/support/threads/{thread_id}": {
@@ -1633,11 +2370,6 @@
         ],
         "summary": "Get Thread",
         "operationId": "support_get_thread",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "thread_id",
@@ -1647,6 +2379,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Thread Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -1681,11 +2430,6 @@
         ],
         "summary": "Post Admin Message",
         "operationId": "support_post_admin_message",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "thread_id",
@@ -1695,6 +2439,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Thread Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -1739,15 +2500,34 @@
         ],
         "summary": "Create Learning Event",
         "operationId": "learning-events_create_learning_event",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LearningEventCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -1770,12 +2550,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/folders": {
@@ -1785,11 +2560,6 @@
         ],
         "summary": "List Folders",
         "operationId": "folders_list_folders",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "parentId",
@@ -1815,6 +2585,23 @@
               "type": "boolean",
               "default": false,
               "title": "All"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -1851,9 +2638,23 @@
         ],
         "summary": "Create Folder",
         "operationId": "folders_create_folder",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -1898,27 +2699,51 @@
         "summary": "Folders Material Counts",
         "description": "По каждой папке: количество материалов (документы, тесты, режимы спасения)\nво всей вложенности — сама папка + все подпапки (descendants), и сколько из них\nзавершено текущим пользователем (документ прочитан, тест/режим пройден успешно).",
         "operationId": "folders_folders_material_counts",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/FolderMaterialCountOut"
                   },
-                  "type": "array",
                   "title": "Response Folders Folders Material Counts"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/folders/{item_id}": {
@@ -1928,11 +2753,6 @@
         ],
         "summary": "Get Folder",
         "operationId": "folders_get_folder",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -1941,6 +2761,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -1973,11 +2810,6 @@
         ],
         "summary": "Update Folder",
         "operationId": "folders_update_folder",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -1986,6 +2818,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2028,11 +2877,6 @@
         ],
         "summary": "Delete Folder",
         "operationId": "folders_delete_folder",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -2041,6 +2885,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2068,11 +2929,6 @@
         ],
         "summary": "List Articles",
         "operationId": "articles_list_articles",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "parentId",
@@ -2098,6 +2954,23 @@
               "type": "boolean",
               "default": false,
               "title": "All"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2134,9 +3007,23 @@
         ],
         "summary": "Create Article",
         "operationId": "articles_create_article",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -2180,11 +3067,6 @@
         ],
         "summary": "Get Article",
         "operationId": "articles_get_article",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -2193,6 +3075,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2225,11 +3124,6 @@
         ],
         "summary": "Update Article",
         "operationId": "articles_update_article",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -2238,6 +3132,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2280,11 +3191,6 @@
         ],
         "summary": "Delete Article",
         "operationId": "articles_delete_article",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -2293,6 +3199,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2320,11 +3243,6 @@
         ],
         "summary": "List Tests",
         "operationId": "tests_list_tests",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "parentId",
@@ -2350,6 +3268,23 @@
               "type": "boolean",
               "default": false,
               "title": "All"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2386,9 +3321,23 @@
         ],
         "summary": "Create Test",
         "operationId": "tests_create_test",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -2432,11 +3381,6 @@
         ],
         "summary": "Get Test",
         "operationId": "tests_get_test",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -2445,6 +3389,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2477,11 +3438,6 @@
         ],
         "summary": "Update Test",
         "operationId": "tests_update_test",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -2490,6 +3446,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2532,11 +3505,6 @@
         ],
         "summary": "Delete Test",
         "operationId": "tests_delete_test",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -2545,6 +3513,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2572,11 +3557,6 @@
         ],
         "summary": "List Rescue",
         "operationId": "rescue_list_rescue",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "parentId",
@@ -2602,6 +3582,23 @@
               "type": "boolean",
               "default": false,
               "title": "All"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2638,9 +3635,23 @@
         ],
         "summary": "Create Rescue",
         "operationId": "rescue_create_rescue",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -2684,11 +3695,6 @@
         ],
         "summary": "Get Rescue",
         "operationId": "rescue_get_rescue",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -2697,6 +3703,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2729,11 +3752,6 @@
         ],
         "summary": "Update Rescue",
         "operationId": "rescue_update_rescue",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -2742,6 +3760,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2784,11 +3819,6 @@
         ],
         "summary": "Delete Rescue",
         "operationId": "rescue_delete_rescue",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "item_id",
@@ -2797,6 +3827,23 @@
             "schema": {
               "type": "string",
               "title": "Item Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2824,11 +3871,6 @@
         ],
         "summary": "List Article Stats",
         "operationId": "stats_list_article_stats",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "articleId",
@@ -2844,6 +3886,23 @@
                 }
               ],
               "title": "Articleid"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2880,9 +3939,23 @@
         ],
         "summary": "Upsert Article Stats",
         "operationId": "stats_upsert_article_stats",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -2926,11 +3999,6 @@
         ],
         "summary": "List Test Stats",
         "operationId": "stats_list_test_stats",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "testId",
@@ -2946,6 +4014,23 @@
                 }
               ],
               "title": "Testid"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -2982,9 +4067,23 @@
         ],
         "summary": "Create Test Stats",
         "operationId": "stats_create_test_stats",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -3026,9 +4125,23 @@
         ],
         "summary": "Upsert Test Stats",
         "operationId": "stats_upsert_test_stats",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -3072,11 +4185,6 @@
         ],
         "summary": "Update Test Stats",
         "operationId": "stats_update_test_stats",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "stats_id",
@@ -3086,6 +4194,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Stats Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -3130,11 +4255,6 @@
         ],
         "summary": "List Rescue Stats",
         "operationId": "stats_list_rescue_stats",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "rescueId",
@@ -3150,6 +4270,23 @@
                 }
               ],
               "title": "Rescueid"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -3186,9 +4323,23 @@
         ],
         "summary": "Upsert Rescue Stats",
         "operationId": "stats_upsert_rescue_stats",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -3232,11 +4383,6 @@
         ],
         "summary": "List Test Results",
         "operationId": "stats_list_test_results",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "testId",
@@ -3252,6 +4398,23 @@
                 }
               ],
               "title": "Testid"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -3288,9 +4451,23 @@
         ],
         "summary": "Create Test Result",
         "operationId": "stats_create_test_result",
-        "security": [
+        "parameters": [
           {
-            "OAuth2PasswordBearer": []
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
           }
         ],
         "requestBody": {
@@ -3334,16 +4511,40 @@
         ],
         "summary": "Reset All Stats",
         "operationId": "stats_reset_all_stats",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/training/me": {
@@ -3353,27 +4554,51 @@
         ],
         "summary": "Training Me",
         "operationId": "training_training_me",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/TrainingTopicOut"
                   },
-                  "type": "array",
                   "title": "Response Training Training Me"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/training/test-recommendations": {
@@ -3384,15 +4609,34 @@
         "summary": "Test Recommendations",
         "description": "Articles to read after finishing a test, picked by embedding similarity\nto the test name and wrongly answered questions.",
         "operationId": "training_test_recommendations",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TestRecommendationsCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -3400,10 +4644,10 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/RecommendedArticleOut"
                   },
-                  "type": "array",
                   "title": "Response Training Test Recommendations"
                 }
               }
@@ -3419,12 +4663,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/users": {
@@ -3434,27 +4673,51 @@
         ],
         "summary": "List Users",
         "operationId": "users_list_users",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/UserListItemOut"
                   },
-                  "type": "array",
                   "title": "Response Users List Users"
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/users/reset-stats": {
@@ -3465,15 +4728,34 @@
         "summary": "Reset Users Stats",
         "description": "Полный сброс статистики и прогресса: события обучения (аналитика,\nстатистика тестов/статей/режимов) и записи о полученных достижениях.",
         "operationId": "users_reset_users_stats",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ResetStatsRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -3496,12 +4778,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/users/{user_id}/qr-profile": {
@@ -3511,11 +4788,6 @@
         ],
         "summary": "Get User Qr Profile",
         "operationId": "users_get_user_qr_profile",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "user_id",
@@ -3525,6 +4797,23 @@
               "type": "string",
               "format": "uuid",
               "title": "User Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -3566,7 +4855,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/LegalDocumentOut"
                   },
                   "type": "array",
                   "title": "Response Legal List Legal Documents"
@@ -3624,11 +4913,6 @@
         ],
         "summary": "Download Media",
         "operationId": "media_download_media",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "file_path",
@@ -3637,6 +4921,23 @@
             "schema": {
               "type": "string",
               "title": "File Path"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -3667,11 +4968,6 @@
         ],
         "summary": "Delete Media",
         "operationId": "media_delete_media",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "file_path",
@@ -3680,6 +4976,23 @@
             "schema": {
               "type": "string",
               "title": "File Path"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
             }
           }
         ],
@@ -3707,15 +5020,34 @@
         ],
         "summary": "Upload Media",
         "operationId": "media_upload_media",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_media_upload_media"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -3738,12 +5070,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/health": {
@@ -4779,62 +6106,19 @@
         ],
         "title": "BillingMeOut"
       },
-      "Body_auth_login": {
+      "Body_auth_upload_avatar": {
         "properties": {
-          "grant_type": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "password"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grant Type"
-          },
-          "username": {
+          "file": {
             "type": "string",
-            "title": "Username"
-          },
-          "password": {
-            "type": "string",
-            "title": "Password"
-          },
-          "scope": {
-            "type": "string",
-            "title": "Scope",
-            "default": ""
-          },
-          "client_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Client Id"
-          },
-          "client_secret": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Client Secret"
+            "format": "binary",
+            "title": "File"
           }
         },
         "type": "object",
         "required": [
-          "username",
-          "password"
+          "file"
         ],
-        "title": "Body_auth_login"
+        "title": "Body_auth_upload_avatar"
       },
       "Body_media_upload_media": {
         "properties": {
@@ -4934,6 +6218,21 @@
           "label"
         ],
         "title": "CityOut"
+      },
+      "DeleteAccount": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "DeleteAccount"
       },
       "FolderCreate": {
         "properties": {
@@ -5283,6 +6582,29 @@
         ],
         "title": "LearningEventOut"
       },
+      "LegalDocumentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "LegalDocumentOut"
+      },
       "LinkToArticle": {
         "properties": {
           "key": {
@@ -5313,6 +6635,18 @@
             "maxLength": 100,
             "minLength": 1,
             "title": "Password"
+          },
+          "device_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Name"
           }
         },
         "type": "object",
@@ -6412,6 +7746,93 @@
         },
         "type": "object",
         "title": "RewardUpdate"
+      },
+      "SessionCreated": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "user"
+        ],
+        "title": "SessionCreated"
+      },
+      "SessionLogout": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id"
+        ],
+        "title": "SessionLogout"
+      },
+      "SessionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "device_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "last_active_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Active At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "last_active_at",
+          "expires_at"
+        ],
+        "title": "SessionOut"
       },
       "SubscribeOut": {
         "properties": {
@@ -7887,74 +9308,6 @@
         "type": "object",
         "title": "TestUpdate"
       },
-      "Token": {
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "title": "Access Token"
-          },
-          "refresh_token": {
-            "type": "string",
-            "title": "Refresh Token"
-          },
-          "token_type": {
-            "type": "string",
-            "title": "Token Type",
-            "default": "bearer"
-          },
-          "expires_in": {
-            "type": "integer",
-            "title": "Expires In"
-          },
-          "user": {
-            "$ref": "#/components/schemas/UserOut"
-          }
-        },
-        "type": "object",
-        "required": [
-          "access_token",
-          "refresh_token",
-          "expires_in",
-          "user"
-        ],
-        "title": "Token"
-      },
-      "TokenRefresh": {
-        "properties": {
-          "refresh_token": {
-            "type": "string",
-            "title": "Refresh Token"
-          }
-        },
-        "type": "object",
-        "required": [
-          "refresh_token"
-        ],
-        "title": "TokenRefresh"
-      },
-      "TokenRefreshResponse": {
-        "properties": {
-          "access_token": {
-            "type": "string",
-            "title": "Access Token"
-          },
-          "token_type": {
-            "type": "string",
-            "title": "Token Type",
-            "default": "bearer"
-          },
-          "expires_in": {
-            "type": "integer",
-            "title": "Expires In"
-          }
-        },
-        "type": "object",
-        "required": [
-          "access_token",
-          "expires_in"
-        ],
-        "title": "TokenRefreshResponse"
-      },
       "TrainingTopicOut": {
         "properties": {
           "testId": {
@@ -8006,24 +9359,6 @@
             "maxLength": 100,
             "minLength": 6,
             "title": "Password"
-          },
-          "full_name": {
-            "type": "string",
-            "maxLength": 200,
-            "title": "Full Name",
-            "default": ""
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 200
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
           },
           "city_id": {
             "anyOf": [
@@ -8106,6 +9441,39 @@
               }
             ]
           },
+          "avatar_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Key"
+          },
+          "birth_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Year"
+          },
+          "occupation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occupation"
+          },
           "role": {
             "type": "string",
             "title": "Role"
@@ -8156,6 +9524,31 @@
               }
             ],
             "title": "City Id"
+          },
+          "birth_year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2026.0,
+                "minimum": 1900.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Year"
+          },
+          "occupation": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occupation"
           }
         },
         "type": "object",
@@ -8235,17 +9628,6 @@
           "wrongCount"
         ],
         "title": "WrongQuestionOut"
-      }
-    },
-    "securitySchemes": {
-      "OAuth2PasswordBearer": {
-        "type": "oauth2",
-        "flows": {
-          "password": {
-            "scopes": {},
-            "tokenUrl": "/api/v1/auth/login"
-          }
-        }
       }
     }
   }

@@ -1,6 +1,6 @@
 import type { SupportMessage } from '@/api/support';
 import { API_BASE_URL } from '@/api/client';
-import { getAccessToken } from '@/lib/auth-storage';
+import { getSessionId } from '@/lib/auth-storage';
 
 type Handler = (m: SupportMessage) => void;
 
@@ -54,15 +54,15 @@ export function disconnectSupportWs() {
 export async function connectSupportWs() {
   stopped = false;
   clearReconnect();
-  const token = getAccessToken();
-  if (!token) return;
+  const sessionId = getSessionId();
+  if (!sessionId) return;
 
   if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
     return;
   }
 
   try {
-    const ws = new WebSocket(`${wsBase()}/api/v1/support/ws?token=${encodeURIComponent(token)}`);
+    const ws = new WebSocket(`${wsBase()}/api/v1/support/ws?session_id=${encodeURIComponent(sessionId)}`);
     socket = ws;
     ws.onopen = () => {
       attempt = 0;

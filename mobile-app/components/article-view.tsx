@@ -7,12 +7,10 @@ import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { apiFetch } from '@/lib/api';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +18,7 @@ import { PdfView } from './pdf-view/pdf-view';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 import { Button } from './ui/button';
+import { IconSymbol } from './ui/icon-symbol';
 
 type ArticleViewProps = {
   article: AppArticleVm;
@@ -169,8 +168,6 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   const { response: pdfUri, isLoading } = useFilePdf(`${article.id}.pdf`);
   const insets = useSafeAreaInsets();
   const { isWide, contentPaddingLeft } = useNavRail();
-  // Высота нижнего таб-бара (он absolute и перекрывает контент); на широком лейауте — боковой рельс
-  const tabBarHeight = useBottomTabBarHeight();
 
   // Все остальные хуки - данные хранятся в refs, чтобы не вызывать перерисовку
   const { deviceId } = useDeviceId();
@@ -191,21 +188,16 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
   const isReadRef = useRef(false);
   const progressSentRef = useRef<Set<number>>(new Set());
 
-  // Кнопка «Я все прочитал»: появляется после доскролла до конца.
-  // Пока пользователь на конце документа — сверху; начал скроллить — уезжает вниз.
+  // Кнопка «Я все прочитал»: появляется после доскролла до конца
   const [reachedEnd, setReachedEnd] = useState(false);
-  const [atEnd, setAtEnd] = useState(false);
-  const [buttonLayerHeight, setButtonLayerHeight] = useState(0);
   useEffect(() => {
     setReachedEnd(false);
-    setAtEnd(false);
   }, [article.id]);
 
   const onScrolledToEndRef = useRef<() => void>(() => {});
   useEffect(() => {
     onScrolledToEndRef.current = () => {
       setReachedEnd(true);
-      setAtEnd(true);
     };
   }, []);
 
@@ -238,11 +230,8 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
         event: 'progress',
         payload: { percent },
       });
-      // Позиция кнопки: на конце документа — сверху, отскроллил вниз-обратно — снизу
-      if (!reachedEnd) return;
-      setAtEnd((prev) => (percent >= 98 ? true : percent <= 90 ? false : prev));
     };
-  }, [article.id, reachedEnd]);
+  }, [article.id]);
   
   // Мемоизируем массив article.id, чтобы избежать бесконечных запросов
   const articleIds = useMemo(() => [article.id], [article.id]);
@@ -328,35 +317,6 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     onBack();
   }, [markAsReadWithUpdate, onBack]);
 
-  // Позиция кнопки «Я все прочитал»: анимированный переезд верх ↔ низ
-  const READ_BUTTON_HEIGHT = 52;
-  const readButtonTop = useSharedValue(0);
-  const readButtonOpacity = useSharedValue(0);
-  useEffect(() => {
-    if (buttonLayerHeight <= 0) return;
-    // Верхняя позиция — сразу под шапкой с кнопкой «Назад» (высота шапки ~68 + safe-area)
-    const topPos = insets.top + (isWide ? 0 : 68) + 12;
-    const bottomPos = Math.max(
-      topPos,
-      buttonLayerHeight -
-        (isWide ? 0 : tabBarHeight) -
-        Math.max(insets.bottom, 0) +
-        4 -
-        READ_BUTTON_HEIGHT,
-    );
-    readButtonTop.value = withSpring(atEnd ? topPos : bottomPos, {
-      damping: 18,
-      stiffness: 170,
-    });
-  }, [atEnd, buttonLayerHeight, isWide, tabBarHeight, insets.top, insets.bottom]);
-  useEffect(() => {
-    readButtonOpacity.value = withTiming(reachedEnd ? 1 : 0, { duration: 200 });
-  }, [reachedEnd]);
-  const readButtonAnimatedStyle = useAnimatedStyle(() => ({
-    top: readButtonTop.value,
-    opacity: readButtonOpacity.value,
-  }));
-
   return (
     <Animated.View
       style={[
@@ -380,22 +340,18 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
         onScrollProgressRef={onScrollProgressRef}
       />
       {!isRead && reachedEnd ? (
-        <View
-          pointerEvents="box-none"
-          style={styles.readButtonLayer}
-          onLayout={(e) => setButtonLayerHeight(e.nativeEvent.layout.height)}
-        >
-          <Animated.View
-            pointerEvents="auto"
-            style={[styles.readButtonWrap, readButtonAnimatedStyle]}
+        <View pointerEvents="box-none" style={styles.readButtonLayer}>
+          <Pressable
+            onPress={handleMarkReadPressed}
+            style={({ pressed }) => [
+              styles.readIconButton,
+              { backgroundColor: tintColor, opacity: pressed ? 0.85 : 1 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Я все прочитал"
           >
-            <Button
-              title="Я все прочитал"
-              onPress={handleMarkReadPressed}
-              fullWidth
-              size="large"
-            />
-          </Animated.View>
+            <IconSymbol name="checkmark" size={26} color="#FFFFFF" />
+          </Pressable>
         </View>
       ) : null}
       <View pointerEvents="box-none" style={styles.navButtonsLayer}>
@@ -487,14 +443,17 @@ const styles = StyleSheet.create({
     pointerEvents: 'box-none',
   },
   readButtonLayer: {
-    ...StyleSheet.absoluteFillObject,
-    pointerEvents: 'box-none',
-    justifyContent: 'flex-end',
-  },
-  readButtonWrap: {
     position: 'absolute',
-    left: 16,
     right: 16,
+    bottom: Platform.select({ ios: 84, default: 76 }),
+    zIndex: 10,
+  },
+  readIconButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pdfContainer: {
     flex: 1,
