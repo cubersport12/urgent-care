@@ -8,7 +8,7 @@ import { signOut as apiSignOut } from '@/lib/auth-api';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 type AuthContextValue = {
-  session: { access_token: string } | null;
+  session: { sessionId: string } | null;
   user: UserOut | null;
   initialized: boolean;
   signOut: () => Promise<void>;
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      session: user ? { access_token: 'stored' } : null,
+      session: user ? { sessionId: 'stored' } : null,
       user: user ?? getCurrentUser(),
       initialized,
       signOut,

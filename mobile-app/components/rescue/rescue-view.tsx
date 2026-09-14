@@ -1,4 +1,5 @@
 import {
+  AppArticleVm,
   AppRescueItemVm,
   type RescueScheneChoiceImplicationVm,
   type RescueTimerParameterVm,
@@ -8,8 +9,10 @@ import {
 import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useAppTheme } from '@/hooks/use-theme-color';
+import { fetchArticle } from '@/hooks/api/useArticles';
+import { ArticleView } from '@/components/article-view';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
@@ -141,6 +144,19 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
     };
   }, [firstTimerParam, sceneParameters]);
 
+  // Документы сцены: открытие статьи как полноэкранного оверлея поверх сцены
+  const [selectedArticle, setSelectedArticle] = useState<AppArticleVm | null>(null);
+  const [isLoadingArticle, setIsLoadingArticle] = useState(false);
+  const handleOpenDocument = useCallback(async (articleId: string) => {
+    setIsLoadingArticle(true);
+    try {
+      const result = await fetchArticle(articleId);
+      if (result.data) setSelectedArticle(result.data);
+    } finally {
+      setIsLoadingArticle(false);
+    }
+  }, []);
+
   if (!orderedScenes.length) {
     return (
       <ThemedView style={[styles.container, { backgroundColor }]}>
@@ -204,13 +220,15 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
         styles.container,
         {
           backgroundColor,
-          paddingTop: isWide ? 0 : insets.top,
+          // При открытом документе отступ не нужен: ArticleView сам добавляет insets.top
+          paddingTop: isWide || selectedArticle ? 0 : insets.top,
           paddingLeft: isWide ? contentPaddingLeft : insets.left,
           paddingRight: insets.right,
         },
       ]}
     >
-      {!isWide ? (
+      {/* Шапку сцены скрываем при открытом документе — у ArticleView своя кнопка «Назад» */}
+      {!isWide && !selectedArticle ? (
         <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
           <Button
             title="Назад"
@@ -223,19 +241,30 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
           />
         </ThemedView>
       ) : null}
-      <View style={styles.sceneArea}>
-        <RescueSceneVisualNovel
-          backgroundImage={currentScene.background}
-          defaultBackground={rescueItem.data?.defaultBackground}
-          text={currentScene.text}
-          choices={currentScene.choices ?? []}
-          typingSpeedMs={typingSpeedMs}
-          onNext={handleNextScene}
-          parametersList={visibleSceneParameters}
-          parameterValues={parameters}
-          isReviewed={currentScene.isReviewed}
-        />
-      </View>
+      {selectedArticle ? (
+        <ArticleView article={selectedArticle} onBack={() => setSelectedArticle(null)} />
+      ) : (
+        <View style={styles.sceneArea}>
+          <RescueSceneVisualNovel
+            backgroundImage={currentScene.background}
+            defaultBackground={rescueItem.data?.defaultBackground}
+            text={currentScene.text}
+            choices={currentScene.choices ?? []}
+            documents={currentScene.documents ?? []}
+            onOpenDocument={(articleId) => void handleOpenDocument(articleId)}
+            typingSpeedMs={typingSpeedMs}
+            onNext={handleNextScene}
+            parametersList={visibleSceneParameters}
+            parameterValues={parameters}
+            isReviewed={currentScene.isReviewed}
+          />
+        </View>
+      )}
+      {isLoadingArticle ? (
+        <View style={[StyleSheet.absoluteFill, styles.articleLoading]} pointerEvents="auto">
+          <ActivityIndicator size="large" />
+        </View>
+      ) : null}
     </ThemedView>
   );
 }
@@ -263,6 +292,12 @@ const styles = StyleSheet.create({
   sceneArea: {
     flex: 1,
     minHeight: 0,
+  },
+  articleLoading: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    zIndex: 20,
   },
 });
 

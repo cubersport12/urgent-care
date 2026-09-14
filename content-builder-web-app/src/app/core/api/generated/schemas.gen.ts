@@ -997,62 +997,19 @@ export const BillingMeOutSchema = {
     title: 'BillingMeOut'
 } as const;
 
-export const Body_auth_loginSchema = {
+export const Body_auth_upload_avatarSchema = {
     properties: {
-        grant_type: {
-            anyOf: [
-                {
-                    type: 'string',
-                    pattern: 'password'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Grant Type'
-        },
-        username: {
+        file: {
             type: 'string',
-            title: 'Username'
-        },
-        password: {
-            type: 'string',
-            title: 'Password'
-        },
-        scope: {
-            type: 'string',
-            title: 'Scope',
-            default: ''
-        },
-        client_id: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Client Id'
-        },
-        client_secret: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Client Secret'
+            format: 'binary',
+            title: 'File'
         }
     },
     type: 'object',
     required: [
-        'username',
-        'password'
+        'file'
     ],
-    title: 'Body_auth_login'
+    title: 'Body_auth_upload_avatar'
 } as const;
 
 export const Body_media_upload_mediaSchema = {
@@ -1155,6 +1112,22 @@ export const CityOutSchema = {
         'label'
     ],
     title: 'CityOut'
+} as const;
+
+export const DeleteAccountSchema = {
+    properties: {
+        password: {
+            type: 'string',
+            maxLength: 100,
+            minLength: 1,
+            title: 'Password'
+        }
+    },
+    type: 'object',
+    required: [
+        'password'
+    ],
+    title: 'DeleteAccount'
 } as const;
 
 export const FolderCreateSchema = {
@@ -1569,6 +1542,18 @@ export const LoginJsonSchema = {
             maxLength: 100,
             minLength: 1,
             title: 'Password'
+        },
+        device_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Device Name'
         }
     },
     type: 'object',
@@ -2690,6 +2675,84 @@ export const RewardUpdateSchema = {
     },
     type: 'object',
     title: 'RewardUpdate'
+} as const;
+
+export const SessionCreatedSchema = {
+    properties: {
+        session_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Session Id'
+        },
+        user: {
+            $ref: '#/components/schemas/UserOut'
+        }
+    },
+    type: 'object',
+    required: [
+        'session_id',
+        'user'
+    ],
+    title: 'SessionCreated'
+} as const;
+
+export const SessionLogoutSchema = {
+    properties: {
+        session_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Session Id'
+        }
+    },
+    type: 'object',
+    required: [
+        'session_id'
+    ],
+    title: 'SessionLogout'
+} as const;
+
+export const SessionOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        device_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Device Name'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        last_active_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Last Active At'
+        },
+        expires_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Expires At'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'created_at',
+        'last_active_at',
+        'expires_at'
+    ],
+    title: 'SessionOut'
 } as const;
 
 export const SubscribeOutSchema = {
@@ -4184,77 +4247,6 @@ export const TestUpdateSchema = {
     title: 'TestUpdate'
 } as const;
 
-export const TokenSchema = {
-    properties: {
-        access_token: {
-            type: 'string',
-            title: 'Access Token'
-        },
-        refresh_token: {
-            type: 'string',
-            title: 'Refresh Token'
-        },
-        token_type: {
-            type: 'string',
-            title: 'Token Type',
-            default: 'bearer'
-        },
-        expires_in: {
-            type: 'integer',
-            title: 'Expires In'
-        },
-        user: {
-            $ref: '#/components/schemas/UserOut'
-        }
-    },
-    type: 'object',
-    required: [
-        'access_token',
-        'refresh_token',
-        'expires_in',
-        'user'
-    ],
-    title: 'Token'
-} as const;
-
-export const TokenRefreshSchema = {
-    properties: {
-        refresh_token: {
-            type: 'string',
-            title: 'Refresh Token'
-        }
-    },
-    type: 'object',
-    required: [
-        'refresh_token'
-    ],
-    title: 'TokenRefresh'
-} as const;
-
-export const TokenRefreshResponseSchema = {
-    properties: {
-        access_token: {
-            type: 'string',
-            title: 'Access Token'
-        },
-        token_type: {
-            type: 'string',
-            title: 'Token Type',
-            default: 'bearer'
-        },
-        expires_in: {
-            type: 'integer',
-            title: 'Expires In'
-        }
-    },
-    type: 'object',
-    required: [
-        'access_token',
-        'expires_in'
-    ],
-    title: 'TokenRefreshResponse'
-} as const;
-
 export const TrainingTopicOutSchema = {
     properties: {
         testId: {
@@ -4308,24 +4300,6 @@ export const UserCreateSchema = {
             maxLength: 100,
             minLength: 6,
             title: 'Password'
-        },
-        full_name: {
-            type: 'string',
-            maxLength: 200,
-            title: 'Full Name',
-            default: ''
-        },
-        name: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 200
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Name'
         },
         city_id: {
             anyOf: [
@@ -4410,6 +4384,39 @@ export const UserOutSchema = {
                 }
             ]
         },
+        avatar_key: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Avatar Key'
+        },
+        birth_year: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Birth Year'
+        },
+        occupation: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Occupation'
+        },
         role: {
             type: 'string',
             title: 'Role'
@@ -4461,6 +4468,31 @@ export const UserUpdateSchema = {
                 }
             ],
             title: 'City Id'
+        },
+        birth_year: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 2026,
+                    minimum: 1900
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Birth Year'
+        },
+        occupation: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Occupation'
         }
     },
     type: 'object',
@@ -4589,24 +4621,12 @@ export const CityOutWritableSchema = {
     title: 'CityOut'
 } as const;
 
-export const TokenWritableSchema = {
+export const SessionCreatedWritableSchema = {
     properties: {
-        access_token: {
+        session_id: {
             type: 'string',
-            title: 'Access Token'
-        },
-        refresh_token: {
-            type: 'string',
-            title: 'Refresh Token'
-        },
-        token_type: {
-            type: 'string',
-            title: 'Token Type',
-            default: 'bearer'
-        },
-        expires_in: {
-            type: 'integer',
-            title: 'Expires In'
+            format: 'uuid',
+            title: 'Session Id'
         },
         user: {
             $ref: '#/components/schemas/UserOutWritable'
@@ -4614,12 +4634,10 @@ export const TokenWritableSchema = {
     },
     type: 'object',
     required: [
-        'access_token',
-        'refresh_token',
-        'expires_in',
+        'session_id',
         'user'
     ],
-    title: 'Token'
+    title: 'SessionCreated'
 } as const;
 
 export const UserOutWritableSchema = {
@@ -4658,6 +4676,39 @@ export const UserOutWritableSchema = {
                     type: 'null'
                 }
             ]
+        },
+        avatar_key: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Avatar Key'
+        },
+        birth_year: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Birth Year'
+        },
+        occupation: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Occupation'
         },
         role: {
             type: 'string',

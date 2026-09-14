@@ -2,6 +2,7 @@
  * Thin compatibility layer + media helpers over generated OpenAPI client.
  */
 import { API_BASE_URL, authFetch } from '@/api/client';
+import { getSessionId } from '@/lib/auth-storage';
 import {
   articlesGetArticle,
   articlesListArticles,
@@ -17,7 +18,6 @@ import {
   testsListTests,
 } from '@/api/generated/sdk.gen';
 import { apiCall } from '@/api/utils';
-import { getAccessToken, getCurrentUser, loadStoredAuth, onAuthChange } from '@/lib/auth-storage';
 
 export type { UserOut as ApiUser } from '@/api/generated/types.gen';
 export type ApiListResponse<T> = {
@@ -26,7 +26,7 @@ export type ApiListResponse<T> = {
 };
 
 export {
-  getAccessToken,
+  getSessionId,
   getCurrentUser,
   loadStoredAuth,
   onAuthChange,
@@ -158,8 +158,8 @@ export async function apiFetch<T>(
   if (!(init.body instanceof FormData) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  const token = getAccessToken();
-  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const sessionId = getSessionId();
+  if (sessionId) headers.set('X-Session-Id', sessionId);
   const res = await authFetch(`${API_BASE_URL}${path}`, { ...init, headers });
   if (res.status === 204) return undefined as T;
   const text = await res.text();

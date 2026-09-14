@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -29,6 +29,12 @@ class User(Base):
         nullable=True,
     )
     hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    avatar_key: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    birth_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    occupation: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    consent_accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="user", index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(

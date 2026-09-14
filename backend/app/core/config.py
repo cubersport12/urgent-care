@@ -29,8 +29,7 @@ class Settings(BaseSettings):
 
     jwt_secret: str = Field(min_length=32)
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60 * 24 * 30
-    refresh_token_expire_days: int = 60
+    session_ttl_days: int = 60
     bcrypt_rounds: int = 12
 
     admin_email: str = "test@yandex.ru"

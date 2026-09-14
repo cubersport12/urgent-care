@@ -5,7 +5,8 @@ import {
   type NullableValue,
   RescueParameterSeverityEnum,
   RescueParameterSeverityVm,
-  RescueSceneChoiceVm,
+  type RescueSceneChoiceVm,
+  type RescueSceneDocumentVm,
   RescueTimerParameterVm,
 } from '@/hooks/api/types';
 import { useFileImage } from '@/hooks/api/useFileImage';
@@ -13,7 +14,7 @@ import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { Image } from 'expo-image';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -21,6 +22,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IconSymbol } from '../ui/icon-symbol';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
@@ -224,6 +226,8 @@ type RescueSceneVisualNovelProps = {
   defaultBackground?: string;
   text: string;
   choices: RescueSceneChoiceVm[];
+  documents?: RescueSceneDocumentVm[];
+  onOpenDocument?: (articleId: string) => void;
   typingSpeedMs?: number;
   parametersList?: RescueTimerParameterVm[];
   parameterValues?: Record<string, number>;
@@ -236,6 +240,8 @@ export function RescueSceneVisualNovel({
   defaultBackground,
   text,
   choices,
+  documents = [],
+  onOpenDocument,
   typingSpeedMs = 35,
   parametersList = [],
   parameterValues = {},
@@ -246,6 +252,7 @@ export function RescueSceneVisualNovel({
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { isWide } = useNavRail();
+  const glass = useGlass();
   const {
     page: backgroundColor,
     primary: primaryColor,
@@ -277,10 +284,12 @@ export function RescueSceneVisualNovel({
   const [isTyping, setIsTyping] = useState(false);
   const [hasShownChoices, setHasShownChoices] = useState(false);
   const [severityToastMessage, setSeverityToastMessage] = useState<string | null>(null);
+  const [docsModalVisible, setDocsModalVisible] = useState(false);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fullText = text ?? '';
   const hasChoices = useMemo(() => choices && choices.length > 0, [choices]);
+  const hasDocuments = documents.length > 0 && onOpenDocument != null;
 
   useEffect(() => {
     if (typingIntervalRef.current) {
@@ -431,7 +440,7 @@ export function RescueSceneVisualNovel({
                 key={choice.id}
                 title={choice.text}
                 onPress={() => onNext(choice)}
-                variant="glass"
+                variant="default"
                 fullWidth
                 size="large"
                 style={styles.choiceButton}
@@ -439,6 +448,58 @@ export function RescueSceneVisualNovel({
             ))}
           </View>
         </View>
+      ) : null}
+
+      {/* Сцена без вариантов выбора: список документов по центру — ключевая информация сцены */}
+      {!hasChoices && hasDocuments ? (
+        <View style={[styles.choicesOverlay, styles.docsOverlayTransparent]} pointerEvents="box-none">
+          <View style={[styles.choicesCenter, styles.docsCard, { backgroundColor: glass.background, borderColor: glass.border }]}>
+            <ThemedText style={[styles.docsCardTitle, { color: textColor }]}>Документы</ThemedText>
+            {documents.map((doc) => (
+              <Button
+                key={doc.id}
+                title={doc.name}
+                icon="doc.fill"
+                iconPosition="left"
+                onPress={() => onOpenDocument?.(doc.articleId)}
+                variant="default"
+                fullWidth
+                style={styles.choiceButton}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      {/* Есть варианты И документы: список открывается кнопкой «Справка» рядом с «Показать варианты» */}
+      {hasChoices && hasDocuments ? (
+        <Modal visible={docsModalVisible} animationType="slide" onRequestClose={() => setDocsModalVisible(false)}>
+          <View style={[styles.docsModalRoot, { backgroundColor: backgroundColor }]}>
+            <View style={styles.docsModalHeader}>
+              <ThemedText type="h2">Документы</ThemedText>
+              <Pressable onPress={() => setDocsModalVisible(false)} style={styles.docsModalClose}>
+                <IconSymbol name="xmark.circle.fill" size={26} color={textColor} />
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={styles.docsModalContent}>
+              {documents.map((doc) => (
+                <Button
+                  key={doc.id}
+                  title={doc.name}
+                  icon="doc.fill"
+                  iconPosition="left"
+                  onPress={() => {
+                    setDocsModalVisible(false);
+                    onOpenDocument?.(doc.articleId);
+                  }}
+                  variant="default"
+                  fullWidth
+                  style={styles.choiceButton}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        </Modal>
       ) : null}
 
       <View
@@ -459,36 +520,47 @@ export function RescueSceneVisualNovel({
           bounces={false}
           nestedScrollEnabled
         >
-          <ThemedText
-            lightColor={surfaces.sceneText}
-            darkColor={surfaces.sceneText}
-            style={styles.sceneText}
-          >
-            {displayedText}
-            {isTyping ? (
-              <ThemedText lightColor={primaryColor} darkColor={primaryColor} style={styles.cursor}>
-                ▋
-              </ThemedText>
-            ) : null}
-          </ThemedText>
+          <Pressable onPress={handleNextPress}>
+            <ThemedText
+              lightColor={surfaces.sceneText}
+              darkColor={surfaces.sceneText}
+              style={styles.sceneText}
+            >
+              {displayedText}
+              {isTyping ? (
+                <ThemedText lightColor={primaryColor} darkColor={primaryColor} style={styles.cursor}>
+                  ▋
+                </ThemedText>
+              ) : null}
+            </ThemedText>
+          </Pressable>
         </ScrollView>
 
-        {showNextButton ? (
+        {showNextButton || (hasChoices && hasDocuments) ? (
           <View style={styles.actionsRow}>
-            <Pressable onPress={handleNextPress} style={styles.linkButton}>
-              <ThemedText
-                style={[
-                  styles.linkButtonText,
-                  { color: canAdvanceOnTap ? primaryColor : `${textColor}80` },
-                ]}
-              >
-                {isTyping
-                  ? 'Показать сразу'
-                  : hasChoices && !hasShownChoices
-                    ? 'Показать варианты'
-                    : 'Далее'}
-              </ThemedText>
-            </Pressable>
+            {hasChoices && hasDocuments ? (
+              <Pressable onPress={() => setDocsModalVisible(true)} style={styles.linkButton}>
+                <ThemedText style={[styles.linkButtonText, { color: primaryColor }]}>
+                  Справка
+                </ThemedText>
+              </Pressable>
+            ) : null}
+            {showNextButton ? (
+              <Pressable onPress={handleNextPress} style={styles.linkButton}>
+                <ThemedText
+                  style={[
+                    styles.linkButtonText,
+                    { color: canAdvanceOnTap ? primaryColor : `${textColor}80` },
+                  ]}
+                >
+                  {isTyping
+                    ? 'Показать сразу'
+                    : hasChoices && !hasShownChoices
+                      ? 'Показать варианты'
+                      : 'Далее'}
+                </ThemedText>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -517,7 +589,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingTop: 0,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignContent: 'flex-start',
   },
   parameterCard: {
@@ -663,11 +735,45 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   actionsRow: {
-    flexDirection: 'column',
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 12,
   },
   choiceButton: {
     width: '100%',
+  },
+  docsOverlayTransparent: {
+    backgroundColor: 'transparent',
+  },
+  docsCard: {
+    borderWidth: 1,
+    borderRadius: Radius.lg,
+    padding: 16,
+    gap: 10,
+  },
+  docsCardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  docsModalRoot: {
+    flex: 1,
+    paddingTop: 48,
+    paddingHorizontal: 16,
+  },
+  docsModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  docsModalClose: {
+    padding: 4,
+  },
+  docsModalContent: {
+    gap: 10,
+    paddingBottom: 24,
   },
   linkButton: {
     paddingVertical: 4,

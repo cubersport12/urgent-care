@@ -142,12 +142,19 @@ export type RescueSceneChoiceVm = {
   implications?: NullableValue<RescueScheneChoiceImplicationVm[]>;
 };
 
+export type RescueSceneDocumentVm = {
+  id: string;
+  name: string;
+  articleId: string;
+};
+
 export type RescueSceneVm = {
   id: string;
   order?: number;
   background?: string;
   text: string;
   choices: RescueSceneChoiceVm[];
+  documents?: NullableValue<RescueSceneDocumentVm[]>;
   hidden?: NullableValue<boolean>;
   isReviewed?: NullableValue<boolean>;
 };
@@ -213,6 +220,5 @@ export type {
   RescueStatsOut,
   TestResultOut,
   UserOut,
-  Token,
   LinkToArticle,
 } from '@/api/generated/types.gen';

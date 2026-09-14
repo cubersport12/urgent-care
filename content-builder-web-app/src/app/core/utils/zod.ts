@@ -139,6 +139,13 @@ export const rescueSceneSchema = z.object({
   isReviewed: z.boolean().nullable().optional().describe('Сцена проверена редактором')
 });
 
+/** Документ, привязанный к сцене (ссылка на статью по id) */
+export const rescueSceneDocumentSchema = z.object({
+  id: z.string().describe('UUID документа'),
+  name: z.string().describe('Название документа'),
+  articleId: z.string().describe('id статьи из базы')
+});
+
 /** Лист дерева: сравнение параметра с числом */
 export const rescueCompletionCompareSchema = z.object({
   type: z.literal('compare'),
@@ -227,7 +234,16 @@ export const rescueItemSchema = z.object({
   parentId: z.string().nullable().optional(),
   createdAt: z.string(),
   description: z.string(),
-  data: rescueItemDataSchema.optional(),
+  // Для хранения: сцены могут содержать documents (в AI-промпт rescueItemDataSchema они не попадают)
+  data: rescueItemDataSchema
+    .extend({
+      scenes: z.array(
+        rescueSceneSchema.extend({
+          documents: z.array(rescueSceneDocumentSchema).optional().describe('Документы сцены')
+        })
+      ).optional()
+    })
+    .optional(),
   requiredTariffId: z.string().nullable().optional(),
   requiredRewardId: z.string().nullable().optional()
 });

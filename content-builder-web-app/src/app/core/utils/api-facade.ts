@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   articlesCreateArticle,
   articlesDeleteArticle,
@@ -6,6 +7,7 @@ import {
   articlesListArticles,
   articlesUpdateArticle,
   authLoginJson,
+  authLogout,
   authMe,
   foldersCreateFolder,
   foldersDeleteFolder,
@@ -29,34 +31,21 @@ import {
   API_BASE,
   clearTokens,
   configureApiClient,
-  getAccessToken,
-  getRefreshToken,
-  setTokens
+  getSessionId,
+  setSession
 } from '@/core/api/api-client';
 import { apiCall } from '@/core/api/api-utils';
-import { environment } from '../../../environments/environment';
-
-type EnvWithTestAuth = typeof environment & {
-  testAuth?: { email: string; password: string };
-};
 
 /** HTTP facade over generated OpenAPI client. */
 @Injectable({
   providedIn: 'root'
 })
 export class AppApi {
+  private readonly _router = inject(Router);
   private _ensureAuthPromise: Promise<void> | null = null;
 
   constructor() {
     configureApiClient();
-  }
-
-  get accessToken(): string | null {
-    return getAccessToken();
-  }
-
-  get isLoggedIn(): boolean {
-    return !!getAccessToken();
   }
 
   ensureAuthenticated(): Promise<void> {
@@ -69,41 +58,36 @@ export class AppApi {
   }
 
   async login(email: string, password: string): Promise<void> {
-    const data = await apiCall(() => authLoginJson({ body: { email, password } }));
-    setTokens(data.access_token, data.refresh_token);
-    configureApiClient();
+    const data = await apiCall(() =>
+      authLoginJson({ body: { email, password, device_name: 'Конструктор контента' } })
+    );
+    setSession(data.session_id);
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
+    const sessionId = getSessionId();
+    if (sessionId) {
+      try {
+        await apiCall(() => authLogout({ body: { session_id: sessionId } }));
+      } catch {
+        // сессия уже неактивна — локально всё равно разлогиниваемся
+      }
+    }
     clearTokens();
+    this._router.navigate(['/login']);
   }
 
   private async _ensureAuthenticated(): Promise<void> {
-    if (getAccessToken()) {
+    if (getSessionId()) {
       try {
         await apiCall(() => authMe());
         return;
       } catch {
-        if (getRefreshToken()) {
-          // refresh handled inside client fetch; retry me once after configure
-          configureApiClient();
-          try {
-            await apiCall(() => authMe());
-            return;
-          } catch {
-            clearTokens();
-          }
-        } else {
-          clearTokens();
-        }
+        clearTokens();
       }
     }
-
-    const testAuth = (environment as EnvWithTestAuth).testAuth;
-    if (!testAuth?.email || !testAuth?.password) {
-      throw new Error('Not authenticated and no testAuth credentials in environment');
-    }
-    await this.login(testAuth.email, testAuth.password);
+    void this._router.navigate(['/login']);
+    throw new Error('Not authenticated');
   }
 
   list<T>(resource: string, opts?: { parentId?: string | null; all?: boolean; id?: string }): Promise<T[]> {
@@ -209,8 +193,8 @@ export class AppApi {
   async downloadFile(fileName: string): Promise<Blob> {
     const path = fileName.startsWith('public/') ? fileName : `public/${fileName}`;
     const headers = new Headers();
-    const token = getAccessToken();
-    if (token) headers.set('Authorization', `Bearer ${token}`);
+    const sessionId = getSessionId();
+    if (sessionId) headers.set('X-Session-Id', sessionId);
     const res = await fetch(`${API_BASE}/api/v1/media/${path}`, { headers });
     if (!res.ok) {
       throw new Error(`Download failed: ${res.status}`);

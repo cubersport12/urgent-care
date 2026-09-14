@@ -60,7 +60,9 @@ const MAPPING = {
   'square.and.arrow.up.fill': 'share',
   'square.and.arrow.down.fill': 'download',
   'photo.fill': 'image',
+  'briefcase.fill': 'work',
   'qrcode': 'qr-code',
+  'trash.fill': 'delete',
 } as IconMapping;
 
 /**

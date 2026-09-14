@@ -1,41 +1,38 @@
 import {
+  authDeleteAvatar,
+  authDeleteMe,
   authForgotPassword,
+  authListSessions,
   authLoginJson,
+  authLogout,
   authRegister,
   authResetPassword,
   authUpdateMe,
+  authUploadAvatar,
 } from '@/api/generated/sdk.gen';
 import { apiCall } from '@/api/utils';
-import { clearAuth, persistAuth, persistUser } from '@/lib/auth-storage';
+import { clearAuth, getSessionId, persistAuth, persistUser } from '@/lib/auth-storage';
 import { registerPushToken, unregisterPushToken } from '@/lib/push-notifications';
-import type { Token, UserOut } from '@/api/generated/types.gen';
+import type { SessionCreated, SessionOut, UserOut } from '@/api/generated/types.gen';
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
 
-export async function login(email: string, password: string): Promise<Token> {
+function deviceName(): string {
+  if (Platform.OS === 'web') return 'Браузер';
+  return [Device.deviceName, Device.modelName].find(Boolean) || Platform.OS;
+}
+
+export async function login(email: string, password: string): Promise<SessionCreated> {
   const data = await apiCall(() =>
-    authLoginJson({ body: { email, password } }),
+    authLoginJson({ body: { email, password, device_name: deviceName() } }),
   );
   await persistAuth(data);
   void registerPushToken();
   return data;
 }
 
-export async function register(
-  email: string,
-  password: string,
-  fullName: string,
-  cityId?: string | null,
-): Promise<Token> {
-  const data = await apiCall(() =>
-    authRegister({
-      body: {
-        email,
-        password,
-        full_name: fullName,
-        name: fullName,
-        city_id: cityId ?? null,
-      },
-    }),
-  );
+export async function register(email: string, password: string): Promise<SessionCreated> {
+  const data = await apiCall(() => authRegister({ body: { email, password } }));
   await persistAuth(data);
   void registerPushToken();
   return data;
@@ -44,13 +41,39 @@ export async function register(
 export async function updateMe(fields: {
   full_name?: string | null;
   city_id?: string | null;
+  birth_year?: number | null;
+  occupation?: string | null;
 }): Promise<UserOut> {
-  const body: { full_name?: string | null; city_id?: string | null } = {};
+  const body: {
+    full_name?: string | null;
+    city_id?: string | null;
+    birth_year?: number | null;
+    occupation?: string | null;
+  } = {};
   if (fields.full_name !== undefined) body.full_name = fields.full_name;
   if (fields.city_id !== undefined) body.city_id = fields.city_id;
+  if (fields.birth_year !== undefined) body.birth_year = fields.birth_year;
+  if (fields.occupation !== undefined) body.occupation = fields.occupation;
   const user = await apiCall(() => authUpdateMe({ body }));
   await persistUser(user);
   return user;
+}
+
+export async function uploadAvatar(uri: string): Promise<UserOut> {
+  const blob = await (await fetch(uri)).blob();
+  const user = await apiCall(() => authUploadAvatar({ body: { file: blob } }));
+  await persistUser(user);
+  return user;
+}
+
+export async function deleteAvatar(): Promise<UserOut> {
+  const user = await apiCall(() => authDeleteAvatar());
+  await persistUser(user);
+  return user;
+}
+
+export async function fetchSessions(): Promise<SessionOut[]> {
+  return apiCall(() => authListSessions());
 }
 
 export async function forgotPassword(email: string): Promise<void> {
@@ -62,6 +85,21 @@ export async function resetPassword(token: string, password: string): Promise<vo
 }
 
 export async function signOut(): Promise<void> {
+  const sessionId = getSessionId();
+  if (sessionId) {
+    try {
+      await apiCall(() => authLogout({ body: { session_id: sessionId } }));
+    } catch {
+      // сессия уже неактивна/сеть недоступна — локально всё равно разлогиниваемся
+    }
+  }
+  await unregisterPushToken();
+  await clearAuth();
+}
+
+/** 152-ФЗ: необратимое удаление аккаунта со всеми данными. */
+export async function deleteAccount(password: string): Promise<void> {
+  await apiCall(() => authDeleteMe({ body: { password } }));
   await unregisterPushToken();
   await clearAuth();
 }

@@ -1,0 +1,23 @@
+<h2 mat-dialog-title>{{ _dialogData.document ? 'Редактировать документ' : 'Новый документ' }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="_form" class="flex flex-col gap-4 min-w-[360px]">
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Название документа</mat-label>
+      <input matInput formControlName="name" />
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Документ из базы</mat-label>
+      <mat-select formControlName="articleId">
+        @for (a of _articleOptions; track a.id) {
+          <mat-option [value]="a.id">{{ a.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="_cancel()">Отмена</button>
+  <button mat-flat-button color="primary" (click)="_submit()" [disabled]="_form.invalid">
+    {{ _dialogData.document ? 'Сохранить' : 'Добавить' }}
+  </button>
+</mat-dialog-actions>

@@ -1,6 +1,7 @@
 """ORM models — import for Alembic / metadata registration."""
 from app.models.achievement import Achievement, Reward, RewardAchievement, UserAchievement
 from app.models.article import Article
+from app.models.auth_session import AuthSession
 from app.models.billing import (
     Payment,
     PaymentMethod,
@@ -22,6 +23,7 @@ from app.models.user import User
 
 __all__ = [
     "User",
+    "AuthSession",
     "City",
     "EmbeddingCache",
     "Folder",
