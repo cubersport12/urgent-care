@@ -29,7 +29,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionCreated"
+                  "$ref": "#/components/schemas/RegisterOut"
                 }
               }
             }
@@ -60,6 +60,151 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LoginJson"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Verify Email",
+        "operationId": "auth_verify_email",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmail"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/resend-verification": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Resend Verification",
+        "description": "Always 204 — do not reveal whether the email exists.",
+        "operationId": "auth_resend_verification",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendVerification"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login/code/request": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Request Login Code",
+        "description": "Одноразовый код входа на почту. Always 204 — do not reveal whether the email exists.",
+        "operationId": "auth_request_login_code",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login/code/verify": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Verify Login Code",
+        "operationId": "auth_verify_login_code",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginCodeVerify"
               }
             }
           },
@@ -6623,6 +6768,52 @@
         ],
         "title": "LinkToArticle"
       },
+      "LoginCodeRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "LoginCodeRequest"
+      },
+      "LoginCodeVerify": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Code"
+          },
+          "device_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "code"
+        ],
+        "title": "LoginCodeVerify"
+      },
       "LoginJson": {
         "properties": {
           "email": {
@@ -6976,6 +7167,17 @@
           "name"
         ],
         "title": "RecommendedArticleOut"
+      },
+      "RegisterOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "verification_email_sent"
+          }
+        },
+        "type": "object",
+        "title": "RegisterOut"
       },
       "RescueCreate": {
         "properties": {
@@ -7370,6 +7572,20 @@
         },
         "type": "object",
         "title": "RescueUpdate"
+      },
+      "ResendVerification": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ResendVerification"
       },
       "ResetPassword": {
         "properties": {
@@ -9482,6 +9698,11 @@
             "type": "boolean",
             "title": "Is Active"
           },
+          "email_verified": {
+            "type": "boolean",
+            "title": "Email Verified",
+            "default": false
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -9586,6 +9807,21 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerifyEmail": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 10,
+            "title": "Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "VerifyEmail"
       },
       "WrongQuestionOut": {
         "properties": {

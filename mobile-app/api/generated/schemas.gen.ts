@@ -1530,6 +1530,54 @@ export const LinkToArticleSchema = {
     title: 'LinkToArticle'
 } as const;
 
+export const LoginCodeRequestSchema = {
+    properties: {
+        email: {
+            type: 'string',
+            format: 'email',
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    required: [
+        'email'
+    ],
+    title: 'LoginCodeRequest'
+} as const;
+
+export const LoginCodeVerifySchema = {
+    properties: {
+        email: {
+            type: 'string',
+            format: 'email',
+            title: 'Email'
+        },
+        code: {
+            type: 'string',
+            pattern: '^\\d{6}$',
+            title: 'Code'
+        },
+        device_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Device Name'
+        }
+    },
+    type: 'object',
+    required: [
+        'email',
+        'code'
+    ],
+    title: 'LoginCodeVerify'
+} as const;
+
 export const LoginJsonSchema = {
     properties: {
         email: {
@@ -1893,6 +1941,18 @@ export const RecommendedArticleOutSchema = {
         'name'
     ],
     title: 'RecommendedArticleOut'
+} as const;
+
+export const RegisterOutSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            title: 'Status',
+            default: 'verification_email_sent'
+        }
+    },
+    type: 'object',
+    title: 'RegisterOut'
 } as const;
 
 export const RescueCreateSchema = {
@@ -2292,6 +2352,21 @@ export const RescueUpdateSchema = {
     },
     type: 'object',
     title: 'RescueUpdate'
+} as const;
+
+export const ResendVerificationSchema = {
+    properties: {
+        email: {
+            type: 'string',
+            format: 'email',
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    required: [
+        'email'
+    ],
+    title: 'ResendVerification'
 } as const;
 
 export const ResetPasswordSchema = {
@@ -4437,6 +4512,11 @@ export const UserOutSchema = {
             type: 'boolean',
             title: 'Is Active'
         },
+        email_verified: {
+            type: 'boolean',
+            title: 'Email Verified',
+            default: false
+        },
         created_at: {
             type: 'string',
             format: 'date-time',
@@ -4543,6 +4623,22 @@ export const ValidationErrorSchema = {
         'type'
     ],
     title: 'ValidationError'
+} as const;
+
+export const VerifyEmailSchema = {
+    properties: {
+        token: {
+            type: 'string',
+            maxLength: 500,
+            minLength: 10,
+            title: 'Token'
+        }
+    },
+    type: 'object',
+    required: [
+        'token'
+    ],
+    title: 'VerifyEmail'
 } as const;
 
 export const WrongQuestionOutSchema = {
@@ -4729,6 +4825,11 @@ export const UserOutWritableSchema = {
         is_active: {
             type: 'boolean',
             title: 'Is Active'
+        },
+        email_verified: {
+            type: 'boolean',
+            title: 'Email Verified',
+            default: false
         },
         created_at: {
             type: 'string',

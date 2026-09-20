@@ -765,6 +765,34 @@ export type LinkToArticle = {
 };
 
 /**
+ * LoginCodeRequest
+ */
+export type LoginCodeRequest = {
+    /**
+     * Email
+     */
+    email: string;
+};
+
+/**
+ * LoginCodeVerify
+ */
+export type LoginCodeVerify = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Device Name
+     */
+    device_name?: string | null;
+};
+
+/**
  * LoginJson
  */
 export type LoginJson = {
@@ -988,6 +1016,16 @@ export type RecommendedArticleOut = {
 };
 
 /**
+ * RegisterOut
+ */
+export type RegisterOut = {
+    /**
+     * Status
+     */
+    status?: string;
+};
+
+/**
  * RescueCreate
  */
 export type RescueCreate = {
@@ -1169,6 +1207,16 @@ export type RescueUpdate = {
      * Requiredrewardid
      */
     requiredRewardId?: string | null;
+};
+
+/**
+ * ResendVerification
+ */
+export type ResendVerification = {
+    /**
+     * Email
+     */
+    email: string;
 };
 
 /**
@@ -2190,6 +2238,10 @@ export type UserOut = {
      */
     is_active: boolean;
     /**
+     * Email Verified
+     */
+    email_verified?: boolean;
+    /**
      * Created At
      */
     created_at: string;
@@ -2233,6 +2285,16 @@ export type ValidationError = {
      * Error Type
      */
     type: string;
+};
+
+/**
+ * VerifyEmail
+ */
+export type VerifyEmail = {
+    /**
+     * Token
+     */
+    token: string;
 };
 
 /**
@@ -2348,6 +2410,10 @@ export type UserOutWritable = {
      */
     is_active: boolean;
     /**
+     * Email Verified
+     */
+    email_verified?: boolean;
+    /**
      * Created At
      */
     created_at: string;
@@ -2373,7 +2439,7 @@ export type AuthRegisterResponses = {
     /**
      * Successful Response
      */
-    201: SessionCreated;
+    201: RegisterOut;
 };
 
 export type AuthRegisterResponse = AuthRegisterResponses[keyof AuthRegisterResponses];
@@ -2402,6 +2468,106 @@ export type AuthLoginJsonResponses = {
 };
 
 export type AuthLoginJsonResponse = AuthLoginJsonResponses[keyof AuthLoginJsonResponses];
+
+export type AuthVerifyEmailData = {
+    body: VerifyEmail;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/verify-email';
+};
+
+export type AuthVerifyEmailErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthVerifyEmailError = AuthVerifyEmailErrors[keyof AuthVerifyEmailErrors];
+
+export type AuthVerifyEmailResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AuthVerifyEmailResponse = AuthVerifyEmailResponses[keyof AuthVerifyEmailResponses];
+
+export type AuthResendVerificationData = {
+    body: ResendVerification;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/resend-verification';
+};
+
+export type AuthResendVerificationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthResendVerificationError = AuthResendVerificationErrors[keyof AuthResendVerificationErrors];
+
+export type AuthResendVerificationResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AuthResendVerificationResponse = AuthResendVerificationResponses[keyof AuthResendVerificationResponses];
+
+export type AuthRequestLoginCodeData = {
+    body: LoginCodeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/login/code/request';
+};
+
+export type AuthRequestLoginCodeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthRequestLoginCodeError = AuthRequestLoginCodeErrors[keyof AuthRequestLoginCodeErrors];
+
+export type AuthRequestLoginCodeResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AuthRequestLoginCodeResponse = AuthRequestLoginCodeResponses[keyof AuthRequestLoginCodeResponses];
+
+export type AuthVerifyLoginCodeData = {
+    body: LoginCodeVerify;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/login/code/verify';
+};
+
+export type AuthVerifyLoginCodeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthVerifyLoginCodeError = AuthVerifyLoginCodeErrors[keyof AuthVerifyLoginCodeErrors];
+
+export type AuthVerifyLoginCodeResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionCreated;
+};
+
+export type AuthVerifyLoginCodeResponse = AuthVerifyLoginCodeResponses[keyof AuthVerifyLoginCodeResponses];
 
 export type AuthLogoutData = {
     body: SessionLogout;

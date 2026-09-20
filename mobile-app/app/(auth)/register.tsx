@@ -5,12 +5,12 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { register } from '@/lib/auth-api';
+import { showAlert } from '@/lib/alert';
 import { legalDocFileUrl } from '@/lib/legal-docs';
 import { Link, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -32,22 +32,22 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     const e = email.trim();
     if (!e || !password) {
-      Alert.alert('Ошибка', 'Заполните почту и пароль');
+      showAlert('Ошибка', 'Заполните почту и пароль');
       return;
     }
     if (!consentAccepted) {
-      Alert.alert(
+      showAlert(
         'Требуется согласие',
         'Необходимо согласие на обработку персональных данных',
       );
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Ошибка', 'Пароли не совпадают');
+      showAlert('Ошибка', 'Пароли не совпадают');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Ошибка', 'Пароль должен быть не короче 6 символов');
+      showAlert('Ошибка', 'Пароль должен быть не короче 6 символов');
       return;
     }
 
@@ -55,9 +55,13 @@ export default function RegisterScreen() {
     try {
       try {
         await register(e, password);
-        router.replace('/(tabs)');
+        showAlert(
+          'Проверьте почту',
+          `Мы отправили ссылку для подтверждения на ${e}. Подтвердите почту и войдите.`,
+          () => router.replace('/(auth)/login'),
+        );
       } catch (err) {
-        Alert.alert(
+        showAlert(
           'Регистрация не удалась',
           err instanceof Error ? err.message : 'Ошибка регистрации',
         );

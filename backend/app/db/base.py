@@ -55,6 +55,7 @@ from app.models.city import City  # noqa: E402, F401
 from app.models.embedding_cache import EmbeddingCache  # noqa: E402, F401
 from app.models.folder import Folder  # noqa: E402, F401
 from app.models.learning_event import LearningEvent  # noqa: E402, F401
+from app.models.login_code import LoginCode  # noqa: E402, F401
 from app.models.push_token import PushToken  # noqa: E402, F401
 from app.models.rescue import Rescue  # noqa: E402, F401
 from app.models.test import Test  # noqa: E402, F401

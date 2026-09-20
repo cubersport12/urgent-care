@@ -13,6 +13,7 @@ from app.models.city import City
 from app.models.embedding_cache import EmbeddingCache
 from app.models.folder import Folder
 from app.models.learning_event import LearningEvent
+from app.models.login_code import LoginCode
 from app.models.notification import Notification
 from app.models.password_reset import PasswordResetToken
 from app.models.push_token import PushToken
@@ -45,4 +46,5 @@ __all__ = [
     "SupportThread",
     "SupportMessage",
     "PasswordResetToken",
+    "LoginCode",
 ]

@@ -3,7 +3,7 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_current_user, get_db
@@ -48,7 +48,7 @@ def _email_copy(*, to: str, subject: str, body: str) -> None:
     if not to:
         return
     try:
-        send_email(to=to, subject=subject, body=body)
+        send_email(to=to, subject=subject, body=body, account="support")
     except Exception as exc:
         log.warning("support_email_failed to=%s error=%s", to, exc)
 
@@ -73,6 +73,7 @@ async def get_my_thread(
 @router.post("/me/messages", response_model=SupportMessageOut, status_code=status.HTTP_201_CREATED)
 async def post_my_message(
     payload: SupportMessageCreate,
+    background_tasks: BackgroundTasks,
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ) -> SupportMessageOut:
@@ -84,7 +85,8 @@ async def post_my_message(
         sender_id=user.id,
         body=payload.body,
     )
-    _email_copy(
+    background_tasks.add_task(
+        _email_copy,
         to=settings.support_inbox,
         subject=f"Поддержка: сообщение от {user.email}",
         body=(
@@ -148,6 +150,7 @@ async def get_thread(
 async def post_admin_message(
     thread_id: UUID,
     payload: SupportMessageCreate,
+    background_tasks: BackgroundTasks,
     db: Annotated[AsyncSession, Depends(get_db)],
     admin: Annotated[User, Depends(get_current_admin)],
 ) -> SupportMessageOut:
@@ -163,7 +166,8 @@ async def post_admin_message(
     )
     thread_user = await UserRepository(db).get(thread.user_id)
     if thread_user and thread_user.email:
-        _email_copy(
+        background_tasks.add_task(
+            _email_copy,
             to=thread_user.email,
             subject="Ответ службы поддержки",
             body=f"{msg.body}\n\n— Служба поддержки",

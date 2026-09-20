@@ -15,6 +15,7 @@ from app.models import (  # noqa: F401
     city,
     folder,
     learning_event,
+    login_code,
     notification,
     password_reset,
     push_token,

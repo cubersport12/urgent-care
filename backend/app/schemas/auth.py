@@ -43,6 +43,7 @@ class UserOut(BaseModel):
     occupation: str | None = None
     role: str
     is_active: bool
+    email_verified: bool = False
     created_at: datetime
 
 
@@ -77,3 +78,25 @@ class ForgotPassword(BaseModel):
 class ResetPassword(BaseModel):
     token: str = Field(min_length=10, max_length=200)
     password: str = Field(min_length=6, max_length=100)
+
+
+class RegisterOut(BaseModel):
+    status: str = "verification_email_sent"
+
+
+class VerifyEmail(BaseModel):
+    token: str = Field(min_length=10, max_length=500)
+
+
+class ResendVerification(BaseModel):
+    email: EmailStr
+
+
+class LoginCodeRequest(BaseModel):
+    email: EmailStr
+
+
+class LoginCodeVerify(BaseModel):
+    email: EmailStr
+    code: str = Field(pattern=r"^\d{6}$")
+    device_name: str | None = Field(None, max_length=200)
