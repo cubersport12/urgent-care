@@ -22,9 +22,10 @@ type TestResultsViewProps = {
   onBack: () => void;
   onFinish: () => void;
   animatedStyle: any;
+  resetTests?: { id: string; name: string }[] | null;
 };
 
-export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResultsViewProps) {
+export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests }: TestResultsViewProps) {
   const {
     test,
     answers,
@@ -189,6 +190,19 @@ export function TestResultsView({ onBack, onFinish, animatedStyle }: TestResults
               <ThemedText style={styles.statusText}>{statusText}</ThemedText>
             </ThemedView>
           </ThemedView>
+
+          {!isPassed && resetTests?.length ? (
+            <ThemedView style={styles.summaryCard}>
+              <ThemedText type="subtitle" style={styles.summaryTitle}>
+                Чтобы пересдать этот тест, сначала пересдайте:
+              </ThemedText>
+              {resetTests.map((t) => (
+                <ThemedText key={t.id} style={styles.summaryItem}>
+                  • {t.name}
+                </ThemedText>
+              ))}
+            </ThemedView>
+          ) : null}
 
           {recommendations.length > 0 ? (
             <ThemedView style={styles.summaryCard}>

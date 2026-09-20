@@ -85,7 +85,8 @@ export const testSchema = z.object({
     isReaded: z.boolean().nullable().optional()
   })).nullable(),
   requiredTariffId: z.string().nullable().optional(),
-  requiredRewardId: z.string().nullable().optional()
+  requiredRewardId: z.string().nullable().optional(),
+  resetTestIds: z.array(z.string()).nullable().optional()
 });
 
 /** Уровень серьёзности параметра (диапазон + метка) */

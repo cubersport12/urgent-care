@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
+# Bootstrap nginx for a FRESH server. The regular deploy does NOT touch nginx:
+# any live-config change is made on the server manually and mirrored back here.
 set -euo pipefail
 
+install -m 644 /opt/urgent-care/deploy/nginx/planka-socket-upgrade.conf /etc/nginx/conf.d/planka-socket-upgrade.conf
 install -m 644 /opt/urgent-care/deploy/nginx/urgent-care.conf /etc/nginx/sites-available/urgent-care
 chmod +x /opt/urgent-care/deploy/enable-ssl.sh
 chmod +x /opt/urgent-care/deploy/remote/*.sh

@@ -497,6 +497,72 @@ export type BroadcastOut = {
 };
 
 /**
+ * CertificateIssueRequest
+ */
+export type CertificateIssueRequest = {
+    /**
+     * Userid
+     */
+    userId: string;
+    /**
+     * Displayname
+     */
+    displayName?: string | null;
+};
+
+/**
+ * CertificateOut
+ */
+export type CertificateOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Number
+     */
+    number: number;
+    /**
+     * Userid
+     */
+    userId: string;
+    /**
+     * Fullname
+     */
+    fullName: string;
+    /**
+     * Filepath
+     */
+    filePath: string;
+    /**
+     * Issuedat
+     */
+    issuedAt: string;
+};
+
+/**
+ * CertificateVerifyOut
+ */
+export type CertificateVerifyOut = {
+    /**
+     * Number
+     */
+    number: number;
+    /**
+     * Fullname
+     */
+    fullName: string;
+    /**
+     * Issuedat
+     */
+    issuedAt: string;
+    /**
+     * Valid
+     */
+    valid?: boolean;
+};
+
+/**
  * CityOut
  */
 export type CityOut = {
@@ -765,6 +831,34 @@ export type LinkToArticle = {
 };
 
 /**
+ * LoginCodeRequest
+ */
+export type LoginCodeRequest = {
+    /**
+     * Email
+     */
+    email: string;
+};
+
+/**
+ * LoginCodeVerify
+ */
+export type LoginCodeVerify = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Device Name
+     */
+    device_name?: string | null;
+};
+
+/**
  * LoginJson
  */
 export type LoginJson = {
@@ -988,6 +1082,16 @@ export type RecommendedArticleOut = {
 };
 
 /**
+ * RegisterOut
+ */
+export type RegisterOut = {
+    /**
+     * Status
+     */
+    status?: string;
+};
+
+/**
  * RescueCreate
  */
 export type RescueCreate = {
@@ -1172,6 +1276,16 @@ export type RescueUpdate = {
 };
 
 /**
+ * ResendVerification
+ */
+export type ResendVerification = {
+    /**
+     * Email
+     */
+    email: string;
+};
+
+/**
  * ResetPassword
  */
 export type ResetPassword = {
@@ -1206,6 +1320,20 @@ export type ResetStatsRequest = {
 };
 
 /**
+ * ResetTestOut
+ */
+export type ResetTestOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * RewardCreate
  */
 export type RewardCreate = {
@@ -1229,6 +1357,14 @@ export type RewardCreate = {
      * Files
      */
     files?: Array<string> | null;
+    /**
+     * Subscriptiontariffid
+     */
+    subscriptionTariffId?: string | null;
+    /**
+     * Subscriptiondays
+     */
+    subscriptionDays?: number | null;
     /**
      * Sortorder
      */
@@ -1272,6 +1408,14 @@ export type RewardMeOut = {
      */
     files?: Array<string> | null;
     /**
+     * Subscriptiontariffid
+     */
+    subscriptionTariffId?: string | null;
+    /**
+     * Subscriptiondays
+     */
+    subscriptionDays?: number | null;
+    /**
      * Sortorder
      */
     sortOrder: number;
@@ -1310,6 +1454,14 @@ export type RewardOut = {
      */
     files?: Array<string> | null;
     /**
+     * Subscriptiontariffid
+     */
+    subscriptionTariffId?: string | null;
+    /**
+     * Subscriptiondays
+     */
+    subscriptionDays?: number | null;
+    /**
      * Sortorder
      */
     sortOrder: number;
@@ -1343,6 +1495,14 @@ export type RewardUpdate = {
      * Files
      */
     files?: Array<string> | null;
+    /**
+     * Subscriptiontariffid
+     */
+    subscriptionTariffId?: string | null;
+    /**
+     * Subscriptiondays
+     */
+    subscriptionDays?: number | null;
     /**
      * Sortorder
      */
@@ -1751,6 +1911,10 @@ export type TestCreate = {
      */
     accessabilityConditions?: Array<unknown> | null;
     /**
+     * Resettestids
+     */
+    resetTestIds?: Array<string> | null;
+    /**
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
@@ -1828,6 +1992,10 @@ export type TestOut = {
      * Accessabilityconditions
      */
     accessabilityConditions: Array<unknown> | null;
+    /**
+     * Resettestids
+     */
+    resetTestIds: Array<string> | null;
     /**
      * Requiredtariffid
      */
@@ -1926,6 +2094,10 @@ export type TestResultOut = {
      * Completedat
      */
     completedAt?: string | null;
+    /**
+     * Resettests
+     */
+    resetTests?: Array<ResetTestOut> | null;
 };
 
 /**
@@ -2075,6 +2247,10 @@ export type TestUpdate = {
      */
     accessabilityConditions?: Array<unknown> | null;
     /**
+     * Resettestids
+     */
+    resetTestIds?: Array<string> | null;
+    /**
      * Requiredtariffid
      */
     requiredTariffId?: string | null;
@@ -2190,6 +2366,10 @@ export type UserOut = {
      */
     is_active: boolean;
     /**
+     * Email Verified
+     */
+    email_verified?: boolean;
+    /**
      * Created At
      */
     created_at: string;
@@ -2233,6 +2413,16 @@ export type ValidationError = {
      * Error Type
      */
     type: string;
+};
+
+/**
+ * VerifyEmail
+ */
+export type VerifyEmail = {
+    /**
+     * Token
+     */
+    token: string;
 };
 
 /**
@@ -2348,6 +2538,10 @@ export type UserOutWritable = {
      */
     is_active: boolean;
     /**
+     * Email Verified
+     */
+    email_verified?: boolean;
+    /**
      * Created At
      */
     created_at: string;
@@ -2373,7 +2567,7 @@ export type AuthRegisterResponses = {
     /**
      * Successful Response
      */
-    201: SessionCreated;
+    201: RegisterOut;
 };
 
 export type AuthRegisterResponse = AuthRegisterResponses[keyof AuthRegisterResponses];
@@ -2402,6 +2596,106 @@ export type AuthLoginJsonResponses = {
 };
 
 export type AuthLoginJsonResponse = AuthLoginJsonResponses[keyof AuthLoginJsonResponses];
+
+export type AuthVerifyEmailData = {
+    body: VerifyEmail;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/verify-email';
+};
+
+export type AuthVerifyEmailErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthVerifyEmailError = AuthVerifyEmailErrors[keyof AuthVerifyEmailErrors];
+
+export type AuthVerifyEmailResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AuthVerifyEmailResponse = AuthVerifyEmailResponses[keyof AuthVerifyEmailResponses];
+
+export type AuthResendVerificationData = {
+    body: ResendVerification;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/resend-verification';
+};
+
+export type AuthResendVerificationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthResendVerificationError = AuthResendVerificationErrors[keyof AuthResendVerificationErrors];
+
+export type AuthResendVerificationResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AuthResendVerificationResponse = AuthResendVerificationResponses[keyof AuthResendVerificationResponses];
+
+export type AuthRequestLoginCodeData = {
+    body: LoginCodeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/login/code/request';
+};
+
+export type AuthRequestLoginCodeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthRequestLoginCodeError = AuthRequestLoginCodeErrors[keyof AuthRequestLoginCodeErrors];
+
+export type AuthRequestLoginCodeResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AuthRequestLoginCodeResponse = AuthRequestLoginCodeResponses[keyof AuthRequestLoginCodeResponses];
+
+export type AuthVerifyLoginCodeData = {
+    body: LoginCodeVerify;
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/login/code/verify';
+};
+
+export type AuthVerifyLoginCodeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthVerifyLoginCodeError = AuthVerifyLoginCodeErrors[keyof AuthVerifyLoginCodeErrors];
+
+export type AuthVerifyLoginCodeResponses = {
+    /**
+     * Successful Response
+     */
+    200: SessionCreated;
+};
+
+export type AuthVerifyLoginCodeResponse = AuthVerifyLoginCodeResponses[keyof AuthVerifyLoginCodeResponses];
 
 export type AuthLogoutData = {
     body: SessionLogout;
@@ -5298,6 +5592,133 @@ export type MediaUploadMediaResponses = {
 };
 
 export type MediaUploadMediaResponse = MediaUploadMediaResponses[keyof MediaUploadMediaResponses];
+
+export type CertificatesListCertificatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/certificates';
+};
+
+export type CertificatesListCertificatesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CertificatesListCertificatesError = CertificatesListCertificatesErrors[keyof CertificatesListCertificatesErrors];
+
+export type CertificatesListCertificatesResponses = {
+    /**
+     * Response Certificates List Certificates
+     *
+     * Successful Response
+     */
+    200: Array<CertificateOut>;
+};
+
+export type CertificatesListCertificatesResponse = CertificatesListCertificatesResponses[keyof CertificatesListCertificatesResponses];
+
+export type CertificatesIssueData = {
+    body: CertificateIssueRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/certificates';
+};
+
+export type CertificatesIssueErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CertificatesIssueError = CertificatesIssueErrors[keyof CertificatesIssueErrors];
+
+export type CertificatesIssueResponses = {
+    /**
+     * Successful Response
+     */
+    201: CertificateOut;
+};
+
+export type CertificatesIssueResponse = CertificatesIssueResponses[keyof CertificatesIssueResponses];
+
+export type CertificatesListMyCertificatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/certificates/my';
+};
+
+export type CertificatesListMyCertificatesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CertificatesListMyCertificatesError = CertificatesListMyCertificatesErrors[keyof CertificatesListMyCertificatesErrors];
+
+export type CertificatesListMyCertificatesResponses = {
+    /**
+     * Response Certificates List My Certificates
+     *
+     * Successful Response
+     */
+    200: Array<CertificateOut>;
+};
+
+export type CertificatesListMyCertificatesResponse = CertificatesListMyCertificatesResponses[keyof CertificatesListMyCertificatesResponses];
+
+export type CertificatesVerifyCertificateData = {
+    body?: never;
+    path: {
+        /**
+         * Number
+         */
+        number: number;
+    };
+    query?: never;
+    url: '/api/v1/certificates/{number}';
+};
+
+export type CertificatesVerifyCertificateErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CertificatesVerifyCertificateError = CertificatesVerifyCertificateErrors[keyof CertificatesVerifyCertificateErrors];
+
+export type CertificatesVerifyCertificateResponses = {
+    /**
+     * Successful Response
+     */
+    200: CertificateVerifyOut;
+};
+
+export type CertificatesVerifyCertificateResponse = CertificatesVerifyCertificateResponses[keyof CertificatesVerifyCertificateResponses];
 
 export type MetaHealthData = {
     body?: never;

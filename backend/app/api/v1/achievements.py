@@ -43,6 +43,8 @@ def _reward_out(row: Reward) -> RewardOut:
         description=row.description,
         icon_path=row.icon_path,
         files=row.files,
+        subscription_tariff_id=row.subscription_tariff_id,
+        subscription_days=row.subscription_days,
         sort_order=row.sort_order,
         is_active=row.is_active,
     )
@@ -156,6 +158,8 @@ async def list_rewards_me(
                 description=reward.description,
                 icon_path=reward.icon_path,
                 files=reward.files,
+                subscription_tariff_id=reward.subscription_tariff_id,
+                subscription_days=reward.subscription_days,
                 sort_order=reward.sort_order,
                 unlocked_at=unlocked_at,
             )
@@ -308,6 +312,8 @@ async def create_reward(
         description=payload.description,
         icon_path=payload.icon_path,
         files=payload.files,
+        subscription_tariff_id=payload.subscription_tariff_id,
+        subscription_days=payload.subscription_days,
         sort_order=payload.sort_order,
         is_active=payload.is_active,
     )
@@ -331,6 +337,10 @@ async def update_reward(
         achievement_ids = await _validate_achievement_ids(repo, achievement_ids)
     if "title" in data and data["title"]:
         data["title"] = data["title"].strip()
+    # Тариф и срок меняются парой: присутствует одно поле — второе сбрасываем явно
+    if "subscription_tariff_id" in data or "subscription_days" in data:
+        data["subscription_tariff_id"] = data.get("subscription_tariff_id")
+        data["subscription_days"] = data.get("subscription_days")
     return _reward_out(
         await repo.update_reward(row, achievement_ids=achievement_ids, **data)
     )

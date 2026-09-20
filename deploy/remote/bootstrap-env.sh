@@ -59,7 +59,12 @@ SMTP_USER=
 SMTP_PASSWORD=
 SMTP_FROM=
 SMTP_TLS=true
+SUPPORT_SMTP_USER=
+SUPPORT_SMTP_PASSWORD=
+SUPPORT_SMTP_FROM=
+SUPPORT_EMAIL=
 PASSWORD_RESET_URL=${PUBLIC_BASE}/mobile-app/reset-password
+EMAIL_VERIFICATION_URL=${PUBLIC_BASE}/mobile-app/verify-email
 EOF
 chmod 600 "$ENV_FILE"
 echo "Created /opt/urgent-care/backend/.env"

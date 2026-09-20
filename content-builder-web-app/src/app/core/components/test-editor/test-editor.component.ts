@@ -1,4 +1,4 @@
-import { AppLoading, TestsActions } from '@/core/store';
+import { AppLoading, TestsActions, TestsState } from '@/core/store';
 import { AppTestAccessablityCondition, AppTestQuestionVm, AppTestVm, generateGUID, NullableValue } from '@/core/utils';
 import { Component, computed, effect, inject, Injectable, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -111,9 +111,18 @@ export class TestEditorComponent {
     hidden: new FormControl<boolean>(false),
     randomizeQuestions: new FormControl<boolean>(false),
     questionsToShow: new FormControl<NullableValue<number>>(null),
+    resetStatistics: new FormControl<boolean>(false, { nonNullable: true }),
+    resetStatisticsTestIds: new FormControl<string[]>([], { nonNullable: true }),
     requiredTariffId: new FormControl<string | null>(null),
     requiredRewardId: new FormControl<string | null>(null)
   });
+
+  /** Все тесты, кроме текущего — варианты для списка сброса. */
+  protected readonly _resetCandidates = computed(() =>
+    [...this._store.selectSignal(TestsState.getAllTests)()]
+      .filter((t) => t.id !== this._dialogData.id)
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+  );
 
   // Вычисляем сумму правильных баллов
   protected readonly _totalCorrectScore = computed(() => {
@@ -163,11 +172,12 @@ export class TestEditorComponent {
         this._form.enable();
       }
     });
+    this._store.dispatch(new TestsActions.FetchAllTests());
     this._reset();
   }
 
   private _reset(): void {
-    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, randomizeQuestions, questionsToShow, requiredTariffId, requiredRewardId } = this._dialogData;
+    const { name, accessabilityConditions, questions, minScore, maxErrors, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, randomizeQuestions, questionsToShow, resetTestIds, requiredTariffId, requiredRewardId } = this._dialogData;
     this._form.reset({
       name,
       conditions: accessabilityConditions ?? [],
@@ -182,6 +192,8 @@ export class TestEditorComponent {
       hidden: hidden ?? false,
       randomizeQuestions: randomizeQuestions ?? false,
       questionsToShow: questionsToShow ?? null,
+      resetStatistics: !!resetTestIds?.length,
+      resetStatisticsTestIds: resetTestIds ?? [],
       requiredTariffId: requiredTariffId ?? null,
       requiredRewardId: requiredRewardId ?? null
     });
@@ -194,7 +206,7 @@ export class TestEditorComponent {
   }
 
   private _getTestVm(): AppTestVm {
-    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, randomizeQuestions, questionsToShow, requiredTariffId, requiredRewardId } = this._form.value;
+    const { name, conditions, maxErrors, minScore, questions, showCorrectAnswer, includeToStatistics, showSkipButton, showNavigation, showBackButton, hidden, randomizeQuestions, questionsToShow, resetStatistics, resetStatisticsTestIds, requiredTariffId, requiredRewardId } = this._form.value;
     const result: AppTestVm = {
       ...(this._dialogData ?? {}),
       name: name!,
@@ -210,6 +222,7 @@ export class TestEditorComponent {
       hidden,
       randomizeQuestions: randomizeQuestions ?? false,
       questionsToShow: randomizeQuestions ? (questionsToShow ?? null) : null,
+      resetTestIds: resetStatistics ? (resetStatisticsTestIds ?? []) : null,
       requiredTariffId: requiredTariffId ?? null,
       requiredRewardId: requiredRewardId ?? null
     };

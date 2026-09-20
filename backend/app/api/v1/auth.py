@@ -1,16 +1,18 @@
 """Authentication endpoints. Авторизация — только по session id (X-Session-Id)."""
 import mimetypes
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Response, UploadFile, status
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db
 from app.core.config import settings
-from app.core.security import hash_password, verify_password
+from app.core.security import hash_password, make_email_token, read_email_token, verify_password
+from app.db.repositories.login_code import LoginCodeRepository
 from app.db.repositories.password_reset import PasswordResetRepository
 from app.db.repositories.user import UserRepository
 from app.models.auth_session import AuthSession
@@ -19,7 +21,11 @@ from app.models.user import User
 from app.schemas.auth import (
     DeleteAccount,
     ForgotPassword,
+    LoginCodeRequest,
+    LoginCodeVerify,
     LoginJson,
+    RegisterOut,
+    ResendVerification,
     ResetPassword,
     SessionCreated,
     SessionLogout,
@@ -27,8 +33,9 @@ from app.schemas.auth import (
     UserCreate,
     UserOut,
     UserUpdate,
+    VerifyEmail,
 )
-from app.utils.email import send_email
+from app.utils.email import send_email_safe
 from app.utils.s3 import get_s3_client
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -63,11 +70,42 @@ async def _issue_session(user: User, db: AsyncSession, device_name: str | None) 
     return SessionCreated(session_id=session.id, user=UserOut.model_validate(user))
 
 
-@router.post("/register", response_model=SessionCreated, status_code=status.HTTP_201_CREATED)
+# ponytail: кулдаун отправки писем в памяти процесса — потолок 1 воркер;
+# при нескольких воркерах перенести в БД (колонка в users)
+_send_marks: dict[str, float] = {}
+_SEND_COOLDOWN_SECONDS = 60.0
+
+
+def _throttled(key: str) -> bool:
+    now = time.monotonic()
+    if now - _send_marks.get(key, 0.0) < _SEND_COOLDOWN_SECONDS:
+        return True
+    _send_marks[key] = now
+    return False
+
+
+def _queue_verification_email(background_tasks: BackgroundTasks, user: User) -> None:
+    token = make_email_token(user.id, user.email, settings.email_verification_ttl_hours * 3600)
+    link = f"{settings.email_verification_url.rstrip('/')}?token={token}"
+    background_tasks.add_task(
+        send_email_safe,
+        to=user.email,
+        subject="Подтверждение почты",
+        body=(
+            "Подтвердите почту, чтобы войти в приложение:\n\n"
+            f"{link}\n\n"
+            f"Ссылка действует {settings.email_verification_ttl_hours} ч. "
+            "Если вы не регистрировались — проигнорируйте письмо."
+        ),
+    )
+
+
+@router.post("/register", response_model=RegisterOut, status_code=status.HTTP_201_CREATED)
 async def register(
     payload: UserCreate,
+    background_tasks: BackgroundTasks,
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> SessionCreated:
+) -> RegisterOut:
     repo = UserRepository(db)
     existing = await repo.get_by_email(payload.email)
     if existing:
@@ -83,12 +121,28 @@ async def register(
         hashed_password=hash_password(payload.password),
         role=role,
         is_active=True,
+        email_verified=False,
         consent_accepted_at=datetime.now(timezone.utc),
     )
     from app.services.billing import BillingService
 
     await BillingService(db).ensure_subscription(user)
-    return await _issue_session(user, db, None)
+    _queue_verification_email(background_tasks, user)
+    return RegisterOut()
+
+
+async def _authenticate(db: AsyncSession, email: str, password: str) -> User:
+    repo = UserRepository(db)
+    user = await repo.get_by_email(email.lower())
+    if not user or not user.hashed_password:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+    if not verify_password(password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account deactivated")
+    if not user.email_verified:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email not verified")
+    return user
 
 
 @router.post("/login/json", response_model=SessionCreated)
@@ -97,14 +151,95 @@ async def login_json(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> SessionCreated:
     """JSON login for mobile/web clients (email + password)."""
-    repo = UserRepository(db)
-    user = await repo.get_by_email(payload.email.lower())
-    if not user or not user.hashed_password:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
-    if not verify_password(payload.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account deactivated")
+    user = await _authenticate(db, payload.email, payload.password)
+    return await _issue_session(user, db, payload.device_name)
+
+
+@router.post("/login/constructor", response_model=SessionCreated)
+async def login_constructor(
+    payload: LoginJson,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> SessionCreated:
+    """Вход в конструктор контента — только для администраторов."""
+    user = await _authenticate(db, payload.email, payload.password)
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ только для администраторов",
+        )
+    return await _issue_session(user, db, payload.device_name)
+
+
+@router.post("/verify-email", status_code=status.HTTP_204_NO_CONTENT)
+async def verify_email(
+    payload: VerifyEmail,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> Response:
+    parsed = read_email_token(payload.token)
+    if not parsed:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    user_id, email = parsed
+    user = await UserRepository(db).get(user_id)
+    if not user or user.email.lower() != email.lower() or not user.is_active:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    if not user.email_verified:
+        user.email_verified = True
+        await db.flush()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/resend-verification", status_code=status.HTTP_204_NO_CONTENT)
+async def resend_verification(
+    payload: ResendVerification,
+    background_tasks: BackgroundTasks,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> Response:
+    """Always 204 — do not reveal whether the email exists."""
+    if not _throttled(f"verify:{payload.email.lower()}"):
+        user = await UserRepository(db).get_by_email(payload.email.lower())
+        if user and user.is_active and not user.email_verified:
+            _queue_verification_email(background_tasks, user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/login/code/request", status_code=status.HTTP_204_NO_CONTENT)
+async def request_login_code(
+    payload: LoginCodeRequest,
+    background_tasks: BackgroundTasks,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> Response:
+    """Одноразовый код входа на почту. Always 204 — do not reveal whether the email exists."""
+    if not _throttled(f"code:{payload.email.lower()}"):
+        user = await UserRepository(db).get_by_email(payload.email.lower())
+        if user and user.is_active:
+            code = await LoginCodeRepository(db).issue(user.id)
+            background_tasks.add_task(
+                send_email_safe,
+                to=user.email,
+                subject="Код для входа",
+                body=(
+                    f"Код для входа: {code}\n\n"
+                    "Код действует 10 минут. "
+                    "Если вы не запрашивали вход — проигнорируйте письмо."
+                ),
+            )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/login/code/verify", response_model=SessionCreated)
+async def verify_login_code(
+    payload: LoginCodeVerify,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> SessionCreated:
+    user = await UserRepository(db).get_by_email(payload.email.lower())
+    if not user or not user.is_active:
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+    if not await LoginCodeRepository(db).consume(user.id, payload.code):
+        raise HTTPException(status_code=400, detail="Invalid or expired code")
+    # Ввод кода из письма доказывает владение почтой
+    if not user.email_verified:
+        user.email_verified = True
+        await db.flush()
     return await _issue_session(user, db, payload.device_name)
 
 
@@ -231,6 +366,7 @@ async def delete_me(
 @router.post("/forgot-password", status_code=status.HTTP_204_NO_CONTENT)
 async def forgot_password(
     payload: ForgotPassword,
+    background_tasks: BackgroundTasks,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> Response:
     """Always 204 — do not reveal whether the email exists."""
@@ -238,7 +374,8 @@ async def forgot_password(
     if user and user.is_active:
         raw = await PasswordResetRepository(db).issue(user.id)
         link = f"{settings.password_reset_url.rstrip('/')}?token={raw}"
-        send_email(
+        background_tasks.add_task(
+            send_email_safe,
             to=user.email,
             subject="Сброс пароля",
             body=f"Перейдите по ссылке, чтобы задать новый пароль:\n\n{link}\n\nСсылка действует 2 часа.",

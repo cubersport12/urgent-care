@@ -5,6 +5,7 @@ from app.api.v1.achievements import router as achievements_router
 from app.api.v1.articles import router as articles_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.billing import router as billing_router
+from app.api.v1.certificates import router as certificates_router
 from app.api.v1.cities import router as cities_router
 from app.api.v1.folders import router as folders_router
 from app.api.v1.learning_events import router as learning_events_router
@@ -37,3 +38,4 @@ api_router.include_router(training_router)
 api_router.include_router(users_router)
 api_router.include_router(legal_router)
 api_router.include_router(media_router)
+api_router.include_router(certificates_router)

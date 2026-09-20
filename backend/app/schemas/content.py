@@ -122,6 +122,7 @@ class TestOut(CamelModel):
     questions_to_show: int | None = Field(None, alias="questionsToShow")
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
+    reset_test_ids: list[str] | None = Field(None, alias="resetTestIds")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
@@ -143,6 +144,7 @@ class TestCreate(CamelModel):
     questions_to_show: int | None = Field(None, alias="questionsToShow")
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
+    reset_test_ids: list[str] | None = Field(None, alias="resetTestIds")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
@@ -163,6 +165,7 @@ class TestUpdate(CamelModel):
     questions_to_show: int | None = Field(None, alias="questionsToShow")
     questions: list[Any] | None = None
     accessability_conditions: list[Any] | None = Field(None, alias="accessabilityConditions")
+    reset_test_ids: list[str] | None = Field(None, alias="resetTestIds")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 

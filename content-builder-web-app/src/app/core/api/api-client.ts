@@ -22,7 +22,11 @@ function redirectToLogin(): void {
 
 function createAuthFetch(baseFetch: typeof fetch = fetch.bind(globalThis)): typeof fetch {
   return async (input, init) => {
-    const headers = new Headers(init?.headers);
+    // hey-api зовёт фетч готовым Request с пустым init — заголовки лежат в input.headers.
+    // init.headers заменяет заголовки Request целиком, поэтому мёржим оба источника:
+    // иначе теряется Content-Type с границей multipart и загрузка файлов падает с 422.
+    const headers = new Headers(input instanceof Request ? input.headers : undefined);
+    for (const [key, value] of new Headers(init?.headers)) headers.set(key, value);
     if (!headers.has('X-Session-Id')) {
       const sessionId = getSessionId();
       if (sessionId) headers.set('X-Session-Id', sessionId);

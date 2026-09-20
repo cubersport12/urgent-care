@@ -6,9 +6,13 @@ import {
   authLoginJson,
   authLogout,
   authRegister,
+  authRequestLoginCode,
+  authResendVerification,
   authResetPassword,
   authUpdateMe,
   authUploadAvatar,
+  authVerifyEmail,
+  authVerifyLoginCode,
 } from '@/api/generated/sdk.gen';
 import { apiCall } from '@/api/utils';
 import { clearAuth, getSessionId, persistAuth, persistUser } from '@/lib/auth-storage';
@@ -31,8 +35,27 @@ export async function login(email: string, password: string): Promise<SessionCre
   return data;
 }
 
-export async function register(email: string, password: string): Promise<SessionCreated> {
-  const data = await apiCall(() => authRegister({ body: { email, password } }));
+/** Регистрация: сессия не выдаётся — ждём подтверждения почты из письма. */
+export async function register(email: string, password: string): Promise<void> {
+  await apiCall(() => authRegister({ body: { email, password } }));
+}
+
+export async function verifyEmail(token: string): Promise<void> {
+  await apiCall(() => authVerifyEmail({ body: { token } }));
+}
+
+export async function resendVerification(email: string): Promise<void> {
+  await apiCall(() => authResendVerification({ body: { email } }));
+}
+
+export async function requestLoginCode(email: string): Promise<void> {
+  await apiCall(() => authRequestLoginCode({ body: { email } }));
+}
+
+export async function loginWithCode(email: string, code: string): Promise<SessionCreated> {
+  const data = await apiCall(() =>
+    authVerifyLoginCode({ body: { email, code, device_name: deviceName() } }),
+  );
   await persistAuth(data);
   void registerPushToken();
   return data;

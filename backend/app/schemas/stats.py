@@ -73,6 +73,11 @@ class RescueStatsUpsert(CamelModel):
     data: Any | None = None
 
 
+class ResetTestOut(CamelModel):
+    id: str
+    name: str
+
+
 class TestResultOut(CamelModel):
     id: UUID | None = None
     client_id: str | None = Field(None, alias="clientId")
@@ -83,6 +88,8 @@ class TestResultOut(CamelModel):
     completion_type: str | None = Field(None, alias="completionType")
     answers: Any | None = None
     completed_at: datetime | None = Field(None, alias="completedAt")
+    # Заполнено при провале теста со списком сброса: зачёты, переведённые в «не сдан»
+    reset_tests: list[ResetTestOut] | None = Field(None, alias="resetTests")
 
 
 class TestResultCreate(CamelModel):

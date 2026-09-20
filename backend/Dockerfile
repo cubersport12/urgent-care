@@ -14,6 +14,7 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY scripts ./scripts
+COPY data ./data
 RUN pip install --upgrade pip \
     && pip install --prefix=/install .
 
@@ -33,6 +34,7 @@ COPY --from=builder /build/app ./app
 COPY --from=builder /build/alembic ./alembic
 COPY --from=builder /build/alembic.ini .
 COPY --from=builder /build/scripts ./scripts
+COPY --from=builder /build/data ./data
 
 RUN useradd -m -u 1000 urgent && chown -R urgent:urgent /app
 USER urgent

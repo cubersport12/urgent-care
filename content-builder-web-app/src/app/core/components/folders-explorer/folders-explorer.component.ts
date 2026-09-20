@@ -38,6 +38,7 @@ import { AchievementsEditorService } from '../achievements-editor';
 import { RewardsEditorService } from '../rewards-editor';
 import { StatsResetEditorService } from '../stats-reset-editor/stats-reset-editor.component';
 import { LegalDocsEditorService } from '../legal-docs-editor/legal-docs-editor.component';
+import { CertificatesEditorService } from '../certificates-editor/certificates-editor.component';
 import { FolderPropertiesService } from '../folder-properties/folder-properties.component';
 import { SetItemTariffService } from '../set-item-tariff/set-item-tariff.component';
 import { AppFilesStorageService, AppFoldersStorageService, AppTariffsStorageService } from '@/core/api';
@@ -92,6 +93,7 @@ export class FoldersExplorerComponent {
   private readonly _rewardsEditor = inject(RewardsEditorService);
   private readonly _statsResetEditor = inject(StatsResetEditorService);
   private readonly _legalDocsEditor = inject(LegalDocsEditorService);
+  private readonly _certificatesEditor = inject(CertificatesEditorService);
   private readonly _folderProperties = inject(FolderPropertiesService);
   private readonly _setItemTariff = inject(SetItemTariffService);
   private readonly _tariffsStorage = inject(AppTariffsStorageService);
@@ -502,6 +504,10 @@ export class FoldersExplorerComponent {
 
   protected _openLegalDocs(): void {
     this._legalDocsEditor.open();
+  }
+
+  protected _openCertificates(): void {
+    this._certificatesEditor.open();
   }
 
   protected _sendTestNotification(): void {

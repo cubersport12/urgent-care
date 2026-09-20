@@ -59,6 +59,7 @@ echo "==> Uploading backend"
   backend/alembic \
   backend/alembic.ini \
   backend/scripts \
+  backend/data \
   backend/pyproject.toml \
   backend/Dockerfile \
   backend/docker-compose.prod.yml \
@@ -96,8 +97,6 @@ fi
 echo "==> Ensuring backend .env on server"
 "${SSH[@]}" "$SSH_TARGET" "bash /opt/urgent-care/deploy/remote/bootstrap-env.sh ${PUBLIC_HOST}"
 
-echo "==> Configuring nginx"
-"${SSH[@]}" "$SSH_TARGET" "bash /opt/urgent-care/deploy/remote/setup-nginx.sh"
 
 echo "==> Ensuring swap"
 "${SSH[@]}" "$SSH_TARGET" "bash /opt/urgent-care/deploy/remote/ensure-swap.sh"

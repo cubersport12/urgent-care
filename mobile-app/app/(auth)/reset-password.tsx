@@ -2,11 +2,11 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
+import { showAlert } from '@/lib/alert';
 import { resetPassword } from '@/lib/auth-api';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -27,25 +27,25 @@ export default function ResetPasswordScreen() {
 
   const handleSubmit = async () => {
     if (!token) {
-      Alert.alert('Ошибка', 'Ссылка недействительна');
+      showAlert('Ошибка', 'Ссылка недействительна');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Ошибка', 'Пароль должен быть не короче 6 символов');
+      showAlert('Ошибка', 'Пароль должен быть не короче 6 символов');
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Ошибка', 'Пароли не совпадают');
+      showAlert('Ошибка', 'Пароли не совпадают');
       return;
     }
     setSubmitting(true);
     try {
       await resetPassword(token, password);
-      Alert.alert('Готово', 'Пароль обновлён. Войдите с новым паролем.', [
-        { text: 'OK', onPress: () => router.replace('/(auth)/login') },
-      ]);
+      showAlert('Готово', 'Пароль обновлён. Войдите с новым паролем.', () =>
+        router.replace('/(auth)/login'),
+      );
     } catch (err) {
-      Alert.alert('Ошибка', err instanceof Error ? err.message : 'Не удалось сбросить пароль');
+      showAlert('Ошибка', err instanceof Error ? err.message : 'Не удалось сбросить пароль');
     } finally {
       setSubmitting(false);
     }

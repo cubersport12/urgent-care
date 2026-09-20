@@ -42,7 +42,13 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     smtp_from: str = ""
     smtp_tls: bool = True
+    # Отдельный аккаунт для писем поддержки (копии обращений + ответы). Пусто → базовый SMTP-аккаунт
+    support_smtp_user: str = ""
+    support_smtp_password: str = ""
+    support_smtp_from: str = ""
     password_reset_url: str = "https://trouble-dent.ru/mobile-app/reset-password"
+    email_verification_url: str = "https://trouble-dent.ru/mobile-app/verify-email"
+    email_verification_ttl_hours: int = 48
 
     @property
     def support_inbox(self) -> str:

@@ -9,9 +9,11 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.learning_event import LearningEvent
+from app.models.test import Test
 from app.schemas.stats import (
     ArticleStatsOut,
     RescueStatsOut,
+    ResetTestOut,
     TestResultOut,
     TestStatsOut,
 )
@@ -275,6 +277,39 @@ async def project_test_results(
     return out
 
 
+async def _append_reset_attempts(
+    session: AsyncSession, user_id: UUID, test_id: str
+) -> list[ResetTestOut]:
+    """Провал «экзамена»: дописать зависимым зачётам reset-попытку passed=false.
+
+    Последняя попытка решает — зачёт снова считается не сданным, при этом история
+    попыток сохраняется. Возвращает список сброшенных тестов (id + имя).
+    """
+    test = await session.get(Test, test_id)
+    ids = [str(x) for x in (test.reset_test_ids or [])] if test else []
+    ids = [tid for tid in ids if tid and tid != test_id]
+    if not ids:
+        return []
+    for tid in ids:
+        await record_learning_event(
+            session,
+            user_id=user_id,
+            entity_type="test",
+            entity_id=tid,
+            event="finished",
+            payload={
+                "score": 0,
+                "errors": 0,
+                "passed": False,
+                "completion_type": "reset",
+                "answers": None,
+            },
+        )
+    rows = (await session.execute(select(Test.id, Test.name).where(Test.id.in_(ids)))).all()
+    names = {r[0]: r[1] for r in rows}
+    return [ResetTestOut(id=tid, name=names.get(tid, tid)) for tid in ids]
+
+
 async def create_test_result(
     session: AsyncSession,
     user_id: UUID,
@@ -301,6 +336,11 @@ async def create_test_result(
         },
     )
     assert row is not None
+
+    reset_tests: list[ResetTestOut] = []
+    if not is_passed:
+        reset_tests = await _append_reset_attempts(session, user_id, test_id)
+
     return TestResultOut(
         id=row.id,
         client_id=str(user_id),
@@ -311,6 +351,7 @@ async def create_test_result(
         completion_type=completion_type,
         answers=answers,
         completed_at=row.created_at,
+        reset_tests=reset_tests or None,
     )
 
 
@@ -334,11 +375,13 @@ async def resolve_test_entity_id(session: AsyncSession, user_id: UUID, stats_id:
 
 async def count_distinct_completed(session: AsyncSession, user_id: UUID, entity_type: str, event: str, *, passed_only: bool = False) -> int:
     events = await list_events(session, user_id, entity_type=entity_type, event=event)
-    seen: set[str] = set()
+    if not passed_only:
+        return len({ev.entity_id for ev in events})
+    # «Последняя попытка решает»: события идут по времени, reset-попытка (passed=false)
+    # перекрывает прежний успех — зачёт снова считается не сданным.
+    # ponytail: уже выданные достижения за эти тесты не отзываются (sync только выдаёт);
+    # путь апгрейда — отзыв UserAchievement по правилам test_passed/tests_passed при сбросе.
+    latest_passed: dict[str, bool] = {}
     for ev in events:
-        if passed_only:
-            p = _payload(ev)
-            if p.get("passed") is not True:
-                continue
-        seen.add(ev.entity_id)
-    return len(seen)
+        latest_passed[ev.entity_id] = _payload(ev).get("passed") is True
+    return sum(1 for passed in latest_passed.values() if passed)

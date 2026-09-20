@@ -18,6 +18,7 @@ from app.models.folder import Folder
 from app.models.rescue import Rescue
 from app.models.test import Test
 from app.models.user import User
+from app.realtime.notifications_hub import notification_hub
 from app.schemas.billing import (
     BillingMeOut,
     PaymentOut,
@@ -319,7 +320,9 @@ class BillingService:
         sub = await self.repo.get_subscription(payment.user_id)
         tariff = await self.repo.get_tariff(payment.tariff_id)
         if user and sub and tariff:
-            await self._activate_plan(user, sub, tariff, payment_method_id=pm_id)
+            meta = yk_obj.get("metadata") or {}
+            source = "renewal" if str(meta.get("renewal")) == "1" else "purchase"
+            await self._activate_plan(user, sub, tariff, payment_method_id=pm_id, source=source)
         await self.repo.save_payment(payment)
 
     async def _activate_plan(
@@ -328,6 +331,7 @@ class BillingService:
         sub: UserSubscription,
         tariff: Tariff,
         payment_method_id: str | None,
+        source: str = "purchase",
     ) -> None:
         now = datetime.now(timezone.utc)
         sub.tariff_id = tariff.id
@@ -338,6 +342,51 @@ class BillingService:
         if payment_method_id:
             sub.yookassa_payment_method_id = payment_method_id
         await self.repo.save_subscription(sub)
+        await self._emit_subscription_granted(user.id, tariff, sub, source)
+
+    async def grant_subscription(
+        self,
+        user_id: UUID,
+        tariff: Tariff,
+        days: int,
+        source: str,
+    ) -> None:
+        """Выдача вне покупки (награда): дни добавляются к периоду, тариф не понижается."""
+        user = await self.db.get(User, user_id)
+        if not user:
+            return
+        sub = await self.ensure_subscription(user)
+        current = await self.repo.get_tariff(sub.tariff_id)
+        if not current or tariff.rank > current.rank:
+            sub.tariff_id = tariff.id
+        now = datetime.now(timezone.utc)
+        if not sub.current_period_end or sub.current_period_end <= now:
+            sub.current_period_start = now
+            sub.current_period_end = now + timedelta(days=days)
+        else:
+            sub.current_period_end = sub.current_period_end + timedelta(days=days)
+        sub.status = "active"
+        await self.repo.save_subscription(sub)
+        await self._emit_subscription_granted(user_id, tariff, sub, source)
+
+    @staticmethod
+    async def _emit_subscription_granted(
+        user_id: UUID, tariff: Tariff, sub: UserSubscription, source: str
+    ) -> None:
+        await notification_hub.send_user(
+            user_id,
+            {
+                "type": "subscription_granted",
+                "data": {
+                    "tariffId": str(tariff.id),
+                    "tariffTitle": tariff.title,
+                    "periodEnd": (
+                        sub.current_period_end.isoformat() if sub.current_period_end else None
+                    ),
+                    "source": source,
+                },
+            },
+        )
 
     async def renew_due(self) -> dict[str, int]:
         now = datetime.now(timezone.utc)

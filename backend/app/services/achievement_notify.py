@@ -6,9 +6,11 @@ from uuid import UUID, uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.repositories.achievements import AchievementRepository
+from app.models.billing import Tariff
 from app.models.achievement import UserAchievement
 from app.models.notification import Notification
 from app.realtime.notifications_hub import notification_hub
+from app.services.billing import BillingService
 from app.services.expo_push import push_user
 
 
@@ -83,6 +85,16 @@ async def notify_unlocks(
             body=body,
             data={"kind": "achievement", "achievementId": str(ach.id)},
         )
+        # Награда полностью разблокирована — выдаём подписку (WS уйдёт после achievement_unlocked)
+        if reward and reward.subscription_tariff_id and reward.subscription_days:
+            tariff = await session.get(Tariff, reward.subscription_tariff_id)
+            if tariff:
+                await BillingService(session).grant_subscription(
+                    user_id,
+                    tariff,
+                    reward.subscription_days,
+                    source="reward",
+                )
 
 
 async def sync_and_notify(session: AsyncSession, user_id: UUID) -> list[UserAchievement]:

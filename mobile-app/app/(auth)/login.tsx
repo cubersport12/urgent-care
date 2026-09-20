@@ -1,13 +1,14 @@
+import { ApiError } from '@/api/utils';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
-import { login } from '@/lib/auth-api';
+import { showAlert } from '@/lib/alert';
+import { login, loginWithCode, requestLoginCode, resendVerification } from '@/lib/auth-api';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -25,8 +26,9 @@ type GlassInputProps = {
   onChangeText: (text: string) => void;
   secureTextEntry?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-  autoComplete?: 'email' | 'password' | 'name' | 'off' | 'username';
+  autoComplete?: 'email' | 'password' | 'name' | 'off' | 'username' | 'one-time-code';
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  maxLength?: number;
 };
 
 function GlassInput({
@@ -39,6 +41,7 @@ function GlassInput({
   autoCapitalize,
   autoComplete,
   keyboardType,
+  maxLength,
 }: GlassInputProps) {
   const { primary: tintColor, text: textColor, neutralSoft } = useAppTheme();
   const glass = useGlass();
@@ -76,6 +79,7 @@ function GlassInput({
           autoCapitalize={autoCapitalize}
           autoComplete={autoComplete}
           keyboardType={keyboardType}
+          maxLength={maxLength}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
         />
@@ -97,14 +101,19 @@ export default function LoginScreen() {
   const router = useRouter();
   const { primary: tintColor, layout1, border } = useAppTheme();
   const glass = useGlass();
+  const [mode, setMode] = useState<'password' | 'code'>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [notVerifiedEmail, setNotVerifiedEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
 
   const handleLogin = async () => {
     const e = email.trim();
     if (!e || !password) {
-      Alert.alert('Ошибка', 'Введите почту и пароль');
+      showAlert('Ошибка', 'Введите почту и пароль');
       return;
     }
     setSubmitting(true);
@@ -113,14 +122,69 @@ export default function LoginScreen() {
         await login(e, password);
         router.replace('/(tabs)');
       } catch (err) {
-        Alert.alert(
-          'Не удалось войти',
-          err instanceof Error ? err.message : 'Ошибка входа',
-        );
+        if (err instanceof ApiError && err.status_code === 403 && err.detail === 'Email not verified') {
+          setNotVerifiedEmail(e);
+        } else {
+          showAlert('Не удалось войти', err instanceof Error ? err.message : 'Ошибка входа');
+        }
       }
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleResend = async () => {
+    if (!notVerifiedEmail || resending) return;
+    setResending(true);
+    try {
+      await resendVerification(notVerifiedEmail);
+      showAlert('Готово', 'Письмо отправлено. Проверьте почту.');
+    } catch (err) {
+      showAlert('Ошибка', err instanceof Error ? err.message : 'Не удалось отправить письмо');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleSendCode = async () => {
+    const e = email.trim();
+    if (!e) {
+      showAlert('Ошибка', 'Введите почту');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await requestLoginCode(e);
+      setCodeSent(true);
+    } catch (err) {
+      showAlert('Ошибка', err instanceof Error ? err.message : 'Не удалось отправить код');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleLoginWithCode = async () => {
+    const e = email.trim();
+    if (code.length !== 6) {
+      showAlert('Ошибка', 'Введите 6-значный код из письма');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await loginWithCode(e, code);
+      router.replace('/(tabs)');
+    } catch (err) {
+      showAlert('Не удалось войти', err instanceof Error ? err.message : 'Ошибка входа');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleMode = () => {
+    setMode(mode === 'password' ? 'code' : 'password');
+    setCodeSent(false);
+    setCode('');
+    setNotVerifiedEmail(null);
   };
 
   return (
@@ -150,7 +214,11 @@ export default function LoginScreen() {
             <ThemedText type="h1" style={styles.title}>
               Вход
             </ThemedText>
-            <ThemedText style={styles.hint}>Введите почту и пароль учётной записи</ThemedText>
+            <ThemedText style={styles.hint}>
+              {mode === 'password'
+                ? 'Введите почту и пароль учётной записи'
+                : 'Мы пришлём код на вашу почту'}
+            </ThemedText>
 
             <GlassInput
               label="Электронная почта"
@@ -163,31 +231,91 @@ export default function LoginScreen() {
               keyboardType="email-address"
             />
 
-            <GlassInput
-              label="Пароль"
-              icon="lock.fill"
-              placeholder="••••••••"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoComplete="password"
-            />
+            {mode === 'password' ? (
+              <>
+                <GlassInput
+                  label="Пароль"
+                  icon="lock.fill"
+                  placeholder="••••••••"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoComplete="password"
+                />
 
-            <Link href="/(auth)/forgot-password" asChild>
-              <Pressable style={styles.forgotWrap}>
-                <ThemedText style={[styles.forgot, { color: tintColor }]}>Забыли пароль?</ThemedText>
-              </Pressable>
-            </Link>
+                {notVerifiedEmail ? (
+                  <View style={styles.verifyNotice}>
+                    <ThemedText style={styles.verifyText}>
+                      Почта не подтверждена. Проверьте письмо или отправьте его ещё раз.
+                    </ThemedText>
+                    <Pressable onPress={() => void handleResend()} disabled={resending}>
+                      <ThemedText style={[styles.resendLink, { color: tintColor }]}>
+                        {resending ? 'Отправка...' : 'Отправить письмо повторно'}
+                      </ThemedText>
+                    </Pressable>
+                  </View>
+                ) : null}
 
-            <View style={styles.buttonContainer}>
-              <Button
-                title={submitting ? 'Вход...' : 'Войти'}
-                onPress={() => void handleLogin()}
-                disabled={submitting}
-                fullWidth
-                size="large"
-              />
-            </View>
+                <Link href="/(auth)/forgot-password" asChild>
+                  <Pressable style={styles.forgotWrap}>
+                    <ThemedText style={[styles.forgot, { color: tintColor }]}>Забыли пароль?</ThemedText>
+                  </Pressable>
+                </Link>
+
+                <View style={styles.buttonContainer}>
+                  <Button
+                    title={submitting ? 'Вход...' : 'Войти'}
+                    onPress={() => void handleLogin()}
+                    disabled={submitting}
+                    fullWidth
+                    size="large"
+                  />
+                </View>
+              </>
+            ) : (
+              <>
+                {codeSent ? (
+                  <>
+                    <ThemedText style={styles.codeHint}>
+                      Код отправлен на {email.trim()}. Он действует 10 минут.
+                    </ThemedText>
+                    <GlassInput
+                      label="Код из письма"
+                      icon="envelope.fill"
+                      placeholder="000000"
+                      value={code}
+                      onChangeText={(t) => setCode(t.replace(/\D/g, ''))}
+                      autoComplete="one-time-code"
+                      keyboardType="numeric"
+                      maxLength={6}
+                    />
+                  </>
+                ) : null}
+                <View style={styles.buttonContainer}>
+                  <Button
+                    title={
+                      submitting
+                        ? codeSent
+                          ? 'Вход...'
+                          : 'Отправка...'
+                        : codeSent
+                          ? 'Войти'
+                          : 'Отправить код'
+                    }
+                    onPress={() => void (codeSent ? handleLoginWithCode() : handleSendCode())}
+                    disabled={submitting}
+                    fullWidth
+                    size="large"
+                  />
+                </View>
+              </>
+            )}
+
+            <Pressable onPress={toggleMode} style={styles.toggleWrap}>
+              <ThemedText style={[styles.toggleText, { color: tintColor }]}>
+                {mode === 'password' ? 'Войти по коду из письма' : 'Войти по паролю'}
+              </ThemedText>
+            </Pressable>
 
             <Link href="/(auth)/register" asChild>
               <Pressable style={styles.linkWrap}>
@@ -229,15 +357,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 20,
   },
-  forgotWrap: {
-    alignSelf: 'flex-end',
-    marginTop: -4,
-    marginBottom: 8,
-  },
-  forgot: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
   title: {
     marginBottom: 8,
     textAlign: 'center',
@@ -249,6 +368,13 @@ const styles = StyleSheet.create({
     marginBottom: 28,
     textAlign: 'center',
     fontSize: 14,
+  },
+  codeHint: {
+    opacity: 0.75,
+    marginBottom: 16,
+    textAlign: 'center',
+    fontSize: 13,
+    lineHeight: 18,
   },
   inputContainer: {
     marginBottom: 18,
@@ -286,8 +412,44 @@ const styles = StyleSheet.create({
     marginTop: 12,
     width: '100%',
   },
+  forgotWrap: {
+    alignSelf: 'flex-end',
+    marginTop: -6,
+    marginBottom: 8,
+    paddingVertical: 4,
+  },
+  forgot: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  verifyNotice: {
+    marginBottom: 14,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(128,128,128,0.4)',
+    gap: 8,
+  },
+  verifyText: {
+    fontSize: 13,
+    lineHeight: 18,
+    opacity: 0.85,
+  },
+  resendLink: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  toggleWrap: {
+    marginTop: 16,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  toggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   linkWrap: {
-    marginTop: 24,
+    marginTop: 8,
     paddingVertical: 8,
     alignItems: 'center',
   },

@@ -1,4 +1,5 @@
 import { statsCreateTestResult } from '@/api/generated/sdk.gen';
+import type { TestResultOut } from '@/api/generated/types.gen';
 import { apiCall } from '@/api/utils';
 import { TestAnswer, TestFinishReason } from '@/contexts/test-context';
 import { computeTestOutcome } from '@/lib/test-outcome';
@@ -52,9 +53,9 @@ export async function persistTestCompletion(params: {
     passed: boolean;
     data: { answers: TestAnswer[]; completionType: TestCompletionType };
   }) => Promise<unknown>;
-}): Promise<void> {
+}): Promise<TestResultOut | null> {
   const key = `${params.testId}:${params.answers.map((a) => `${a.questionId}:${a.isCorrect}`).join('|')}`;
-  if (_persistedKey === key) return;
+  if (_persistedKey === key) return null;
   _persistedKey = key;
   const outcome = computeTestOutcome({
     answers: params.answers,
@@ -63,7 +64,7 @@ export async function persistTestCompletion(params: {
     finishReason: params.finishReason,
   });
   try {
-    await saveTestResult({
+    const saved = await saveTestResult({
       testId: params.testId,
       totalScore: outcome.totalScore,
       totalErrors: outcome.totalErrors,
@@ -76,6 +77,8 @@ export async function persistTestCompletion(params: {
       passed: outcome.isPassed,
       data: { answers: params.answers, completionType: outcome.completionType },
     });
+    // resetTests: при провале «экзамена» бэкенд дописал reset-попытки зависимым зачётам
+    return saved ?? null;
   } catch (e) {
     _persistedKey = null;
     throw e;

@@ -4,10 +4,10 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { forgotPassword } from '@/lib/auth-api';
+import { showAlert } from '@/lib/alert';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -26,19 +26,19 @@ export default function ForgotPasswordScreen() {
   const handleSubmit = async () => {
     const e = email.trim();
     if (!e) {
-      Alert.alert('Ошибка', 'Введите почту');
+      showAlert('Ошибка', 'Введите почту');
       return;
     }
     setSubmitting(true);
     try {
       await forgotPassword(e);
-      Alert.alert(
+      showAlert(
         'Проверьте почту',
         'Если аккаунт существует, мы отправили ссылку для сброса пароля.',
-        [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }],
+        () => router.replace('/(auth)/login'),
       );
     } catch (err) {
-      Alert.alert('Ошибка', err instanceof Error ? err.message : 'Не удалось отправить');
+      showAlert('Ошибка', err instanceof Error ? err.message : 'Не удалось отправить');
     } finally {
       setSubmitting(false);
     }
