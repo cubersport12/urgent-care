@@ -9,6 +9,7 @@ from app.models.billing import (
     Tariff,
     UserSubscription,
 )
+from app.models.certificate import Certificate
 from app.models.city import City
 from app.models.embedding_cache import EmbeddingCache
 from app.models.folder import Folder
@@ -47,4 +48,5 @@ __all__ = [
     "SupportMessage",
     "PasswordResetToken",
     "LoginCode",
+    "Certificate",
 ]

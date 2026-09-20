@@ -29,6 +29,9 @@ class Test(Base):
     questions_to_show: Mapped[int | None] = mapped_column(Integer, nullable=True)
     questions: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     accessability_conditions: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    # «Экзамен»: при провале этого теста статистика перечисленных тестов
+    # сбрасывается (дописывается reset-попытка passed=false)
+    reset_test_ids: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     required_tariff_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("tariffs.id"), nullable=True, index=True
     )

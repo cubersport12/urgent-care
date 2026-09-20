@@ -5218,6 +5218,215 @@
         }
       }
     },
+    "/api/v1/certificates": {
+      "post": {
+        "tags": [
+          "certificates"
+        ],
+        "summary": "Issue",
+        "operationId": "certificates_issue",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateIssueRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "certificates"
+        ],
+        "summary": "List Certificates",
+        "operationId": "certificates_list_certificates",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CertificateOut"
+                  },
+                  "title": "Response Certificates List Certificates"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/certificates/my": {
+      "get": {
+        "tags": [
+          "certificates"
+        ],
+        "summary": "List My Certificates",
+        "operationId": "certificates_list_my_certificates",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CertificateOut"
+                  },
+                  "title": "Response Certificates List My Certificates"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/certificates/{number}": {
+      "get": {
+        "tags": [
+          "certificates"
+        ],
+        "summary": "Verify Certificate",
+        "description": "Публичная проверка подлинности — цель QR-кода на сертификате.",
+        "operationId": "certificates_verify_certificate",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateVerifyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -6313,6 +6522,102 @@
           "created"
         ],
         "title": "BroadcastOut"
+      },
+      "CertificateIssueRequest": {
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Userid"
+          },
+          "displayName": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Displayname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "userId"
+        ],
+        "title": "CertificateIssueRequest"
+      },
+      "CertificateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Userid"
+          },
+          "fullName": {
+            "type": "string",
+            "title": "Fullname"
+          },
+          "filePath": {
+            "type": "string",
+            "title": "Filepath"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Issuedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "number",
+          "userId",
+          "fullName",
+          "filePath",
+          "issuedAt"
+        ],
+        "title": "CertificateOut"
+      },
+      "CertificateVerifyOut": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "fullName": {
+            "type": "string",
+            "title": "Fullname"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Issuedat"
+          },
+          "valid": {
+            "type": "boolean",
+            "title": "Valid",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "number",
+          "fullName",
+          "issuedAt"
+        ],
+        "title": "CertificateVerifyOut"
       },
       "CityOut": {
         "properties": {
@@ -7640,6 +7945,24 @@
         ],
         "title": "ResetStatsRequest"
       },
+      "ResetTestOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ResetTestOut"
+      },
       "RewardCreate": {
         "properties": {
           "achievementIds": {
@@ -7693,6 +8016,31 @@
               }
             ],
             "title": "Files"
+          },
+          "subscriptionTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiontariffid"
+          },
+          "subscriptionDays": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 3650.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiondays"
           },
           "sortOrder": {
             "type": "integer",
@@ -7774,6 +8122,29 @@
             ],
             "title": "Files"
           },
+          "subscriptionTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiontariffid"
+          },
+          "subscriptionDays": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiondays"
+          },
           "sortOrder": {
             "type": "integer",
             "title": "Sortorder"
@@ -7849,6 +8220,29 @@
               }
             ],
             "title": "Files"
+          },
+          "subscriptionTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiontariffid"
+          },
+          "subscriptionDays": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiondays"
           },
           "sortOrder": {
             "type": "integer",
@@ -7936,6 +8330,31 @@
               }
             ],
             "title": "Files"
+          },
+          "subscriptionTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiontariffid"
+          },
+          "subscriptionDays": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 3650.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiondays"
           },
           "sortOrder": {
             "anyOf": [
@@ -8743,6 +9162,20 @@
             ],
             "title": "Accessabilityconditions"
           },
+          "resetTestIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resettestids"
+          },
           "requiredTariffId": {
             "anyOf": [
               {
@@ -8940,6 +9373,20 @@
             ],
             "title": "Accessabilityconditions"
           },
+          "resetTestIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resettestids"
+          },
           "requiredTariffId": {
             "anyOf": [
               {
@@ -8983,6 +9430,7 @@
           "questionsToShow",
           "questions",
           "accessabilityConditions",
+          "resetTestIds",
           "requiredTariffId",
           "requiredRewardId"
         ],
@@ -9147,6 +9595,20 @@
               }
             ],
             "title": "Completedat"
+          },
+          "resetTests": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ResetTestOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resettests"
           }
         },
         "type": "object",
@@ -9495,6 +9957,20 @@
               }
             ],
             "title": "Accessabilityconditions"
+          },
+          "resetTestIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resettestids"
           },
           "requiredTariffId": {
             "anyOf": [

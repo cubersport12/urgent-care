@@ -12,6 +12,7 @@ from app.models import (  # noqa: F401
     achievement,
     article,
     billing,
+    certificate,
     city,
     folder,
     learning_event,

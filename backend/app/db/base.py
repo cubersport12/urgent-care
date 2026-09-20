@@ -51,6 +51,7 @@ from app.models.billing import (  # noqa: E402, F401
     Tariff,
     UserSubscription,
 )
+from app.models.certificate import Certificate  # noqa: E402, F401
 from app.models.city import City  # noqa: E402, F401
 from app.models.embedding_cache import EmbeddingCache  # noqa: E402, F401
 from app.models.folder import Folder  # noqa: E402, F401

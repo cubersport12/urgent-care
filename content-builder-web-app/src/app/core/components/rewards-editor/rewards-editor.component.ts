@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import {
@@ -19,13 +19,21 @@ import { forkJoin } from 'rxjs';
 import {
   AppAchievementsStorageService,
   AppFilesStorageService,
-  AppRewardsStorageService
+  AppRewardsStorageService,
+  AppTariffsStorageService
 } from '@/core/api';
 import { ApiError } from '@/core/api/api-utils';
-import type { AchievementOut, RewardCreate, RewardOut } from '@/core/api/generated/types.gen';
+import type { AchievementOut, RewardCreate, RewardOut, TariffOut } from '@/core/api/generated/types.gen';
 import { generateGUID } from '@/core/utils';
 
 type RewardEditData = { reward: RewardOut | null; achievements: AchievementOut[] };
+
+/** Тариф и срок задаются парой: одно без другого — ошибка формы. */
+function subscriptionPairValidator(control: AbstractControl) {
+  const tariff = control.get('subscriptionTariffId')?.value ?? null;
+  const days = control.get('subscriptionDays')?.value ?? null;
+  return (tariff == null) !== (days == null) ? { subscriptionPair: true } : null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class RewardsEditorService {
@@ -118,6 +126,26 @@ export class RewardsEditorService {
           <mat-label>Порядок</mat-label>
           <input matInput type="number" formControlName="sortOrder" />
         </mat-form-field>
+        <div class="flex flex-col gap-1">
+          <div class="flex gap-2 items-start">
+            <mat-form-field appearance="fill" class="grow">
+              <mat-label>Подписка (необязательно)</mat-label>
+              <mat-select formControlName="subscriptionTariffId">
+                <mat-option [value]="null">— Без подписки —</mat-option>
+                @for (t of _tariffs(); track t.id) {
+                  <mat-option [value]="t.id">{{ t.title }} ({{ t.periodDays }} дн.)</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="fill" class="w-28">
+              <mat-label>Дней</mat-label>
+              <input matInput type="number" formControlName="subscriptionDays" min="1" max="3650" />
+            </mat-form-field>
+          </div>
+          @if (_form.hasError('subscriptionPair')) {
+            <div class="text-xs text-red-600">Укажите и тариф, и срок — или очистите оба поля</div>
+          }
+        </div>
         <mat-checkbox formControlName="isActive">Активна</mat-checkbox>
       </form>
     </mat-dialog-content>
@@ -135,24 +163,33 @@ export class RewardEditDialogComponent {
   protected readonly _data = inject<RewardEditData>(MAT_DIALOG_DATA);
   protected readonly _ref = inject(MatDialogRef<RewardEditDialogComponent, RewardCreate | null>);
   private readonly _files = inject(AppFilesStorageService);
+  private readonly _tariffsStorage = inject(AppTariffsStorageService);
   private readonly _destroyRef = inject(DestroyRef);
 
   protected readonly _uploading = signal(false);
   protected readonly _uploadingFiles = signal(false);
   protected readonly _attached = signal<string[]>(this._data.reward?.files ?? []);
   protected readonly _thumbs = signal<Record<string, string>>({});
+  protected readonly _tariffs = signal<TariffOut[]>([]);
 
-  protected readonly _form = new FormGroup({
-    achievementIds: new FormControl<string[]>([], {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(1)]
-    }),
-    title: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    description: new FormControl<string | null>(null),
-    iconPath: new FormControl<string | null>(null),
-    sortOrder: new FormControl(0, { nonNullable: true }),
-    isActive: new FormControl(true, { nonNullable: true })
-  });
+  protected readonly _form = new FormGroup(
+    {
+      achievementIds: new FormControl<string[]>([], {
+        nonNullable: true,
+        validators: [Validators.required, Validators.minLength(1)]
+      }),
+      title: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+      description: new FormControl<string | null>(null),
+      iconPath: new FormControl<string | null>(null),
+      subscriptionTariffId: new FormControl<string | null>(null),
+      subscriptionDays: new FormControl<number | null>(null, {
+        validators: [Validators.min(1), Validators.max(3650)]
+      }),
+      sortOrder: new FormControl(0, { nonNullable: true }),
+      isActive: new FormControl(true, { nonNullable: true })
+    },
+    { validators: [subscriptionPairValidator] }
+  );
 
   constructor() {
     const r = this._data.reward;
@@ -162,12 +199,18 @@ export class RewardEditDialogComponent {
         title: r.title,
         description: r.description ?? null,
         iconPath: r.iconPath ?? null,
+        subscriptionTariffId: r.subscriptionTariffId ?? null,
+        subscriptionDays: r.subscriptionDays ?? null,
         sortOrder: r.sortOrder,
         isActive: r.isActive
       });
     } else if (this._data.achievements[0]) {
       this._form.controls.achievementIds.setValue([this._data.achievements[0].id]);
     }
+
+    this._tariffsStorage.listAll().subscribe((list) => {
+      this._tariffs.set([...list].sort((a, b) => a.rank - b.rank || a.sortOrder - b.sortOrder));
+    });
 
     effect(() => {
       for (const path of this._attached()) {
@@ -250,6 +293,8 @@ export class RewardEditDialogComponent {
       description: v.description?.trim() || null,
       iconPath: v.iconPath?.trim() || null,
       files: this._attached().length ? this._attached() : null,
+      subscriptionTariffId: v.subscriptionTariffId ?? null,
+      subscriptionDays: v.subscriptionDays != null ? Number(v.subscriptionDays) : null,
       sortOrder: Number(v.sortOrder),
       isActive: v.isActive
     });

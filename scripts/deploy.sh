@@ -59,6 +59,7 @@ echo "==> Uploading backend"
   backend/alembic \
   backend/alembic.ini \
   backend/scripts \
+  backend/data \
   backend/pyproject.toml \
   backend/Dockerfile \
   backend/docker-compose.prod.yml \

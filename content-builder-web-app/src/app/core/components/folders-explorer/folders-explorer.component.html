@@ -103,6 +103,14 @@
       <button
         type="button"
         mat-icon-button
+        (click)="_openCertificates()"
+        matTooltip="Выдача сертификатов"
+      >
+        <mat-icon svgIcon="certificate" />
+      </button>
+      <button
+        type="button"
+        mat-icon-button
         (click)="_sendTestNotification()"
         matTooltip="Тестовое уведомление"
       >

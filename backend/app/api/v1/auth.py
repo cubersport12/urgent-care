@@ -131,22 +131,42 @@ async def register(
     return RegisterOut()
 
 
+async def _authenticate(db: AsyncSession, email: str, password: str) -> User:
+    repo = UserRepository(db)
+    user = await repo.get_by_email(email.lower())
+    if not user or not user.hashed_password:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+    if not verify_password(password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account deactivated")
+    if not user.email_verified:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email not verified")
+    return user
+
+
 @router.post("/login/json", response_model=SessionCreated)
 async def login_json(
     payload: LoginJson,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> SessionCreated:
     """JSON login for mobile/web clients (email + password)."""
-    repo = UserRepository(db)
-    user = await repo.get_by_email(payload.email.lower())
-    if not user or not user.hashed_password:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
-    if not verify_password(payload.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account deactivated")
-    if not user.email_verified:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email not verified")
+    user = await _authenticate(db, payload.email, payload.password)
+    return await _issue_session(user, db, payload.device_name)
+
+
+@router.post("/login/constructor", response_model=SessionCreated)
+async def login_constructor(
+    payload: LoginJson,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> SessionCreated:
+    """Вход в конструктор контента — только для администраторов."""
+    user = await _authenticate(db, payload.email, payload.password)
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ только для администраторов",
+        )
     return await _issue_session(user, db, payload.device_name)
 
 

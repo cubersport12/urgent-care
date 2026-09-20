@@ -23,6 +23,8 @@ dependencies = [
     "openai==1.57.0",
     "pgvector==0.3.6",
     "pypdf==5.1.0",
+    "pillow==12.3.0",
+    "qrcode==8.2",
 ]
 
 [project.optional-dependencies]

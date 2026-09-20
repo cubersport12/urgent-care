@@ -6,7 +6,7 @@ import {
   articlesGetArticle,
   articlesListArticles,
   articlesUpdateArticle,
-  authLoginJson,
+  authLoginConstructor,
   authLogout,
   authMe,
   foldersCreateFolder,
@@ -58,8 +58,9 @@ export class AppApi {
   }
 
   async login(email: string, password: string): Promise<void> {
+    // Отдельный эндпоинт: сессию для конструктора получают только администраторы
     const data = await apiCall(() =>
-      authLoginJson({ body: { email, password, device_name: 'Конструктор контента' } })
+      authLoginConstructor({ body: { email, password, device_name: 'Конструктор контента' } })
     );
     setSession(data.session_id);
   }
@@ -78,16 +79,22 @@ export class AppApi {
   }
 
   private async _ensureAuthenticated(): Promise<void> {
+    let notAdmin = false;
     if (getSessionId()) {
       try {
-        await apiCall(() => authMe());
-        return;
+        const me = await apiCall(() => authMe());
+        if (me.role === 'admin') {
+          return;
+        }
+        // Сессия валидна, но пользователь не администратор — в конструктор не пускаем
+        notAdmin = true;
       } catch {
-        clearTokens();
+        // сессия невалидна/истекла
       }
+      clearTokens();
     }
     void this._router.navigate(['/login']);
-    throw new Error('Not authenticated');
+    throw new Error(notAdmin ? 'Доступ только для администраторов' : 'Not authenticated');
   }
 
   list<T>(resource: string, opts?: { parentId?: string | null; all?: boolean; id?: string }): Promise<T[]> {

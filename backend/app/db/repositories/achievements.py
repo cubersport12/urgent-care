@@ -85,6 +85,8 @@ class AchievementRepository:
         description: str | None,
         icon_path: str | None,
         files: list[str] | None = None,
+        subscription_tariff_id: UUID | None = None,
+        subscription_days: int | None = None,
         sort_order: int,
         is_active: bool,
     ) -> Reward:
@@ -94,6 +96,8 @@ class AchievementRepository:
             description=description,
             icon_path=icon_path,
             files=files,
+            subscription_tariff_id=subscription_tariff_id,
+            subscription_days=subscription_days,
             sort_order=sort_order,
             is_active=is_active,
         )

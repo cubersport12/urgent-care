@@ -47,6 +47,13 @@ class Reward(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     icon_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     files: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    # Подписка в награду: тариф + срок. Оба поля заполняются парой; пустые = награда без подписки
+    subscription_tariff_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("tariffs.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    subscription_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(

@@ -1063,6 +1063,105 @@ export const BroadcastOutSchema = {
     title: 'BroadcastOut'
 } as const;
 
+export const CertificateIssueRequestSchema = {
+    properties: {
+        userId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Userid'
+        },
+        displayName: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Displayname'
+        }
+    },
+    type: 'object',
+    required: [
+        'userId'
+    ],
+    title: 'CertificateIssueRequest'
+} as const;
+
+export const CertificateOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        number: {
+            type: 'integer',
+            title: 'Number'
+        },
+        userId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Userid'
+        },
+        fullName: {
+            type: 'string',
+            title: 'Fullname'
+        },
+        filePath: {
+            type: 'string',
+            title: 'Filepath'
+        },
+        issuedAt: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Issuedat'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'number',
+        'userId',
+        'fullName',
+        'filePath',
+        'issuedAt'
+    ],
+    title: 'CertificateOut'
+} as const;
+
+export const CertificateVerifyOutSchema = {
+    properties: {
+        number: {
+            type: 'integer',
+            title: 'Number'
+        },
+        fullName: {
+            type: 'string',
+            title: 'Fullname'
+        },
+        issuedAt: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Issuedat'
+        },
+        valid: {
+            type: 'boolean',
+            title: 'Valid',
+            default: true
+        }
+    },
+    type: 'object',
+    required: [
+        'number',
+        'fullName',
+        'issuedAt'
+    ],
+    title: 'CertificateVerifyOut'
+} as const;
+
 export const CityOutSchema = {
     properties: {
         id: {
@@ -1530,6 +1629,54 @@ export const LinkToArticleSchema = {
     title: 'LinkToArticle'
 } as const;
 
+export const LoginCodeRequestSchema = {
+    properties: {
+        email: {
+            type: 'string',
+            format: 'email',
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    required: [
+        'email'
+    ],
+    title: 'LoginCodeRequest'
+} as const;
+
+export const LoginCodeVerifySchema = {
+    properties: {
+        email: {
+            type: 'string',
+            format: 'email',
+            title: 'Email'
+        },
+        code: {
+            type: 'string',
+            pattern: '^\\d{6}$',
+            title: 'Code'
+        },
+        device_name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Device Name'
+        }
+    },
+    type: 'object',
+    required: [
+        'email',
+        'code'
+    ],
+    title: 'LoginCodeVerify'
+} as const;
+
 export const LoginJsonSchema = {
     properties: {
         email: {
@@ -1893,6 +2040,18 @@ export const RecommendedArticleOutSchema = {
         'name'
     ],
     title: 'RecommendedArticleOut'
+} as const;
+
+export const RegisterOutSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            title: 'Status',
+            default: 'verification_email_sent'
+        }
+    },
+    type: 'object',
+    title: 'RegisterOut'
 } as const;
 
 export const RescueCreateSchema = {
@@ -2294,6 +2453,21 @@ export const RescueUpdateSchema = {
     title: 'RescueUpdate'
 } as const;
 
+export const ResendVerificationSchema = {
+    properties: {
+        email: {
+            type: 'string',
+            format: 'email',
+            title: 'Email'
+        }
+    },
+    type: 'object',
+    required: [
+        'email'
+    ],
+    title: 'ResendVerification'
+} as const;
+
 export const ResetPasswordSchema = {
     properties: {
         token: {
@@ -2350,6 +2524,25 @@ export const ResetStatsRequestSchema = {
     title: 'ResetStatsRequest'
 } as const;
 
+export const ResetTestOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name'
+    ],
+    title: 'ResetTestOut'
+} as const;
+
 export const RewardCreateSchema = {
     properties: {
         achievementIds: {
@@ -2403,6 +2596,31 @@ export const RewardCreateSchema = {
                 }
             ],
             title: 'Files'
+        },
+        subscriptionTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Subscriptiontariffid'
+        },
+        subscriptionDays: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 3650,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Subscriptiondays'
         },
         sortOrder: {
             type: 'integer',
@@ -2485,6 +2703,29 @@ export const RewardMeOutSchema = {
             ],
             title: 'Files'
         },
+        subscriptionTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Subscriptiontariffid'
+        },
+        subscriptionDays: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Subscriptiondays'
+        },
         sortOrder: {
             type: 'integer',
             title: 'Sortorder'
@@ -2561,6 +2802,29 @@ export const RewardOutSchema = {
                 }
             ],
             title: 'Files'
+        },
+        subscriptionTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Subscriptiontariffid'
+        },
+        subscriptionDays: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Subscriptiondays'
         },
         sortOrder: {
             type: 'integer',
@@ -2649,6 +2913,31 @@ export const RewardUpdateSchema = {
                 }
             ],
             title: 'Files'
+        },
+        subscriptionTariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Subscriptiontariffid'
+        },
+        subscriptionDays: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 3650,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Subscriptiondays'
         },
         sortOrder: {
             anyOf: [
@@ -2743,6 +3032,18 @@ export const SessionOutSchema = {
             type: 'string',
             format: 'date-time',
             title: 'Expires At'
+        },
+        ended_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ended At'
         }
     },
     type: 'object',
@@ -3457,6 +3758,20 @@ export const TestCreateSchema = {
             ],
             title: 'Accessabilityconditions'
         },
+        resetTestIds: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resettestids'
+        },
         requiredTariffId: {
             anyOf: [
                 {
@@ -3655,6 +3970,20 @@ export const TestOutSchema = {
             ],
             title: 'Accessabilityconditions'
         },
+        resetTestIds: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resettestids'
+        },
         requiredTariffId: {
             anyOf: [
                 {
@@ -3698,6 +4027,7 @@ export const TestOutSchema = {
         'questionsToShow',
         'questions',
         'accessabilityConditions',
+        'resetTestIds',
         'requiredTariffId',
         'requiredRewardId'
     ],
@@ -3865,6 +4195,20 @@ export const TestResultOutSchema = {
                 }
             ],
             title: 'Completedat'
+        },
+        resetTests: {
+            anyOf: [
+                {
+                    items: {
+                        $ref: '#/components/schemas/ResetTestOut'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resettests'
         }
     },
     type: 'object',
@@ -4218,6 +4562,20 @@ export const TestUpdateSchema = {
             ],
             title: 'Accessabilityconditions'
         },
+        resetTestIds: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Resettestids'
+        },
         requiredTariffId: {
             anyOf: [
                 {
@@ -4425,6 +4783,11 @@ export const UserOutSchema = {
             type: 'boolean',
             title: 'Is Active'
         },
+        email_verified: {
+            type: 'boolean',
+            title: 'Email Verified',
+            default: false
+        },
         created_at: {
             type: 'string',
             format: 'date-time',
@@ -4531,6 +4894,22 @@ export const ValidationErrorSchema = {
         'type'
     ],
     title: 'ValidationError'
+} as const;
+
+export const VerifyEmailSchema = {
+    properties: {
+        token: {
+            type: 'string',
+            maxLength: 500,
+            minLength: 10,
+            title: 'Token'
+        }
+    },
+    type: 'object',
+    required: [
+        'token'
+    ],
+    title: 'VerifyEmail'
 } as const;
 
 export const WrongQuestionOutSchema = {
@@ -4717,6 +5096,11 @@ export const UserOutWritableSchema = {
         is_active: {
             type: 'boolean',
             title: 'Is Active'
+        },
+        email_verified: {
+            type: 'boolean',
+            title: 'Email Verified',
+            default: false
         },
         created_at: {
             type: 'string',

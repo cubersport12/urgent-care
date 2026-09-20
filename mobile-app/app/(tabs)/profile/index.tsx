@@ -1,4 +1,5 @@
 import { billingApi, type BillingMe } from '@/api/billing';
+import { certificatesApi, type AppCertificate } from '@/api/certificates';
 import type { City } from '@/api/cities';
 import { ThemedText } from '@/components/themed-text';
 import { CityPicker } from '@/components/ui/city-picker';
@@ -93,6 +94,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [billing, setBilling] = useState<BillingMe | null>(null);
+  const [certificate, setCertificate] = useState<AppCertificate | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
   const { primary, neutralSoft, error: dangerColor, text } = useAppTheme();
@@ -106,6 +108,13 @@ export default function ProfileScreen() {
       .me()
       .then(setBilling)
       .catch(() => setBilling(null));
+  }, []);
+
+  const loadCertificate = useCallback(() => {
+    void certificatesApi
+      .my()
+      .then((list) => setCertificate(list[0] ?? null))
+      .catch(() => setCertificate(null));
   }, []);
 
   const accountName =
@@ -132,8 +141,9 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       loadBilling();
+      loadCertificate();
       refreshUnread();
-    }, [loadBilling, refreshUnread]),
+    }, [loadBilling, loadCertificate, refreshUnread]),
   );
 
   const handleSignOut = async () => {
@@ -440,6 +450,16 @@ export default function ProfileScreen() {
               onPress={() => router.push('/(tabs)/profile/qr-code')}
               isLast={false}
             />
+            {certificate ? (
+              <ProfileRow
+                icon="doc.text.fill"
+                iconBg="rgba(16, 185, 129, 0.1)"
+                iconColor="#10B981"
+                label="Мой сертификат"
+                onPress={() => router.push('/(tabs)/profile/certificate')}
+                isLast={false}
+              />
+            ) : null}
             <ProfileRow
               icon="trophy.fill"
               iconBg="rgba(245, 158, 11, 0.1)"

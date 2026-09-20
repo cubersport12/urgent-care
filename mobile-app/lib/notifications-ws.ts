@@ -17,9 +17,26 @@ export type AchievementUnlockPayload = {
   } | null;
 };
 
+export type SubscriptionGrantedPayload = {
+  tariffId: string;
+  tariffTitle: string;
+  periodEnd?: string | null;
+  /** purchase | renewal | reward */
+  source: string;
+};
+
+export type CertificateIssuedPayload = {
+  number: number;
+  numberLabel: string;
+  fullName: string;
+  filePath: string;
+};
+
 export type NotificationsWsEvent =
   | { type: 'notification'; data: AppNotification }
-  | { type: 'achievement_unlocked'; data: AchievementUnlockPayload };
+  | { type: 'achievement_unlocked'; data: AchievementUnlockPayload }
+  | { type: 'subscription_granted'; data: SubscriptionGrantedPayload }
+  | { type: 'certificate_issued'; data: CertificateIssuedPayload };
 
 type Handler = (ev: NotificationsWsEvent) => void;
 
@@ -107,6 +124,18 @@ export async function connectNotificationsWs() {
         const event: NotificationsWsEvent = {
           type: 'achievement_unlocked',
           data: msg.data as AchievementUnlockPayload,
+        };
+        handlers.forEach((h) => h(event));
+      } else if (msg.type === 'subscription_granted' && msg.data) {
+        const event: NotificationsWsEvent = {
+          type: 'subscription_granted',
+          data: msg.data as SubscriptionGrantedPayload,
+        };
+        handlers.forEach((h) => h(event));
+      } else if (msg.type === 'certificate_issued' && msg.data) {
+        const event: NotificationsWsEvent = {
+          type: 'certificate_issued',
+          data: msg.data as CertificateIssuedPayload,
         };
         handlers.forEach((h) => h(event));
       }

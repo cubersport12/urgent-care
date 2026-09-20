@@ -73,7 +73,9 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     return onLiveNotification((ev) => {
-      const n = ev.type === 'notification' ? ev.data : ev.data.notification;
+      // В инбоксе только реальные уведомления; subscription_granted — баннер без записи в историю
+      if (ev.type !== 'achievement_unlocked') return;
+      const n = ev.data.notification;
       setItems((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev]));
     });
   }, [onLiveNotification]);

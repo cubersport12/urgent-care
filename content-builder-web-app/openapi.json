@@ -29,7 +29,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SessionCreated"
+                  "$ref": "#/components/schemas/RegisterOut"
                 }
               }
             }
@@ -89,13 +89,200 @@
         }
       }
     },
+    "/api/v1/auth/login/constructor": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login Constructor",
+        "description": "Вход в конструктор контента — только для администраторов.",
+        "operationId": "auth_login_constructor",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginJson"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Verify Email",
+        "operationId": "auth_verify_email",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmail"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/resend-verification": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Resend Verification",
+        "description": "Always 204 — do not reveal whether the email exists.",
+        "operationId": "auth_resend_verification",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendVerification"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login/code/request": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Request Login Code",
+        "description": "Одноразовый код входа на почту. Always 204 — do not reveal whether the email exists.",
+        "operationId": "auth_request_login_code",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login/code/verify": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Verify Login Code",
+        "operationId": "auth_verify_login_code",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginCodeVerify"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/logout": {
       "post": {
         "tags": [
           "auth"
         ],
         "summary": "Logout",
-        "description": "Явный разлогин устройства: удаляем сессию по её id.",
+        "description": "Явный разлогин устройства: закрываем сессию по её id.",
         "operationId": "auth_logout",
         "requestBody": {
           "content": {
@@ -5073,6 +5260,215 @@
         }
       }
     },
+    "/api/v1/certificates": {
+      "post": {
+        "tags": [
+          "certificates"
+        ],
+        "summary": "Issue",
+        "operationId": "certificates_issue",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CertificateIssueRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "certificates"
+        ],
+        "summary": "List Certificates",
+        "operationId": "certificates_list_certificates",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CertificateOut"
+                  },
+                  "title": "Response Certificates List Certificates"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/certificates/my": {
+      "get": {
+        "tags": [
+          "certificates"
+        ],
+        "summary": "List My Certificates",
+        "operationId": "certificates_list_my_certificates",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CertificateOut"
+                  },
+                  "title": "Response Certificates List My Certificates"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/certificates/{number}": {
+      "get": {
+        "tags": [
+          "certificates"
+        ],
+        "summary": "Verify Certificate",
+        "description": "Публичная проверка подлинности — цель QR-кода на сертификате.",
+        "operationId": "certificates_verify_certificate",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateVerifyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -6169,6 +6565,102 @@
         ],
         "title": "BroadcastOut"
       },
+      "CertificateIssueRequest": {
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Userid"
+          },
+          "displayName": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Displayname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "userId"
+        ],
+        "title": "CertificateIssueRequest"
+      },
+      "CertificateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Userid"
+          },
+          "fullName": {
+            "type": "string",
+            "title": "Fullname"
+          },
+          "filePath": {
+            "type": "string",
+            "title": "Filepath"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Issuedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "number",
+          "userId",
+          "fullName",
+          "filePath",
+          "issuedAt"
+        ],
+        "title": "CertificateOut"
+      },
+      "CertificateVerifyOut": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "fullName": {
+            "type": "string",
+            "title": "Fullname"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Issuedat"
+          },
+          "valid": {
+            "type": "boolean",
+            "title": "Valid",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "number",
+          "fullName",
+          "issuedAt"
+        ],
+        "title": "CertificateVerifyOut"
+      },
       "CityOut": {
         "properties": {
           "id": {
@@ -6623,6 +7115,52 @@
         ],
         "title": "LinkToArticle"
       },
+      "LoginCodeRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "LoginCodeRequest"
+      },
+      "LoginCodeVerify": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Code"
+          },
+          "device_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "code"
+        ],
+        "title": "LoginCodeVerify"
+      },
       "LoginJson": {
         "properties": {
           "email": {
@@ -6976,6 +7514,17 @@
           "name"
         ],
         "title": "RecommendedArticleOut"
+      },
+      "RegisterOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "verification_email_sent"
+          }
+        },
+        "type": "object",
+        "title": "RegisterOut"
       },
       "RescueCreate": {
         "properties": {
@@ -7371,6 +7920,20 @@
         "type": "object",
         "title": "RescueUpdate"
       },
+      "ResendVerification": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ResendVerification"
+      },
       "ResetPassword": {
         "properties": {
           "token": {
@@ -7423,6 +7986,24 @@
           "userIds"
         ],
         "title": "ResetStatsRequest"
+      },
+      "ResetTestOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ResetTestOut"
       },
       "RewardCreate": {
         "properties": {
@@ -7477,6 +8058,31 @@
               }
             ],
             "title": "Files"
+          },
+          "subscriptionTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiontariffid"
+          },
+          "subscriptionDays": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 3650.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiondays"
           },
           "sortOrder": {
             "type": "integer",
@@ -7558,6 +8164,29 @@
             ],
             "title": "Files"
           },
+          "subscriptionTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiontariffid"
+          },
+          "subscriptionDays": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiondays"
+          },
           "sortOrder": {
             "type": "integer",
             "title": "Sortorder"
@@ -7633,6 +8262,29 @@
               }
             ],
             "title": "Files"
+          },
+          "subscriptionTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiontariffid"
+          },
+          "subscriptionDays": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiondays"
           },
           "sortOrder": {
             "type": "integer",
@@ -7720,6 +8372,31 @@
               }
             ],
             "title": "Files"
+          },
+          "subscriptionTariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiontariffid"
+          },
+          "subscriptionDays": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 3650.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subscriptiondays"
           },
           "sortOrder": {
             "anyOf": [
@@ -7811,6 +8488,18 @@
             "type": "string",
             "format": "date-time",
             "title": "Expires At"
+          },
+          "ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ended At"
           }
         },
         "type": "object",
@@ -8515,6 +9204,20 @@
             ],
             "title": "Accessabilityconditions"
           },
+          "resetTestIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resettestids"
+          },
           "requiredTariffId": {
             "anyOf": [
               {
@@ -8712,6 +9415,20 @@
             ],
             "title": "Accessabilityconditions"
           },
+          "resetTestIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resettestids"
+          },
           "requiredTariffId": {
             "anyOf": [
               {
@@ -8755,6 +9472,7 @@
           "questionsToShow",
           "questions",
           "accessabilityConditions",
+          "resetTestIds",
           "requiredTariffId",
           "requiredRewardId"
         ],
@@ -8919,6 +9637,20 @@
               }
             ],
             "title": "Completedat"
+          },
+          "resetTests": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ResetTestOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resettests"
           }
         },
         "type": "object",
@@ -9268,6 +10000,20 @@
             ],
             "title": "Accessabilityconditions"
           },
+          "resetTestIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resettestids"
+          },
           "requiredTariffId": {
             "anyOf": [
               {
@@ -9470,6 +10216,11 @@
             "type": "boolean",
             "title": "Is Active"
           },
+          "email_verified": {
+            "type": "boolean",
+            "title": "Email Verified",
+            "default": false
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -9574,6 +10325,21 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerifyEmail": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 10,
+            "title": "Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "VerifyEmail"
       },
       "WrongQuestionOut": {
         "properties": {

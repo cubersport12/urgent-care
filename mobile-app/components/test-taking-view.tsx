@@ -50,6 +50,7 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(1);
+  const [resetTests, setResetTests] = useState<{ id: string; name: string }[] | null>(null);
 
   useEffect(() => {
     resetTestCompletionGuard();
@@ -69,7 +70,12 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
         deviceId && startedAt
           ? (patch) => testStatsHook.addOrUpdate(patch)
           : undefined,
-    }).catch((err) => console.error('Error persisting test completion:', err));
+    })
+      .then((saved) => {
+        // Провал «экзамена»: бэкенд вернул зачёты, переведённые в «не сданы»
+        if (saved?.resetTests?.length) setResetTests(saved.resetTests);
+      })
+      .catch((err) => console.error('Error persisting test completion:', err));
   }, [isTestCompleted, test, deviceId, startedAt, finishReason, processSkippedQuestions, testStatsHook]);
 
   // Автозавершение теста при превышении лимита ошибок (ошибок стало больше maxErrors)
@@ -219,7 +225,14 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
 
   // Показываем результаты только после явного завершения теста
   if (isTestCompleted) {
-    return <TestResultsView onBack={onBack} onFinish={onFinish} animatedStyle={animatedStyle} />;
+    return (
+      <TestResultsView
+        onBack={onBack}
+        onFinish={onFinish}
+        animatedStyle={animatedStyle}
+        resetTests={resetTests}
+      />
+    );
   }
     
   // Иначе показываем текущий вопрос

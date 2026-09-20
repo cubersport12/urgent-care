@@ -64,6 +64,11 @@ export class LegalDocsEditorService {
             @if (_status(cat.id) === 'checking') {
               <mat-spinner diameter="22" />
             } @else {
+              @if (_status(cat.id) === 'uploaded') {
+                <button mat-stroked-button type="button" (click)="_view(cat.id)">
+                  Просмотреть
+                </button>
+              }
               <button
                 mat-stroked-button
                 type="button"
@@ -142,6 +147,11 @@ export class LegalDocsEditorComponent {
   protected _pickFile(id: LegalDocId): void {
     this._pendingId = id;
     this._fileInput().nativeElement.click();
+  }
+
+  protected _view(id: LegalDocId): void {
+    // Публичный роут — тот же, что использует мобильный; PDF браузер открывает нативно
+    window.open(`${API_BASE}/api/v1/legal/documents/${id}/file`, '_blank', 'noopener');
   }
 
   protected async _onFile(event: Event): Promise<void> {

@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CamelModel(BaseModel):
@@ -84,6 +84,8 @@ class RewardOut(CamelModel):
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath")
     files: list[str] | None = None
+    subscription_tariff_id: UUID | None = Field(None, alias="subscriptionTariffId")
+    subscription_days: int | None = Field(None, alias="subscriptionDays")
     sort_order: int = Field(alias="sortOrder")
     is_active: bool = Field(alias="isActive")
 
@@ -94,8 +96,16 @@ class RewardCreate(CamelModel):
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath", max_length=512)
     files: list[str] | None = None
+    subscription_tariff_id: UUID | None = Field(None, alias="subscriptionTariffId")
+    subscription_days: int | None = Field(None, alias="subscriptionDays", ge=1, le=3650)
     sort_order: int = Field(0, alias="sortOrder")
     is_active: bool = Field(True, alias="isActive")
+
+    @model_validator(mode="after")
+    def _subscription_pair(self) -> "RewardCreate":
+        if (self.subscription_tariff_id is None) != (self.subscription_days is None):
+            raise ValueError("subscriptionTariffId and subscriptionDays must be set together")
+        return self
 
 
 class RewardUpdate(CamelModel):
@@ -104,6 +114,8 @@ class RewardUpdate(CamelModel):
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath", max_length=512)
     files: list[str] | None = None
+    subscription_tariff_id: UUID | None = Field(None, alias="subscriptionTariffId")
+    subscription_days: int | None = Field(None, alias="subscriptionDays", ge=1, le=3650)
     sort_order: int | None = Field(None, alias="sortOrder")
     is_active: bool | None = Field(None, alias="isActive")
 
@@ -132,6 +144,8 @@ class RewardMeOut(CamelModel):
     description: str | None = None
     icon_path: str | None = Field(None, alias="iconPath")
     files: list[str] | None = None
+    subscription_tariff_id: UUID | None = Field(None, alias="subscriptionTariffId")
+    subscription_days: int | None = Field(None, alias="subscriptionDays")
     sort_order: int = Field(alias="sortOrder")
     unlocked_at: datetime = Field(alias="unlockedAt")
 

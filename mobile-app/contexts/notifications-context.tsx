@@ -5,6 +5,7 @@ import {
   disconnectNotificationsWs,
   subscribeNotifications,
   type NotificationsWsEvent,
+  type SubscriptionGrantedPayload,
 } from '@/lib/notifications-ws';
 import { registerPushToken } from '@/lib/push-notifications';
 import React, {
@@ -25,6 +26,24 @@ type NotificationsContextValue = {
 };
 
 const NotificationsContext = createContext<NotificationsContextValue | null>(null);
+
+const SUBSCRIPTION_TITLES: Record<string, string> = {
+  purchase: 'Подписка оформлена',
+  renewal: 'Подписка продлена',
+  reward: 'Подписка получена в награду',
+};
+
+function subscriptionBanner(d: SubscriptionGrantedPayload): AppNotification {
+  const until = d.periodEnd ? ` — до ${new Date(d.periodEnd).toLocaleDateString('ru-RU')}` : '';
+  return {
+    id: `sub-${d.source}-${Date.now()}`,
+    title: SUBSCRIPTION_TITLES[d.source] ?? 'Обновление подписки',
+    body: `Тариф «${d.tariffTitle}»${until}`,
+    createdAt: new Date().toISOString(),
+    readAt: null,
+    isRead: true,
+  };
+}
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const { session, initialized } = useAuth();
@@ -59,6 +78,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       if (ev.type === 'notification') {
         setUnreadCount((c) => c + 1);
         setBanner(ev.data);
+        return;
+      }
+      if (ev.type === 'subscription_granted') {
+        // Сервер не создаёт Notification — инбокс и счётчик не трогаем, только баннер
+        setBanner(subscriptionBanner(ev.data));
         return;
       }
       // Achievement unlocks: count toward inbox, toast handled by AchievementsProvider.

@@ -28,7 +28,14 @@ def _smtp_account(account: EmailAccount) -> tuple[str, str, str]:
     )
 
 
-def send_email(*, to: str, subject: str, body: str, account: EmailAccount = "noreply") -> bool:
+def send_email(
+    *,
+    to: str,
+    subject: str,
+    body: str,
+    account: EmailAccount = "noreply",
+    attachment: tuple[str, bytes, str] | None = None,
+) -> bool:
     host = (settings.smtp_host or "").strip()
     if not host:
         log.warning("SMTP_HOST empty — email not sent to %s: %s", to, subject)
@@ -40,6 +47,13 @@ def send_email(*, to: str, subject: str, body: str, account: EmailAccount = "nor
     msg["From"] = from_addr
     msg["To"] = to
     msg.set_content(body)
+    if attachment:
+        filename, data, mime = attachment
+        maintype, _, subtype = mime.partition("/")
+        msg.add_attachment(
+            data, maintype=maintype or "application", subtype=subtype or "octet-stream",
+            filename=filename,
+        )
 
     port = settings.smtp_port
     if settings.smtp_tls:
@@ -56,9 +70,16 @@ def send_email(*, to: str, subject: str, body: str, account: EmailAccount = "nor
     return True
 
 
-def send_email_safe(*, to: str, subject: str, body: str, account: EmailAccount = "noreply") -> None:
+def send_email_safe(
+    *,
+    to: str,
+    subject: str,
+    body: str,
+    account: EmailAccount = "noreply",
+    attachment: tuple[str, bytes, str] | None = None,
+) -> None:
     """Обёртка для BackgroundTasks: ошибка SMTP логируется, но не роняет ответ."""
     try:
-        send_email(to=to, subject=subject, body=body, account=account)
+        send_email(to=to, subject=subject, body=body, account=account, attachment=attachment)
     except Exception:
         log.exception("email_send_failed account=%s to=%s subject=%s", account, to, subject)
