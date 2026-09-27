@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Sequence
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.billing import (
@@ -15,6 +15,7 @@ from app.models.billing import (
     Tariff,
     UserSubscription,
 )
+from app.models.promo import PromoActivation, PromoCode
 
 
 class BillingRepository:
@@ -214,3 +215,72 @@ class BillingRepository:
             )
         )
         return result.scalars().all()
+
+    # --- Промокоды ---
+
+    async def get_promo(self, promo_id: UUID) -> PromoCode | None:
+        return await self.db.get(PromoCode, promo_id)
+
+    async def get_promo_by_code(self, code: str) -> PromoCode | None:
+        result = await self.db.execute(select(PromoCode).where(PromoCode.code == code))
+        return result.scalar_one_or_none()
+
+    async def list_promo_codes(self) -> Sequence[PromoCode]:
+        result = await self.db.execute(
+            select(PromoCode).order_by(PromoCode.created_at.desc())
+        )
+        return result.scalars().all()
+
+    async def count_promo_activations(self, promo_id: UUID) -> int:
+        return int(
+            await self.db.scalar(
+                select(func.count())
+                .select_from(PromoActivation)
+                .where(PromoActivation.promo_code_id == promo_id)
+            )
+            or 0
+        )
+
+    async def count_all_promo_activations(self) -> dict[UUID, int]:
+        result = await self.db.execute(
+            select(
+                PromoActivation.promo_code_id, func.count()
+            ).group_by(PromoActivation.promo_code_id)
+        )
+        return {row[0]: int(row[1]) for row in result.all()}
+
+    async def save_promo(self, promo: PromoCode) -> PromoCode:
+        self.db.add(promo)
+        await self.db.commit()
+        await self.db.refresh(promo)
+        return promo
+
+    async def delete_promo(self, promo: PromoCode) -> None:
+        await self.db.delete(promo)
+        await self.db.commit()
+
+    async def get_user_active_promo(
+        self, user_id: UUID
+    ) -> tuple[PromoActivation, PromoCode] | None:
+        result = await self.db.execute(
+            select(PromoActivation, PromoCode)
+            .join(PromoCode, PromoActivation.promo_code_id == PromoCode.id)
+            .where(PromoActivation.user_id == user_id, PromoActivation.status == "active")
+            .order_by(PromoActivation.activated_at.desc())
+            .limit(1)
+        )
+        row = result.first()
+        return (row[0], row[1]) if row else None
+
+    async def replace_user_active_promos(self, user_id: UUID) -> None:
+        await self.db.execute(
+            update(PromoActivation)
+            .where(PromoActivation.user_id == user_id, PromoActivation.status == "active")
+            .values(status="replaced")
+        )
+
+    async def save_promo_activation(self, activation: PromoActivation) -> PromoActivation:
+        self.db.add(activation)
+        await self.db.commit()
+        await self.db.refresh(activation)
+        return activation

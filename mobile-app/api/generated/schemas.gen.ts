@@ -376,6 +376,60 @@ export const AchievementUpdateSchema = {
     title: 'AchievementUpdate'
 } as const;
 
+export const ActivePromoOutSchema = {
+    properties: {
+        code: {
+            type: 'string',
+            title: 'Code'
+        },
+        discountPercent: {
+            type: 'integer',
+            title: 'Discountpercent'
+        },
+        tariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tariffid'
+        },
+        tariffTitle: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tarifftitle'
+        },
+        validUntil: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validuntil'
+        }
+    },
+    type: 'object',
+    required: [
+        'code',
+        'discountPercent'
+    ],
+    title: 'ActivePromoOut'
+} as const;
+
 export const ArticleCreateSchema = {
     properties: {
         id: {
@@ -979,6 +1033,16 @@ export const BillingMeOutSchema = {
                 }
             ],
             title: 'Scheduledchangestatus'
+        },
+        promo: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/ActivePromoOut'
+                },
+                {
+                    type: 'null'
+                }
+            ]
         }
     },
     type: 'object',
@@ -1880,6 +1944,369 @@ export const PaymentOutSchema = {
         'updatedAt'
     ],
     title: 'PaymentOut'
+} as const;
+
+export const PromoActivateOutSchema = {
+    properties: {
+        code: {
+            type: 'string',
+            title: 'Code'
+        },
+        discountPercent: {
+            type: 'integer',
+            title: 'Discountpercent'
+        },
+        tariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tariffid'
+        },
+        tariffTitle: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tarifftitle'
+        },
+        validUntil: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validuntil'
+        },
+        message: {
+            type: 'string',
+            title: 'Message'
+        }
+    },
+    type: 'object',
+    required: [
+        'code',
+        'discountPercent',
+        'message'
+    ],
+    title: 'PromoActivateOut'
+} as const;
+
+export const PromoActivateRequestSchema = {
+    properties: {
+        code: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: 'Code'
+        }
+    },
+    type: 'object',
+    required: [
+        'code'
+    ],
+    title: 'PromoActivateRequest'
+} as const;
+
+export const PromoCodeCreateSchema = {
+    properties: {
+        code: {
+            type: 'string',
+            maxLength: 64,
+            minLength: 1,
+            title: 'Code'
+        },
+        title: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Title'
+        },
+        type: {
+            type: 'string',
+            title: 'Type',
+            default: 'discount'
+        },
+        discountPercent: {
+            type: 'integer',
+            maximum: 99,
+            minimum: 1,
+            title: 'Discountpercent',
+            default: 1
+        },
+        tariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tariffid'
+        },
+        maxActivations: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Maxactivations'
+        },
+        validFrom: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validfrom'
+        },
+        validUntil: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validuntil'
+        },
+        isActive: {
+            type: 'boolean',
+            title: 'Isactive',
+            default: true
+        }
+    },
+    type: 'object',
+    required: [
+        'code'
+    ],
+    title: 'PromoCodeCreate'
+} as const;
+
+export const PromoCodeOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        code: {
+            type: 'string',
+            title: 'Code'
+        },
+        title: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Title'
+        },
+        type: {
+            type: 'string',
+            title: 'Type'
+        },
+        discountPercent: {
+            type: 'integer',
+            title: 'Discountpercent'
+        },
+        tariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tariffid'
+        },
+        maxActivations: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Maxactivations'
+        },
+        validFrom: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validfrom'
+        },
+        validUntil: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validuntil'
+        },
+        isActive: {
+            type: 'boolean',
+            title: 'Isactive'
+        },
+        createdAt: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Createdat'
+        },
+        activationsCount: {
+            type: 'integer',
+            title: 'Activationscount',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'code',
+        'type',
+        'discountPercent',
+        'isActive',
+        'createdAt'
+    ],
+    title: 'PromoCodeOut'
+} as const;
+
+export const PromoCodeUpdateSchema = {
+    properties: {
+        title: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Title'
+        },
+        discountPercent: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 99,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Discountpercent'
+        },
+        tariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tariffid'
+        },
+        maxActivations: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Maxactivations'
+        },
+        validFrom: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validfrom'
+        },
+        validUntil: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Validuntil'
+        },
+        isActive: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Isactive'
+        }
+    },
+    type: 'object',
+    title: 'PromoCodeUpdate'
 } as const;
 
 export const PushTokenUpsertSchema = {

@@ -290,6 +290,14 @@ export default function ProfileScreen() {
               label="Мой тарифный план"
               value={billing?.tariffTitle ?? 'Загрузка…'}
               onPress={() => router.push('/(tabs)/profile/subscription')}
+              isLast={false}
+            />
+            <ProfileRow
+              icon="ticket.fill"
+              iconBg="rgba(245, 158, 11, 0.1)"
+              iconColor="#F59E0B"
+              label="Промокоды"
+              onPress={() => router.push('/(tabs)/profile/promo-codes')}
               isLast={true}
             />
           </GlassCard>

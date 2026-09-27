@@ -191,6 +191,32 @@ export type AchievementUpdate = {
 };
 
 /**
+ * ActivePromoOut
+ */
+export type ActivePromoOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Discountpercent
+     */
+    discountPercent: number;
+    /**
+     * Tariffid
+     */
+    tariffId?: string | null;
+    /**
+     * Tarifftitle
+     */
+    tariffTitle?: string | null;
+    /**
+     * Validuntil
+     */
+    validUntil?: string | null;
+};
+
+/**
  * ArticleCreate
  */
 export type ArticleCreate = {
@@ -456,6 +482,7 @@ export type BillingMeOut = {
      * Scheduledchangestatus
      */
     scheduledChangeStatus?: string | null;
+    promo?: ActivePromoOut | null;
 };
 
 /**
@@ -984,6 +1011,176 @@ export type PaymentOut = {
      * Yookassapaymentid
      */
     yookassaPaymentId?: string | null;
+};
+
+/**
+ * PromoActivateOut
+ */
+export type PromoActivateOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Discountpercent
+     */
+    discountPercent: number;
+    /**
+     * Tariffid
+     */
+    tariffId?: string | null;
+    /**
+     * Tarifftitle
+     */
+    tariffTitle?: string | null;
+    /**
+     * Validuntil
+     */
+    validUntil?: string | null;
+    /**
+     * Message
+     */
+    message: string;
+};
+
+/**
+ * PromoActivateRequest
+ */
+export type PromoActivateRequest = {
+    /**
+     * Code
+     */
+    code: string;
+};
+
+/**
+ * PromoCodeCreate
+ */
+export type PromoCodeCreate = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Type
+     */
+    type?: string;
+    /**
+     * Discountpercent
+     */
+    discountPercent?: number;
+    /**
+     * Tariffid
+     */
+    tariffId?: string | null;
+    /**
+     * Maxactivations
+     */
+    maxActivations?: number | null;
+    /**
+     * Validfrom
+     */
+    validFrom?: string | null;
+    /**
+     * Validuntil
+     */
+    validUntil?: string | null;
+    /**
+     * Isactive
+     */
+    isActive?: boolean;
+};
+
+/**
+ * PromoCodeOut
+ */
+export type PromoCodeOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Type
+     */
+    type: string;
+    /**
+     * Discountpercent
+     */
+    discountPercent: number;
+    /**
+     * Tariffid
+     */
+    tariffId?: string | null;
+    /**
+     * Maxactivations
+     */
+    maxActivations?: number | null;
+    /**
+     * Validfrom
+     */
+    validFrom?: string | null;
+    /**
+     * Validuntil
+     */
+    validUntil?: string | null;
+    /**
+     * Isactive
+     */
+    isActive: boolean;
+    /**
+     * Createdat
+     */
+    createdAt: string;
+    /**
+     * Activationscount
+     */
+    activationsCount?: number;
+};
+
+/**
+ * PromoCodeUpdate
+ */
+export type PromoCodeUpdate = {
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Discountpercent
+     */
+    discountPercent?: number | null;
+    /**
+     * Tariffid
+     */
+    tariffId?: string | null;
+    /**
+     * Maxactivations
+     */
+    maxActivations?: number | null;
+    /**
+     * Validfrom
+     */
+    validFrom?: string | null;
+    /**
+     * Validuntil
+     */
+    validUntil?: string | null;
+    /**
+     * Isactive
+     */
+    isActive?: boolean | null;
 };
 
 /**
@@ -3174,6 +3371,173 @@ export type BillingUpdateTariffResponses = {
 };
 
 export type BillingUpdateTariffResponse = BillingUpdateTariffResponses[keyof BillingUpdateTariffResponses];
+
+export type BillingListPromoCodesData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/promo-codes';
+};
+
+export type BillingListPromoCodesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingListPromoCodesError = BillingListPromoCodesErrors[keyof BillingListPromoCodesErrors];
+
+export type BillingListPromoCodesResponses = {
+    /**
+     * Response Billing List Promo Codes
+     *
+     * Successful Response
+     */
+    200: Array<PromoCodeOut>;
+};
+
+export type BillingListPromoCodesResponse = BillingListPromoCodesResponses[keyof BillingListPromoCodesResponses];
+
+export type BillingCreatePromoCodeData = {
+    body: PromoCodeCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/promo-codes';
+};
+
+export type BillingCreatePromoCodeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingCreatePromoCodeError = BillingCreatePromoCodeErrors[keyof BillingCreatePromoCodeErrors];
+
+export type BillingCreatePromoCodeResponses = {
+    /**
+     * Successful Response
+     */
+    201: PromoCodeOut;
+};
+
+export type BillingCreatePromoCodeResponse = BillingCreatePromoCodeResponses[keyof BillingCreatePromoCodeResponses];
+
+export type BillingDeletePromoCodeData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Promo Id
+         */
+        promo_id: string;
+    };
+    query?: never;
+    url: '/api/v1/billing/promo-codes/{promo_id}';
+};
+
+export type BillingDeletePromoCodeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingDeletePromoCodeError = BillingDeletePromoCodeErrors[keyof BillingDeletePromoCodeErrors];
+
+export type BillingDeletePromoCodeResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type BillingDeletePromoCodeResponse = BillingDeletePromoCodeResponses[keyof BillingDeletePromoCodeResponses];
+
+export type BillingUpdatePromoCodeData = {
+    body: PromoCodeUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Promo Id
+         */
+        promo_id: string;
+    };
+    query?: never;
+    url: '/api/v1/billing/promo-codes/{promo_id}';
+};
+
+export type BillingUpdatePromoCodeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingUpdatePromoCodeError = BillingUpdatePromoCodeErrors[keyof BillingUpdatePromoCodeErrors];
+
+export type BillingUpdatePromoCodeResponses = {
+    /**
+     * Successful Response
+     */
+    200: PromoCodeOut;
+};
+
+export type BillingUpdatePromoCodeResponse = BillingUpdatePromoCodeResponses[keyof BillingUpdatePromoCodeResponses];
+
+export type BillingActivatePromoCodeData = {
+    body: PromoActivateRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/promo-codes/activate';
+};
+
+export type BillingActivatePromoCodeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingActivatePromoCodeError = BillingActivatePromoCodeErrors[keyof BillingActivatePromoCodeErrors];
+
+export type BillingActivatePromoCodeResponses = {
+    /**
+     * Successful Response
+     */
+    200: PromoActivateOut;
+};
+
+export type BillingActivatePromoCodeResponse = BillingActivatePromoCodeResponses[keyof BillingActivatePromoCodeResponses];
 
 export type BillingBillingMeData = {
     body?: never;

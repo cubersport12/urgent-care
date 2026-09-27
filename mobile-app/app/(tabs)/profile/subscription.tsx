@@ -31,9 +31,10 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import type { ActivePromoOut } from '@/api/generated/types.gen';
 
 function formatDate(iso: string): string {
   try {
@@ -45,6 +46,17 @@ function formatDate(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+/** Зеркало backend discounted_price: округление до копеек, минимум 1 ₽. */
+function discountedPrice(priceRub: number, percent: number): number {
+  return Math.max(1, Math.round(priceRub * (100 - percent)) / 100);
+}
+
+function promoForTariff(promo: ActivePromoOut | null | undefined, tariff: BillingTariff) {
+  if (!promo || tariff.priceRub <= 0) return null;
+  if (promo.tariffId != null && promo.tariffId !== tariff.id) return null;
+  return promo;
 }
 
 function formatPaymentDate(iso: string): string {
@@ -67,6 +79,7 @@ export default function SubscriptionScreen() {
   const glow = useGlow();
   const { contentPaddingBottom } = useNavRail();
   const { paid } = useLocalSearchParams<{ paid?: string }>();
+  const router = useRouter();
 
   const [tariffs, setTariffs] = useState<BillingTariff[]>([]);
   const [me, setMe] = useState<BillingMe | null>(null);
@@ -436,6 +449,20 @@ export default function SubscriptionScreen() {
           <ThemedText type="caption" style={[styles.sectionSubtitle, { color: neutralSoft }]}>
             Выберите подходящий уровень доступа для обучения
           </ThemedText>
+          {me?.promo ? (
+            <View style={styles.promoRow}>
+              <IconSymbol name="ticket.fill" size={14} color="#10B981" />
+              <ThemedText style={[styles.promoText, { color: '#10B981' }]}>
+                Промокод {me.promo.code} · −{me.promo.discountPercent}% применён к цене
+              </ThemedText>
+            </View>
+          ) : (
+            <Pressable onPress={() => router.push('/(tabs)/profile/promo-codes')} hitSlop={6}>
+              <ThemedText style={[styles.promoLink, { color: primary }]}>
+                Есть промокод? Ввести →
+              </ThemedText>
+            </Pressable>
+          )}
         </View>
 
         {tariffs.map((tariff, index) => {
@@ -443,6 +470,8 @@ export default function SubscriptionScreen() {
           const isScheduled = me?.scheduledTariffId === tariff.id;
           const canSelect = !isCurrent && !me?.scheduledTariffId;
           const isPremium = tariff.priceRub > 0;
+          const activePromo = promoForTariff(me?.promo, tariff);
+          const discounted = activePromo ? discountedPrice(tariff.priceRub, activePromo.discountPercent) : null;
 
           return (
             <Animated.View key={tariff.id} entering={FadeInUp.delay(100 * (index + 1)).duration(400)}>
@@ -464,11 +493,29 @@ export default function SubscriptionScreen() {
                 )} */}
 
                 <View style={styles.tariffHeader}>
-                  <ThemedText style={styles.tariffTitle}>{tariff.title}</ThemedText>
+                  <View style={styles.tariffTitleWrap}>
+                    <ThemedText style={styles.tariffTitle}>{tariff.title}</ThemedText>
+                    {activePromo ? (
+                      <ThemedText style={[styles.promoBadge, { color: '#10B981' }]}>
+                        промокод −{activePromo.discountPercent}%
+                      </ThemedText>
+                    ) : null}
+                  </View>
                   <View style={styles.priceContainer}>
-                    <ThemedText style={styles.priceVal}>
-                      {tariff.priceRub > 0 ? `${tariff.priceRub} ₽` : 'Бесплатно'}
-                    </ThemedText>
+                    {discounted != null ? (
+                      <>
+                        <ThemedText style={[styles.priceVal, styles.priceValOld]}>
+                          {tariff.priceRub} ₽
+                        </ThemedText>
+                        <ThemedText style={[styles.priceVal, { color: '#10B981' }]}>
+                          {discounted} ₽
+                        </ThemedText>
+                      </>
+                    ) : (
+                      <ThemedText style={styles.priceVal}>
+                        {tariff.priceRub > 0 ? `${tariff.priceRub} ₽` : 'Бесплатно'}
+                      </ThemedText>
+                    )}
                     {tariff.priceRub > 0 && (
                       <ThemedText type="caption" style={[styles.pricePeriod, { color: neutralSoft }]}>
                         / {tariff.periodDays} дн.
@@ -751,6 +798,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
+  promoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+  },
+  promoText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  promoLink: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
+  },
 
   /* Tariff Cards */
   tariffCard: {
@@ -786,6 +848,29 @@ const styles = StyleSheet.create({
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
+  },
+  tariffTitleWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingRight: 8,
+  },
+  promoBadge: {
+    fontSize: 11,
+    fontWeight: '700',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  priceValOld: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(128,128,128,0.6)',
+    textDecorationLine: 'line-through',
   },
   priceVal: {
     fontSize: 20,

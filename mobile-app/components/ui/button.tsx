@@ -220,5 +220,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontWeight: '500',
+    // Многострочный заголовок без этого сворачивается влево (однострочный выглядит центрированным)
+    textAlign: 'center',
   },
 });

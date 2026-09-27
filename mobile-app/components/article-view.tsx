@@ -8,11 +8,7 @@ import { useAppTheme } from '@/hooks/use-theme-color';
 import { apiFetch } from '@/lib/api';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PdfView } from './pdf-view/pdf-view';
 import { ThemedText } from './themed-text';
@@ -100,24 +96,12 @@ const ArticleViewContent = memo(({
   tintColorRef: React.MutableRefObject<string>;
   onScrollProgressRef: React.MutableRefObject<(percent: number) => void>;
 }) => {
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    opacity.value = withTiming(1, { duration: 300 });
-  }, [opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-    };
-  });
-
   const { border: borderColor } = useAppTheme();
   const { isWide } = useNavRail();
   useChromeBack(onBack);
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <Animated.View style={styles.container} entering={FadeIn.duration(300)}>
       {!isWide ? (
         <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
           <Button

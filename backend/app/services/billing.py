@@ -1,6 +1,7 @@
 """Subscription lifecycle and YooKassa integration."""
 from __future__ import annotations
 
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID, uuid4
@@ -15,18 +16,51 @@ from app.db.repositories.billing import BillingRepository
 from app.models.article import Article
 from app.models.billing import Payment, SubscriptionChange, Tariff, UserSubscription
 from app.models.folder import Folder
+from app.models.promo import PromoActivation, PromoCode
 from app.models.rescue import Rescue
 from app.models.test import Test
 from app.models.user import User
 from app.realtime.notifications_hub import notification_hub
 from app.schemas.billing import (
+    ActivePromoOut,
     BillingMeOut,
     PaymentOut,
+    PromoActivateOut,
+    PromoCodeCreate,
+    PromoCodeOut,
+    PromoCodeUpdate,
     SubscribeOut,
     TariffCreate,
     TariffOut,
     TariffUpdate,
 )
+
+
+def normalize_promo_code(code: str) -> str:
+    return (code or "").strip().upper()
+
+
+def discounted_price(price_rub: int, discount_percent: int) -> float:
+    """Цена со скидкой: копейки округляем до 2 знаков, минимум 1 ₽ (YooKassa не принимает 0)."""
+    return max(1.0, round(price_rub * (100 - discount_percent) / 100, 2))
+
+
+# ponytail: лимит неудачных попыток активации в памяти процесса — потолок 1 воркер;
+# при нескольких воркерах перенести в БД (счётчик у пользователя)
+_promo_failures: dict[UUID, list[float]] = {}
+_PROMO_MAX_FAILURES = 10
+_PROMO_FAILURE_WINDOW_SECONDS = 600.0
+
+
+def _promo_throttled(user_id: UUID) -> bool:
+    now = time.monotonic()
+    marks = [
+        t
+        for t in _promo_failures.get(user_id, [])
+        if now - t < _PROMO_FAILURE_WINDOW_SECONDS
+    ]
+    _promo_failures[user_id] = marks
+    return len(marks) >= _PROMO_MAX_FAILURES
 
 
 class BillingService:
@@ -100,6 +134,140 @@ class BillingService:
             )
         await self.repo.delete_tariff(tariff)
 
+    # --- Промокоды (админ) ---
+
+    async def list_promo_codes_admin(self) -> list[PromoCodeOut]:
+        items = await self.repo.list_promo_codes()
+        counts = await self.repo.count_all_promo_activations()
+        result: list[PromoCodeOut] = []
+        for p in items:
+            out = PromoCodeOut.model_validate(p)
+            out.activations_count = counts.get(p.id, 0)
+            result.append(out)
+        return result
+
+    async def create_promo_code(self, payload: PromoCodeCreate) -> PromoCodeOut:
+        if payload.type != "discount":
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Неизвестный тип промокода"
+            )
+        code = normalize_promo_code(payload.code)
+        if not code:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Код не может быть пустым")
+        if await self.repo.get_promo_by_code(code):
+            raise HTTPException(status.HTTP_409_CONFLICT, detail="Такой промокод уже существует")
+        await self._promo_validate_tariff(payload.tariff_id)
+        self._promo_validate_window(payload.valid_from, payload.valid_until)
+        promo = await self.repo.save_promo(
+            PromoCode(
+                id=uuid4(),
+                code=code,
+                title=payload.title,
+                type=payload.type,
+                discount_percent=payload.discount_percent,
+                tariff_id=payload.tariff_id,
+                max_activations=payload.max_activations,
+                valid_from=payload.valid_from,
+                valid_until=payload.valid_until,
+                is_active=payload.is_active,
+            )
+        )
+        out = PromoCodeOut.model_validate(promo)
+        out.activations_count = 0
+        return out
+
+    async def update_promo_code(self, promo_id: UUID, payload: PromoCodeUpdate) -> PromoCodeOut:
+        promo = await self.repo.get_promo(promo_id)
+        if not promo:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Промокод не найден")
+        data = payload.model_dump(by_alias=False, exclude_unset=True)
+        if "tariff_id" in data:
+            await self._promo_validate_tariff(data["tariff_id"])
+        self._promo_validate_window(
+            data.get("valid_from", promo.valid_from), data.get("valid_until", promo.valid_until)
+        )
+        for key, value in data.items():
+            setattr(promo, key, value)
+        promo = await self.repo.save_promo(promo)
+        counts = await self.repo.count_all_promo_activations()
+        out = PromoCodeOut.model_validate(promo)
+        out.activations_count = counts.get(promo.id, 0)
+        return out
+
+    async def delete_promo_code(self, promo_id: UUID) -> None:
+        promo = await self.repo.get_promo(promo_id)
+        if not promo:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Промокод не найден")
+        await self.repo.delete_promo(promo)
+
+    async def _promo_validate_tariff(self, tariff_id: UUID | None) -> None:
+        if tariff_id is None:
+            return
+        tariff = await self.repo.get_tariff(tariff_id)
+        if not tariff:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Tariff not found")
+
+    @staticmethod
+    def _promo_validate_window(
+        valid_from: datetime | None, valid_until: datetime | None
+    ) -> None:
+        if valid_from and valid_until and valid_from >= valid_until:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Дата начала должна быть раньше даты окончания",
+            )
+
+    # --- Промокоды (пользователь) ---
+
+    async def activate_promo(self, user: User, raw_code: str) -> PromoActivateOut:
+        if _promo_throttled(user.id):
+            raise HTTPException(
+                status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Слишком много попыток; попробуйте позже",
+            )
+        promo = await self.repo.get_promo_by_code(normalize_promo_code(raw_code))
+        err = self._promo_check_error(promo)
+        if err is None and promo.max_activations is not None:
+            counts = await self.repo.count_all_promo_activations()
+            if counts.get(promo.id, 0) >= promo.max_activations:
+                err = (status.HTTP_409_CONFLICT, "Лимит активаций этого промокода исчерпан")
+        if err:
+            now_mono = time.monotonic()
+            _promo_failures.setdefault(user.id, []).append(now_mono)
+            raise HTTPException(err[0], err[1])
+
+        _promo_failures.pop(user.id, None)
+        await self.repo.replace_user_active_promos(user.id)
+        await self.repo.save_promo_activation(
+            PromoActivation(
+                id=uuid4(), promo_code_id=promo.id, user_id=user.id, status="active"
+            )
+        )
+        tariff_title = None
+        if promo.tariff_id:
+            tariff = await self.repo.get_tariff(promo.tariff_id)
+            tariff_title = tariff.title if tariff else None
+        target = tariff_title or "все платные тарифы"
+        return PromoActivateOut(
+            code=promo.code,
+            discount_percent=promo.discount_percent,
+            tariff_id=promo.tariff_id,
+            tariff_title=tariff_title,
+            valid_until=promo.valid_until,
+            message=f"Промокод активирован: скидка {promo.discount_percent}% на «{target}»",
+        )
+
+    @staticmethod
+    def _promo_check_error(promo: PromoCode | None) -> tuple[int, str] | None:
+        now = datetime.now(timezone.utc)
+        if promo is None or not promo.is_active:
+            return (status.HTTP_404_NOT_FOUND, "Промокод не найден или недоступен")
+        if promo.valid_from and now < promo.valid_from:
+            return (status.HTTP_409_CONFLICT, "Промокод ещё не действует")
+        if promo.valid_until and now > promo.valid_until:
+            return (status.HTTP_409_CONFLICT, "Срок действия промокода истёк")
+        return None
+
     async def ensure_subscription(self, user: User) -> UserSubscription:
         return await self.repo.ensure_free_subscription(user.id)
 
@@ -112,6 +280,8 @@ class BillingService:
         scheduled_tariff: Tariff | None = None
         if change:
             scheduled_tariff = await self.repo.get_tariff(change.to_tariff_id)
+        active = await self.repo.get_user_active_promo(user.id)
+        promo_out = await self._promo_out(active[1]) if active else None
         return BillingMeOut(
             tariff_id=tariff.id,
             tariff_code=tariff.code,
@@ -128,6 +298,20 @@ class BillingService:
             scheduled_tariff_title=scheduled_tariff.title if scheduled_tariff else None,
             scheduled_effective_at=change.effective_at if change else None,
             scheduled_change_status=change.status if change else None,
+            promo=promo_out,
+        )
+
+    async def _promo_out(self, promo: PromoCode) -> ActivePromoOut:
+        tariff_title = None
+        if promo.tariff_id:
+            tariff = await self.repo.get_tariff(promo.tariff_id)
+            tariff_title = tariff.title if tariff else None
+        return ActivePromoOut(
+            code=promo.code,
+            discount_percent=promo.discount_percent,
+            tariff_id=promo.tariff_id,
+            tariff_title=tariff_title,
+            valid_until=promo.valid_until,
         )
 
     async def user_rank(self, user: User) -> int:
@@ -178,23 +362,36 @@ class BillingService:
             )
 
         return_url = return_url or settings.yookassa_return_url
+        promo_activation, promo_code = await self._applicable_promo(user.id, target)
+        # ponytail: один и тот же купон можно прикрепить к двум pending-платежам
+        # (пользователь успел начать вторую покупку до завершения первой);
+        # расходуется купон первым успешным вебхуком, второй просто активирует тариф
+        amount = (
+            float(target.price_rub)
+            if promo_code is None
+            else discounted_price(target.price_rub, promo_code.discount_percent)
+        )
         idem = str(uuid4())
         payment = await self.repo.create_payment(
             user_id=user.id,
             subscription_id=sub.id,
             tariff_id=target.id,
-            amount_rub=float(target.price_rub),
+            amount_rub=amount,
             status="pending",
             yookassa_payment_id=None,
             idempotency_key=idem,
             raw_json=None,
         )
+        if promo_activation is not None:
+            promo_activation.payment_id = payment.id
+            await self.repo.save_promo_activation(promo_activation)
 
         if not self.yk.configured and not settings.is_prod:
             await self._activate_plan(user, sub, target, payment_method_id=None)
             payment.status = "succeeded"
             payment.raw_json = {"mock": True}
             await self.repo.save_payment(payment)
+            await self._consume_promo_for_payment(payment)
             return SubscribeOut(
                 payment_id=payment.id,
                 mock=True,
@@ -206,8 +403,12 @@ class BillingService:
 
         try:
             yk_obj = await self.yk.create_payment(
-                amount_rub=float(target.price_rub),
-                description=f"Подписка {target.title}",
+                amount_rub=amount,
+                description=(
+                    f"Подписка {target.title}"
+                    if promo_code is None
+                    else f"Подписка {target.title} (промокод {promo_code.code}, -{promo_code.discount_percent}%)"
+                ),
                 return_url=return_url,
                 metadata={
                     "user_id": str(user.id),
@@ -219,6 +420,9 @@ class BillingService:
                 idempotency_key=idem,
             )
         except Exception as exc:
+            if promo_activation is not None:
+                promo_activation.payment_id = None
+                await self.repo.save_promo_activation(promo_activation)
             payment.status = "failed"
             payment.raw_json = {"error": str(exc)}
             await self.repo.save_payment(payment)
@@ -299,6 +503,7 @@ class BillingService:
         status_str = yk_obj.get("status")
         if status_str in ("canceled", "expired"):
             payment.status = status_str if status_str != "expired" else "expired"
+            await self._release_promo_for_payment(payment)
             await self.repo.save_payment(payment)
             return
         if status_str != "succeeded":
@@ -323,7 +528,46 @@ class BillingService:
             meta = yk_obj.get("metadata") or {}
             source = "renewal" if str(meta.get("renewal")) == "1" else "purchase"
             await self._activate_plan(user, sub, tariff, payment_method_id=pm_id, source=source)
+        await self._consume_promo_for_payment(payment)
         await self.repo.save_payment(payment)
+
+    async def _applicable_promo(
+        self, user_id: UUID, tariff: Tariff
+    ) -> tuple[PromoActivation | None, PromoCode | None]:
+        row = await self.repo.get_user_active_promo(user_id)
+        if not row:
+            return None, None
+        activation, code = row
+        now = datetime.now(timezone.utc)
+        if (
+            not code.is_active
+            or code.type != "discount"
+            or (code.tariff_id is not None and code.tariff_id != tariff.id)
+            or (code.valid_from is not None and now < code.valid_from)
+            or (code.valid_until is not None and now > code.valid_until)
+        ):
+            return None, None
+        return activation, code
+
+    async def _consume_promo_for_payment(self, payment: Payment) -> None:
+        row = await self.repo.get_user_active_promo(payment.user_id)
+        if not row:
+            return
+        activation, code = row
+        if activation.payment_id not in (None, payment.id):
+            return
+        if code.tariff_id is not None and code.tariff_id != payment.tariff_id:
+            return
+        activation.status = "used"
+        activation.used_at = datetime.now(timezone.utc)
+        activation.payment_id = payment.id
+        await self.repo.save_promo_activation(activation)
+
+    async def _release_promo_for_payment(self, payment: Payment) -> None:
+        row = await self.repo.get_user_active_promo(payment.user_id)
+        if row and row[0].payment_id == payment.id:
+            row[0].payment_id = None
+            await self.repo.save_promo_activation(row[0])
 
     async def _activate_plan(
         self,

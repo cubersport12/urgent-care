@@ -63,6 +63,7 @@ const MAPPING = {
   'briefcase.fill': 'work',
   'qrcode': 'qr-code',
   'trash.fill': 'delete',
+  'ticket.fill': 'local-activity',
 } as IconMapping;
 
 /**

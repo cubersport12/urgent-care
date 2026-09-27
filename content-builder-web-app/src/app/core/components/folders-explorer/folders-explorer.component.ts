@@ -34,6 +34,7 @@ import { CdkDropList, CdkDrag, CdkDragDrop, CdkDropListGroup, moveItemInArray } 
 import { TestsEditorService } from '../test-editor';
 import { RescueEditorService } from '../rescue-editor';
 import { TariffsEditorService } from '../tariffs-editor';
+import { PromoCodesEditorService } from '../promo-codes-editor';
 import { AchievementsEditorService } from '../achievements-editor';
 import { RewardsEditorService } from '../rewards-editor';
 import { StatsResetEditorService } from '../stats-reset-editor/stats-reset-editor.component';
@@ -89,6 +90,7 @@ export class FoldersExplorerComponent {
   private readonly _testsEditor = inject(TestsEditorService);
   private readonly _rescueEditor = inject(RescueEditorService);
   private readonly _tariffsEditor = inject(TariffsEditorService);
+  private readonly _promoCodesEditor = inject(PromoCodesEditorService);
   private readonly _achievementsEditor = inject(AchievementsEditorService);
   private readonly _rewardsEditor = inject(RewardsEditorService);
   private readonly _statsResetEditor = inject(StatsResetEditorService);
@@ -488,6 +490,10 @@ export class FoldersExplorerComponent {
 
   protected _openTariffs(): void {
     this._tariffsEditor.open().afterClosed().subscribe(() => this._loadTariffs());
+  }
+
+  protected _openPromoCodes(): void {
+    this._promoCodesEditor.open();
   }
 
   protected _openAchievements(): void {
