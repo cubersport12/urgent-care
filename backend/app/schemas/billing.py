@@ -52,6 +52,14 @@ class TariffUpdate(CamelModel):
     sort_order: int | None = Field(None, alias="sortOrder")
 
 
+class ActivePromoOut(CamelModel):
+    code: str
+    discount_percent: int = Field(alias="discountPercent")
+    tariff_id: UUID | None = Field(None, alias="tariffId")
+    tariff_title: str | None = Field(None, alias="tariffTitle")
+    valid_until: datetime | None = Field(None, alias="validUntil")
+
+
 class BillingMeOut(CamelModel):
     tariff_id: UUID = Field(alias="tariffId")
     tariff_code: str = Field(alias="tariffCode")
@@ -68,6 +76,7 @@ class BillingMeOut(CamelModel):
     scheduled_tariff_title: str | None = Field(None, alias="scheduledTariffTitle")
     scheduled_effective_at: datetime | None = Field(None, alias="scheduledEffectiveAt")
     scheduled_change_status: str | None = Field(None, alias="scheduledChangeStatus")
+    promo: ActivePromoOut | None = None
 
 
 class SubscribeRequest(CamelModel):
@@ -93,3 +102,48 @@ class PaymentOut(CamelModel):
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")
     yookassa_payment_id: str | None = Field(None, alias="yookassaPaymentId")
+
+
+class PromoCodeCreate(CamelModel):
+    code: str = Field(min_length=1, max_length=64)
+    title: str | None = Field(None, max_length=200)
+    type: str = "discount"
+    discount_percent: int = Field(1, alias="discountPercent", ge=1, le=99)
+    tariff_id: UUID | None = Field(None, alias="tariffId")
+    max_activations: int | None = Field(None, alias="maxActivations", ge=1)
+    valid_from: datetime | None = Field(None, alias="validFrom")
+    valid_until: datetime | None = Field(None, alias="validUntil")
+    is_active: bool = Field(True, alias="isActive")
+
+
+class PromoCodeUpdate(CamelModel):
+    title: str | None = Field(None, max_length=200)
+    discount_percent: int | None = Field(None, alias="discountPercent", ge=1, le=99)
+    tariff_id: UUID | None = Field(None, alias="tariffId")
+    max_activations: int | None = Field(None, alias="maxActivations", ge=1)
+    valid_from: datetime | None = Field(None, alias="validFrom")
+    valid_until: datetime | None = Field(None, alias="validUntil")
+    is_active: bool | None = Field(None, alias="isActive")
+
+
+class PromoCodeOut(CamelModel):
+    id: UUID
+    code: str
+    title: str | None = None
+    type: str
+    discount_percent: int = Field(alias="discountPercent")
+    tariff_id: UUID | None = Field(None, alias="tariffId")
+    max_activations: int | None = Field(None, alias="maxActivations")
+    valid_from: datetime | None = Field(None, alias="validFrom")
+    valid_until: datetime | None = Field(None, alias="validUntil")
+    is_active: bool = Field(alias="isActive")
+    created_at: datetime = Field(alias="createdAt")
+    activations_count: int = Field(0, alias="activationsCount")
+
+
+class PromoActivateRequest(CamelModel):
+    code: str = Field(min_length=1, max_length=64)
+
+
+class PromoActivateOut(ActivePromoOut):
+    message: str

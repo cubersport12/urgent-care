@@ -149,7 +149,7 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: |
-            start-page/package-lock.json
+            landing/package-lock.json
             content-builder-web-app/package-lock.json
             mobile-app/package-lock.json
 
@@ -160,12 +160,12 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${{ env.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Install start-page deps
-        working-directory: start-page
-        run: npm install --legacy-peer-deps
+      - name: Install landing deps
+        working-directory: landing
+        run: npm ci
 
-      - name: Build start-page
-        working-directory: start-page
+      - name: Build landing
+        working-directory: landing
         run: npm run build
 
       - name: Install content-builder deps

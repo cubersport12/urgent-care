@@ -10,6 +10,11 @@ from app.models.user import User
 from app.schemas.billing import (
     BillingMeOut,
     PaymentOut,
+    PromoActivateOut,
+    PromoActivateRequest,
+    PromoCodeCreate,
+    PromoCodeOut,
+    PromoCodeUpdate,
     SubscribeOut,
     SubscribeRequest,
     TariffCreate,
@@ -62,6 +67,51 @@ async def delete_tariff(
     _: Annotated[User, Depends(get_current_admin)],
 ) -> None:
     await BillingService(db).delete_tariff(tariff_id)
+
+
+@router.get("/promo-codes", response_model=list[PromoCodeOut])
+async def list_promo_codes(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> list[PromoCodeOut]:
+    return await BillingService(db).list_promo_codes_admin()
+
+
+@router.post("/promo-codes", response_model=PromoCodeOut, status_code=201)
+async def create_promo_code(
+    payload: PromoCodeCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> PromoCodeOut:
+    return await BillingService(db).create_promo_code(payload)
+
+
+@router.patch("/promo-codes/{promo_id}", response_model=PromoCodeOut)
+async def update_promo_code(
+    promo_id: UUID,
+    payload: PromoCodeUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> PromoCodeOut:
+    return await BillingService(db).update_promo_code(promo_id, payload)
+
+
+@router.delete("/promo-codes/{promo_id}", status_code=204)
+async def delete_promo_code(
+    promo_id: UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> None:
+    await BillingService(db).delete_promo_code(promo_id)
+
+
+@router.post("/promo-codes/activate", response_model=PromoActivateOut)
+async def activate_promo_code(
+    payload: PromoActivateRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> PromoActivateOut:
+    return await BillingService(db).activate_promo(user, payload.code)
 
 
 @router.get("/me", response_model=BillingMeOut)

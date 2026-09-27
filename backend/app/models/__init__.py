@@ -17,6 +17,7 @@ from app.models.learning_event import LearningEvent
 from app.models.login_code import LoginCode
 from app.models.notification import Notification
 from app.models.password_reset import PasswordResetToken
+from app.models.promo import PromoActivation, PromoCode
 from app.models.push_token import PushToken
 from app.models.rescue import Rescue
 from app.models.support import SupportMessage, SupportThread
@@ -49,4 +50,6 @@ __all__ = [
     "PasswordResetToken",
     "LoginCode",
     "Certificate",
+    "PromoCode",
+    "PromoActivation",
 ]

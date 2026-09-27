@@ -30,13 +30,13 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install Start Page deps
-        run: npm install --legacy-peer-deps
-        working-directory: ./start-page
+      - name: Install landing deps
+        run: npm ci
+        working-directory: ./landing
 
-      - name: Build Start Page
-        run: npm run build
-        working-directory: ./start-page
+      - name: Build Landing
+        run: npm run build:pages
+        working-directory: ./landing
 
       - name: Install Content Builder deps
         run: npm ci --legacy-peer-deps

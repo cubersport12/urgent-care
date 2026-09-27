@@ -6,9 +6,9 @@ import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { useAddOrUpdateRescueStats } from '@/hooks/api/useRescueStats';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '../explorer/back-button';
 import { ThemedText } from '../themed-text';
@@ -50,18 +50,6 @@ export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescue
     await onStart();
   }, [addOrUpdate, onRescueSessionStarted, onStart]);
 
-  const opacity = useSharedValue(0);
-
-  useEffect(() => {
-    opacity.value = withTiming(1, { duration: 300 });
-  }, [opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-    };
-  });
-
   const { primary: tintColor } = useAppTheme();
   const footerPaddingBottom =
     Math.max(insets.bottom, 12) + (isWide ? 12 : Spacing.nav);
@@ -90,7 +78,7 @@ export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescue
 
   return (
     <ScreenBackground style={styles.container}>
-      <Animated.View style={[styles.inner, animatedStyle]}>
+      <Animated.View style={styles.inner} entering={FadeIn.duration(300)}>
         {!isWide ? <BackButton onPress={onBack} label="Назад" /> : null}
         <ScrollView
           style={styles.scrollView}

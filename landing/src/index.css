@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+/* Тёмная тема по классу .dark на <html> (ставится inline-скриптом в index.html). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Палитра приложения — mobile-app/constants/theme.ts */
+@theme {
+  --color-brand: #0070e0; /* Colors.light.primary */
+  --color-brand-bright: #0084ff; /* Colors.dark.primary */
+  --color-rescue: #e05555; /* Colors.light.error */
+  --color-rescue-bright: #ff6b6b; /* Colors.dark.error */
+  --color-page: #f8f9fa; /* Colors.light.page */
+  --color-night: #050505; /* Colors.dark.page */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}

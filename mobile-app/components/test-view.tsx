@@ -3,9 +3,8 @@ import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { staggerEnter } from '@/hooks/use-enter-animation';
-import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { BackButton } from './explorer/back-button';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
@@ -21,16 +20,9 @@ type TestViewProps = {
 };
 
 export function TestView({ test, onBack, onStart }: TestViewProps) {
-  const opacity = useSharedValue(0);
   const { primary: tintColor } = useAppTheme();
   const { isWide } = useNavRail();
   useChromeBack(onBack);
-
-  useEffect(() => {
-    opacity.value = withTiming(1, { duration: 300 });
-  }, [opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   const poolSize = test.questions?.length ?? 0;
   const questionCount =
@@ -48,7 +40,7 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
 
   return (
     <ScreenBackground style={styles.container}>
-      <Animated.View style={[styles.inner, animatedStyle]}>
+      <Animated.View style={styles.inner} entering={FadeIn.duration(300)}>
         {!isWide ? (
           <View style={styles.header}>
             <BackButton onPress={onBack} />
