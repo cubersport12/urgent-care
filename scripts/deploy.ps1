@@ -35,11 +35,11 @@ if (-not (Test-Path $SshKey)) {
 }
 
 if (-not $SkipBuild -and -not $SkipFrontend) {
-    Write-Host "==> Building start-page" -ForegroundColor Cyan
-    Push-Location (Join-Path $RepoRoot "start-page")
-    if (-not (Test-Path "node_modules")) { npm install --legacy-peer-deps }
+    Write-Host "==> Building landing" -ForegroundColor Cyan
+    Push-Location (Join-Path $RepoRoot "landing")
+    if (-not (Test-Path "node_modules")) { npm install }
     npm run build
-    if ($LASTEXITCODE -ne 0) { throw "start-page build failed" }
+    if ($LASTEXITCODE -ne 0) { throw "landing build failed" }
     Pop-Location
 
     Write-Host "==> Building content-builder (VPS base-href)" -ForegroundColor Cyan
@@ -84,12 +84,16 @@ if (-not $SkipFrontend) {
         throw "dist/ missing - run without -SkipBuild"
     }
 
-    $startFiles = Get-ChildItem $distRoot -File
-    $startDirs = Get-ChildItem $distRoot -Directory | Where-Object { $_.Name -notin @("content-builder", "mobile-app") }
-    if ($startFiles.Count -gt 0) {
-        Invoke-Scp ($startFiles.FullName) "/var/www/urgent-care/"
+    # Landing files at dist root. Wipe stale root files from previous deploys first
+    # (content-builder/ and mobile-app/ are managed separately below).
+    Invoke-Ssh "find /var/www/urgent-care -maxdepth 1 -mindepth 1 ! -name content-builder ! -name mobile-app -exec rm -rf {} +"
+
+    $landingFiles = Get-ChildItem $distRoot -File
+    $landingDirs = Get-ChildItem $distRoot -Directory | Where-Object { $_.Name -notin @("content-builder", "mobile-app") }
+    if ($landingFiles.Count -gt 0) {
+        Invoke-Scp ($landingFiles.FullName) "/var/www/urgent-care/"
     }
-    foreach ($dir in $startDirs) {
+    foreach ($dir in $landingDirs) {
         Invoke-Scp @($dir.FullName) "/var/www/urgent-care/"
     }
 
@@ -132,7 +136,7 @@ Invoke-Ssh "bash /opt/urgent-care/deploy/remote/ensure-admin.sh"
 
 Write-Host ""
 Write-Host "Deploy complete." -ForegroundColor Green
-Write-Host "  Start page:      http://$HostName/"
+Write-Host "  Landing:         http://$HostName/"
 Write-Host "  Content builder: http://$HostName/content-builder/"
 Write-Host "  Mobile web:      http://$HostName/mobile-app/"
 Write-Host "  API health:      http://$HostName/health"

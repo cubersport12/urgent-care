@@ -37,8 +37,8 @@ echo "==> Deploy target: ${SSH_TARGET}"
 cd "$REPO_ROOT"
 
 if [[ "$SKIP_BUILD" -eq 0 && "$SKIP_FRONTEND" -eq 0 ]]; then
-  echo "==> Building start-page"
-  (cd start-page && [[ -d node_modules ]] || npm install --legacy-peer-deps
+  echo "==> Building landing"
+  (cd landing && [[ -d node_modules ]] || npm install
    npm run build)
 
   echo "==> Building content-builder (VPS)"
@@ -73,10 +73,12 @@ if [[ "$SKIP_FRONTEND" -eq 0 ]]; then
   echo "==> Uploading static sites"
   [[ -d dist ]] || { echo "dist/ missing — run without --skip-build" >&2; exit 1; }
 
-  # start-page files at dist root
+  # Landing files at dist root. Wipe stale root files from previous deploys first
+  # (content-builder/ and mobile-app/ are managed separately below).
+  "${SSH[@]}" "$SSH_TARGET" "find /var/www/urgent-care -maxdepth 1 -mindepth 1 ! -name content-builder ! -name mobile-app -exec rm -rf {} +"
   shopt -s nullglob
-  start_items=(dist/*)
-  for item in "${start_items[@]}"; do
+  landing_items=(dist/*)
+  for item in "${landing_items[@]}"; do
     base="$(basename "$item")"
     [[ "$base" == "content-builder" || "$base" == "mobile-app" ]] && continue
     "${SCP[@]}" "$item" "${SSH_TARGET}:/var/www/urgent-care/"

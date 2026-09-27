@@ -4,7 +4,7 @@
 
 - App: `/opt/urgent-care/`
 - Static frontends: `/var/www/urgent-care`
-  - `/` → start-page
+  - `/` → landing (React + Tailwind, `landing/`)
   - `/content-builder/` → content builder
   - `/mobile-app/` → mobile web
 - Nginx site: `/etc/nginx/sites-available/urgent-care`
@@ -16,7 +16,7 @@ Host ports (localhost only): API `8001`, Postgres `5433`, MinIO `9100`/`9101`.
 
 TLS certs: `/etc/nginx/ssl/fullchain.pem` + `ssl.key`.
 
-- Start page: `https://trouble-dent.ru/`
+- Landing: `https://trouble-dent.ru/`
 - Content builder: `https://trouble-dent.ru/content-builder/`
 - Mobile web: `https://trouble-dent.ru/mobile-app/`
 - API health: `https://trouble-dent.ru/health`
@@ -29,7 +29,7 @@ Production deploys run only when you **publish a GitHub Release**
 (`.github/workflows/release.yml`):
 
 1. Builds `TroubleDent.apk` → Actions artifact (+ attaches to the GitHub Release)
-2. Builds start-page / content-builder / mobile web and deploys to the VPS
+2. Builds landing / content-builder / mobile web and deploys to the VPS
 
 Required GitHub **repository secrets**:
 
