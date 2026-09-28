@@ -18,6 +18,7 @@ import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
 import { RescueSceneVisualNovel } from './rescue-story';
+import { showConfirm } from '@/lib/alert';
 
 type RescueViewProps = {
   rescueItem: AppRescueItemVm;
@@ -39,7 +40,13 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
   const insets = useSafeAreaInsets();
   const { isWide, contentPaddingLeft } = useNavRail();
   const handleChromeBack = useCallback(() => {
-    void onBack();
+    showConfirm(
+      'Выйти из режима спасения?',
+      'Прогресс сцены не сохранится, попытка будет записана как провал.',
+      () => {
+        void onBack();
+      },
+    );
   }, [onBack]);
   useChromeBack(handleChromeBack);
 
@@ -232,7 +239,7 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
         <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
           <Button
             title="Назад"
-            onPress={onBack}
+            onPress={handleChromeBack}
             variant="default"
             icon="chevron.left"
             iconPosition="left"
