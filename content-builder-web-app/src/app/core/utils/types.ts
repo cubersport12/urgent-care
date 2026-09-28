@@ -160,6 +160,8 @@ export type RescueParameterSeverityVm = {
 export type RescueTimerParameterVm = {
   id: string;
   name: string;
+  /** Необязательное пояснение к параметру (показывается в мобильном приложении) */
+  description?: string;
   delta: number;
   startValue: number;
   severities?: RescueParameterSeverityVm[];

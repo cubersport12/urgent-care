@@ -3,6 +3,7 @@ import {
   RescueParameterSeverityEnum,
   type RescueScheneChoiceImplicationVm,
 } from '@/hooks/api/types';
+import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import {
   buildRescueCompletionDescription,
@@ -11,9 +12,12 @@ import {
 } from '@/lib/rescue-completion';
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
+import { GlassCard } from '../ui/glass-card';
+import { IconSymbol } from '../ui/icon-symbol';
 import { ScreenBackground } from '../ui/screen-background';
 
 type RescueCompleteProps = {
@@ -61,7 +65,14 @@ export function RescueComplete({
   selectedImplications = [],
   onBack,
 }: RescueCompleteProps) {
-  const { success, error } = useAppTheme();
+  const {
+    success,
+    error,
+    primary,
+    successContainer,
+    errorContainer,
+    primaryContainer,
+  } = useAppTheme();
 
   const data = useMemo(() => parseRescueItemDataVm(rescueItem.data), [rescueItem.data]);
 
@@ -109,6 +120,30 @@ export function RescueComplete({
     ],
   );
 
+  const emblem = useMemo(() => {
+    if (outcome === 'passed') {
+      return { icon: 'checkmark.circle.fill' as const, color: success, bg: successContainer };
+    }
+    if (outcome === 'failed') {
+      return { icon: 'xmark.circle.fill' as const, color: error, bg: errorContainer };
+    }
+    return { icon: 'info.circle.fill' as const, color: primary, bg: primaryContainer };
+  }, [outcome, success, error, primary, successContainer, errorContainer, primaryContainer]);
+
+  /** Финальные значения параметров: таймеры — в формате ЧЧ:ММ:СС */
+  const parameterRows = useMemo(() => {
+    return (data.parameters ?? []).map((p) => {
+      const value = parameterValues[p.id];
+      const display =
+        value === undefined
+          ? '—'
+          : p.type === 'timer'
+            ? formatSecondsAsHms(value)
+            : String(value);
+      return { id: p.id, name: p.name, display };
+    });
+  }, [data.parameters, parameterValues]);
+
   const titleColor =
     outcome === 'passed' ? success : outcome === 'failed' ? error : undefined;
 
@@ -118,48 +153,86 @@ export function RescueComplete({
 
   return (
     <ScreenBackground style={styles.container}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <ThemedView style={[styles.content, { backgroundColor: 'transparent' }]}>
-          <ThemedText type="title" style={[styles.title, titleColor ? { color: titleColor } : undefined]}>
-            {title}
-          </ThemedText>
-          <ThemedText style={styles.subtitle} numberOfLines={2}>
-            {rescueItem.name}
-          </ThemedText>
-          <ThemedText style={styles.description}>{body}</ThemedText>
-          {implicationTags.length > 0 ? (
-            <ThemedView style={styles.implicationsSection}>
-              <ThemedText style={styles.implicationsHeading}>Последствия ваших ответов</ThemedText>
-              <View style={styles.tagsWrap}>
-                {implicationTags.map((imp, i) => {
-                  const sev = normalizeImplicationSeverity(imp.severity);
-                  const bg = implicationTagBackground(sev);
-                  return (
-                    <View
-                      key={`${i}-${imp.description.slice(0, 32)}`}
-                      style={[styles.implicationTag, { backgroundColor: bg }]}
-                    >
-                      <ThemedText style={styles.implicationTagText}>{imp.description.trim()}</ThemedText>
+      <Animated.View style={styles.flex} entering={FadeIn.duration(300)}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <ThemedView style={[styles.content, { backgroundColor: 'transparent' }]}>
+            {/* Эмблема результата */}
+            <View style={[styles.emblem, { backgroundColor: emblem.bg }]}>
+              <IconSymbol name={emblem.icon} size={44} color={emblem.color} />
+            </View>
+            <ThemedText type="title" style={[styles.title, titleColor ? { color: titleColor } : undefined]}>
+              {title}
+            </ThemedText>
+            <ThemedText type="caption" style={styles.subtitle} numberOfLines={2}>
+              {rescueItem.name}
+            </ThemedText>
+
+            {/* Итог: связное объяснение, почему такой исход */}
+            <GlassCard padding={16} borderRadius={16} style={styles.card}>
+              <ThemedText type="label" style={styles.cardHeading}>
+                Итог
+              </ThemedText>
+              <ThemedText style={styles.body}>{body}</ThemedText>
+            </GlassCard>
+
+            {/* Финальные значения параметров сцены */}
+            {parameterRows.length > 0 ? (
+              <GlassCard padding={16} borderRadius={16} style={styles.card}>
+                <ThemedText type="label" style={styles.cardHeading}>
+                  Показатели
+                </ThemedText>
+                <View style={styles.rowsWrap}>
+                  {parameterRows.map((row) => (
+                    <View key={row.id} style={styles.parameterRow}>
+                      <ThemedText style={styles.parameterName}>{row.name}</ThemedText>
+                      <ThemedText type="mono" style={styles.parameterValue}>
+                        {row.display}
+                      </ThemedText>
                     </View>
-                  );
-                })}
-              </View>
-            </ThemedView>
-          ) : null}
-          <Button
-            title="Назад"
-            onPress={onBack}
-            variant="primary"
-            size="large"
-            fullWidth
-            style={styles.backButton}
-          />
-        </ThemedView>
-      </ScrollView>
+                  ))}
+                </View>
+              </GlassCard>
+            ) : null}
+
+            {implicationTags.length > 0 ? (
+              <GlassCard padding={16} borderRadius={16} style={styles.card}>
+                <ThemedText type="label" style={styles.cardHeading}>
+                  Последствия ваших ответов
+                </ThemedText>
+                <View style={styles.tagsWrap}>
+                  {implicationTags.map((imp, i) => {
+                    const sev = normalizeImplicationSeverity(imp.severity);
+                    const bg = implicationTagBackground(sev);
+                    return (
+                      <View
+                        key={`${i}-${imp.description.slice(0, 32)}`}
+                        style={[styles.implicationTag, { backgroundColor: bg }]}
+                      >
+                        <ThemedText style={styles.implicationTagText}>
+                          {imp.description.trim()}
+                        </ThemedText>
+                      </View>
+                    );
+                  })}
+                </View>
+              </GlassCard>
+            ) : null}
+
+            <Button
+              title="Готово"
+              onPress={onBack}
+              variant="primary"
+              size="large"
+              fullWidth
+              style={styles.backButton}
+            />
+          </ThemedView>
+        </ScrollView>
+      </Animated.View>
     </ScreenBackground>
   );
 }
@@ -168,57 +241,80 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  flex: {
+    flex: 1,
+  },
   scroll: {
     flex: 1,
     width: '100%',
   },
   scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 24,
+    paddingBottom: 48,
   },
   content: {
-    padding: 20,
-    alignItems: 'center',
+    padding: 16,
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 420,
+    alignSelf: 'center',
+  },
+  emblem: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 12,
   },
   title: {
-    marginBottom: 8,
-    fontSize: 32,
-    fontWeight: 'bold',
+    marginBottom: 4,
+    fontSize: 28,
     textAlign: 'center',
   },
   subtitle: {
+    fontSize: 14,
+    marginBottom: 20,
+    textAlign: 'center',
+    opacity: 0.7,
+  },
+  card: {
+    marginBottom: 12,
+    width: '100%',
+  },
+  cardHeading: {
+    opacity: 0.6,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  body: {
     fontSize: 15,
-    marginBottom: 16,
-    textAlign: 'center',
-    opacity: 0.75,
-  },
-  description: {
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
+    lineHeight: 22,
     opacity: 0.9,
-    lineHeight: 24,
-    alignSelf: 'stretch',
   },
-  implicationsSection: {
-    alignSelf: 'stretch',
-    marginBottom: 20,
+  rowsWrap: {
+    gap: 10,
   },
-  implicationsHeading: {
+  parameterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(128, 128, 128, 0.25)',
+  },
+  parameterName: {
+    fontSize: 15,
+    flex: 1,
+    opacity: 0.85,
+  },
+  parameterValue: {
     fontSize: 15,
     fontWeight: '600',
-    marginBottom: 10,
-    opacity: 0.9,
-    textAlign: 'center',
   },
   tagsWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
     gap: 8,
   },
   implicationTag: {
@@ -232,10 +328,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 19,
-    textAlign: 'center',
   },
   backButton: {
-    marginTop: 16,
+    marginTop: 8,
     maxWidth: 300,
     alignSelf: 'center',
   },

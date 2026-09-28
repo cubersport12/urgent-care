@@ -6,6 +6,11 @@
       <input matInput formControlName="name">
     </mat-form-field>
     <mat-form-field appearance="fill" class="w-full">
+      <mat-label>Описание</mat-label>
+      <textarea matInput formControlName="description" rows="2"></textarea>
+      <mat-hint>Необязательно; показывается в мобильном приложении под параметром</mat-hint>
+    </mat-form-field>
+    <mat-form-field appearance="fill" class="w-full">
       <mat-label>Тип параметра</mat-label>
       <mat-select formControlName="type">
         <mat-option value="numeric">Числовой</mat-option>

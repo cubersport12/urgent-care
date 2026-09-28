@@ -28,3 +28,15 @@ Rules:
 - Mark deliberate simplifications that cut a real corner with a known ceiling (global lock, O(n²) scan, naive heuristic) with a `ponytail:` comment naming the ceiling and upgrade path.
 
 Not lazy about: understanding the problem (read it fully and trace the real flow before picking a rung, a small diff you don't understand is just laziness dressed up as efficiency), input validation at trust boundaries, error handling that prevents data loss, security, accessibility, the calibration real hardware needs (the platform is never the spec ideal, a clock drifts, a sensor reads off), anything explicitly requested. Lazy code without its check is unfinished: non-trivial logic leaves ONE runnable check behind, the smallest thing that fails if the logic breaks (an assert-based demo/self-check or one small test file; no frameworks, no fixtures). Trivial one-liners need no test.
+
+## Mobile UI: design system only
+
+All `mobile-app/` UI is built exclusively through the design system. Reference: `mobile-app/design-system.html` (open in a browser — live tokens, components, motion vocabulary); source of truth: `mobile-app/constants/theme.ts`.
+
+- Colors: only palette tokens via `useAppTheme()` / `useThemeColor()` (plus `useGlass()` / `useGlow()` / `useThemeShadow()`). No literal hex/rgba in screens or new components.
+- Text: only `ThemedText` with its `type` variants — no bare `Text`, no ad-hoc fontSize/fontFamily.
+- Shape/spacing: `Radius`, `Spacing`, `NavRail` constants — no magic numbers.
+- Surfaces & controls: reuse `components/ui/` first (Button, GlassCard, GlassInput, StatusBadge, ProgressBar, ScreenBackground, …) — rung 2 of the ladder applies to styling too.
+- Motion: only the established durations/easings (see the Анимации section of design-system.html; shared helper `use-enter-animation`); mount animations via Reanimated `entering={FadeIn…}`, never hand-rolled shared-value fades.
+- If a token or component is genuinely missing, add it to `constants/theme.ts` / `components/ui/` first, then use it — don't inline a one-off style.
+- Legacy hardcoded colors inside existing components (StatusBadge, FilterPills, …) are known debt listed in design-system.html: don't copy the pattern, don't refactor it unprompted.

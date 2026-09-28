@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TroubleDent · Дизайн-система мобильного приложения</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   ТОКЕНЫ — значения 1:1 из mobile-app/constants/theme.ts
+   ============================================================ */
+:root[data-theme='dark'] {
+  /* Colors.dark */
+  --c-primary:#0084FF; --c-onPrimary:#FFFFFF; --c-primaryContainer:rgba(0,132,255,0.15); --c-onPrimaryContainer:#B3D9FF;
+  --c-error:#FF6B6B; --c-onError:#FFFFFF; --c-errorContainer:rgba(255,107,107,0.15); --c-onErrorContainer:#FFCDD2;
+  --c-success:#4D8B31; --c-onSuccess:#FFFFFF; --c-successContainer:rgba(77,139,49,0.15); --c-onSuccessContainer:#C8E6C9;
+  --c-warning:#F59E0B; --c-onWarning:#000000; --c-warningContainer:rgba(245,158,11,0.15); --c-onWarningContainer:#FFE0B2;
+  --c-page:#050505; --c-text:#EAEAEA;
+  --c-layout1:#050505; --c-layout2:rgba(255,255,255,0.05); --c-layout3:rgba(255,255,255,0.03);
+  --c-onLayout1:#EAEAEA; --c-onLayout2:#EAEAEA; --c-onLayout3:#EAEAEA;
+  --c-elevated1:rgba(255,255,255,0.05); --c-elevated2:rgba(255,255,255,0.08); --c-elevated3:rgba(255,255,255,0.12);
+  --c-neutral:#9BA1A6; --c-neutralSoft:#7E7E7E; --c-icon:#7E7E7E; --c-onNeutral:#000000; --c-onNeutralSoft:#FFFFFF;
+  --c-border:rgba(255,255,255,0.1); --c-borderVariant:rgba(255,255,255,0.08);
+  --c-shadow:#000000; --c-white:#FFFFFF; --c-accentPurple:#A78BFA;
+  /* Glass.dark */
+  --glass-background:rgba(255,255,255,0.05); --glass-backgroundSubtle:rgba(255,255,255,0.03); --glass-backgroundHover:rgba(255,255,255,0.06);
+  --glass-border:rgba(255,255,255,0.1); --glass-borderSubtle:rgba(255,255,255,0.08); --glass-borderHover:rgba(255,255,255,0.2);
+  --glass-header:rgba(5,5,5,0.7); --glass-scrim:rgba(5,5,5,0.85); --glass-progressTrack:rgba(255,255,255,0.1);
+  --glass-primaryTint:rgba(0,132,255,0.1); --glass-primaryBorder:rgba(0,132,255,0.3);
+  --glass-successTint:rgba(77,139,49,0.1); --glass-successBorder:rgba(77,139,49,0.2);
+  --glass-dangerTint:rgba(255,107,107,0.1); --glass-dangerBorder:rgba(255,107,107,0.2);
+  --glass-row:rgba(255,255,255,0.02);
+  /* Glow.dark */
+  --glow-primary:rgba(0,132,255,0.3); --glow-primaryStrong:rgba(0,132,255,0.6);
+  --glow-success:rgba(77,139,49,0.4); --glow-danger:rgba(255,107,107,0.4); --glow-title:rgba(0,132,255,0.2);
+  /* Gradients.dark */
+  --grad-primary:linear-gradient(135deg,#0084FF,#4D8B31);
+  --grad-horizontal:linear-gradient(90deg,#0084FF,#4D8B31);
+  /* Shadows.dark — перевод RN shadow (offset/opacity/radius) в box-shadow */
+  --sh-small:0 2px 4px rgba(0,0,0,0.2);
+  --sh-medium:0 4px 8px rgba(0,0,0,0.3);
+  --sh-large:0 8px 16px rgba(0,0,0,0.4);
+  --sh-glass:0 4px 20px rgba(0,0,0,0.2);
+  --sh-nav:0 -4px 24px rgba(0,0,0,0.4);
+  --glow-btn:0 4px 16px rgba(0,132,255,0.3);
+  --glow-progress:0 0 8px rgba(0,132,255,0.3);
+  /* Служебные для самой страницы документации */
+  --doc-surface:rgba(255,255,255,0.03);
+  --doc-card:#050505;
+  --param-base:#1C1C1E; --param-flash:#2C2C2E;
+  --toast-bg:#1C1C1E;
+}
+:root[data-theme='light'] {
+  /* Colors.light */
+  --c-primary:#0070E0; --c-onPrimary:#FFFFFF; --c-primaryContainer:rgba(0,112,224,0.12); --c-onPrimaryContainer:#005BB5;
+  --c-error:#E05555; --c-onError:#FFFFFF; --c-errorContainer:rgba(224,85,85,0.12); --c-onErrorContainer:#B33A3A;
+  --c-success:#3D7A28; --c-onSuccess:#FFFFFF; --c-successContainer:rgba(61,122,40,0.12); --c-onSuccessContainer:#2D5C1E;
+  --c-warning:#D97706; --c-onWarning:#FFFFFF; --c-warningContainer:rgba(217,119,6,0.12); --c-onWarningContainer:#B45309;
+  --c-page:#F8F9FA; --c-text:#1A1A1A;
+  --c-layout1:#FFFFFF; --c-layout2:#F3F4F6; --c-layout3:#E5E7EB;
+  --c-onLayout1:#1A1A1A; --c-onLayout2:#1A1A1A; --c-onLayout3:#1A1A1A;
+  --c-elevated1:rgba(0,0,0,0.03); --c-elevated2:rgba(0,0,0,0.05); --c-elevated3:rgba(0,0,0,0.08);
+  --c-neutral:#6B7280; --c-neutralSoft:#9CA3AF; --c-icon:#6B7280; --c-onNeutral:#FFFFFF; --c-onNeutralSoft:#FFFFFF;
+  --c-border:rgba(0,0,0,0.1); --c-borderVariant:rgba(0,0,0,0.06);
+  --c-shadow:#000000; --c-white:#FFFFFF; --c-accentPurple:#8B5CF6;
+  /* Glass.light */
+  --glass-background:#FFFFFF; --glass-backgroundSubtle:#F3F4F6; --glass-backgroundHover:#ECEEF1;
+  --glass-border:rgba(0,0,0,0.08); --glass-borderSubtle:rgba(0,0,0,0.06); --glass-borderHover:rgba(0,0,0,0.14);
+  --glass-header:rgba(248,249,250,0.85); --glass-scrim:rgba(248,249,250,0.9); --glass-progressTrack:rgba(0,0,0,0.08);
+  --glass-primaryTint:rgba(0,112,224,0.1); --glass-primaryBorder:rgba(0,112,224,0.25);
+  --glass-successTint:rgba(61,122,40,0.1); --glass-successBorder:rgba(61,122,40,0.2);
+  --glass-dangerTint:rgba(224,85,85,0.1); --glass-dangerBorder:rgba(224,85,85,0.2);
+  --glass-row:rgba(0,0,0,0.03);
+  /* Glow.light */
+  --glow-primary:rgba(0,112,224,0.25); --glow-primaryStrong:rgba(0,112,224,0.45);
+  --glow-success:rgba(61,122,40,0.35); --glow-danger:rgba(224,85,85,0.35); --glow-title:rgba(0,112,224,0.15);
+  /* Gradients.light */
+  --grad-primary:linear-gradient(135deg,#0070E0,#3D7A28);
+  --grad-horizontal:linear-gradient(90deg,#0070E0,#3D7A28);
+  /* Shadows.light */
+  --sh-small:0 2px 4px rgba(0,0,0,0.08);
+  --sh-medium:0 4px 8px rgba(0,0,0,0.12);
+  --sh-large:0 8px 16px rgba(0,0,0,0.16);
+  --sh-glass:none;
+  --sh-nav:0 -4px 24px rgba(0,0,0,0.4);
+  --glow-btn:0 4px 16px rgba(0,112,224,0.25);
+  --glow-progress:0 0 8px rgba(0,112,224,0.25);
+  --doc-surface:#FFFFFF;
+  --doc-card:#F8F9FA;
+  --param-base:#FFFFFF; --param-flash:#EEF2F7;
+  --toast-bg:#FFFFFF;
+}
+
+/* ============================================================
+   КАРКАС СТРАНИЦЫ (сама страница живёт на токенах системы)
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+body {
+  background: var(--c-page); color: var(--c-text);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px; line-height: 1.55;
+  transition: background .25s, color .25s;
+}
+code, .mono { font-family: 'IBM Plex Mono', SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+main { max-width: 1080px; margin: 0 auto; padding: 0 20px 96px; }
+code { color: var(--c-primary); }
+code.dim { color: var(--c-neutral); }
+
+.page-header {
+  max-width: 1080px; margin: 0 auto; padding: 40px 20px 8px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.page-header h1 {
+  font-size: 32px; font-weight: 700; letter-spacing: -0.5px;
+  background: var(--grad-horizontal); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.page-header .lead { color: var(--c-neutral); margin-top: 6px; max-width: 640px; }
+.lead b { color: var(--c-text); font-weight: 600; }
+
+#themeToggle {
+  border: 1px solid var(--glass-border); background: var(--glass-backgroundSubtle); color: var(--c-text);
+  border-radius: 12px; padding: 10px 16px; font: 500 14px 'Inter', sans-serif; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+}
+#themeToggle:hover { background: var(--glass-backgroundHover); }
+#themeToggle:active { transform: scale(0.98); }
+
+.doc-nav {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--glass-header); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 10px 20px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+}
+.doc-nav::-webkit-scrollbar { display: none; }
+.doc-nav a {
+  flex: none; color: var(--c-text); text-decoration: none; font-size: 13px; font-weight: 500;
+  border: 1px solid var(--glass-borderSubtle); background: var(--glass-backgroundSubtle);
+  padding: 6px 14px; border-radius: 9999px;
+}
+.doc-nav a:hover { background: var(--glass-primaryTint); border-color: var(--glass-primaryBorder); }
+
+section { margin-top: 56px; }
+.sec-h { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+.sec-h h2 { font-size: 24px; font-weight: 600; }
+.sec-h .num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--c-neutral); }
+.sec-sub { color: var(--c-neutral); margin-bottom: 20px; max-width: 720px; }
+
+.card {
+  background: var(--doc-surface); border: 1px solid var(--glass-border);
+  border-radius: 16px; padding: 20px;
+}
+.h3 { font-size: 16px; font-weight: 600; margin: 28px 0 12px; }
+.h3:first-child { margin-top: 0; }
+.note {
+  font-size: 13px; color: var(--c-neutral); border-left: 3px solid var(--c-primary);
+  background: var(--glass-primaryTint); border-radius: 0 10px 10px 0;
+  padding: 10px 14px; margin: 12px 0;
+}
+.note.warn { border-left-color: var(--c-warning); background: var(--c-warningContainer); }
+
+table.spec { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.spec th, table.spec td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--glass-borderSubtle); vertical-align: top; }
+table.spec th { color: var(--c-neutral); font-weight: 500; font-size: 12.5px; }
+table.spec td:last-child, table.spec th:last-child { text-align: right; }
+
+/* Материал-иконки (Material Symbols, FILL 1 — как в приложении) */
+.ms {
+  font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal;
+  line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block;
+  white-space: nowrap; direction: ltr; -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 1;
+}
+.s12 { font-size: 12px; } .s14 { font-size: 14px; } .s16 { font-size: 16px; }
+.s18 { font-size: 18px; } .s20 { font-size: 20px; } .s24 { font-size: 24px; }
+
+/* ============================================================
+   СЕКЦИЯ: ЦВЕТА
+   ============================================================ */
+.swatch-group { margin-bottom: 24px; }
+.swatch-group > h4 { font-size: 13px; font-weight: 600; color: var(--c-neutral); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 10px; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.swatch {
+  border: 1px solid var(--glass-borderSubtle); border-radius: 12px; overflow: hidden;
+  background: var(--doc-surface);
+}
+.swatch-chip { height: 52px; border-bottom: 1px solid var(--glass-borderSubtle); }
+.swatch-meta { padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.swatch-meta code { font-size: 12px; }
+.swatch-vals { font-size: 11px; color: var(--c-neutral); font-family: 'IBM Plex Mono', monospace; }
+
+/* ============================================================
+   СЕКЦИЯ: ТИПОГРАФИКА
+   ============================================================ */
+.typo-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 24px;
+  padding: 14px 0; border-bottom: 1px solid var(--glass-borderSubtle);
+}
+.typo-row:last-child { border-bottom: none; }
+.typo-spec { flex: none; text-align: right; color: var(--c-neutral); font-size: 11.5px; max-width: 320px; }
+.t-default   { font-size: 16px; line-height: 24px; font-weight: 400; }
+.t-semi      { font-size: 16px; line-height: 24px; font-weight: 600; }
+.t-title     { font-size: 32px; line-height: 36px; font-weight: 700; }
+.t-subtitle  { font-size: 20px; font-weight: 600; }
+.t-h1        { font-size: 28px; line-height: 34px; font-weight: 300; letter-spacing: -0.5px; }
+.t-h2        { font-size: 20px; line-height: 26px; font-weight: 400; }
+.t-caption   { font-size: 13px; line-height: 18px; }
+.t-label     { font-size: 11px; font-weight: 500; letter-spacing: 0.3px; text-transform: uppercase; color: var(--c-neutral); }
+.t-mono      { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+.t-link      { font-size: 16px; line-height: 30px; color: var(--c-primary); }
+
+.font-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.font-card { border: 1px solid var(--glass-borderSubtle); border-radius: 12px; padding: 16px; background: var(--doc-surface); }
+.font-card .f-samp { font-size: 26px; margin-bottom: 6px; }
+.font-card .f-meta { font-size: 12px; color: var(--c-neutral); font-family: 'IBM Plex Mono', monospace; }
+
+/* ============================================================
+   СЕКЦИЯ: СКРУГЛЕНИЯ / ОТСТУПЫ
+   ============================================================ */
+.radius-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.radius-tile { text-align: center; }
+.radius-box {
+  height: 72px; background: var(--grad-primary); margin-bottom: 8px;
+  border: 1px solid var(--glass-border);
+}
+.radius-tile code { display: block; }
+.radius-tile .where { font-size: 11.5px; color: var(--c-neutral); margin-top: 2px; }
+
+.spacing-row { display: flex; align-items: center; gap: 14px; padding: 8px 0; border-bottom: 1px solid var(--glass-borderSubtle); }
+.spacing-row:last-child { border-bottom: none; }
+.spacing-bar { height: 14px; background: var(--grad-horizontal); border-radius: 3px; flex: none; }
+.spacing-lbl { font-size: 13px; }
+.spacing-lbl code { font-size: 12px; }
+
+/* ============================================================
+   СЕКЦИЯ: КОМПОНЕНТЫ
+   ============================================================ */
+.demo {
+  border: 1px dashed var(--glass-border); border-radius: 16px; padding: 20px;
+  display: flex; flex-direction: column; gap: 16px; margin: 12px 0;
+}
+.demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.demo-cap { font-size: 12px; color: var(--c-neutral); }
+.demo-title { font-size: 14px; font-weight: 600; margin-bottom: -6px; }
+
+/* --- Button --- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 12px; border: none; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-weight: 500;
+  transition: opacity .12s;
+}
+.btn:active { transform: scale(0.98); }
+.btn-sm { padding: 8px 12px; min-height: 36px; font-size: 14px; }
+.btn-md { padding: 12px 16px; min-height: 44px; font-size: 16px; }
+.btn-lg { padding: 16px 20px; min-height: 52px; font-size: 18px; }
+.btn-primary  { background: var(--grad-primary); color: var(--c-onPrimary); box-shadow: var(--glow-btn); }
+.btn-primary:active { opacity: .9; }
+.btn-success  { background: var(--c-success); color: var(--c-onSuccess); }
+.btn-error    { background: var(--c-error); color: var(--c-onError); }
+.btn-success:active, .btn-error:active { opacity: .85; }
+.btn-default  { background: var(--c-layout1); color: var(--c-onLayout1); }
+.btn-default:active { opacity: .85; }
+.btn-glass    { background: var(--glass-background); color: var(--c-text); border: 1px solid var(--glass-border); }
+.btn-glass:active { background: var(--glass-backgroundHover); opacity: .95; }
+.btn-ghost    { background: transparent; color: var(--c-text); }
+.btn-ghost:active { background: var(--glass-backgroundSubtle); opacity: .85; }
+.btn:disabled { background: var(--c-layout2); color: var(--c-onLayout1); opacity: .6; cursor: not-allowed; box-shadow: none; }
+
+/* --- GlassCard --- */
+.gcard {
+  background: var(--glass-background); border: 1px solid var(--glass-border);
+  border-radius: 16px; padding: 16px; box-shadow: var(--sh-glass); position: relative; overflow: hidden;
+}
+.gcard::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.1); }
+.gcard-12 { border-radius: 12px; }
+
+/* --- GlassInput --- */
+.input-wrap { margin-bottom: 18px; width: 340px; max-width: 100%; }
+.input-label { display: block; font-size: 13px; font-weight: 600; opacity: .9; margin-bottom: 8px; padding-left: 4px; }
+.input-field {
+  display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 14px;
+  border: 1px solid var(--glass-border); border-radius: 14px; background: var(--glass-backgroundSubtle);
+  transition: border-color .15s, background .15s;
+}
+.input-field:focus-within { border-color: var(--c-primary); background: var(--glass-backgroundHover); }
+.input-field .ms { color: var(--c-neutralSoft); flex: none; }
+.input-field:focus-within .ms { color: var(--c-primary); }
+.input-field input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  color: var(--c-text); font: 400 16px 'Inter', sans-serif;
+}
+.input-field input::placeholder { color: var(--c-neutralSoft); }
+.eye-btn { background: none; border: none; cursor: pointer; color: var(--c-neutralSoft); padding: 4px; display: flex; }
+
+/* --- StatusBadge (цвета захардкожены в компоненте, обе темы одинаково) --- */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px; border-radius: 9999px;
+  border: 1px solid transparent; padding: 4px 8px; font-size: 11px; font-weight: 500; white-space: nowrap;
+}
+.b-good   { color: #4D8B31; background: rgba(77,139,49,0.1);  border-color: rgba(77,139,49,0.2); }
+.b-mute   { color: #7E7E7E; background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+.b-bad    { color: #FF6B6B; background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.2); }
+
+/* --- ProgressBar --- */
+.progress { width: 100%; height: 6px; border-radius: 9999px; background: var(--glass-progressTrack); overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 9999px; background: var(--grad-horizontal); box-shadow: var(--glow-progress); }
+.progress-fill.shimmer { animation: shimmer 3000ms ease-in-out infinite; }
+@keyframes shimmer { 0%, 100% { opacity: .85; } 50% { opacity: 1; } }
+
+/* --- TypeIcon --- */
+.type-icon {
+  width: 36px; height: 36px; border-radius: 9999px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.ti-folder, .ti-test { background: var(--c-primaryContainer); color: var(--c-primary); box-shadow: 0 0 12px var(--glow-primary); }
+.ti-article { background: var(--c-elevated2); color: var(--c-neutral); }
+.ti-rescue  { background: var(--c-errorContainer); color: var(--c-error); box-shadow: 0 0 12px var(--glow-danger); }
+
+/* --- ContentCard --- */
+.content-card {
+  display: flex; align-items: center; gap: 12px; padding: 16px;
+  background: var(--glass-background); border: 1px solid var(--glass-border);
+  border-radius: 12px; margin-bottom: 10px; cursor: pointer;
+}
+.content-card:active { transform: scale(0.98); opacity: .95; }
+.cc-body { flex: 1; min-width: 0; }
+.cc-title { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-desc { font-size: 13px; color: var(--c-neutralSoft); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-chev { color: var(--c-neutralSoft); }
+
+/* --- FilterPills (активные цвета захардкожены) --- */
+.pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill {
+  border-radius: 9999px; border: 1px solid var(--glass-borderSubtle); background: var(--glass-backgroundSubtle);
+  color: var(--c-text); padding: 8px 14px; font: 500 13px 'Inter', sans-serif; cursor: pointer;
+}
+.pill.active { background: rgba(0,132,255,0.15); border-color: rgba(0,132,255,0.4); color: var(--c-primary); }
+
+/* --- Теги последствий (rescue, серьёзность) --- */
+.tag {
+  display: inline-flex; padding: 8px 12px; border-radius: 14px; color: #FFFFFF;
+  font-size: 14px; font-weight: 600; line-height: 19px;
+}
+.t-normal { background: rgba(96,125,139,0.92); }
+.t-low    { background: rgba(33,150,243,0.92); }
+.t-medium { background: rgba(255,152,0,0.92); }
+.t-high   { background: rgba(211,47,47,0.92); }
+
+/* --- SideNavRail --- */
+.rail-frame {
+  border: 1px solid var(--glass-border); border-radius: 16px; overflow: hidden;
+  width: 420px; max-width: 100%; background: var(--doc-surface); display: flex; height: 300px;
+}
+.rail {
+  width: 200px; flex: none; background: var(--c-page); border-right: 1px solid var(--glass-border);
+  padding: 12px 8px 12px 8px; display: flex; flex-direction: column; gap: 4px;
+  transition: width 220ms cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden;
+}
+.rail.collapsed { width: 72px; }
+.rail-item {
+  display: flex; align-items: center; gap: 10px; min-height: 48px; border-radius: 12px;
+  padding: 10px 12px; cursor: pointer; white-space: nowrap; border: none; background: none;
+}
+.rail-item .ms { color: var(--c-neutralSoft); flex: none; }
+.rail-item span.rail-label { font-size: 13px; font-weight: 500; color: var(--c-text); }
+.rail-item:hover { background: var(--glass-backgroundHover); }
+.rail-item.active { background: var(--glass-primaryTint); }
+.rail-item.active .ms { color: var(--c-primary); }
+.rail-content { flex: 1; padding: 16px; color: var(--c-neutral); font-size: 13px; }
+
+/* ============================================================
+   СЕКЦИЯ: ЭФФЕКТЫ
+   ============================================================ */
+.glass-stage {
+  position: relative; border-radius: 16px; overflow: hidden; min-height: 220px;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(0,132,255,0.55), transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(77,139,49,0.5), transparent 45%),
+    radial-gradient(circle at 70% 15%, rgba(167,139,250,0.4), transparent 40%),
+    #111;
+}
+.glass-live {
+  position: relative; width: min(360px, 80%); border-radius: 16px; padding: 18px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2); color: #fff;
+}
+.glass-live::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.1); }
+.glass-live .gl-t { font-weight: 600; margin-bottom: 4px; }
+.glass-live .gl-d { font-size: 13px; opacity: .8; }
+
+.shadow-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.shadow-tile {
+  background: var(--c-layout1); border-radius: 12px; padding: 14px; min-height: 84px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.st-small  { box-shadow: var(--sh-small); }
+.st-medium { box-shadow: var(--sh-medium); }
+.st-large  { box-shadow: var(--sh-large); }
+.st-glass  { box-shadow: var(--sh-glass); border: 1px solid var(--glass-border); }
+.st-nav    { box-shadow: var(--sh-nav); }
+
+.glow-title-demo {
+  font-size: 32px; font-weight: 300; letter-spacing: -0.5px;
+  text-shadow: 0 0 20px var(--glow-title);
+}
+.grad-bar { height: 44px; border-radius: 12px; margin-bottom: 8px; }
+.blurscale { display: flex; gap: 8px; flex-wrap: wrap; }
+.blur-pill { border: 1px solid var(--glass-borderSubtle); border-radius: 9999px; padding: 6px 14px; font-size: 13px; }
+.blur-pill b { font-weight: 600; }
+
+/* ============================================================
+   СЕКЦИЯ: АНИМАЦИИ
+   ============================================================ */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInDown { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-16px); } }
+@keyframes blinkCursor { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes paramFlash {
+  0% { background: var(--param-base); }
+  33% { background: var(--param-flash); }
+  100% { background: var(--param-base); }
+}
+
+.replay {
+  align-self: flex-start; border: 1px solid var(--glass-border); background: var(--glass-backgroundSubtle);
+  color: var(--c-text); border-radius: 10px; padding: 7px 14px; font: 500 13px 'Inter', sans-serif;
+  cursor: pointer; display: inline-flex; gap: 6px; align-items: center;
+}
+.replay:hover { background: var(--glass-backgroundHover); }
+.replay:active { transform: scale(0.98); }
+
+.anim-frame {
+  position: relative; border: 1px solid var(--glass-borderSubtle); border-radius: 14px;
+  background: var(--doc-surface); padding: 20px; min-height: 120px;
+}
+.screen-demo { background: var(--glass-backgroundSubtle); border: 1px solid var(--glass-borderSubtle); border-radius: 12px; padding: 14px; }
+.screen-demo.play { animation: fadeIn 300ms ease-out both; }
+
+.stagger-item {
+  display: flex; align-items: center; gap: 10px; background: var(--glass-backgroundSubtle);
+  border: 1px solid var(--glass-borderSubtle); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px;
+  font-size: 14px;
+}
+.stagger-item.play { animation: fadeInDown 600ms cubic-bezier(0.19,1,0.22,1) both; animation-delay: calc(var(--i) * 60ms); }
+
+.toast-demo {
+  position: absolute; top: 12px; left: 12px; right: 12px;
+  display: flex; gap: 10px; padding: 12px; border-radius: 14px;
+  background: var(--toast-bg); border: 1px solid var(--c-border);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.28); opacity: 0; visibility: hidden;
+}
+.toast-demo.play { visibility: visible; animation: toastIn 280ms ease-out both; }
+.toast-demo.play.hide { animation: toastOut 200ms ease-in both; }
+.toast-icon { width: 32px; height: 32px; border-radius: 10px; background: rgba(16,185,129,0.15); color: var(--c-primary); display: flex; align-items: center; justify-content: center; flex: none; }
+.toast-t { font-size: 14px; font-weight: 700; }
+.toast-b { font-size: 13px; color: var(--c-neutralSoft); }
+.toast-x { margin-left: auto; color: var(--c-neutralSoft); align-self: flex-start; }
+
+.type-line { font-size: 15px; min-height: 24px; }
+.type-cursor { display: inline-block; color: var(--c-primary); animation: blinkCursor 1000ms step-end infinite; }
+
+.param-badge {
+  display: inline-flex; flex-direction: column; gap: 2px; border-radius: 12px;
+  background: var(--param-base); border: 1px solid var(--glass-border); padding: 10px 14px; min-width: 110px;
+}
+.param-badge .p-name { font-size: 11px; color: var(--c-neutral); }
+.param-badge .p-val { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 500; }
+.param-badge.play { animation: paramFlash 480ms ease-out both; }
+
+.press-demo {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.press-card {
+  flex: 1; min-width: 200px; background: var(--glass-backgroundSubtle); border: 1px solid var(--glass-borderSubtle);
+  border-radius: 12px; padding: 16px; cursor: pointer; user-select: none;
+}
+.press-card:active { transform: scale(0.98); opacity: .95; }
+.press-row { display: flex; align-items: center; gap: 8px; opacity: .7; }
+.press-row:active { opacity: .7; }
+
+/* ============================================================
+   СЕКЦИЯ: ИКОНКИ
+   ============================================================ */
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.icon-cell {
+  border: 1px solid var(--glass-borderSubtle); border-radius: 12px; background: var(--doc-surface);
+  padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+}
+.icon-cell .ms { font-size: 24px; color: var(--c-primary); }
+.icon-cell code { font-size: 10.5px; word-break: break-all; }
+
+footer {
+  border-top: 1px solid var(--glass-border); margin-top: 72px; padding: 24px 20px;
+  color: var(--c-neutral); font-size: 13px; text-align: center;
+}
+footer code { color: var(--c-neutral); }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div>
+    <h1>TroubleDent · Дизайн-система</h1>
+    <p class="lead">Мобильное приложение (React Native / Expo). <b>Kimi-inspired</b>: тёмная тема первична,
+    светлая — адаптированный вариант. Все значения — снимок кода на
+    <b>28.09.2026</b>, источник: <code>constants/theme.ts</code> и <code>components/**</code>.</p>
+  </div>
+  <button id="themeToggle"><span class="ms s16">dark_mode</span><span id="themeToggleLabel">Светлая тема</span></button>
+</header>
+
+<nav class="doc-nav">
+  <a href="#colors">Цвета</a>
+  <a href="#typography">Типографика</a>
+  <a href="#radius">Скругления</a>
+  <a href="#spacing">Отступы</a>
+  <a href="#components">Компоненты</a>
+  <a href="#effects">Эффекты</a>
+  <a href="#motion">Анимации</a>
+  <a href="#icons">Иконки</a>
+  <a href="#platform">Платформа</a>
+</nav>
+
+<main>
+
+<!-- ============================================================ ЦВЕТА -->
+<section id="colors">
+  <div class="sec-h"><span class="num">01</span><h2>Цвета</h2></div>
+  <p class="sec-sub">Палитра Material-стиля: каждая семантическая роль — четвёрка <code>role / onRole / roleContainer / onRoleContainer</code>.
+  Свотчи ниже реагируют на переключатель темы в шапке; подписи показывают значения обеих тем (L — светлая, D — тёмная).</p>
+  <div id="colorGroups"></div>
+
+  <h3 class="h3">Цвета вне токенов (захардкожены в компонентах)</h3>
+  <p class="sec-sub">Найдены при аудите — используемы, но не входят в палитру. При рефакторинге стоит перенести в токены.</p>
+  <div class="card">
+    <table class="spec">
+      <tr><th>Где</th><th>Цвет(а)</th><th>Назначение</th></tr>
+      <tr><td>StatusBadge</td><td><code>#4D8B31 / #7E7E7E / #FF6B6B</code> + тинты</td><td>статусы материалов, одинаково в обеих темах</td></tr>
+      <tr><td>FilterPills (active)</td><td><code>rgba(0,132,255,.15)</code> / <code>.4</code></td><td>активная пилюля фильтра</td></tr>
+      <tr><td>GlobalNotificationBanner</td><td><code>#1C1C1E</code>, <code>rgba(16,185,129,.15)</code></td><td>непрозрачный фон тоста, изумрудный чип иконки</td></tr>
+      <tr><td>ParameterBadge (rescue)</td><td><code>#1C1C1E → #2C2C2E</code> / <code>#FFFFFF → #EEF2F7</code></td><td>бейдж параметра и цвет вспышки при изменении</td></tr>
+      <tr><td>Теги последствий (rescue)</td><td><code>rgba(96,125,139,.92)</code> · <code>rgba(33,150,243,.92)</code> · <code>rgba(255,152,0,.92)</code> · <code>rgba(211,47,47,.92)</code></td><td>серьёзность: normal / low / medium / high</td></tr>
+      <tr><td>ParticleHelix (не используется)</td><td><code>#0084FF · #F59E0B · #FF6B6B · #4D8B31</code></td><td>декоративная спираль, 60 частиц</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ ТИПОГРАФИКА -->
+<section id="typography">
+  <div class="sec-h"><span class="num">02</span><h2>Типографика</h2></div>
+  <p class="sec-sub">11 вариантов <code>ThemedText</code>. Шрифты: <b>Inter</b> (300 Light / 400 Regular / 500 Medium / 600 SemiBold)
+  и <b>IBM Plex Mono</b> (400 / 500) — таймеры и числовые значения. Образцы ниже набраны реальными шрифтами.</p>
+
+  <div class="card">
+    <div class="typo-row"><div class="t-h1">Обучение</div><div class="typo-spec mono">h1 · 28 / lh 34 · weight 300 · ls −0.5 · Inter Light</div></div>
+    <div class="typo-row"><div class="t-title">Результаты теста</div><div class="typo-spec mono">title · 32 / lh 36 · bold · Inter SemiBold</div></div>
+    <div class="typo-row"><div class="t-h2">Раздел стоматологии</div><div class="typo-spec mono">h2 · 20 / lh 26 · 400 · Inter Regular</div></div>
+    <div class="typo-row"><div class="t-subtitle">Итоги</div><div class="typo-spec mono">subtitle · 20 · 600 · Inter SemiBold</div></div>
+    <div class="typo-row"><div class="t-default">Основной текст приложения. Интерфейс полностью на русском языке.</div><div class="typo-spec mono">default · 16 / lh 24 · 400 · Inter Regular</div></div>
+    <div class="typo-row"><div class="t-semi">Полужирный текст — 16 / 24, вес 600</div><div class="typo-spec mono">defaultSemiBold · 16 / lh 24 · 600</div></div>
+    <div class="typo-row"><div class="t-link">Открыть статью</div><div class="typo-spec mono">link · 16 / lh 30 · цвет = primary</div></div>
+    <div class="typo-row"><div class="t-caption">Подпись · дополнительные пояснения и метаданные</div><div class="typo-spec mono">caption · 13 / lh 18 · 400</div></div>
+    <div class="typo-row"><div class="t-label">Метка · uppercase-заголовки карточек</div><div class="typo-spec mono">label · 11 · 500 · ls 0.3</div></div>
+    <div class="typo-row"><div class="t-mono">00:02:44</div><div class="typo-spec mono">mono · 13 · IBM Plex Mono 400</div></div>
+  </div>
+
+  <h3 class="h3">Шрифтовые стеки</h3>
+  <div class="font-cards">
+    <div class="font-card"><div class="f-samp" style="font-weight:300">Inter Light 300</div><div class="f-meta">Inter_300Light · h1</div></div>
+    <div class="font-card"><div class="f-samp" style="font-weight:400">Inter Regular 400</div><div class="f-meta">Inter_400Regular · default</div></div>
+    <div class="font-card"><div class="f-samp" style="font-weight:500">Inter Medium 500</div><div class="f-meta">Inter_500Medium · label</div></div>
+    <div class="font-card"><div class="f-samp" style="font-weight:600">Inter SemiBold 600</div><div class="f-meta">Inter_600SemiBold · title/subtitle</div></div>
+    <div class="font-card"><div class="f-samp t-mono" style="font-size:22px">IBM Plex Mono 400</div><div class="f-meta">IBMPlexMono_400Regular · mono</div></div>
+    <div class="font-card"><div class="f-samp t-mono" style="font-size:22px;font-weight:500">Plex Mono 500</div><div class="f-meta">IBMPlexMono_500Medium · значения</div></div>
+  </div>
+  <div class="note">Web-фолбэки (без загрузки шрифтов): sans → <code>Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif</code>;
+  mono → <code>'IBM Plex Mono', SFMono-Regular, Menlo, monospace</code>. На iOS/Android шрифты грузятся через @expo-google-fonts, сплэш держится до готовности.</div>
+</section>
+
+<!-- ============================================================ СКРУГЛЕНИЯ -->
+<section id="radius">
+  <div class="sec-h"><span class="num">03</span><h2>Скругления</h2></div>
+  <p class="sec-sub">Шкала <code>Radius</code> из theme.ts. Каждое значение привязано к классу компонентов — не выбирается произвольно.</p>
+  <div class="card">
+    <div class="radius-grid">
+      <div class="radius-tile"><div class="radius-box" style="border-radius:8px"></div><code>sm · 8</code><div class="where">строки списков, мелкие элементы</div></div>
+      <div class="radius-tile"><div class="radius-box" style="border-radius:10px"></div><code>md · 10</code><div class="where">чипы иконок, мелкие кнопки</div></div>
+      <div class="radius-tile"><div class="radius-box" style="border-radius:12px"></div><code>lg · 12</code><div class="where">Button, ContentCard, поля, rail-пункты</div></div>
+      <div class="radius-tile"><div class="radius-box" style="border-radius:16px"></div><code>xl · 16</code><div class="where">GlassCard (по умолчанию)</div></div>
+      <div class="radius-tile"><div class="radius-box" style="border-radius:20px"></div><code>modal · 20</code><div class="where">модальные окна, нижние шиты</div></div>
+      <div class="radius-tile"><div class="radius-box" style="border-radius:9999px"></div><code>pill · 9999</code><div class="where">бейджи, пилюли, прогресс</div></div>
+    </div>
+    <div class="note warn">GlassInput использует скругление 14 — единственное значение вне шкалы (хардкод в компоненте).</div>
+  </div>
+</section>
+
+<!-- ============================================================ ОТСТУПЫ -->
+<section id="spacing">
+  <div class="sec-h"><span class="num">04</span><h2>Отступы и сетка</h2></div>
+  <p class="sec-sub">Семантические размеры <code>Spacing</code> и <code>NavRail</code>. Полосы показаны в масштабе 1:1 (пиксели).</p>
+  <div class="card">
+    <div class="spacing-row"><div class="spacing-bar" style="width:16px"></div><span class="spacing-lbl"><code>pageX · 16</code> — горизонтальный отступ экрана</span></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:16px"></div><span class="spacing-lbl"><code>card · 16</code> — внутренний отступ карточек</span></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:56px"></div><span class="spacing-lbl"><code>header · 56</code> — высота шапки экрана</span></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:64px"></div><span class="spacing-lbl"><code>nav · 64</code> — высота нижней навигации (iOS 64 / Android 60)</span></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:96px"></div><span class="spacing-lbl"><code>pageBottom · 96</code> — нижний отступ контента над таб-баром</span></div>
+  </div>
+  <h3 class="h3">Планшетная навигация (NavRail)</h3>
+  <div class="card">
+    <div class="spacing-row"><div class="spacing-bar" style="width:72px"></div><span class="spacing-lbl"><code>collapsedWidth · 72</code> — свёрнутый рельс (только иконки)</span></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:200px"></div><span class="spacing-lbl"><code>expandedWidth · 200</code> — развёрнутый рельс (иконки + подписи)</span></div>
+    <div class="spacing-row"><div class="spacing-bar" style="width:96px"></div><span class="spacing-lbl"><code>breakpoint · 768</code> — ≥768px боковой рельс, &lt;768px нижний таб-бар</span></div>
+  </div>
+</section>
+
+<!-- ============================================================ КОМПОНЕНТЫ -->
+<section id="components">
+  <div class="sec-h"><span class="num">05</span><h2>Компоненты</h2></div>
+  <p class="sec-sub">Живые реконструкции из <code>components/ui/</code>. Нажимайте — press-состояния настоящие (scale 0.98 + затемнение, мгновенно, как в приложении).</p>
+
+  <h3 class="h3">Button</h3>
+  <div class="demo">
+    <div class="demo-title">Варианты</div>
+    <div class="demo-row">
+      <button class="btn btn-primary btn-md">Начать</button>
+      <button class="btn btn-success btn-md">Сохранить</button>
+      <button class="btn btn-error btn-md">Удалить</button>
+      <button class="btn btn-default btn-md">Назад</button>
+      <button class="btn btn-glass btn-md">Справка</button>
+      <button class="btn btn-ghost btn-md">Отмена</button>
+    </div>
+    <div class="demo-title">Размеры</div>
+    <div class="demo-row">
+      <button class="btn btn-primary btn-sm">Small · 36</button>
+      <button class="btn btn-primary btn-md">Medium · 44</button>
+      <button class="btn btn-primary btn-lg">Large · 52</button>
+    </div>
+    <div class="demo-title">Иконки и состояние</div>
+    <div class="demo-row">
+      <button class="btn btn-primary btn-md"><span class="ms s16">chevron_left</span>Назад</button>
+      <button class="btn btn-primary btn-md">Продолжить<span class="ms s16">chevron_right</span></button>
+      <button class="btn btn-primary btn-md" disabled>Загрузка…</button>
+    </div>
+    <div class="demo-cap">radius 12 · вес 500 · gap 8 · primary = градиент 135° + glow-тень · иконка наследует размер шрифта · disabled: bg layout2 + opacity 0.6</div>
+  </div>
+
+  <h3 class="h3">GlassCard</h3>
+  <div class="demo">
+    <div class="demo-row" style="align-items:stretch">
+      <div class="gcard" style="flex:1;min-width:220px">
+        <div style="font-weight:600;margin-bottom:4px">Карточка контента</div>
+        <div style="font-size:13px;color:var(--c-neutral)">radius 16 · padding 16 · border 1px glass.border</div>
+      </div>
+      <div class="gcard gcard-12" style="flex:1;min-width:220px">
+        <div style="font-weight:600;margin-bottom:4px">ContentCard (radius 12)</div>
+        <div style="font-size:13px;color:var(--c-neutral)">списковые карточки материалов</div>
+      </div>
+    </div>
+    <div class="demo-cap">Тёмная тема: полупрозрачный фон + BlurView 20 + тень glass + верхняя линия-блик. Светлая: сплошной #FFFFFF без тени. Pressable-режим: scale 0.98 / opacity 0.95.</div>
+  </div>
+
+  <h3 class="h3">GlassInput</h3>
+  <div class="demo">
+    <div class="demo-row" style="align-items:flex-start">
+      <div class="input-wrap">
+        <label class="input-label">Email</label>
+        <div class="input-field">
+          <span class="ms s20">email</span>
+          <input type="email" placeholder="you@example.com">
+        </div>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Пароль</label>
+        <div class="input-field">
+          <span class="ms s20">lock</span>
+          <input id="pwdInput" type="password" placeholder="••••••••" style="font-family:'IBM Plex Mono',monospace">
+          <button class="eye-btn" id="eyeBtn" title="Показать пароль"><span class="ms s20">visibility_off</span></button>
+        </div>
+      </div>
+    </div>
+    <div class="demo-cap">height 52 · radius 14 · иконка 20 · focus: рамка primary + фон backgroundHover. Кликните в поле — focus-состояние настоящее. Глазок переключает видимость.</div>
+  </div>
+
+  <h3 class="h3">StatusBadge</h3>
+  <div class="demo">
+    <div class="demo-row">
+      <span class="badge b-good"><span class="ms s12">check_circle</span>Прочитано</span>
+      <span class="badge b-mute"><span class="ms s12">radio_button_unchecked</span>Не прочитано</span>
+      <span class="badge b-good"><span class="ms s12">check_circle</span>Пройдено</span>
+      <span class="badge b-mute"><span class="ms s12">radio_button_unchecked</span>Не пройдено</span>
+      <span class="badge b-good"><span class="ms s12">emoji_events</span>Успешно</span>
+      <span class="badge b-bad"><span class="ms s12">cancel</span>Не успешно</span>
+      <span class="badge b-mute"><span class="ms s12">lock</span>Заблокировано</span>
+    </div>
+    <div class="demo-cap">pill · padding 4/8 · текст 11/500 · иконка 12. Цвета захардкожены, не зависят от темы.</div>
+  </div>
+
+  <h3 class="h3">ProgressBar</h3>
+  <div class="demo">
+    <div class="progress"><div class="progress-fill shimmer" style="width:64%"></div></div>
+    <div class="progress"><div class="progress-fill" style="width:38%"></div></div>
+    <div class="demo-cap">height 6 · pill · трек glass.progressTrack · заливка — горизонтальный градиент + glow · shimmer: пульс opacity 0.85↔1 за 3000 ms (верхняя полоса)</div>
+  </div>
+
+  <h3 class="h3">TypeIcon и ContentCard</h3>
+  <div class="demo">
+    <div class="demo-row">
+      <div class="type-icon ti-folder"><span class="ms s20">folder</span></div>
+      <div class="type-icon ti-article"><span class="ms s20">description</span></div>
+      <div class="type-icon ti-test"><span class="ms s20">assignment</span></div>
+      <div class="type-icon ti-rescue"><span class="ms s20">local_hospital</span></div>
+      <span class="demo-cap" style="flex:1">круг 36px · folder/test — primary + glow · article — нейтральный · rescue — error + glow</span>
+    </div>
+    <div class="content-card">
+      <div class="type-icon ti-folder"><span class="ms s20">folder</span></div>
+      <div class="cc-body"><div class="cc-title">Терапия: острые состояния</div><div class="cc-desc">Папка · 12 материалов</div></div>
+      <span class="badge b-mute"><span class="ms s12">lock</span>Заблокировано</span>
+      <span class="ms s16 cc-chev">chevron_right</span>
+    </div>
+    <div class="content-card">
+      <div class="type-icon ti-article"><span class="ms s20">description</span></div>
+      <div class="cc-body"><div class="cc-title">Острая боль: алгоритм действий</div><div class="cc-desc">Статья · 12 мин чтения</div></div>
+      <span class="badge b-good"><span class="ms s12">check_circle</span>Прочитано</span>
+      <span class="ms s16 cc-chev">chevron_right</span>
+    </div>
+    <div class="content-card">
+      <div class="type-icon ti-rescue"><span class="ms s20">local_hospital</span></div>
+      <div class="cc-body"><div class="cc-title">Режим спасения · 3</div><div class="cc-desc">Симуляция · диагноз скрыт до первой попытки</div></div>
+      <span class="ms s16 cc-chev">chevron_right</span>
+    </div>
+    <div class="demo-cap">GlassCard radius 12 · gap 12 · заголовок 15/500 · описание 13 · нажмие — press-состояние</div>
+  </div>
+
+  <h3 class="h3">FilterPills</h3>
+  <div class="demo">
+    <div class="pill-group" id="filterPills">
+      <button class="pill active">Все</button>
+      <button class="pill">Статьи</button>
+      <button class="pill">Тесты</button>
+      <button class="pill">Режимы</button>
+    </div>
+    <div class="demo-cap">pill · padding 8/14 · текст 13/500 · кликабельны. Активный: синий тинт-фон + рамка + primary-текст (захардкожено).</div>
+  </div>
+
+  <h3 class="h3">Теги последствий (rescue)</h3>
+  <div class="demo">
+    <div class="demo-row">
+      <span class="tag t-normal">Записано в карту наблюдений</span>
+      <span class="tag t-low">Пациент стал тревожнее</span>
+      <span class="tag t-medium">Пульс участился до 110</span>
+      <span class="tag t-high">Давление поднялось ещё на 15 единиц</span>
+    </div>
+    <div class="demo-cap">radius 14 · padding 8/12 · текст 14/600 · цвет заливки = серьёзность последствия выбора в сценарии</div>
+  </div>
+
+  <h3 class="h3">SideNavRail (планшет ≥768px)</h3>
+  <div class="demo">
+    <div class="rail-frame">
+      <div class="rail" id="railDemo">
+        <div class="rail-item active"><span class="ms s24">home</span><span class="rail-label">Обучение</span></div>
+        <div class="rail-item"><span class="ms s24">bar_chart</span><span class="rail-label">Статистика</span></div>
+        <div class="rail-item"><span class="ms s24">bolt</span><span class="rail-label">Тренировка</span></div>
+        <div class="rail-item"><span class="ms s24">person</span><span class="rail-label">Профиль</span></div>
+      </div>
+      <div class="rail-content">Область контента. Ширина рельса анимируется 72 ↔ 200 px за 220 ms.</div>
+    </div>
+    <button class="replay" id="railToggle"><span class="ms s14">refresh</span>Свернуть / развернуть</button>
+  </div>
+</section>
+
+<!-- ============================================================ ЭФФЕКТЫ -->
+<section id="effects">
+  <div class="sec-h"><span class="num">06</span><h2>Эффекты</h2></div>
+  <p class="sec-sub">Глассморфизм, свечение, градиенты и тени — фирменные приёмы системы.</p>
+
+  <h3 class="h3">Glass — живой блюр</h3>
+  <div class="glass-stage">
+    <div class="glass-live">
+      <div class="gl-t">GlassCard · native dark</div>
+      <div class="gl-d">BlurView intensity 20 · фон rgba(255,255,255,0.05) · рамка 10% · блик сверху</div>
+    </div>
+  </div>
+  <div class="note">В приложении блюр рендерится <b>только в тёмной теме на нативе</b> (<code>showBlur = !isLight && OS !== 'web'</code>).
+  Светлая тема и web получают плоскую поверхность: светлая — #FFFFFF без тени, тёмная — полупрозрачный фон + тень glass.</div>
+
+  <h3 class="h3">Токены Glass</h3>
+  <div class="card">
+    <table class="spec">
+      <tr><th>Токен</th><th>Light</th><th>Dark</th><th>Где используется</th></tr>
+      <tr><td><code>background</code></td><td><code>#FFFFFF</code></td><td><code>rgba(255,255,255,.05)</code></td><td>GlassCard, кнопка glass</td></tr>
+      <tr><td><code>backgroundSubtle</code></td><td><code>#F3F4F6</code></td><td><code>rgba(255,255,255,.03)</code></td><td>поля ввода, пилюли, строки</td></tr>
+      <tr><td><code>backgroundHover</code></td><td><code>#ECEEF1</code></td><td><code>rgba(255,255,255,.06)</code></td><td>hover-состояния</td></tr>
+      <tr><td><code>border</code></td><td><code>rgba(0,0,0,.08)</code></td><td><code>rgba(255,255,255,.1)</code></td><td>рамки карточек, разделители</td></tr>
+      <tr><td><code>borderSubtle</code></td><td><code>rgba(0,0,0,.06)</code></td><td><code>rgba(255,255,255,.08)</code></td><td>внутренние рамки</td></tr>
+      <tr><td><code>borderHover</code></td><td><code>rgba(0,0,0,.14)</code></td><td><code>rgba(255,255,255,.2)</code></td><td>—</td></tr>
+      <tr><td><code>header</code></td><td><code>rgba(248,249,250,.85)</code></td><td><code>rgba(5,5,5,.7)</code></td><td>шапки, липкие панели</td></tr>
+      <tr><td><code>scrim</code></td><td><code>rgba(248,249,250,.9)</code></td><td><code>rgba(5,5,5,.85)</code></td><td>затемнение под модалками</td></tr>
+      <tr><td><code>progressTrack</code></td><td><code>rgba(0,0,0,.08)</code></td><td><code>rgba(255,255,255,.1)</code></td><td>трек прогресс-бара</td></tr>
+      <tr><td><code>primaryTint / primaryBorder</code></td><td><code>rgba(0,112,224,.1) / .25</code></td><td><code>rgba(0,132,255,.1) / .3</code></td><td>активный пункт навигации</td></tr>
+      <tr><td><code>successTint / successBorder</code></td><td><code>rgba(61,122,40,.1) / .2</code></td><td><code>rgba(77,139,49,.1) / .2</code></td><td>успешные состояния</td></tr>
+      <tr><td><code>dangerTint / dangerBorder</code></td><td><code>rgba(224,85,85,.1) / .2</code></td><td><code>rgba(255,107,107,.1) / .2</code></td><td>опасные состояния</td></tr>
+      <tr><td><code>row</code></td><td><code>rgba(0,0,0,.03)</code></td><td><code>rgba(255,255,255,.02)</code></td><td>зебра строк</td></tr>
+    </table>
+  </div>
+
+  <h3 class="h3">Glow — свечение</h3>
+  <div class="card">
+    <div class="glow-title-demo">Обучение</div>
+    <div class="demo-cap" style="margin-top:8px">title-glow: text-shadow 0 0 20px <code>glow.title</code> — за крупными заголовками экранов. Кнопки primary: 0 4px 16px <code>glow.primary</code>; прогресс: 0 0 8px.</div>
+  </div>
+
+  <h3 class="h3">Градиенты</h3>
+  <div class="card">
+    <div class="grad-bar" style="background:linear-gradient(135deg,#0084FF,#4D8B31)"></div>
+    <div class="demo-cap">Gradients.primary — <code>#0084FF → #4D8B31</code> (dark), 135° — кнопки primary, эмблемы</div>
+    <div class="grad-bar" style="background:linear-gradient(90deg,#0084FF,#4D8B31)"></div>
+    <div class="demo-cap">горизонтальный (0,0)→(1,0) — заливка ProgressBar</div>
+    <div class="grad-bar" style="background:linear-gradient(135deg,#0070E0,#3D7A28)"></div>
+    <div class="demo-cap">Gradients.primaryLight — <code>#0070E0 → #3D7A28</code> — вариант для светлой темы</div>
+  </div>
+
+  <h3 class="h3">Тени (5 уровней)</h3>
+  <div class="card">
+    <div class="shadow-grid">
+      <div class="shadow-tile st-small"><span>small</span><span class="demo-cap">0/2 · r4 · op .08/.2 · elev 2</span></div>
+      <div class="shadow-tile st-medium"><span>medium</span><span class="demo-cap">0/4 · r8 · .12/.3 · elev 4</span></div>
+      <div class="shadow-tile st-large"><span>large</span><span class="demo-cap">0/8 · r16 · .16/.4 · elev 6</span></div>
+      <div class="shadow-tile st-glass"><span>glass</span><span class="demo-cap">0/4 · r20 · .2 · elev 4<br>light: без тени</span></div>
+      <div class="shadow-tile st-nav"><span>nav</span><span class="demo-cap">0/−4 · r24 · .4 · elev 8 — вверх (таб-бар)</span></div>
+    </div>
+    <div class="note">Формат RN: shadowOffset / shadowOpacity / shadowRadius + Android elevation. Плитки выше — текущая тема; значения в подписи: light / dark.</div>
+  </div>
+
+  <h3 class="h3">Шкала blurIntensity (зарезервирована)</h3>
+  <div class="card">
+    <div class="blurscale">
+      <span class="blur-pill">sm · <b>8</b></span>
+      <span class="blur-pill">md · <b>16</b></span>
+      <span class="blur-pill">lg · <b>20</b></span>
+      <span class="blur-pill">xl · <b>32</b></span>
+      <span class="blur-pill">nav · <b>40</b></span>
+      <span class="blur-pill">disabledOpacity · <b>0.6</b></span>
+    </div>
+    <div class="note warn">Шкала объявлена, но компоненты хардкодят 20 (dark) / 12 (light). <code>disabledOpacity 0.6</code> — активно используется.</div>
+  </div>
+</section>
+
+<!-- ============================================================ АНИМАЦИИ -->
+<section id="motion">
+  <div class="sec-h"><span class="num">07</span><h2>Анимации</h2></div>
+  <p class="sec-sub">Движение построено на Reanimated. Словарь длительностей фиксирован — не выдумывать новые числа.</p>
+
+  <div class="card">
+    <table class="spec">
+      <tr><th>Длительность</th><th>Эффект</th><th>Где</th></tr>
+      <tr><td><code>60 ms</code></td><td>шаг стаггера списков</td><td><code>Animation.stagger</code> · use-enter-animation</td></tr>
+      <tr><td><code>200 ms</code></td><td>выходы: FadeOutUp, кроссфейд навигации</td><td>тост, explorer</td></tr>
+      <tr><td><code>220 ms</code></td><td>ширина бокового рельса 72↔200</td><td>SideNavRail</td></tr>
+      <tr><td><code>280 ms</code></td><td>вход тоста FadeInUp</td><td>GlobalNotificationBanner</td></tr>
+      <tr><td><code>300 ms</code></td><td>появление экрана FadeIn, смена вопроса</td><td>экраны, тесты</td></tr>
+      <tr><td><code>400 ms</code></td><td>FadeInUp карточек подписки (delay 100·i)</td><td>subscription</td></tr>
+      <tr><td><code>600 ms</code></td><td>стаггер-вход списков, springify</td><td><code>Animation.enterDuration</code></td></tr>
+      <tr><td><code>3000 ms</code></td><td>shimmer прогресса (opacity .85↔1)</td><td>ProgressBar</td></tr>
+      <tr><td><code>35 ms/символ</code></td><td>эффект печатной машинки</td><td>сценарии rescue</td></tr>
+      <tr><td><code>160 / 320 ms</code></td><td>вспышка параметра: подъём → затухание</td><td>ParameterBadge</td></tr>
+      <tr><td><code>6000 ms</code></td><td>автоскрытие тоста</td><td>GlobalNotificationBanner</td></tr>
+      <tr><td class="dim"><code>1500 / 3000 / 1000</code></td><td class="dim">pulseDanger / pulseRing / blinkTimer — зарезервированы, не используются</td><td class="dim">—</td></tr>
+    </table>
+  </div>
+
+  <h3 class="h3">Живые демо</h3>
+
+  <div class="demo">
+    <div class="demo-title">Появление экрана — FadeIn 300 ms</div>
+    <div class="anim-frame">
+      <div class="screen-demo" data-auto>Содержимое экрана плавно проявляется при монтировании.</div>
+    </div>
+    <button class="replay" data-replay=".screen-demo"><span class="ms s14">refresh</span>Повторить</button>
+  </div>
+
+  <div class="demo">
+    <div class="demo-title">Стаггер списка — шаг 60 ms · 600 ms · spring (damping 18 / stiffness 120)</div>
+    <div class="anim-frame" style="padding:12px">
+      <div class="stagger-item" style="--i:0" data-auto><span class="ms s16" style="color:var(--c-primary)">folder</span>Папка «Терапия»</div>
+      <div class="stagger-item" style="--i:1" data-auto><span class="ms s16" style="color:var(--c-neutral)">description</span>Статья · 12 мин</div>
+      <div class="stagger-item" style="--i:2" data-auto><span class="ms s16" style="color:var(--c-primary)">assignment</span>Тест · 15 вопросов</div>
+      <div class="stagger-item" style="--i:3" data-auto><span class="ms s16" style="color:var(--c-error)">local_hospital</span>Режим спасения · 2</div>
+      <div class="stagger-item" style="--i:4" data-auto><span class="ms s16" style="color:var(--c-neutral)">description</span>Статья · 7 мин</div>
+    </div>
+    <button class="replay" data-replay=".stagger-item"><span class="ms s14">refresh</span>Повторить</button>
+  </div>
+
+  <div class="demo">
+    <div class="demo-title">Тост — вход 280 ms · выход 200 ms · автоскрытие 6000 ms (в демо — 1.6 s)</div>
+    <div class="anim-frame" style="min-height:150px">
+      <div class="toast-demo" id="toastDemo">
+        <div class="toast-icon"><span class="ms s16">notifications</span></div>
+        <div style="flex:1">
+          <div class="toast-t">Новый материал</div>
+          <div class="toast-b">В разделе «Терапия» появилась новая статья</div>
+        </div>
+        <span class="ms s18 toast-x">cancel</span>
+      </div>
+      <div style="position:absolute;bottom:14px;left:14px" class="demo-cap">зона экрана</div>
+    </div>
+    <button class="replay" id="toastReplay"><span class="ms s14">refresh</span>Показать тост</button>
+  </div>
+
+  <div class="demo">
+    <div class="demo-title">Эффект печатной машинки — 35 ms/символ</div>
+    <div class="anim-frame">
+      <div class="type-line"><span id="typeTarget"></span><span class="type-cursor">▋</span></div>
+    </div>
+    <button class="replay" id="typeReplay"><span class="ms s14">refresh</span>Повторить</button>
+  </div>
+
+  <div class="demo">
+    <div class="demo-title">Вспышка параметра — 160 ms подъём + 320 ms затухание</div>
+    <div class="anim-frame" style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="param-badge" id="paramDemo">
+        <span class="p-name">Пульс</span><span class="p-val">92</span>
+      </div>
+      <span class="demo-cap" style="align-self:center">значение изменилось — фон коротко вспыхивает (dark: #1C1C1E→#2C2C2E, light: #FFF→#EEF2F7)</span>
+    </div>
+    <button class="replay" data-replay="#paramDemo"><span class="ms s14">refresh</span>Повторить</button>
+  </div>
+
+  <div class="demo">
+    <div class="demo-title">Press-состояния — мгновенно, без transition</div>
+    <div class="press-demo">
+      <div class="press-card">Карточка — нажмите и удерживайте<br><span class="demo-cap">scale 0.98 · opacity 0.95</span></div>
+      <div class="press-row"><button class="btn btn-primary btn-md">Кнопка</button><span class="demo-cap">scale 0.98 · opacity 0.9</span></div>
+      <div class="press-row"><button class="btn btn-default btn-md">Обычная</button><span class="demo-cap">scale 0.98 · opacity 0.85</span></div>
+    </div>
+  </div>
+
+  <h3 class="h3">Правила движения</h3>
+  <div class="card">
+    <table class="spec">
+      <tr><td>Mount-анимации</td><td style="text-align:left">только <code>entering={FadeIn…}</code> из Reanimated. Ручной <code>useSharedValue(0)+withTiming</code> на web залипает на opacity 0 (баг, уже ловили)</td></tr>
+      <tr><td>Стаггер списков</td><td style="text-align:left"><code>staggerEnter(index)</code> = FadeInDown · delay i·60 · 600 ms · springify(18/120) — единый хелпер</td></tr>
+      <tr><td>Press</td><td style="text-align:left">scale 0.98 + opacity 0.85–0.95, мгновенно (Pressable state, без длительности)</td></tr>
+      <tr><td>Disabled</td><td style="text-align:left">opacity 0.6 (<code>ThemeValues.disabledOpacity</code>)</td></tr>
+      <tr><td>Easing входов</td><td style="text-align:left">экспортирован <code>enterEasing = [0.19, 1, 0.22, 1]</code> (easeOutExpo) — им же анимируются CSS-демо выше</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ ИКОНКИ -->
+<section id="icons">
+  <div class="sec-h"><span class="num">08</span><h2>Иконки</h2></div>
+  <p class="sec-sub">Кроссплатформенный <code>IconSymbol</code>: на iOS — нативные SF Symbols (weight regular),
+  на Android/web — MaterialIcons по таблице соответствия. Неизвестное имя рендерит null + console.warn.
+  В коде пишется SF-имя, маппинг — деталь реализации.</p>
+  <div class="icon-grid" id="iconGrid"></div>
+</section>
+
+<!-- ============================================================ ПЛАТФОРМА -->
+<section id="platform">
+  <div class="sec-h"><span class="num">09</span><h2>Платформенные особенности</h2></div>
+  <div class="card">
+    <table class="spec">
+      <tr><th>Тема</th><td style="text-align:left">light / dark / system; выбор в AsyncStorage <code>@app/theme-preference</code>; навигация — React Navigation DarkTheme/DefaultTheme с токенами палитры; сплэш ждёт загрузки шрифтов</td></tr>
+      <tr><th>Блюр</th><td style="text-align:left">экспо BlurView — только тёмная тема на нативе; web и light — плоская подложка (см. Glass)</td></tr>
+      <tr><th>Тени</th><td style="text-align:left">RN shadow (iOS) + elevation (Android); web переводится в box-shadow Xpx Ypx Bpx rgba(...)</td></tr>
+      <tr><th>Тактильность</th><td style="text-align:left">Haptics Light impact по нажатию табов — только iOS (HapticTab)</td></tr>
+      <tr><th>Шрифты</th><td style="text-align:left">натива — Expo Google Fonts (Inter, IBM Plex Mono); web — CSS-стеки с системными фолбэками</td></tr>
+      <tr><th>Иконки</th><td style="text-align:left">iOS — SF Symbols; Android/web — MaterialIcons; в таблице иконок — 50 соответствий</td></tr>
+      <tr><th>Типографика</th><td style="text-align:left">кнопки и многострочные тексты требуют явного text-align: center (Button в RN не центрирует сам)</td></tr>
+    </table>
+  </div>
+  <div class="note warn">Известные ловушки проекта: hand-rolled fade на web залипает (см. Правила движения); GlassCard на web без блюра выглядит иначе, чем на нативе — проверять обе платформы.</div>
+</section>
+
+</main>
+
+<footer>
+  Снимок дизайн-системы TroubleDent · собрано вручную по <code>constants/theme.ts</code>, <code>hooks/use-theme-color.ts</code>,
+  <code>components/ui/**</code> · 28.09.2026 · страница не входит в сборку приложения
+</footer>
+
+<script>
+/* ---------- Тема ---------- */
+const rootEl = document.documentElement;
+const themeLabel = document.getElementById('themeToggleLabel');
+function applyTheme(t) {
+  rootEl.dataset.theme = t;
+  themeLabel.textContent = t === 'dark' ? 'Светлая тема' : 'Тёмная тема';
+  try { localStorage.setItem('ds-theme', t); } catch (e) {}
+}
+applyTheme((() => { try { return localStorage.getItem('ds-theme') || 'dark'; } catch (e) { return 'dark'; } })());
+document.getElementById('themeToggle').addEventListener('click', () =>
+  applyTheme(rootEl.dataset.theme === 'dark' ? 'light' : 'dark'));
+
+/* ---------- Свотчи цветов (значения 1:1 из Colors.light / Colors.dark) ---------- */
+const PALETTE = {
+  primary:['#0070E0','#0084FF'], onPrimary:['#FFFFFF','#FFFFFF'], primaryContainer:['rgba(0,112,224,0.12)','rgba(0,132,255,0.15)'], onPrimaryContainer:['#005BB5','#B3D9FF'],
+  error:['#E05555','#FF6B6B'], onError:['#FFFFFF','#FFFFFF'], errorContainer:['rgba(224,85,85,0.12)','rgba(255,107,107,0.15)'], onErrorContainer:['#B33A3A','#FFCDD2'],
+  success:['#3D7A28','#4D8B31'], onSuccess:['#FFFFFF','#FFFFFF'], successContainer:['rgba(61,122,40,0.12)','rgba(77,139,49,0.15)'], onSuccessContainer:['#2D5C1E','#C8E6C9'],
+  warning:['#D97706','#F59E0B'], onWarning:['#FFFFFF','#000000'], warningContainer:['rgba(217,119,6,0.12)','rgba(245,158,11,0.15)'], onWarningContainer:['#B45309','#FFE0B2'],
+  page:['#F8F9FA','#050505'], text:['#1A1A1A','#EAEAEA'],
+  layout1:['#FFFFFF','#050505'], layout2:['#F3F4F6','rgba(255,255,255,0.05)'], layout3:['#E5E7EB','rgba(255,255,255,0.03)'],
+  onLayout1:['#1A1A1A','#EAEAEA'], onLayout2:['#1A1A1A','#EAEAEA'], onLayout3:['#1A1A1A','#EAEAEA'],
+  elevated1:['rgba(0,0,0,0.03)','rgba(255,255,255,0.05)'], elevated2:['rgba(0,0,0,0.05)','rgba(255,255,255,0.08)'], elevated3:['rgba(0,0,0,0.08)','rgba(255,255,255,0.12)'],
+  neutral:['#6B7280','#9BA1A6'], neutralSoft:['#9CA3AF','#7E7E7E'], icon:['#6B7280','#7E7E7E'], onNeutral:['#FFFFFF','#000000'], onNeutralSoft:['#FFFFFF','#FFFFFF'],
+  white:['#FFFFFF','#FFFFFF'], accentPurple:['#8B5CF6','#A78BFA'],
+  border:['rgba(0,0,0,0.1)','rgba(255,255,255,0.1)'], borderVariant:['rgba(0,0,0,0.06)','rgba(255,255,255,0.08)'], shadow:['#000000','#000000'],
+};
+const GROUPS = [
+  ['Primary — основной акцент', ['primary','onPrimary','primaryContainer','onPrimaryContainer']],
+  ['Success — успех', ['success','onSuccess','successContainer','onSuccessContainer']],
+  ['Error — ошибка, режим спасения', ['error','onError','errorContainer','onErrorContainer']],
+  ['Warning — предупреждение', ['warning','onWarning','warningContainer','onWarningContainer']],
+  ['Поверхности', ['page','layout1','layout2','layout3','elevated1','elevated2','elevated3']],
+  ['Текст и нейтральные', ['text','onLayout1','neutral','neutralSoft','icon','onNeutral','onNeutralSoft','accentPurple']],
+  ['Границы и служебные', ['border','borderVariant','shadow','white']],
+];
+document.getElementById('colorGroups').innerHTML = GROUPS.map(([title, tokens]) => `
+  <div class="swatch-group">
+    <h4>${title}</h4>
+    <div class="swatches">
+      ${tokens.map(t => `
+        <div class="swatch">
+          <div class="swatch-chip" style="background:${PALETTE[t][1]}"></div>
+          <div class="swatch-meta">
+            <code>${t}</code>
+            <span class="swatch-vals">L ${PALETTE[t][0]} · D ${PALETTE[t][1]}</span>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`).join('');
+
+/* ---------- Иконки: SF Symbols → MaterialIcons (маппинг из icon-symbol.ts) ---------- */
+const ICONS = [
+  ['house.fill','home'], ['paperplane.fill','send'], ['person.fill','person'],
+  ['chevron.left.forwardslash.chevron.right','code'], ['chevron.right','chevron-right'], ['chevron.left','chevron-left'],
+  ['checkmark.circle.fill','check-circle'], ['checkmark','check'], ['xmark.circle.fill','cancel'],
+  ['questionmark.circle.fill','help-outline'], ['star.fill','star'], ['exclamationmark.triangle.fill','warning'],
+  ['exclamationmark.circle.fill','error'], ['plus.app.fill','1k-plus'], ['cross.fill','local-hospital'],
+  ['plus.circle.fill','local-hospital'], ['folder.fill','folder'], ['doc.fill','description'],
+  ['doc.text.fill','description'], ['list.bullet.clipboard.fill','assignment'], ['chart.pie.fill','pie-chart'],
+  ['chart.bar.fill','bar-chart'], ['bolt.fill','bolt'], ['circle','radio-button-unchecked'],
+  ['trophy.fill','emoji-events'], ['gift.fill','card-giftcard'], ['lock.fill','lock'],
+  ['book.fill','menu-book'], ['clock.fill','schedule'], ['globe','language'],
+  ['bell.fill','notifications'], ['moon.fill','dark-mode'], ['info.circle.fill','info'],
+  ['rectangle.portrait.and.arrow.right','logout'], ['shield.fill','shield'], ['arrow.counterclockwise','refresh'],
+  ['envelope.fill','email'], ['eye.fill','visibility'], ['eye.slash.fill','visibility-off'],
+  ['mappin.and.ellipse','place'], ['bubble.left.and.bubble.right.fill','forum'], ['magnifyingglass','search'],
+  ['chevron.down','expand-more'], ['square.and.arrow.up.fill','share'], ['square.and.arrow.down.fill','download'],
+  ['photo.fill','image'], ['briefcase.fill','work'], ['qrcode','qr-code'],
+  ['trash.fill','delete'], ['ticket.fill','local-activity'],
+];
+document.getElementById('iconGrid').innerHTML = ICONS.map(([sf, mat]) => `
+  <div class="icon-cell">
+    <span class="ms">${mat.replace(/-/g, '_')}</span>
+    <code>${sf}</code>
+    <code class="dim">${mat}</code>
+  </div>`).join('');
+
+/* ---------- Повторы анимаций ---------- */
+function replay(els) {
+  els.forEach(el => { el.classList.remove('play', 'hide'); void el.offsetWidth; el.classList.add('play'); });
+}
+document.querySelectorAll('[data-replay]').forEach(btn =>
+  btn.addEventListener('click', () => replay(document.querySelectorAll(btn.dataset.replay))));
+/* автозапуск демо при загрузке */
+window.addEventListener('load', () => replay(document.querySelectorAll('[data-auto]')));
+
+/* ---------- Тост ---------- */
+let toastTimer = null;
+document.getElementById('toastReplay').addEventListener('click', () => {
+  const t = document.getElementById('toastDemo');
+  t.classList.remove('play', 'hide'); void t.offsetWidth; t.classList.add('play');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.add('hide'), 1600);
+});
+
+/* ---------- Печатная машинка ---------- */
+const TYPE_TEXT = 'Пациент: 34 года. Острая пульсирующая боль в области 36-го зуба, усиливается при накусывании…';
+let typeTimer = null;
+function typewriter() {
+  const el = document.getElementById('typeTarget');
+  clearInterval(typeTimer);
+  el.textContent = '';
+  let i = 0;
+  typeTimer = setInterval(() => {
+    el.textContent = TYPE_TEXT.slice(0, ++i);
+    if (i >= TYPE_TEXT.length) clearInterval(typeTimer);
+  }, 35);
+}
+document.getElementById('typeReplay').addEventListener('click', typewriter);
+window.addEventListener('load', typewriter);
+
+/* ---------- Глазок пароля ---------- */
+document.getElementById('eyeBtn').addEventListener('click', () => {
+  const inp = document.getElementById('pwdInput');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  document.querySelector('#eyeBtn .ms').textContent = show ? 'visibility' : 'visibility_off';
+});
+
+/* ---------- Пилюли фильтра ---------- */
+document.querySelectorAll('#filterPills .pill').forEach(p => p.addEventListener('click', () => {
+  p.parentElement.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+  p.classList.add('active');
+}));
+
+/* ---------- Боковой рельс ---------- */
+document.getElementById('railToggle').addEventListener('click', () =>
+  document.getElementById('railDemo').classList.toggle('collapsed'));
+</script>
+</body>
+</html>
