@@ -142,7 +142,7 @@ function buildTestTakingStyles(theme: ThemeColors, glass: GlassColors) {
     minHeight: 44,
     backgroundColor: theme.primary,
   },
-  finishTestButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  finishTestButtonText: { color: theme.onPrimary, fontSize: 16, fontWeight: '600' },
   scrollView: { flex: 1 },
   scrollViewContent: { paddingBottom: 100 },
   content: { padding: 16 },
@@ -201,13 +201,13 @@ function buildTestTakingStyles(theme: ThemeColors, glass: GlassColors) {
     width: '100%',
   },
   answerButtonSelected: {
-    borderColor: 'rgba(0, 132, 255, 0.4)',
-    backgroundColor: 'rgba(0, 132, 255, 0.1)',
+    borderColor: glass.primaryBorder,
+    backgroundColor: glass.primaryTint,
   },
   answerButtonShouldBeSelected: {
-    borderColor: 'rgba(77, 139, 49, 0.4)',
+    borderColor: glass.successBorder,
     borderStyle: 'dashed',
-    backgroundColor: 'rgba(77, 139, 49, 0.1)',
+    backgroundColor: glass.successTint,
   },
   checkbox: {
     width: 24,
@@ -246,7 +246,7 @@ function buildTestTakingStyles(theme: ThemeColors, glass: GlassColors) {
     borderRadius: 12,
     zIndex: 1,
   },
-  answerBadgeText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  answerBadgeText: { fontSize: 12, fontWeight: '600', color: theme.onPrimary },
   answerTextSelected: { fontWeight: '600' },
   answerTextCorrect: { color: theme.success, fontWeight: '600' },
   answerTextIncorrect: { color: theme.error, fontWeight: '600' },
@@ -290,7 +290,7 @@ function buildTestTakingStyles(theme: ThemeColors, glass: GlassColors) {
     backgroundColor: theme.primary,
     flex: 1,
   },
-  nextButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  nextButtonText: { color: theme.onPrimary, fontSize: 16, fontWeight: '600' },
   resultCard: {
     padding: 20,
     borderRadius: Radius.xl,
@@ -302,7 +302,7 @@ function buildTestTakingStyles(theme: ThemeColors, glass: GlassColors) {
   resultTitle: { marginBottom: 16, color: theme.text },
   resultItem: { marginBottom: 12, fontSize: 16, color: theme.text },
   statusBadge: { marginTop: 16, padding: 16, borderRadius: Radius.lg, alignItems: 'center' },
-  statusText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  statusText: { color: theme.onPrimary, fontSize: 18, fontWeight: '600' },
   fixedButtonContainer: {
     position: 'absolute',
     bottom: 0,
@@ -323,7 +323,7 @@ function buildTestTakingStyles(theme: ThemeColors, glass: GlassColors) {
     minHeight: 56,
     backgroundColor: theme.primary,
   },
-  finishButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  finishButtonText: { color: theme.onPrimary, fontSize: 18, fontWeight: '600' },
   resultsTitle: {
     marginBottom: 24,
     fontSize: 28,
@@ -379,17 +379,17 @@ function buildTestTakingStyles(theme: ThemeColors, glass: GlassColors) {
     backgroundColor: glass.backgroundSubtle,
   },
   questionAnswerCorrect: {
-    borderColor: 'rgba(77, 139, 49, 0.4)',
-    backgroundColor: 'rgba(77, 139, 49, 0.1)',
+    borderColor: glass.successBorder,
+    backgroundColor: glass.successTint,
   },
   questionAnswerIncorrect: {
-    borderColor: 'rgba(255, 107, 107, 0.4)',
-    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    borderColor: glass.dangerBorder,
+    backgroundColor: glass.dangerTint,
   },
   questionAnswerShouldBeSelected: {
-    borderColor: 'rgba(77, 139, 49, 0.4)',
+    borderColor: glass.successBorder,
     borderStyle: 'dashed',
-    backgroundColor: 'rgba(77, 139, 49, 0.05)',
+    backgroundColor: glass.successTint,
   },
   questionAnswerContent: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
   questionAnswerCheckbox: {

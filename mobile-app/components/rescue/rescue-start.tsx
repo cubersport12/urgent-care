@@ -50,7 +50,7 @@ export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescue
     await onStart();
   }, [addOrUpdate, onRescueSessionStarted, onStart]);
 
-  const { primary: tintColor } = useAppTheme();
+  const { primary: tintColor, border } = useAppTheme();
   const footerPaddingBottom =
     Math.max(insets.bottom, 12) + (isWide ? 12 : Spacing.nav);
 
@@ -117,7 +117,7 @@ export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescue
               </View>
               <View style={styles.parametersContainer}>
                 {rescueItem.data?.parameters?.map((param) => (
-                  <View key={param.id} style={styles.parameterItem}>
+                  <View key={param.id} style={[styles.parameterItem, { borderBottomColor: border }]}>
                     <View style={styles.parameterRow}>
                       <ThemedText style={styles.parameterLabel}>{param.name}:</ThemedText>
                       <ThemedText type="mono" style={styles.parameterValue}>
@@ -201,7 +201,6 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(128, 128, 128, 0.2)',
   },
   parameterRow: {
     flexDirection: 'row',

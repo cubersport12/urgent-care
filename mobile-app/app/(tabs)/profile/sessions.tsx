@@ -30,7 +30,7 @@ function sessionStatus(s: SessionOut): { label: string; ended: boolean } {
 }
 
 export default function SessionsScreen() {
-  const { neutralSoft, primary } = useAppTheme();
+  const { neutralSoft, primary, elevated2, primaryContainer, borderVariant } = useAppTheme();
   const { contentPaddingBottom } = useNavRail();
   const [sessions, setSessions] = useState<SessionOut[] | null>(null);
 
@@ -76,7 +76,7 @@ export default function SessionsScreen() {
                     <View
                       style={[
                         styles.iconWrap,
-                        { backgroundColor: status.ended ? 'rgba(128,128,128,0.15)' : `${primary}1A` },
+                        { backgroundColor: status.ended ? elevated2 : primaryContainer },
                       ]}
                     >
                       <IconSymbol
@@ -109,7 +109,7 @@ export default function SessionsScreen() {
                     ) : null}
                   </View>
                   {idx < sessions.length - 1 && (
-                    <View style={[styles.divider, { backgroundColor: 'rgba(128,128,128,0.15)' }]} />
+                    <View style={[styles.divider, { backgroundColor: borderVariant }]} />
                   )}
                 </View>
               );

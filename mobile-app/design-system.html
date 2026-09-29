@@ -24,7 +24,10 @@
   --c-elevated1:rgba(255,255,255,0.05); --c-elevated2:rgba(255,255,255,0.08); --c-elevated3:rgba(255,255,255,0.12);
   --c-neutral:#9BA1A6; --c-neutralSoft:#7E7E7E; --c-icon:#7E7E7E; --c-onNeutral:#000000; --c-onNeutralSoft:#FFFFFF;
   --c-border:rgba(255,255,255,0.1); --c-borderVariant:rgba(255,255,255,0.08);
-  --c-shadow:#000000; --c-white:#FFFFFF; --c-accentPurple:#A78BFA;
+  --c-shadow:#000000; --c-white:#FFFFFF; --c-accentPurple:#A78BFA; --c-accentPurpleContainer:rgba(167,139,250,0.15);
+  --c-surfaceRaised:#1C1C1E; --c-surfaceRaisedPressed:#2C2C2E;
+  --c-severityNormal:rgba(96,125,139,0.92); --c-severityLow:rgba(33,150,243,0.92);
+  --c-severityMedium:rgba(255,152,0,0.92); --c-severityHigh:rgba(211,47,47,0.92);
   /* Glass.dark */
   --glass-background:rgba(255,255,255,0.05); --glass-backgroundSubtle:rgba(255,255,255,0.03); --glass-backgroundHover:rgba(255,255,255,0.06);
   --glass-border:rgba(255,255,255,0.1); --glass-borderSubtle:rgba(255,255,255,0.08); --glass-borderHover:rgba(255,255,255,0.2);
@@ -32,7 +35,9 @@
   --glass-primaryTint:rgba(0,132,255,0.1); --glass-primaryBorder:rgba(0,132,255,0.3);
   --glass-successTint:rgba(77,139,49,0.1); --glass-successBorder:rgba(77,139,49,0.2);
   --glass-dangerTint:rgba(255,107,107,0.1); --glass-dangerBorder:rgba(255,107,107,0.2);
-  --glass-row:rgba(255,255,255,0.02);
+  --glass-warningTint:rgba(245,158,11,0.1); --glass-warningBorder:rgba(245,158,11,0.2);
+  --glass-row:rgba(255,255,255,0.02); --glass-insetHighlight:rgba(255,255,255,0.1);
+  --glass-imageScrim:rgba(0,0,0,0.35); --glass-imageScrimSoft:rgba(0,0,0,0.25);
   /* Glow.dark */
   --glow-primary:rgba(0,132,255,0.3); --glow-primaryStrong:rgba(0,132,255,0.6);
   --glow-success:rgba(77,139,49,0.4); --glow-danger:rgba(255,107,107,0.4); --glow-title:rgba(0,132,255,0.2);
@@ -65,7 +70,10 @@
   --c-elevated1:rgba(0,0,0,0.03); --c-elevated2:rgba(0,0,0,0.05); --c-elevated3:rgba(0,0,0,0.08);
   --c-neutral:#6B7280; --c-neutralSoft:#9CA3AF; --c-icon:#6B7280; --c-onNeutral:#FFFFFF; --c-onNeutralSoft:#FFFFFF;
   --c-border:rgba(0,0,0,0.1); --c-borderVariant:rgba(0,0,0,0.06);
-  --c-shadow:#000000; --c-white:#FFFFFF; --c-accentPurple:#8B5CF6;
+  --c-shadow:#000000; --c-white:#FFFFFF; --c-accentPurple:#8B5CF6; --c-accentPurpleContainer:rgba(139,92,246,0.12);
+  --c-surfaceRaised:#FFFFFF; --c-surfaceRaisedPressed:#EEF2F7;
+  --c-severityNormal:rgba(96,125,139,0.92); --c-severityLow:rgba(33,150,243,0.92);
+  --c-severityMedium:rgba(255,152,0,0.92); --c-severityHigh:rgba(211,47,47,0.92);
   /* Glass.light */
   --glass-background:#FFFFFF; --glass-backgroundSubtle:#F3F4F6; --glass-backgroundHover:#ECEEF1;
   --glass-border:rgba(0,0,0,0.08); --glass-borderSubtle:rgba(0,0,0,0.06); --glass-borderHover:rgba(0,0,0,0.14);
@@ -73,7 +81,9 @@
   --glass-primaryTint:rgba(0,112,224,0.1); --glass-primaryBorder:rgba(0,112,224,0.25);
   --glass-successTint:rgba(61,122,40,0.1); --glass-successBorder:rgba(61,122,40,0.2);
   --glass-dangerTint:rgba(224,85,85,0.1); --glass-dangerBorder:rgba(224,85,85,0.2);
-  --glass-row:rgba(0,0,0,0.03);
+  --glass-warningTint:rgba(217,119,6,0.1); --glass-warningBorder:rgba(217,119,6,0.2);
+  --glass-row:rgba(0,0,0,0.03); --glass-insetHighlight:transparent;
+  --glass-imageScrim:rgba(0,0,0,0.35); --glass-imageScrimSoft:rgba(0,0,0,0.25);
   /* Glow.light */
   --glow-primary:rgba(0,112,224,0.25); --glow-primaryStrong:rgba(0,112,224,0.45);
   --glow-success:rgba(61,122,40,0.35); --glow-danger:rgba(224,85,85,0.35); --glow-title:rgba(0,112,224,0.15);
@@ -296,14 +306,14 @@ table.spec td:last-child, table.spec th:last-child { text-align: right; }
 .input-field input::placeholder { color: var(--c-neutralSoft); }
 .eye-btn { background: none; border: none; cursor: pointer; color: var(--c-neutralSoft); padding: 4px; display: flex; }
 
-/* --- StatusBadge (цвета захардкожены в компоненте, обе темы одинаково) --- */
+/* --- StatusBadge (токены success / error / neutralSoft + Glass-тинты) --- */
 .badge {
   display: inline-flex; align-items: center; gap: 4px; border-radius: 9999px;
   border: 1px solid transparent; padding: 4px 8px; font-size: 11px; font-weight: 500; white-space: nowrap;
 }
-.b-good   { color: #4D8B31; background: rgba(77,139,49,0.1);  border-color: rgba(77,139,49,0.2); }
-.b-mute   { color: #7E7E7E; background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
-.b-bad    { color: #FF6B6B; background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.2); }
+.b-good { color: var(--c-success); background: var(--glass-successTint); border-color: var(--glass-successBorder); }
+.b-mute { color: var(--c-neutralSoft); background: var(--glass-backgroundSubtle); border-color: var(--glass-borderSubtle); }
+.b-bad  { color: var(--c-error); background: var(--glass-dangerTint); border-color: var(--glass-dangerBorder); }
 
 /* --- ProgressBar --- */
 .progress { width: 100%; height: 6px; border-radius: 9999px; background: var(--glass-progressTrack); overflow: hidden; }
@@ -332,23 +342,23 @@ table.spec td:last-child, table.spec th:last-child { text-align: right; }
 .cc-desc { font-size: 13px; color: var(--c-neutralSoft); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cc-chev { color: var(--c-neutralSoft); }
 
-/* --- FilterPills (активные цвета захардкожены) --- */
+/* --- FilterPills --- */
 .pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
 .pill {
   border-radius: 9999px; border: 1px solid var(--glass-borderSubtle); background: var(--glass-backgroundSubtle);
   color: var(--c-text); padding: 8px 14px; font: 500 13px 'Inter', sans-serif; cursor: pointer;
 }
-.pill.active { background: rgba(0,132,255,0.15); border-color: rgba(0,132,255,0.4); color: var(--c-primary); }
+.pill.active { background: var(--c-primaryContainer); border-color: var(--glass-primaryBorder); color: var(--c-primary); }
 
 /* --- Теги последствий (rescue, серьёзность) --- */
 .tag {
-  display: inline-flex; padding: 8px 12px; border-radius: 14px; color: #FFFFFF;
+  display: inline-flex; padding: 8px 12px; border-radius: 14px; color: var(--c-white);
   font-size: 14px; font-weight: 600; line-height: 19px;
 }
-.t-normal { background: rgba(96,125,139,0.92); }
-.t-low    { background: rgba(33,150,243,0.92); }
-.t-medium { background: rgba(255,152,0,0.92); }
-.t-high   { background: rgba(211,47,47,0.92); }
+.t-normal { background: var(--c-severityNormal); }
+.t-low    { background: var(--c-severityLow); }
+.t-medium { background: var(--c-severityMedium); }
+.t-high   { background: var(--c-severityHigh); }
 
 /* --- SideNavRail --- */
 .rail-frame {
@@ -536,17 +546,13 @@ footer code { color: var(--c-neutral); }
   Свотчи ниже реагируют на переключатель темы в шапке; подписи показывают значения обеих тем (L — светлая, D — тёмная).</p>
   <div id="colorGroups"></div>
 
-  <h3 class="h3">Цвета вне токенов (захардкожены в компонентах)</h3>
-  <p class="sec-sub">Найдены при аудите — используемы, но не входят в палитру. При рефакторинге стоит перенести в токены.</p>
+  <h3 class="h3">Цвета вне токенов (сознательные исключения)</h3>
+  <p class="sec-sub">После приведения кода к ДС остались только эти отклонения — каждое с причиной:</p>
   <div class="card">
     <table class="spec">
-      <tr><th>Где</th><th>Цвет(а)</th><th>Назначение</th></tr>
-      <tr><td>StatusBadge</td><td><code>#4D8B31 / #7E7E7E / #FF6B6B</code> + тинты</td><td>статусы материалов, одинаково в обеих темах</td></tr>
-      <tr><td>FilterPills (active)</td><td><code>rgba(0,132,255,.15)</code> / <code>.4</code></td><td>активная пилюля фильтра</td></tr>
-      <tr><td>GlobalNotificationBanner</td><td><code>#1C1C1E</code>, <code>rgba(16,185,129,.15)</code></td><td>непрозрачный фон тоста, изумрудный чип иконки</td></tr>
-      <tr><td>ParameterBadge (rescue)</td><td><code>#1C1C1E → #2C2C2E</code> / <code>#FFFFFF → #EEF2F7</code></td><td>бейдж параметра и цвет вспышки при изменении</td></tr>
-      <tr><td>Теги последствий (rescue)</td><td><code>rgba(96,125,139,.92)</code> · <code>rgba(33,150,243,.92)</code> · <code>rgba(255,152,0,.92)</code> · <code>rgba(211,47,47,.92)</code></td><td>серьёзность: normal / low / medium / high</td></tr>
-      <tr><td>ParticleHelix (не используется)</td><td><code>#0084FF · #F59E0B · #FF6B6B · #4D8B31</code></td><td>декоративная спираль, 60 частиц</td></tr>
+      <tr><th>Где</th><th>Цвет(а)</th><th>Почему</th></tr>
+      <tr><td>QR-код (qr-code.tsx)</td><td><code>#111111</code> на <code>#FFFFFF</code></td><td>максимальный контраст для сканирования — вне темы намеренно</td></tr>
+      <tr><td>AnimatedOrb, ParticleHelix</td><td>декоративные палитры</td><td>компоненты нигде не используются — рекомендованы к удалению</td></tr>
     </table>
   </div>
 </section>
@@ -698,7 +704,7 @@ footer code { color: var(--c-neutral); }
       <span class="badge b-bad"><span class="ms s12">cancel</span>Не успешно</span>
       <span class="badge b-mute"><span class="ms s12">lock</span>Заблокировано</span>
     </div>
-    <div class="demo-cap">pill · padding 4/8 · текст 11/500 · иконка 12. Цвета захардкожены, не зависят от темы.</div>
+    <div class="demo-cap">pill · padding 4/8 · текст 11/500 · иконка 12. Токены: success/error/neutralSoft + Glass-тинты — зависят от темы.</div>
   </div>
 
   <h3 class="h3">ProgressBar</h3>
@@ -745,7 +751,7 @@ footer code { color: var(--c-neutral); }
       <button class="pill">Тесты</button>
       <button class="pill">Режимы</button>
     </div>
-    <div class="demo-cap">pill · padding 8/14 · текст 13/500 · кликабельны. Активный: синий тинт-фон + рамка + primary-текст (захардкожено).</div>
+    <div class="demo-cap">pill · padding 8/14 · текст 13/500 · кликабельны. Активный: primaryContainer + primaryBorder + primary.</div>
   </div>
 
   <h3 class="h3">Теги последствий (rescue)</h3>
@@ -805,6 +811,9 @@ footer code { color: var(--c-neutral); }
       <tr><td><code>primaryTint / primaryBorder</code></td><td><code>rgba(0,112,224,.1) / .25</code></td><td><code>rgba(0,132,255,.1) / .3</code></td><td>активный пункт навигации</td></tr>
       <tr><td><code>successTint / successBorder</code></td><td><code>rgba(61,122,40,.1) / .2</code></td><td><code>rgba(77,139,49,.1) / .2</code></td><td>успешные состояния</td></tr>
       <tr><td><code>dangerTint / dangerBorder</code></td><td><code>rgba(224,85,85,.1) / .2</code></td><td><code>rgba(255,107,107,.1) / .2</code></td><td>опасные состояния</td></tr>
+      <tr><td><code>warningTint / warningBorder</code></td><td><code>rgba(217,119,6,.1) / .2</code></td><td><code>rgba(245,158,11,.1) / .2</code></td><td>предупреждающие состояния, премиум-тариф</td></tr>
+      <tr><td><code>insetHighlight</code></td><td><code>transparent</code></td><td><code>rgba(255,255,255,.1)</code></td><td>верхняя линия-блик GlassCard</td></tr>
+      <tr><td><code>imageScrim / imageScrimSoft</code></td><td colspan="2" style="text-align:left"><code>rgba(0,0,0,.35) / .25</code> — одинаково в обеих темах</td><td>затемнение поверх фото/сцен</td></tr>
       <tr><td><code>row</code></td><td><code>rgba(0,0,0,.03)</code></td><td><code>rgba(255,255,255,.02)</code></td><td>зебра строк</td></tr>
     </table>
   </div>
@@ -1009,16 +1018,20 @@ const PALETTE = {
   onLayout1:['#1A1A1A','#EAEAEA'], onLayout2:['#1A1A1A','#EAEAEA'], onLayout3:['#1A1A1A','#EAEAEA'],
   elevated1:['rgba(0,0,0,0.03)','rgba(255,255,255,0.05)'], elevated2:['rgba(0,0,0,0.05)','rgba(255,255,255,0.08)'], elevated3:['rgba(0,0,0,0.08)','rgba(255,255,255,0.12)'],
   neutral:['#6B7280','#9BA1A6'], neutralSoft:['#9CA3AF','#7E7E7E'], icon:['#6B7280','#7E7E7E'], onNeutral:['#FFFFFF','#000000'], onNeutralSoft:['#FFFFFF','#FFFFFF'],
-  white:['#FFFFFF','#FFFFFF'], accentPurple:['#8B5CF6','#A78BFA'],
+  white:['#FFFFFF','#FFFFFF'], accentPurple:['#8B5CF6','#A78BFA'], accentPurpleContainer:['rgba(139,92,246,0.12)','rgba(167,139,250,0.15)'],
   border:['rgba(0,0,0,0.1)','rgba(255,255,255,0.1)'], borderVariant:['rgba(0,0,0,0.06)','rgba(255,255,255,0.08)'], shadow:['#000000','#000000'],
+  surfaceRaised:['#FFFFFF','#1C1C1E'], surfaceRaisedPressed:['#EEF2F7','#2C2C2E'],
+  severityNormal:['rgba(96,125,139,0.92)','rgba(96,125,139,0.92)'], severityLow:['rgba(33,150,243,0.92)','rgba(33,150,243,0.92)'],
+  severityMedium:['rgba(255,152,0,0.92)','rgba(255,152,0,0.92)'], severityHigh:['rgba(211,47,47,0.92)','rgba(211,47,47,0.92)'],
 };
 const GROUPS = [
   ['Primary — основной акцент', ['primary','onPrimary','primaryContainer','onPrimaryContainer']],
   ['Success — успех', ['success','onSuccess','successContainer','onSuccessContainer']],
   ['Error — ошибка, режим спасения', ['error','onError','errorContainer','onErrorContainer']],
   ['Warning — предупреждение', ['warning','onWarning','warningContainer','onWarningContainer']],
-  ['Поверхности', ['page','layout1','layout2','layout3','elevated1','elevated2','elevated3']],
-  ['Текст и нейтральные', ['text','onLayout1','neutral','neutralSoft','icon','onNeutral','onNeutralSoft','accentPurple']],
+  ['Поверхности', ['page','layout1','layout2','layout3','elevated1','elevated2','elevated3','surfaceRaised','surfaceRaisedPressed']],
+  ['Текст и нейтральные', ['text','onLayout1','neutral','neutralSoft','icon','onNeutral','onNeutralSoft','accentPurple','accentPurpleContainer']],
+  ['Серьёзность последствий (rescue)', ['severityNormal','severityLow','severityMedium','severityHigh']],
   ['Границы и служебные', ['border','borderVariant','shadow','white']],
 ];
 document.getElementById('colorGroups').innerHTML = GROUPS.map(([title, tokens]) => `

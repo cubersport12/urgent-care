@@ -1,5 +1,5 @@
 import { ThemedText } from '@/components/themed-text';
-import { useGlass } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { ScrollView, Pressable, StyleSheet } from 'react-native';
 
 export type FilterKey = 'all' | 'article' | 'test' | 'rescue';
@@ -18,6 +18,7 @@ type FilterPillsProps = {
 
 export function FilterPills({ value, onChange }: FilterPillsProps) {
   const glass = useGlass();
+  const { primary, primaryContainer } = useAppTheme();
 
   return (
     <ScrollView
@@ -34,17 +35,16 @@ export function FilterPills({ value, onChange }: FilterPillsProps) {
             style={[
               styles.pill,
               {
-                backgroundColor: active ? 'rgba(0, 132, 255, 0.15)' : glass.backgroundSubtle,
-                borderColor: active ? 'rgba(0, 132, 255, 0.4)' : glass.borderSubtle,
+                backgroundColor: active ? primaryContainer : glass.backgroundSubtle,
+                borderColor: active ? glass.primaryBorder : glass.borderSubtle,
               },
             ]}
           >
             <ThemedText
               style={[
                 styles.label,
-                { color: active ? '#0084FF' : undefined },
+                { color: active ? primary : undefined },
               ]}
-              lightColor={active ? '#0070E0' : undefined}
             >
               {tab.label}
             </ThemedText>

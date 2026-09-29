@@ -1,6 +1,7 @@
 import { Fonts } from '@/constants/theme';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { StyleSheet, View } from 'react-native';
 
 export type StatusType =
@@ -12,68 +13,33 @@ export type StatusType =
   | 'failure'
   | 'locked';
 
-const config: Record<
-  StatusType,
-  { icon: string; text: string; color: string; bg: string; border: string }
-> = {
-  read: {
-    icon: 'checkmark.circle.fill',
-    text: 'Прочитано',
-    color: '#4D8B31',
-    bg: 'rgba(77, 139, 49, 0.1)',
-    border: 'rgba(77, 139, 49, 0.2)',
-  },
-  unread: {
-    icon: 'circle',
-    text: 'Не прочитано',
-    color: '#7E7E7E',
-    bg: 'rgba(255, 255, 255, 0.03)',
-    border: 'rgba(255, 255, 255, 0.08)',
-  },
-  passed: {
-    icon: 'checkmark.circle.fill',
-    text: 'Пройдено',
-    color: '#4D8B31',
-    bg: 'rgba(77, 139, 49, 0.1)',
-    border: 'rgba(77, 139, 49, 0.2)',
-  },
-  'not-passed': {
-    icon: 'circle',
-    text: 'Не пройдено',
-    color: '#7E7E7E',
-    bg: 'rgba(255, 255, 255, 0.03)',
-    border: 'rgba(255, 255, 255, 0.08)',
-  },
-  success: {
-    icon: 'trophy.fill',
-    text: 'Успешно',
-    color: '#4D8B31',
-    bg: 'rgba(77, 139, 49, 0.1)',
-    border: 'rgba(77, 139, 49, 0.2)',
-  },
-  failure: {
-    icon: 'xmark.circle.fill',
-    text: 'Не успешно',
-    color: '#FF6B6B',
-    bg: 'rgba(255, 107, 107, 0.1)',
-    border: 'rgba(255, 107, 107, 0.2)',
-  },
-  locked: {
-    icon: 'lock.fill',
-    text: 'Заблокировано',
-    color: '#7E7E7E',
-    bg: 'rgba(255, 255, 255, 0.03)',
-    border: 'rgba(255, 255, 255, 0.08)',
-  },
+type StatusTone = 'good' | 'mute' | 'bad';
+
+const config: Record<StatusType, { icon: string; text: string; tone: StatusTone }> = {
+  read: { icon: 'checkmark.circle.fill', text: 'Прочитано', tone: 'good' },
+  unread: { icon: 'circle', text: 'Не прочитано', tone: 'mute' },
+  passed: { icon: 'checkmark.circle.fill', text: 'Пройдено', tone: 'good' },
+  'not-passed': { icon: 'circle', text: 'Не пройдено', tone: 'mute' },
+  success: { icon: 'trophy.fill', text: 'Успешно', tone: 'good' },
+  failure: { icon: 'xmark.circle.fill', text: 'Не успешно', tone: 'bad' },
+  locked: { icon: 'lock.fill', text: 'Заблокировано', tone: 'mute' },
 };
 
 export function StatusBadge({ status }: { status: StatusType }) {
+  const { success, error, neutralSoft } = useAppTheme();
+  const glass = useGlass();
   const c = config[status];
 
+  const tone = {
+    good: { color: success, bg: glass.successTint, border: glass.successBorder },
+    mute: { color: neutralSoft, bg: glass.backgroundSubtle, border: glass.borderSubtle },
+    bad: { color: error, bg: glass.dangerTint, border: glass.dangerBorder },
+  }[c.tone];
+
   return (
-    <View style={[styles.badge, { backgroundColor: c.bg, borderColor: c.border }]}>
-      <IconSymbol name={c.icon as never} size={12} color={c.color} />
-      <ThemedText style={[styles.text, { color: c.color }]}>{c.text}</ThemedText>
+    <View style={[styles.badge, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+      <IconSymbol name={c.icon as never} size={12} color={tone.color} />
+      <ThemedText style={[styles.text, { color: tone.color }]}>{c.text}</ThemedText>
     </View>
   );
 }

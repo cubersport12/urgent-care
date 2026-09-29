@@ -8,7 +8,7 @@ import {
 } from '@/hooks/api/types';
 import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { fetchArticle } from '@/hooks/api/useArticles';
 import { ArticleView } from '@/components/article-view';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -37,6 +37,7 @@ type RescueViewProps = {
 
 export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 }: RescueViewProps) {
   const { page: backgroundColor, border: borderColor } = useAppTheme();
+  const glass = useGlass();
   const insets = useSafeAreaInsets();
   const { isWide, contentPaddingLeft } = useNavRail();
   const handleChromeBack = useCallback(() => {
@@ -268,7 +269,10 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
         </View>
       )}
       {isLoadingArticle ? (
-        <View style={[StyleSheet.absoluteFill, styles.articleLoading]} pointerEvents="auto">
+        <View
+          style={[StyleSheet.absoluteFill, styles.articleLoading, { backgroundColor: glass.imageScrimSoft }]}
+          pointerEvents="auto"
+        >
           <ActivityIndicator size="large" />
         </View>
       ) : null}
@@ -303,7 +307,6 @@ const styles = StyleSheet.create({
   articleLoading: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.25)',
     zIndex: 20,
   },
 });

@@ -1,3 +1,4 @@
+import { Colors, type ThemeMode } from '@/constants/theme';
 import type { ViewStyle } from 'react-native';
 
 export type PdfViewProps = {
@@ -64,8 +65,9 @@ export function normalizePdfDataUri(source: string): string {
 }
 
 /** HTML с pdf.js для Android (WebView не рендерит PDF напрямую) */
-export function pdfJsHtmlFromFile(fileUri: string): string {
+export function pdfJsHtmlFromFile(fileUri: string, theme: ThemeMode = 'light'): string {
   const safeUri = fileUri.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const c = Colors[theme];
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -73,10 +75,10 @@ export function pdfJsHtmlFromFile(fileUri: string): string {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #fff; padding: 8px; }
+    body { background: ${c.page}; padding: 8px; }
     canvas { display: block; width: 100% !important; height: auto !important; margin-bottom: 8px; }
-    #error { color: #c00; padding: 16px; font-family: sans-serif; }
-    #loading { padding: 24px; text-align: center; font-family: sans-serif; color: #666; }
+    #error { color: ${c.error}; padding: 16px; font-family: sans-serif; }
+    #loading { padding: 24px; text-align: center; font-family: sans-serif; color: ${c.neutral}; }
   </style>
 </head>
 <body>
@@ -119,8 +121,9 @@ export function pdfJsHtmlFromFile(fileUri: string): string {
 }
 
 /** pdf.js с base64-данными (fallback, если file:// недоступен) */
-export function pdfJsHtmlFromBase64(base64: string): string {
+export function pdfJsHtmlFromBase64(base64: string, theme: ThemeMode = 'light'): string {
   const safeB64 = base64.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\s/g, '');
+  const c = Colors[theme];
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -128,10 +131,10 @@ export function pdfJsHtmlFromBase64(base64: string): string {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #fff; padding: 8px; }
+    body { background: ${c.page}; padding: 8px; }
     canvas { display: block; width: 100% !important; height: auto !important; margin-bottom: 8px; }
-    #error { color: #c00; padding: 16px; font-family: sans-serif; }
-    #loading { padding: 24px; text-align: center; font-family: sans-serif; color: #666; }
+    #error { color: ${c.error}; padding: 16px; font-family: sans-serif; }
+    #loading { padding: 24px; text-align: center; font-family: sans-serif; color: ${c.neutral}; }
   </style>
 </head>
 <body>

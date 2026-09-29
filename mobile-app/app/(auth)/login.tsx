@@ -244,7 +244,7 @@ export default function LoginScreen() {
                 />
 
                 {notVerifiedEmail ? (
-                  <View style={styles.verifyNotice}>
+                  <View style={[styles.verifyNotice, { borderColor: border }]}>
                     <ThemedText style={styles.verifyText}>
                       Почта не подтверждена. Проверьте письмо или отправьте его ещё раз.
                     </ThemedText>
@@ -427,7 +427,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(128,128,128,0.4)',
     gap: 8,
   },
   verifyText: {

@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { subscribeNotifications } from '@/lib/notifications-ws';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -31,11 +31,12 @@ type UnlockPopup =
 
 function PopupIcon({ path, kind }: { path?: string | null; kind: UnlockPopup['kind'] }) {
   const { response, isLoading } = useFileImage(path ?? '');
-  const color = '#F59E0B';
+  const { warning, warningContainer } = useAppTheme();
+  const color = warning;
   const name = kind === 'reward' ? 'gift.fill' : 'trophy.fill';
 
   return (
-    <View style={[styles.iconBox, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+    <View style={[styles.iconBox, { backgroundColor: warningContainer }]}>
       {path && isLoading ? (
         <ActivityIndicator size="small" color={color} />
       ) : path && response ? (
@@ -50,7 +51,8 @@ function PopupIcon({ path, kind }: { path?: string | null; kind: UnlockPopup['ki
 /** Listens for `achievement_unlocked` on the notifications WS and shows unlock modals. */
 export function AchievementsProvider({ children }: { children: React.ReactNode }) {
   const { session, initialized } = useAuth();
-  const { primary, text, neutralSoft, page } = useAppTheme();
+  const { primary, text, neutralSoft, page, onPrimary } = useAppTheme();
+  const glass = useGlass();
   const [popup, setPopup] = useState<UnlockPopup | null>(null);
   const queueRef = useRef<UnlockPopup[]>([]);
 
@@ -100,7 +102,7 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
     <>
       {children}
       <Modal visible={!!popup} transparent animationType="fade" onRequestClose={dismiss}>
-        <View style={styles.backdrop}>
+        <View style={[styles.backdrop, { backgroundColor: glass.scrim }]}>
           <View style={[styles.card, { backgroundColor: page }]}>
             {popup ? <PopupIcon path={popup.iconPath} kind={popup.kind} /> : null}
             <ThemedText style={[styles.eyebrow, { color: primary }]}>
@@ -122,7 +124,7 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
                 { backgroundColor: primary, opacity: pressed ? 0.9 : 1 },
               ]}
             >
-              <ThemedText style={styles.btnText}>Отлично</ThemedText>
+              <ThemedText style={[styles.btnText, { color: onPrimary }]}>Отлично</ThemedText>
             </Pressable>
           </View>
         </View>
@@ -134,7 +136,6 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 28,
@@ -184,7 +185,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   btnText: {
-    color: '#fff',
     fontWeight: '600',
     fontSize: 16,
   },

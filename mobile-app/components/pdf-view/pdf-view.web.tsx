@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
+import { useTheme } from '@/contexts/theme-context';
 import { pdfJsHtmlFromBase64, pdfJsHtmlFromFile, type PdfViewProps } from './pdf-view.types';
 
 /**
@@ -16,13 +17,14 @@ export function PdfView({
   onScrollToEnd,
   onScrollProgress,
 }: PdfViewProps) {
+  const { theme } = useTheme();
   const html = useMemo(() => {
     if (!source) {
       return null;
     }
     const base64Match = source.match(/data:.*?;base64,(.+)/);
-    return base64Match ? pdfJsHtmlFromBase64(base64Match[1]) : pdfJsHtmlFromFile(source);
-  }, [source]);
+    return base64Match ? pdfJsHtmlFromBase64(base64Match[1], theme) : pdfJsHtmlFromFile(source, theme);
+  }, [source, theme]);
 
   // Колбэки — через ref, чтобы слушатель message не переустанавливать на каждый рендер
   const callbacksRef = useRef({ onLoad, onError, onScrollToEnd, onScrollProgress });

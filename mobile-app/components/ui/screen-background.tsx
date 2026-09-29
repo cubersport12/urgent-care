@@ -1,5 +1,5 @@
 import { useNavRail } from '@/contexts/nav-rail-context';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +18,7 @@ export function ScreenBackground({
   ...rest
 }: ScreenBackgroundProps) {
   const { page } = useAppTheme();
+  const glass = useGlass();
   const insets = useSafeAreaInsets();
   const { isWide, contentPaddingLeft } = useNavRail();
 
@@ -37,7 +38,7 @@ export function ScreenBackground({
     >
       {variant === 'study' && (
         <LinearGradient
-          colors={['rgba(0, 132, 255, 0.08)', 'transparent']}
+          colors={[glass.primaryTint, 'transparent']}
           style={styles.gradientTop}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}

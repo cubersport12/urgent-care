@@ -43,22 +43,6 @@ function normalizeImplicationSeverity(raw: unknown): RescueParameterSeverityEnum
   return undefined;
 }
 
-/** Заливка тега по серьёзности (как у бейджей параметров в сцене) */
-function implicationTagBackground(severity?: RescueParameterSeverityEnum): string {
-  switch (severity) {
-    case RescueParameterSeverityEnum.Normal:
-      return 'rgba(96, 125, 139, 0.92)';
-    case RescueParameterSeverityEnum.Low:
-      return 'rgba(33, 150, 243, 0.92)';
-    case RescueParameterSeverityEnum.Medium:
-      return 'rgba(255, 152, 0, 0.92)';
-    case RescueParameterSeverityEnum.High:
-      return 'rgba(211, 47, 47, 0.92)';
-    default:
-      return 'rgba(0, 0, 0, 0.65)';
-  }
-}
-
 export function RescueComplete({
   rescueItem,
   parameterValues,
@@ -72,7 +56,29 @@ export function RescueComplete({
     successContainer,
     errorContainer,
     primaryContainer,
+    white,
+    border,
+    severityNormal,
+    severityLow,
+    severityMedium,
+    severityHigh,
+    neutral,
   } = useAppTheme();
+
+  const implicationTagBackground = (severity?: RescueParameterSeverityEnum): string => {
+    switch (severity) {
+      case RescueParameterSeverityEnum.Normal:
+        return severityNormal;
+      case RescueParameterSeverityEnum.Low:
+        return severityLow;
+      case RescueParameterSeverityEnum.Medium:
+        return severityMedium;
+      case RescueParameterSeverityEnum.High:
+        return severityHigh;
+      default:
+        return neutral;
+    }
+  };
 
   const data = useMemo(() => parseRescueItemDataVm(rescueItem.data), [rescueItem.data]);
 
@@ -187,7 +193,7 @@ export function RescueComplete({
                 </ThemedText>
                 <View style={styles.rowsWrap}>
                   {parameterRows.map((row) => (
-                    <View key={row.id} style={styles.parameterRow}>
+                    <View key={row.id} style={[styles.parameterRow, { borderBottomColor: border }]}>
                       <ThemedText style={styles.parameterName}>{row.name}</ThemedText>
                       <ThemedText type="mono" style={styles.parameterValue}>
                         {row.display}
@@ -212,7 +218,7 @@ export function RescueComplete({
                         key={`${i}-${imp.description.slice(0, 32)}`}
                         style={[styles.implicationTag, { backgroundColor: bg }]}
                       >
-                        <ThemedText style={styles.implicationTagText}>
+                        <ThemedText style={[styles.implicationTagText, { color: white }]}>
                           {imp.description.trim()}
                         </ThemedText>
                       </View>
@@ -301,7 +307,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(128, 128, 128, 0.25)',
   },
   parameterName: {
     fontSize: 15,
@@ -324,7 +329,6 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   implicationTagText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 19,

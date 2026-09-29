@@ -25,7 +25,7 @@ type TestViewProps = {
 export function TestView({ test, onBack, onStart }: TestViewProps) {
   const { isWide } = useNavRail();
   useChromeBack(onBack);
-  const { primary: tintColor } = useAppTheme();
+  const { primary: tintColor, border } = useAppTheme();
   const insets = useSafeAreaInsets();
   // Кнопка прибита к низу: таб-бар absolute — нужен запас на его высоту
   const footerPaddingBottom =
@@ -121,7 +121,7 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
             </View>
             <View style={styles.rowsContainer}>
               {infoRows.map((row) => (
-                <View key={row.label} style={styles.row}>
+                <View key={row.label} style={[styles.row, { borderBottomColor: border }]}>
                   <ThemedText style={styles.rowLabel}>{row.label}:</ThemedText>
                   <ThemedText type="mono" style={styles.rowValue}>
                     {row.value}
@@ -200,7 +200,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(128, 128, 128, 0.2)',
   },
   rowLabel: { fontSize: 16, fontWeight: '500', flex: 1 },
   rowValue: { fontSize: 16, fontWeight: '600', marginLeft: 12 },

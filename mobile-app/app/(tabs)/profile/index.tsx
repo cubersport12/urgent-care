@@ -13,7 +13,7 @@ import { useNotifications } from '@/contexts/notifications-context';
 import { useTheme } from '@/contexts/theme-context';
 import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
 import { staggerEnter } from '@/hooks/use-enter-animation';
-import { useAppTheme, useGlow } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass, useGlow } from '@/hooks/use-theme-color';
 import { updateMe } from '@/lib/auth-api';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -53,7 +53,7 @@ function ProfileRow({
   textColor?: string;
   isLoading?: boolean;
 }) {
-  const { text, neutralSoft } = useAppTheme();
+  const { text, neutralSoft, borderVariant, elevated1 } = useAppTheme();
 
   return (
     <View>
@@ -61,7 +61,7 @@ function ProfileRow({
         onPress={onPress}
         style={({ pressed }) => [
           styles.row,
-          pressed && styles.rowPressed,
+          pressed && { backgroundColor: elevated1 },
         ]}
       >
         <View style={[styles.rowIconContainer, { backgroundColor: iconBg }]}>
@@ -83,7 +83,7 @@ function ProfileRow({
           <View style={styles.rowChevronSpacer} />
         )}
       </Pressable>
-      {!isLast && <View style={[styles.rowDivider, { backgroundColor: 'rgba(128,128,128,0.15)' }]} />}
+      {!isLast && <View style={[styles.rowDivider, { backgroundColor: borderVariant }]} />}
     </View>
   );
 }
@@ -97,7 +97,25 @@ export default function ProfileScreen() {
   const [certificate, setCertificate] = useState<AppCertificate | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
-  const { primary, neutralSoft, error: dangerColor, text } = useAppTheme();
+  const {
+    primary,
+    neutralSoft,
+    error: dangerColor,
+    text,
+    success,
+    warning,
+    accentPurple,
+    neutral,
+    warningContainer,
+    primaryContainer,
+    successContainer,
+    accentPurpleContainer,
+    elevated1,
+    elevated2,
+    border,
+    borderVariant,
+  } = useAppTheme();
+  const glass = useGlass();
   const glow = useGlow();
   const { contentPaddingBottom } = useNavRail();
   const { data: stats, fetchData } = useAccountOverallStats();
@@ -184,7 +202,7 @@ export default function ProfileScreen() {
         <Animated.View entering={staggerEnter(1)} style={styles.profileCardWrap}>
           <GlassCard padding={16} borderRadius={16}>
             <View style={styles.profileHeaderRow}>
-              <View style={[styles.avatar, { borderColor: primary }]}>
+              <View style={[styles.avatar, { borderColor: primary, backgroundColor: glass.primaryTint }]}>
                 {avatarUri ? (
                   <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
                 ) : initials ? (
@@ -218,20 +236,20 @@ export default function ProfileScreen() {
                     style={[
                       styles.badge,
                       {
-                        backgroundColor: billing && billing.priceRub > 0 ? '#F59E0B15' : 'rgba(0, 132, 255, 0.1)',
-                        borderColor: billing && billing.priceRub > 0 ? '#F59E0B30' : 'rgba(0, 132, 255, 0.2)',
+                        backgroundColor: billing && billing.priceRub > 0 ? warningContainer : glass.primaryTint,
+                        borderColor: billing && billing.priceRub > 0 ? glass.warningBorder : glass.primaryBorder,
                       },
                     ]}
                   >
                     <IconSymbol
                       name={billing && billing.priceRub > 0 ? 'star.fill' : 'person.fill'}
                       size={12}
-                      color={billing && billing.priceRub > 0 ? '#F59E0B' : primary}
+                      color={billing && billing.priceRub > 0 ? warning : primary}
                     />
                     <ThemedText
                       style={[
                         styles.badgeText,
-                        { color: billing && billing.priceRub > 0 ? '#F59E0B' : primary },
+                        { color: billing && billing.priceRub > 0 ? warning : primary },
                       ]}
                     >
                       {billing ? (billing.priceRub > 0 ? 'Premium' : 'Базовый') : 'Загрузка…'}
@@ -255,7 +273,7 @@ export default function ProfileScreen() {
                   Статей
                 </ThemedText>
               </View>
-              <View style={[styles.statDivider, { backgroundColor: 'rgba(128,128,128,0.2)' }]} />
+              <View style={[styles.statDivider, { backgroundColor: border }]} />
               <View style={styles.statCol}>
                 <ThemedText style={[styles.statVal, { color: text }]}>
                   {stats.totals.tests}
@@ -264,7 +282,7 @@ export default function ProfileScreen() {
                   Тестов
                 </ThemedText>
               </View>
-              <View style={[styles.statDivider, { backgroundColor: 'rgba(128,128,128,0.2)' }]} />
+              <View style={[styles.statDivider, { backgroundColor: border }]} />
               <View style={styles.statCol}>
                 <ThemedText style={[styles.statVal, { color: text }]}>
                   {stats.totals.rescues}
@@ -285,8 +303,8 @@ export default function ProfileScreen() {
           <GlassCard padding={0} borderRadius={16}>
             <ProfileRow
               icon="star.fill"
-              iconBg="rgba(245, 158, 11, 0.1)"
-              iconColor="#F59E0B"
+              iconBg={warningContainer}
+              iconColor={warning}
               label="Мой тарифный план"
               value={billing?.tariffTitle ?? 'Загрузка…'}
               onPress={() => router.push('/(tabs)/profile/subscription')}
@@ -294,8 +312,8 @@ export default function ProfileScreen() {
             />
             <ProfileRow
               icon="ticket.fill"
-              iconBg="rgba(245, 158, 11, 0.1)"
-              iconColor="#F59E0B"
+              iconBg={warningContainer}
+              iconColor={warning}
               label="Промокоды"
               onPress={() => router.push('/(tabs)/profile/promo-codes')}
               isLast={true}
@@ -311,16 +329,16 @@ export default function ProfileScreen() {
           <GlassCard padding={0} borderRadius={16}>
             <ProfileRow
               icon="person.fill"
-              iconBg="rgba(59, 130, 246, 0.1)"
-              iconColor="#3B82F6"
+              iconBg={primaryContainer}
+              iconColor={primary}
               label="Редактировать профиль"
               onPress={() => router.push('/(tabs)/profile/edit')}
               isLast={false}
             />
             <ProfileRow
               icon="shield.fill"
-              iconBg="rgba(16, 185, 129, 0.1)"
-              iconColor="#10B981"
+              iconBg={successContainer}
+              iconColor={success}
               label="Активные сессии"
               onPress={() => router.push('/(tabs)/profile/sessions')}
               isLast={true}
@@ -337,8 +355,8 @@ export default function ProfileScreen() {
             {/* Theme Row */}
             <ProfileRow
               icon="moon.fill"
-              iconBg="rgba(139, 92, 246, 0.1)"
-              iconColor="#8B5CF6"
+              iconBg={accentPurpleContainer}
+              iconColor={accentPurple}
               label="Тема оформления"
               value={
                 themePreference === 'system'
@@ -354,7 +372,7 @@ export default function ProfileScreen() {
 
             {/* Theme Options Dropdown */}
             {themeOpen && (
-              <View style={[styles.themeOptions, { backgroundColor: 'rgba(128,128,128,0.04)' }]}>
+              <View style={[styles.themeOptions, { backgroundColor: elevated1 }]}>
                 {(['system', 'light', 'dark'] as const).map((pref, idx) => {
                   const active = themePreference === pref;
                   const label = pref === 'system' ? 'Системная' : pref === 'light' ? 'Светлая' : 'Тёмная';
@@ -367,7 +385,8 @@ export default function ProfileScreen() {
                       }}
                       style={({ pressed }) => [
                         styles.themeOptionRow,
-                        pressed && styles.rowPressed,
+                        { borderBottomColor: borderVariant },
+                        pressed && { backgroundColor: elevated1 },
                         idx === 2 && { borderBottomWidth: 0 },
                       ]}
                     >
@@ -391,8 +410,8 @@ export default function ProfileScreen() {
             {/* Language Row */}
             <ProfileRow
               icon="globe"
-              iconBg="rgba(59, 130, 246, 0.1)"
-              iconColor="#3B82F6"
+              iconBg={primaryContainer}
+              iconColor={primary}
               label="Язык приложения"
               value="Русский"
               onPress={() => Alert.alert('Язык', 'В данный момент поддерживается только русский язык')}
@@ -401,8 +420,8 @@ export default function ProfileScreen() {
 
             <ProfileRow
               icon="mappin.and.ellipse"
-              iconBg="rgba(239, 68, 68, 0.1)"
-              iconColor="#EF4444"
+              iconBg={glass.dangerTint}
+              iconColor={dangerColor}
               label="Город"
               value={user?.city?.label || user?.city?.name || 'Не указан'}
               onPress={() => setCityOpen(true)}
@@ -434,8 +453,8 @@ export default function ProfileScreen() {
             {/* Notifications Row */}
             <ProfileRow
               icon="bell.fill"
-              iconBg="rgba(16, 185, 129, 0.1)"
-              iconColor="#10B981"
+              iconBg={successContainer}
+              iconColor={success}
               label="Уведомления"
               value={unreadNotifications > 0 ? String(unreadNotifications) : undefined}
               onPress={() => router.push('/(tabs)/profile/notifications')}
@@ -452,8 +471,8 @@ export default function ProfileScreen() {
           <GlassCard padding={0} borderRadius={16}>
             <ProfileRow
               icon="qrcode"
-              iconBg="rgba(59, 130, 246, 0.1)"
-              iconColor="#3B82F6"
+              iconBg={primaryContainer}
+              iconColor={primary}
               label="QR-код"
               onPress={() => router.push('/(tabs)/profile/qr-code')}
               isLast={false}
@@ -461,8 +480,8 @@ export default function ProfileScreen() {
             {certificate ? (
               <ProfileRow
                 icon="doc.text.fill"
-                iconBg="rgba(16, 185, 129, 0.1)"
-                iconColor="#10B981"
+                iconBg={successContainer}
+                iconColor={success}
                 label="Мой сертификат"
                 onPress={() => router.push('/(tabs)/profile/certificate')}
                 isLast={false}
@@ -470,8 +489,8 @@ export default function ProfileScreen() {
             ) : null}
             <ProfileRow
               icon="trophy.fill"
-              iconBg="rgba(245, 158, 11, 0.1)"
-              iconColor="#F59E0B"
+              iconBg={warningContainer}
+              iconColor={warning}
               label="Достижения и награды"
               onPress={() => router.push('/(tabs)/profile/achievements')}
               isLast={true}
@@ -487,8 +506,8 @@ export default function ProfileScreen() {
           <GlassCard padding={0} borderRadius={16}>
             <ProfileRow
               icon="bubble.left.and.bubble.right.fill"
-              iconBg="rgba(59, 130, 246, 0.1)"
-              iconColor="#3B82F6"
+              iconBg={primaryContainer}
+              iconColor={primary}
               label="Чат с поддержкой"
               onPress={() => router.push('/(tabs)/profile/support')}
               isLast={true}
@@ -504,8 +523,8 @@ export default function ProfileScreen() {
           <GlassCard padding={0} borderRadius={16}>
             <ProfileRow
               icon="info.circle.fill"
-              iconBg="rgba(107, 114, 128, 0.1)"
-              iconColor="#6B7280"
+              iconBg={elevated2}
+              iconColor={neutral}
               label="Нормативные документы"
               onPress={() => router.push('/(tabs)/profile/legal')}
               isLast={false}
@@ -513,8 +532,8 @@ export default function ProfileScreen() {
 
             <ProfileRow
               icon="info.circle.fill"
-              iconBg="rgba(107, 114, 128, 0.1)"
-              iconColor="#6B7280"
+              iconBg={elevated2}
+              iconColor={neutral}
               label="О приложении"
               onPress={() => router.push('/(tabs)/profile/about')}
               isLast={false}
@@ -522,7 +541,7 @@ export default function ProfileScreen() {
 
             <ProfileRow
               icon="trash.fill"
-              iconBg="rgba(239, 68, 68, 0.1)"
+              iconBg={glass.dangerTint}
               iconColor={dangerColor}
               label="Удалить аккаунт"
               onPress={() => router.push('/(tabs)/profile/delete-account')}
@@ -532,7 +551,7 @@ export default function ProfileScreen() {
 
             <ProfileRow
               icon="rectangle.portrait.and.arrow.right"
-              iconBg="rgba(239, 68, 68, 0.1)"
+              iconBg={glass.dangerTint}
               iconColor={dangerColor}
               label="Выйти из аккаунта"
               onPress={() => void handleSignOut()}
@@ -566,7 +585,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(0, 132, 255, 0.08)',
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
@@ -649,9 +667,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
-  rowPressed: {
-    backgroundColor: 'rgba(128, 128, 128, 0.08)',
-  },
   rowIconContainer: {
     width: 32,
     height: 32,
@@ -691,7 +706,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(128, 128, 128, 0.1)',
   },
   themeOptionLabel: {
     fontSize: 14,

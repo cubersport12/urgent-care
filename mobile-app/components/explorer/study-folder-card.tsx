@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ProgressBar } from '@/components/ui/progress-bar';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass, useGlow } from '@/hooks/use-theme-color';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -23,6 +23,8 @@ export function StudyFolderCard({
   index,
 }: StudyFolderCardProps) {
   const { primary, neutralSoft } = useAppTheme();
+  const glass = useGlass();
+  const glow = useGlow();
   const completed = Math.round((progressPercent / 100) * materialCount);
   const countLabel =
     materialCount === 1
@@ -36,7 +38,7 @@ export function StudyFolderCard({
       <Pressable onPress={onPress} style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
         <GlassCard padding={20} borderRadius={16}>
           <View
-            style={[styles.iconCircle, { backgroundColor: 'rgba(0, 132, 255, 0.1)' }]}
+            style={[styles.iconCircle, { backgroundColor: glass.primaryTint, shadowColor: glow.title }]}
           >
             <IconSymbol name="folder.fill" size={32} color={primary} />
           </View>
@@ -63,7 +65,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: 'rgba(0, 132, 255, 0.2)',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 12,

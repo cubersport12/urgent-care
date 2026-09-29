@@ -1,4 +1,4 @@
-import { Fonts, Radius, Spacing } from '@/constants/theme';
+import { Fonts, getSceneSurfaces, Radius, Spacing } from '@/constants/theme';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTheme } from '@/contexts/theme-context';
 import {
@@ -51,59 +51,28 @@ function severityBandKey(s: RescueParameterSeverityVm | null): string {
   return `${s.min ?? ''}:${s.max ?? ''}:${s.severity ?? ''}`;
 }
 
-/** Цвет значения по enum серьёзности (kimi palette) */
-function colorForSeverity(severity?: RescueParameterSeverityEnum): string {
+/** Цвет значения параметра по enum серьёзности */
+function colorForSeverity(
+  severity: RescueParameterSeverityEnum | undefined,
+  c: { success: string; warning: string; error: string; neutral: string },
+): string {
   switch (severity) {
     case RescueParameterSeverityEnum.Normal:
     case RescueParameterSeverityEnum.Low:
-      return '#4D8B31';
+      return c.success;
     case RescueParameterSeverityEnum.Medium:
-      return '#F59E0B';
+      return c.warning;
     case RescueParameterSeverityEnum.High:
-      return '#FF6B6B';
+      return c.error;
     default:
-      return '#7E7E7E';
+      return c.neutral;
   }
-}
-
-/** Сплошные цвета карточки параметра */
-function solidCardColors(theme: 'light' | 'dark'): { base: string; flash: string } {
-  return theme === 'dark'
-    ? { base: '#1C1C1E', flash: '#2C2C2E' }
-    : { base: '#FFFFFF', flash: '#EEF2F7' };
-}
-
-/** Панели новеллы: полупрозрачные подложки + читаемый текст */
-function novelSurfaces(theme: 'light' | 'dark', hasCritical: boolean) {
-  if (theme === 'dark') {
-    return {
-      textPanelBg: hasCritical ? 'rgba(36, 18, 18, 0.5)' : 'rgba(5, 5, 5, 0.5)',
-      parametersPanelBg: hasCritical ? 'rgba(255, 107, 107, 0.1)' : 'rgba(5, 5, 5, 0.1)',
-      panelBorder: hasCritical ? 'rgba(255, 107, 107, 0.35)' : 'rgba(255, 255, 255, 0.12)',
-      sceneText: '#EAEAEA',
-      mutedText: '#9CA3AF',
-    };
-  }
-  return {
-    textPanelBg: hasCritical ? 'rgba(255, 245, 245, 0.5)' : 'rgba(255, 255, 255, 0.5)',
-    parametersPanelBg: hasCritical ? 'rgba(255, 107, 107, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-    panelBorder: hasCritical ? 'rgba(224, 85, 85, 0.35)' : 'rgba(0, 0, 0, 0.1)',
-    sceneText: '#1A1A1A',
-    mutedText: '#6B7280',
-  };
-}
-
-/** Базовый и «вспышечный» фон карточки при смене значения */
-function flashColorsForSeverity(
-  theme: 'light' | 'dark',
-  _severity?: RescueParameterSeverityEnum,
-): { base: string; flash: string } {
-  return solidCardColors(theme);
 }
 
 /** Toast описания уровня */
 function SeverityDescriptionToast({ message }: { message: string | null }) {
   const glass = useGlass();
+  const { surfaceRaised, shadow } = useAppTheme();
 
   if (!message) return null;
 
@@ -112,13 +81,14 @@ function SeverityDescriptionToast({ message }: { message: string | null }) {
       style={[
         styles.severityToast,
         {
-          backgroundColor: 'rgba(28, 28, 30, 0.92)',
+          backgroundColor: surfaceRaised,
           borderColor: glass.border,
+          shadowColor: shadow,
         },
       ]}
       pointerEvents="none"
     >
-      <ThemedText lightColor="#FFFFFF" darkColor="#FFFFFF" style={styles.severityToastText}>
+      <ThemedText style={styles.severityToastText}>
         {message}
       </ThemedText>
     </View>
@@ -138,15 +108,16 @@ function ParameterBadge({
   const { theme } = useTheme();
   const glass = useGlass();
   const { border: borderColor } = useAppTheme();
-  const surfaces = novelSurfaces(theme, false);
+  const { success, warning, error, neutral, surfaceRaised, surfaceRaisedPressed } = useAppTheme();
+  const surfaces = getSceneSurfaces(theme, false);
   const severityBand = findSeverityForValue(value, param.severities);
-  const severityColor = colorForSeverity(severityBand?.severity);
+  const severityColor = colorForSeverity(severityBand?.severity, { success, warning, error, neutral });
   const min = severityBand?.min ?? 0;
   const max = severityBand?.max ?? Math.max(value, min + 1, 200);
   const range = max - min || 1;
   const pct = Math.max(0, Math.min(100, ((value - min) / range) * 100));
 
-  const backgroundColor = useSharedValue(flashColorsForSeverity(theme, severityBand?.severity).base);
+  const backgroundColor = useSharedValue(surfaceRaised);
   const prevValueRef = useRef(value);
   const prevBandKeyRef = useRef(severityBandKey(severityBand));
 
@@ -162,12 +133,12 @@ function ParameterBadge({
     }
     prevBandKeyRef.current = newKey;
 
-    const { base, flash } = flashColorsForSeverity(theme, newBand?.severity);
+    const { base, flash } = { base: surfaceRaised, flash: surfaceRaisedPressed };
     backgroundColor.value = withSequence(
       withTiming(flash, { duration: 160 }),
       withTiming(base, { duration: 320 }),
     );
-  }, [value, param.severities, backgroundColor, onSeverityDescription, theme]);
+  }, [value, param.severities, backgroundColor, onSeverityDescription, surfaceRaised, surfaceRaisedPressed]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: backgroundColor.value,
@@ -257,6 +228,7 @@ export function RescueSceneVisualNovel({
     page: backgroundColor,
     primary: primaryColor,
     error: errorColor,
+    onError: onErrorColor,
     text: textColor,
   } = useAppTheme();
 
@@ -360,7 +332,7 @@ export function RescueSceneVisualNovel({
     return band?.severity === RescueParameterSeverityEnum.High;
   });
 
-  const surfaces = novelSurfaces(theme, hasCritical);
+  const surfaces = getSceneSurfaces(theme, hasCritical);
 
   return (
     <ThemedView
@@ -372,10 +344,13 @@ export function RescueSceneVisualNovel({
     >
       {sceneNotReviewedByAuthor ? (
         <View
-          style={[styles.unreviewedBanner, { backgroundColor: `${errorColor}E6` }]}
+          style={[
+            styles.unreviewedBanner,
+            { backgroundColor: errorColor, borderBottomColor: glass.imageScrim },
+          ]}
           pointerEvents="none"
         >
-          <ThemedText lightColor="#FFFFFF" darkColor="#FFFFFF" style={styles.unreviewedBannerText}>
+          <ThemedText style={[styles.unreviewedBannerText, { color: onErrorColor }]}>
             Сцена не проверена автором на ошибки и корректность содержимого
           </ThemedText>
         </View>
@@ -433,7 +408,7 @@ export function RescueSceneVisualNovel({
       )}
 
       {hasChoices && hasShownChoices ? (
-        <View style={styles.choicesOverlay} pointerEvents="box-none">
+        <View style={[styles.choicesOverlay, { backgroundColor: glass.imageScrim }]} pointerEvents="box-none">
           <View style={styles.choicesCenter}>
             {choices.map((choice) => (
               <Button
@@ -636,7 +611,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: Radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -661,7 +635,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.2)',
   },
   unreviewedBannerText: {
     fontSize: 13,
@@ -706,7 +679,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
   },
   choicesCenter: {
     width: '100%',
