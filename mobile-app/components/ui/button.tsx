@@ -1,5 +1,5 @@
 import { Radius } from '@/constants/theme';
-import { useAppTheme, useGlass, useThemeValue } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass, useGlow, useThemeValue } from '@/hooks/use-theme-color';
 import { useTheme } from '@/contexts/theme-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Gradients } from '@/constants/theme';
@@ -34,6 +34,7 @@ export function Button({
   const { theme } = useTheme();
   const appTheme = useAppTheme();
   const glass = useGlass();
+  const glow = useGlow();
   const disabledOpacityValue = useThemeValue('disabledOpacity');
   const {
     onPrimary: onPrimaryColor,
@@ -160,6 +161,7 @@ export function Button({
               paddingVertical: sizeStyles.paddingVertical,
               minHeight: sizeStyles.minHeight,
               width: fullWidth ? '100%' : undefined,
+              shadowColor: glow.primary,
             },
           ]}
         >
@@ -212,7 +214,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
   },
   gradientButton: {
-    shadowColor: 'rgba(0, 132, 255, 0.3)',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 16,

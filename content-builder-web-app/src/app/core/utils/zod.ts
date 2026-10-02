@@ -235,9 +235,15 @@ export const rescueItemSchema = z.object({
   parentId: z.string().nullable().optional(),
   createdAt: z.string(),
   description: z.string(),
-  // Для хранения: сцены могут содержать documents (в AI-промпт rescueItemDataSchema они не попадают)
+  // Для хранения: сцены могут содержать documents, параметры — description
+  // (в AI-промпт rescueItemDataSchema они не попадают)
   data: rescueItemDataSchema
     .extend({
+      parameters: z.array(
+        rescueTimerParameterSchema.extend({
+          description: z.string().nullable().optional()
+        })
+      ).optional(),
       scenes: z.array(
         rescueSceneSchema.extend({
           documents: z.array(rescueSceneDocumentSchema).optional().describe('Документы сцены')

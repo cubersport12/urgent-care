@@ -61,7 +61,9 @@ export function GlassCard({
           style={[StyleSheet.absoluteFill, { borderRadius, overflow: 'hidden' }]}
         />
       ) : null}
-      {!isLight ? <View style={styles.insetHighlightDark} pointerEvents="none" /> : null}
+      {!isLight ? (
+        <View style={[styles.insetHighlightDark, { backgroundColor: glass.insetHighlight }]} pointerEvents="none" />
+      ) : null}
       <View style={styles.content}>{children}</View>
     </View>
   );
@@ -93,7 +95,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   content: {
     position: 'relative',

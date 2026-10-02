@@ -9,7 +9,7 @@ import Constants from 'expo-constants';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 export default function AboutScreen() {
-  const { neutralSoft, text } = useAppTheme();
+  const { neutralSoft, text, layout3 } = useAppTheme();
   const { contentPaddingBottom } = useNavRail();
   const version =
     Constants.expoConfig?.version ??
@@ -28,7 +28,7 @@ export default function AboutScreen() {
           <ThemedText type="caption" style={{ color: neutralSoft, marginTop: 4 }}>
             Версия {version}
           </ThemedText>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: layout3 }]} />
           <ThemedText style={[styles.body, { color: text }]}>
             Учебное приложение для студентов стоматологического факультета: материалы,
             тесты и сценарии оказания неотложной помощи.
@@ -60,7 +60,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(128,128,128,0.35)',
     marginVertical: 16,
   },
 });

@@ -14,7 +14,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 
 /** Нормативные документы: список + просмотр PDF. */
 export default function LegalDocsScreen() {
-  const { primary, neutralSoft, text } = useAppTheme();
+  const { primary, neutralSoft, text, borderVariant } = useAppTheme();
   const { contentPaddingBottom } = useNavRail();
   const [selected, setSelected] = useState<{ id: LegalDocId } | null>(null);
 
@@ -45,7 +45,7 @@ export default function LegalDocsScreen() {
                 <IconSymbol name="chevron.right" size={14} color={neutralSoft} />
               </Pressable>
               {idx < LEGAL_DOCUMENTS.length - 1 ? (
-                <View style={[styles.divider, { backgroundColor: 'rgba(128,128,128,0.12)' }]} />
+                <View style={[styles.divider, { backgroundColor: borderVariant }]} />
               ) : null}
             </View>
           ))}
@@ -57,7 +57,7 @@ export default function LegalDocsScreen() {
 
 function LegalDocViewer({ id, onBack }: { id: LegalDocId; onBack: () => void }) {
   const { response: pdfUri, isLoading } = useFilePdf(`legal/${id}.pdf`);
-  const { primary } = useAppTheme();
+  const { primary, neutral } = useAppTheme();
 
   return (
     <ScreenBackground style={styles.root}>
@@ -66,7 +66,7 @@ function LegalDocViewer({ id, onBack }: { id: LegalDocId; onBack: () => void }) 
           <IconSymbol name="chevron.left" size={26} color={primary} />
           <ThemedText style={[styles.backText, { color: primary }]}>Назад</ThemedText>
         </Pressable>
-        <ThemedText type="caption" style={{ color: 'rgba(128,128,128,0.9)' }} numberOfLines={1}>
+        <ThemedText type="caption" style={{ color: neutral }} numberOfLines={1}>
           {legalDocTitle(id)}
         </ThemedText>
       </View>
@@ -78,7 +78,7 @@ function LegalDocViewer({ id, onBack }: { id: LegalDocId; onBack: () => void }) 
         <PdfView source={pdfUri} style={styles.preview} />
       ) : (
         <View style={styles.centered}>
-          <ThemedText style={{ color: 'rgba(128,128,128,0.9)', textAlign: 'center' }}>
+          <ThemedText style={{ color: neutral, textAlign: 'center' }}>
             Документ ещё не загружен
           </ThemedText>
         </View>

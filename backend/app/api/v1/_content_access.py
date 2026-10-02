@@ -8,10 +8,9 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
+from app.schemas.content import CamelModel, RescueOut
 from app.services.entitlements import (
     default_tariff_id,
-    filter_by_rank,
-    filter_by_reward,
     is_reward_visible,
     is_visible,
     tariff_rank_map,
@@ -22,18 +21,54 @@ from app.services.entitlements import (
 T = TypeVar("T")
 
 
-async def filter_content_list(
+async def annotate_content_list(
     db: AsyncSession,
     user: User,
     items: Sequence[T],
-) -> list[T]:
+) -> list[tuple[T, str | None]]:
+    """Для каждого элемента — (item, locked_by): None доступен, 'tariff'/'reward' закрыт.
+    Закрытые элементы не удаляются из списка: клиент показывает их с замком (стаб)."""
     if user.role == "admin":
-        return list(items)
+        return [(item, None) for item in items]
     rank = await user_content_rank(db, user)
     ranks = await tariff_rank_map(db)
-    out = filter_by_rank(items, user_rank=rank, ranks=ranks)
     unlocked = await unlocked_reward_ids(db, user.id)
-    return filter_by_reward(out, unlocked=unlocked)
+    out: list[tuple[T, str | None]] = []
+    for item in items:
+        if not is_visible(
+            required_tariff_id=getattr(item, "required_tariff_id", None),
+            user_rank=rank,
+            ranks=ranks,
+        ):
+            out.append((item, "tariff"))
+        elif not is_reward_visible(
+            required_reward_id=getattr(item, "required_reward_id", None),
+            unlocked=unlocked,
+        ):
+            out.append((item, "reward"))
+        else:
+            out.append((item, None))
+    return out
+
+
+def content_out(item: Any, schema: type[CamelModel], locked_by: str | None) -> CamelModel:
+    """Доступный элемент — полный DTO; заблокированный — стаб только с полями
+    отображения (questions/data/linksToArticles не отдаём)."""
+    if locked_by is None:
+        return schema.model_validate(item, from_attributes=True)
+    fields: dict[str, Any] = {
+        "id": item.id,
+        "name": item.name,
+        "order": item.order,
+        "parent_id": item.parent_id,
+        "required_tariff_id": item.required_tariff_id,
+        "required_reward_id": item.required_reward_id,
+        "is_locked": True,
+        "locked_by": locked_by,
+    }
+    if schema is RescueOut:
+        fields["created_at"] = item.created_at
+    return schema.model_validate(fields)
 
 
 async def assert_content_visible(db: AsyncSession, user: User, item: Any) -> None:

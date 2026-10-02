@@ -2,9 +2,20 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
-import { useAppTheme } from '@/hooks/use-theme-color';
-import { subscribeNotifications } from '@/lib/notifications-ws';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
+import {
+  subscribeNotifications,
+  type AchievementUnlockPayload,
+} from '@/lib/notifications-ws';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -31,11 +42,12 @@ type UnlockPopup =
 
 function PopupIcon({ path, kind }: { path?: string | null; kind: UnlockPopup['kind'] }) {
   const { response, isLoading } = useFileImage(path ?? '');
-  const color = '#F59E0B';
+  const { warning, warningContainer } = useAppTheme();
+  const color = warning;
   const name = kind === 'reward' ? 'gift.fill' : 'trophy.fill';
 
   return (
-    <View style={[styles.iconBox, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+    <View style={[styles.iconBox, { backgroundColor: warningContainer }]}>
       {path && isLoading ? (
         <ActivityIndicator size="small" color={color} />
       ) : path && response ? (
@@ -47,12 +59,29 @@ function PopupIcon({ path, kind }: { path?: string | null; kind: UnlockPopup['ki
   );
 }
 
+type AchievementsUnlockContextValue = {
+  /** Показать разблокировки из HTTP-ответа (дубль WS-события achievement_unlocked). */
+  showUnlocks: (payloads: AchievementUnlockPayload[] | null | undefined) => void;
+};
+
+const AchievementsUnlockContext = createContext<AchievementsUnlockContextValue>({
+  showUnlocks: () => {},
+});
+
+/** Доступ к показу попапов достижений/наград из любого места дерева. */
+export function useAchievementUnlocks() {
+  return useContext(AchievementsUnlockContext);
+}
+
 /** Listens for `achievement_unlocked` on the notifications WS and shows unlock modals. */
 export function AchievementsProvider({ children }: { children: React.ReactNode }) {
   const { session, initialized } = useAuth();
-  const { primary, text, neutralSoft, page } = useAppTheme();
+  const { primary, text, neutralSoft, page, onPrimary } = useAppTheme();
+  const glass = useGlass();
   const [popup, setPopup] = useState<UnlockPopup | null>(null);
   const queueRef = useRef<UnlockPopup[]>([]);
+  // WS и HTTP-ответ теста могут доставить одно и то же событие — показываем один раз
+  const shownIdsRef = useRef<Set<string>>(new Set());
 
   const dismiss = useCallback(() => {
     const next = queueRef.current.shift() ?? null;
@@ -65,42 +94,56 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
     setPopup((cur) => cur ?? queueRef.current.shift() ?? null);
   }, []);
 
+  const showUnlocks = useCallback(
+    (payloads: AchievementUnlockPayload[] | null | undefined) => {
+      if (!payloads?.length) return;
+      const popups: UnlockPopup[] = [];
+      for (const { notification, achievement, reward } of payloads) {
+        const dedupId = notification?.id ?? achievement?.id;
+        if (!dedupId || shownIdsRef.current.has(dedupId)) continue;
+        shownIdsRef.current.add(dedupId);
+        popups.push({
+          kind: 'achievement',
+          title: achievement.title,
+          description: achievement.description,
+          iconPath: achievement.iconPath,
+        });
+        if (reward) {
+          popups.push({
+            kind: 'reward',
+            title: reward.title,
+            description: reward.description,
+            iconPath: reward.iconPath,
+            achievementTitle: achievement.title,
+          });
+        }
+      }
+      enqueue(popups);
+    },
+    [enqueue],
+  );
+
+  const contextValue = useMemo(() => ({ showUnlocks }), [showUnlocks]);
+
   useEffect(() => {
     if (!initialized) return;
     if (!session) {
       queueRef.current = [];
+      shownIdsRef.current.clear();
       setPopup(null);
       return;
     }
     return subscribeNotifications((ev) => {
       if (ev.type !== 'achievement_unlocked') return;
-      const { achievement, reward } = ev.data;
-      const popups: UnlockPopup[] = [
-        {
-          kind: 'achievement',
-          title: achievement.title,
-          description: achievement.description,
-          iconPath: achievement.iconPath,
-        },
-      ];
-      if (reward) {
-        popups.push({
-          kind: 'reward',
-          title: reward.title,
-          description: reward.description,
-          iconPath: reward.iconPath,
-          achievementTitle: achievement.title,
-        });
-      }
-      enqueue(popups);
+      showUnlocks([ev.data]);
     });
-  }, [initialized, session, enqueue]);
+  }, [initialized, session, showUnlocks]);
 
   return (
-    <>
+    <AchievementsUnlockContext.Provider value={contextValue}>
       {children}
       <Modal visible={!!popup} transparent animationType="fade" onRequestClose={dismiss}>
-        <View style={styles.backdrop}>
+        <View style={[styles.backdrop, { backgroundColor: glass.scrim }]}>
           <View style={[styles.card, { backgroundColor: page }]}>
             {popup ? <PopupIcon path={popup.iconPath} kind={popup.kind} /> : null}
             <ThemedText style={[styles.eyebrow, { color: primary }]}>
@@ -122,19 +165,18 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
                 { backgroundColor: primary, opacity: pressed ? 0.9 : 1 },
               ]}
             >
-              <ThemedText style={styles.btnText}>Отлично</ThemedText>
+              <ThemedText style={[styles.btnText, { color: onPrimary }]}>Отлично</ThemedText>
             </Pressable>
           </View>
         </View>
       </Modal>
-    </>
+    </AchievementsUnlockContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 28,
@@ -184,7 +226,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   btnText: {
-    color: '#fff',
     fontWeight: '600',
     fontSize: 16,
   },

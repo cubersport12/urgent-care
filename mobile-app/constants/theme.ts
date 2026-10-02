@@ -22,7 +22,12 @@ export const Glass = {
     successBorder: 'rgba(77, 139, 49, 0.2)',
     dangerTint: 'rgba(255, 107, 107, 0.1)',
     dangerBorder: 'rgba(255, 107, 107, 0.2)',
+    warningTint: 'rgba(245, 158, 11, 0.1)',
+    warningBorder: 'rgba(245, 158, 11, 0.2)',
     row: 'rgba(255, 255, 255, 0.02)',
+    insetHighlight: 'rgba(255, 255, 255, 0.1)',
+    imageScrim: 'rgba(0, 0, 0, 0.35)',
+    imageScrimSoft: 'rgba(0, 0, 0, 0.25)',
   },
   light: {
     background: '#FFFFFF',
@@ -40,7 +45,12 @@ export const Glass = {
     successBorder: 'rgba(61, 122, 40, 0.2)',
     dangerTint: 'rgba(224, 85, 85, 0.1)',
     dangerBorder: 'rgba(224, 85, 85, 0.2)',
+    warningTint: 'rgba(217, 119, 6, 0.1)',
+    warningBorder: 'rgba(217, 119, 6, 0.2)',
     row: 'rgba(0, 0, 0, 0.03)',
+    insetHighlight: 'transparent',
+    imageScrim: 'rgba(0, 0, 0, 0.35)',
+    imageScrimSoft: 'rgba(0, 0, 0, 0.25)',
   },
 } as const;
 
@@ -147,6 +157,17 @@ export const Colors = {
     shadow: '#000000',
     white: '#FFFFFF',
     accentPurple: '#8B5CF6',
+    accentPurpleContainer: 'rgba(139, 92, 246, 0.12)',
+
+    /** Непрозрачная приподнятая поверхность поверх контента (тосты, бейджи параметров) */
+    surfaceRaised: '#FFFFFF',
+    surfaceRaisedPressed: '#EEF2F7',
+
+    /** Заливка тегов серьёзности последствий (rescue) */
+    severityNormal: 'rgba(96, 125, 139, 0.92)',
+    severityLow: 'rgba(33, 150, 243, 0.92)',
+    severityMedium: 'rgba(255, 152, 0, 0.92)',
+    severityHigh: 'rgba(211, 47, 47, 0.92)',
   },
   dark: {
     primary: '#0084FF',
@@ -195,6 +216,17 @@ export const Colors = {
     shadow: '#000000',
     white: '#FFFFFF',
     accentPurple: '#A78BFA',
+    accentPurpleContainer: 'rgba(167, 139, 250, 0.15)',
+
+    /** Непрозрачная приподнятая поверхность поверх контента (тосты, бейджи параметров) */
+    surfaceRaised: '#1C1C1E',
+    surfaceRaisedPressed: '#2C2C2E',
+
+    /** Заливка тегов серьёзности последствий (rescue) */
+    severityNormal: 'rgba(96, 125, 139, 0.92)',
+    severityLow: 'rgba(33, 150, 243, 0.92)',
+    severityMedium: 'rgba(255, 152, 0, 0.92)',
+    severityHigh: 'rgba(211, 47, 47, 0.92)',
   },
 };
 
@@ -327,4 +359,24 @@ export function getGlass(theme: ThemeMode) {
 
 export function getGlow(theme: ThemeMode) {
   return Glow[theme];
+}
+
+/** Полупрозрачные панели поверх фона сцены (rescue-новелла) */
+export function getSceneSurfaces(theme: ThemeMode, hasCritical: boolean) {
+  if (theme === 'dark') {
+    return {
+      textPanelBg: hasCritical ? 'rgba(36, 18, 18, 0.5)' : 'rgba(5, 5, 5, 0.5)',
+      parametersPanelBg: hasCritical ? 'rgba(255, 107, 107, 0.1)' : 'rgba(5, 5, 5, 0.1)',
+      panelBorder: hasCritical ? 'rgba(255, 107, 107, 0.35)' : 'rgba(255, 255, 255, 0.12)',
+      sceneText: '#EAEAEA',
+      mutedText: '#9CA3AF',
+    };
+  }
+  return {
+    textPanelBg: hasCritical ? 'rgba(255, 245, 245, 0.5)' : 'rgba(255, 255, 255, 0.5)',
+    parametersPanelBg: hasCritical ? 'rgba(255, 107, 107, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+    panelBorder: hasCritical ? 'rgba(224, 85, 85, 0.35)' : 'rgba(0, 0, 0, 0.1)',
+    sceneText: '#1A1A1A',
+    mutedText: '#6B7280',
+  };
 }

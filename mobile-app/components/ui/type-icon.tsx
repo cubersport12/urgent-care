@@ -1,47 +1,60 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlow } from '@/hooks/use-theme-color';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 export type MaterialKind = 'folder' | 'article' | 'test' | 'rescue';
 
-export function TypeIcon({ kind, size = 20 }: { kind: MaterialKind; size?: number }) {
+export function TypeIcon({
+  kind,
+  size = 20,
+  locked = false,
+}: {
+  kind: MaterialKind;
+  size?: number;
+  /** Заблокирован (тариф/награда): золотой замок вместо иконки типа */
+  locked?: boolean;
+}) {
   const theme = useAppTheme();
+  const glow = useGlow();
   const containerSize = size + 16;
 
   const variant = useMemo(() => {
-    const glow = (hex: string) => `${hex}33`;
     return {
       folder: {
         icon: 'folder.fill',
         bg: theme.primaryContainer,
         color: theme.primary,
-        shadowColor: glow(theme.primary),
+        shadowColor: glow.primary,
       },
       article: {
         icon: 'doc.text.fill',
         bg: theme.elevated2,
         color: theme.neutral,
+        shadowColor: 'transparent',
       },
       test: {
         icon: 'list.bullet.clipboard.fill',
         bg: theme.primaryContainer,
         color: theme.primary,
-        shadowColor: glow(theme.primary),
+        shadowColor: glow.primary,
       },
       rescue: {
         icon: 'cross.fill',
         bg: theme.errorContainer,
         color: theme.error,
-        shadowColor: glow(theme.error),
+        shadowColor: glow.danger,
       },
     } satisfies Record<
       MaterialKind,
-      { icon: string; bg: string; color: string; shadowColor?: string }
+      { icon: string; bg: string; color: string; shadowColor: string }
     >;
-  }, [theme]);
+  }, [theme, glow]);
 
-  const c = variant[kind];
+  const c = locked
+    ? // Платный/наградный контент помечаем золотым замком — как во всех приложениях
+      { icon: 'lock.fill', bg: theme.warningContainer, color: theme.warning, shadowColor: 'transparent' }
+    : variant[kind];
 
   return (
     <View
@@ -52,15 +65,15 @@ export function TypeIcon({ kind, size = 20 }: { kind: MaterialKind; size?: numbe
           height: containerSize,
           backgroundColor: c.bg,
         },
-        c.shadowColor
-          ? {
+        c.shadowColor === 'transparent'
+          ? styles.noShadow
+          : {
               shadowColor: c.shadowColor,
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 1,
               shadowRadius: 12,
               elevation: 2,
-            }
-          : styles.noShadow,
+            },
       ]}
     >
       <IconSymbol name={c.icon as never} size={size} color={c.color} />

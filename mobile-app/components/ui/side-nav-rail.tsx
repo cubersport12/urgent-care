@@ -146,7 +146,7 @@ export function SideNavRail({ state, descriptors, navigation }: BottomTabBarProp
                       { backgroundColor: colors.primary, borderColor: colors.page },
                     ]}
                   >
-                    <ThemedText style={styles.badgeText}>
+                    <ThemedText style={[styles.badgeText, { color: colors.onPrimary }]}>
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </ThemedText>
                   </View>
@@ -252,7 +252,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeText: {
-    color: '#fff',
     fontSize: 9,
     fontWeight: '700',
     lineHeight: 11,

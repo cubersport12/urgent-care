@@ -50,7 +50,7 @@ export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescue
     await onStart();
   }, [addOrUpdate, onRescueSessionStarted, onStart]);
 
-  const { primary: tintColor } = useAppTheme();
+  const { primary: tintColor, border } = useAppTheme();
   const footerPaddingBottom =
     Math.max(insets.bottom, 12) + (isWide ? 12 : Spacing.nav);
 
@@ -117,11 +117,16 @@ export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescue
               </View>
               <View style={styles.parametersContainer}>
                 {rescueItem.data?.parameters?.map((param) => (
-                  <View key={param.id} style={styles.parameterItem}>
-                    <ThemedText style={styles.parameterLabel}>{param.name}:</ThemedText>
-                    <ThemedText type="mono" style={styles.parameterValue}>
-                      {formatTimerParameter(param)}
-                    </ThemedText>
+                  <View key={param.id} style={[styles.parameterItem, { borderBottomColor: border }]}>
+                    <View style={styles.parameterRow}>
+                      <ThemedText style={styles.parameterLabel}>{param.name}:</ThemedText>
+                      <ThemedText type="mono" style={styles.parameterValue}>
+                        {formatTimerParameter(param)}
+                      </ThemedText>
+                    </View>
+                    {param.description?.trim() ? (
+                      <ThemedText style={styles.parameterDescription}>{param.description}</ThemedText>
+                    ) : null}
                   </View>
                 ))}
               </View>
@@ -193,12 +198,20 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   parameterItem: {
+    width: '100%',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+  },
+  parameterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(128, 128, 128, 0.2)',
+  },
+  parameterDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    opacity: 0.7,
+    marginTop: 4,
   },
   parameterLabel: {
     fontSize: 16,

@@ -6496,6 +6496,22 @@
               }
             ],
             "title": "Requiredrewardid"
+          },
+          "isLocked": {
+            "type": "boolean",
+            "title": "Islocked",
+            "default": false
+          },
+          "lockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lockedby"
           }
         },
         "type": "object",
@@ -6511,7 +6527,9 @@
           "includeToStatistics",
           "linksToArticles",
           "requiredTariffId",
-          "requiredRewardId"
+          "requiredRewardId",
+          "isLocked",
+          "lockedBy"
         ],
         "title": "ArticleOut"
       },
@@ -7233,6 +7251,22 @@
               }
             ],
             "title": "Requiredrewardid"
+          },
+          "isLocked": {
+            "type": "boolean",
+            "title": "Islocked",
+            "default": false
+          },
+          "lockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lockedby"
           }
         },
         "type": "object",
@@ -7242,7 +7276,9 @@
           "order",
           "parentId",
           "requiredTariffId",
-          "requiredRewardId"
+          "requiredRewardId",
+          "isLocked",
+          "lockedBy"
         ],
         "title": "FolderOut"
       },
@@ -8414,6 +8450,22 @@
               }
             ],
             "title": "Requiredrewardid"
+          },
+          "isLocked": {
+            "type": "boolean",
+            "title": "Islocked",
+            "default": false
+          },
+          "lockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lockedby"
           }
         },
         "type": "object",
@@ -8426,7 +8478,9 @@
           "description",
           "data",
           "requiredTariffId",
-          "requiredRewardId"
+          "requiredRewardId",
+          "isLocked",
+          "lockedBy"
         ],
         "title": "RescueOut"
       },
@@ -10166,6 +10220,22 @@
               }
             ],
             "title": "Requiredrewardid"
+          },
+          "isLocked": {
+            "type": "boolean",
+            "title": "Islocked",
+            "default": false
+          },
+          "lockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lockedby"
           }
         },
         "type": "object",
@@ -10188,7 +10258,9 @@
           "accessabilityConditions",
           "resetTestIds",
           "requiredTariffId",
-          "requiredRewardId"
+          "requiredRewardId",
+          "isLocked",
+          "lockedBy"
         ],
         "title": "TestOut"
       },
@@ -10365,6 +10437,18 @@
               }
             ],
             "title": "Resettests"
+          },
+          "unlocked": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unlocked"
           }
         },
         "type": "object",

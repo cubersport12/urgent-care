@@ -35,7 +35,7 @@ function formatWhen(iso: string): string {
 }
 
 export default function NotificationsScreen() {
-  const { primary, neutralSoft, text, error: dangerColor } = useAppTheme();
+  const { primary, neutralSoft, text, error: dangerColor, elevated1, borderVariant, onPrimary } = useAppTheme();
   const { contentPaddingBottom } = useNavRail();
   const { refreshUnread, onLiveNotification, dismissBanner } = useNotifications();
   const [items, setItems] = useState<AppNotification[]>([]);
@@ -148,7 +148,7 @@ export default function NotificationsScreen() {
             }}
             style={[styles.retryBtn, { backgroundColor: primary }]}
           >
-            <ThemedText style={styles.retryText}>Повторить</ThemedText>
+            <ThemedText style={[styles.retryText, { color: onPrimary }]}>Повторить</ThemedText>
           </Pressable>
         </View>
       ) : (
@@ -170,7 +170,7 @@ export default function NotificationsScreen() {
                 <View key={n.id}>
                   <Pressable
                     onPress={() => void onOpen(n)}
-                    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                    style={({ pressed }) => [styles.row, pressed && { backgroundColor: elevated1 }]}
                   >
                     <View
                       style={[
@@ -204,7 +204,7 @@ export default function NotificationsScreen() {
                   </Pressable>
                   {idx < items.length - 1 ? (
                     <View
-                      style={[styles.divider, { backgroundColor: 'rgba(128,128,128,0.12)' }]}
+                      style={[styles.divider, { backgroundColor: borderVariant }]}
                     />
                   ) : null}
                 </View>
@@ -251,9 +251,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     gap: 10,
   },
-  rowPressed: {
-    backgroundColor: 'rgba(128,128,128,0.08)',
-  },
   dot: {
     width: 8,
     height: 8,
@@ -279,7 +276,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   retryText: {
-    color: '#fff',
     fontWeight: '600',
   },
 });

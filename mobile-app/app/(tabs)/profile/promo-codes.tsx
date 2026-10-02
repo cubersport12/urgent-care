@@ -29,7 +29,7 @@ function formatDate(iso: string): string {
 }
 
 export default function PromoCodesScreen() {
-  const { primary, neutralSoft } = useAppTheme();
+  const { primary, neutralSoft, success, successContainer, primaryContainer } = useAppTheme();
   const { contentPaddingBottom } = useNavRail();
   const [code, setCode] = useState('');
   const [activating, setActivating] = useState(false);
@@ -105,7 +105,7 @@ export default function PromoCodesScreen() {
         ) : promo ? (
           <GlassCard padding={20} borderRadius={16} style={styles.activeCard}>
             <View style={styles.activeHeader}>
-              <View style={styles.activeIconBg}>
+              <View style={[styles.activeIconBg, { backgroundColor: primaryContainer }]}>
                 <IconSymbol name="ticket.fill" size={18} color={primary} />
               </View>
               <View style={styles.activeInfo}>
@@ -114,8 +114,8 @@ export default function PromoCodesScreen() {
                 </ThemedText>
                 <ThemedText style={styles.activeCode}>{promo.code}</ThemedText>
               </View>
-              <View style={styles.discountBadge}>
-                <ThemedText style={styles.discountText}>−{promo.discountPercent}%</ThemedText>
+              <View style={[styles.discountBadge, { backgroundColor: successContainer }]}>
+                <ThemedText style={[styles.discountText, { color: success }]}>−{promo.discountPercent}%</ThemedText>
               </View>
             </View>
             <ThemedText type="caption" style={[styles.activeMeta, { color: neutralSoft }]}>
@@ -155,7 +155,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: 'rgba(0, 132, 255, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -168,13 +167,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   discountBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   discountText: {
-    color: '#10B981',
     fontSize: 13,
     fontWeight: '800',
   },

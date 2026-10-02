@@ -64,7 +64,20 @@ function getDayHeader(isoString?: string): string {
 }
 
 export default function SupportChatScreen() {
-  const { primary, neutralSoft, text, error: dangerColor, page, layout1, border } = useAppTheme();
+  const {
+    primary,
+    neutralSoft,
+    text,
+    error: dangerColor,
+    page,
+    layout1,
+    border,
+    success,
+    successContainer,
+    onPrimary,
+    elevated2,
+    elevated3,
+  } = useAppTheme();
   const glass = useGlass();
   const { isWide } = useNavRail();
   const insets = useSafeAreaInsets();
@@ -138,9 +151,9 @@ export default function SupportChatScreen() {
         subtitle="Отвечаем в течение дня"
         backFallbackHref="/(tabs)/profile"
         right={
-          <View style={[styles.statusBadge, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-            <View style={styles.statusDot} />
-            <ThemedText style={styles.statusText}>Онлайн</ThemedText>
+          <View style={[styles.statusBadge, { backgroundColor: successContainer }]}>
+            <View style={[styles.statusDot, { backgroundColor: success }]} />
+            <ThemedText style={[styles.statusText, { color: success }]}>Онлайн</ThemedText>
           </View>
         }
       />
@@ -170,8 +183,8 @@ export default function SupportChatScreen() {
                 }}
                 style={[styles.retryBtn, { backgroundColor: primary }]}
               >
-                <IconSymbol name="arrow.counterclockwise" size={16} color="#ffffff" />
-                <ThemedText style={styles.retryText}>Повторить</ThemedText>
+                <IconSymbol name="arrow.counterclockwise" size={16} color={onPrimary} />
+                <ThemedText style={[styles.retryText, { color: onPrimary }]}>Повторить</ThemedText>
               </Pressable>
             </GlassCard>
           </View>
@@ -234,7 +247,7 @@ export default function SupportChatScreen() {
                   <View key={item.id}>
                     {showDateHeader ? (
                       <View style={styles.dateHeader}>
-                        <View style={[styles.dateBadge, { backgroundColor: 'rgba(128,128,128,0.14)' }]}>
+                        <View style={[styles.dateBadge, { backgroundColor: elevated2 }]}>
                           <ThemedText style={[styles.dateBadgeText, { color: neutralSoft }]}>
                             {currentDay}
                           </ThemedText>
@@ -269,7 +282,7 @@ export default function SupportChatScreen() {
                           </ThemedText>
                         ) : null}
 
-                        <ThemedText style={[styles.bodyText, { color: mine ? '#FFFFFF' : text }]}>
+                        <ThemedText style={[styles.bodyText, { color: mine ? onPrimary : text }]}>
                           {item.body}
                         </ThemedText>
 
@@ -278,13 +291,18 @@ export default function SupportChatScreen() {
                             <ThemedText
                               style={[
                                 styles.timeText,
-                                { color: mine ? 'rgba(255,255,255,0.75)' : neutralSoft },
+                                { color: mine ? onPrimary : neutralSoft, opacity: mine ? 0.75 : 1 },
                               ]}
                             >
                               {timeStr}
                             </ThemedText>
                             {mine ? (
-                              <IconSymbol name="checkmark" size={11} color="rgba(255,255,255,0.75)" />
+                              <IconSymbol
+                                name="checkmark"
+                                size={11}
+                                color={onPrimary}
+                                style={{ opacity: 0.75 }}
+                              />
                             ) : null}
                           </View>
                         ) : null}
@@ -332,18 +350,18 @@ export default function SupportChatScreen() {
                 style={({ pressed }) => [
                   styles.sendBtn,
                   {
-                    backgroundColor: draft.trim() ? primary : 'rgba(128,128,128,0.18)',
+                    backgroundColor: draft.trim() ? primary : elevated3,
                     opacity: pressed ? 0.8 : sending || !draft.trim() ? 0.6 : 1,
                   },
                 ]}
               >
                 {sending ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={onPrimary} />
                 ) : (
                   <IconSymbol
                     name="paperplane.fill"
                     size={16}
-                    color={draft.trim() ? '#FFFFFF' : neutralSoft}
+                    color={draft.trim() ? onPrimary : neutralSoft}
                   />
                 )}
               </Pressable>
@@ -369,7 +387,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
   },
-  retryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  retryText: { fontSize: 14, fontWeight: '600' },
 
   statusBadge: {
     flexDirection: 'row',
@@ -383,12 +401,10 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#10B981',
   },
   statusText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#10B981',
   },
 
   list: { paddingHorizontal: Spacing.pageX, paddingTop: 8, gap: 10, flexGrow: 1 },

@@ -1,7 +1,7 @@
 import type { StatusType } from '@/components/ui/status-badge';
 import { ContentCard } from '@/components/ui/content-card';
 import type { MaterialKind } from '@/components/ui/type-icon';
-import { ExplorerItem } from './types';
+import { ExplorerItem, type LockReason } from './types';
 
 type ExplorerItemComponentProps = {
   item: ExplorerItem;
@@ -108,6 +108,7 @@ export function ExplorerItemComponent({
       kind={getKind(item)}
       status={status}
       disabled={isDisabled}
+      locked={(item.data.lockedBy as LockReason | null) ?? undefined}
       onPress={onPress}
       index={index}
     />

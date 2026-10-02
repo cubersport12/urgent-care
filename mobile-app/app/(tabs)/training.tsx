@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 
 export default function TrainingScreen() {
-  const { primary, neutralSoft, text } = useAppTheme();
+  const { primary, neutralSoft, text, border } = useAppTheme();
   const { contentPaddingBottom } = useNavRail();
   const [topics, setTopics] = useState<TrainingTopic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +129,7 @@ export default function TrainingScreen() {
                         <View
                           style={[
                             styles.qRow,
+                            { borderTopColor: border },
                             idx === 0 && { borderTopWidth: StyleSheet.hairlineWidth },
                           ]}
                         >
@@ -194,7 +195,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderTopColor: 'rgba(128,128,128,0.15)',
   },
   recs: {
     paddingHorizontal: 16,

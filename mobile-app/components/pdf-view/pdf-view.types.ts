@@ -1,3 +1,4 @@
+import { Colors, type ThemeMode } from '@/constants/theme';
 import type { ViewStyle } from 'react-native';
 
 export type PdfViewProps = {
@@ -16,6 +17,20 @@ export type PdfViewProps = {
   onScrollProgress?: (percent: number) => void;
 };
 
+/**
+ * Транспорт сообщений из pdf.js-HTML наружу: в нативном WebView это
+ * ReactNativeWebView.postMessage, на web — postMessage в родительское окно.
+ */
+export const PDF_POST_JS = `
+    function __pdfPost(msg) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(msg);
+      } else if (window.parent !== window) {
+        window.parent.postMessage(msg, '*');
+      }
+    }
+`;
+
 /** Injected into pdf.js HTML scroll handler */
 export const PDF_SCROLL_PROGRESS_JS = `
     var __pdfProgressSent = {};
@@ -26,11 +41,11 @@ export const PDF_SCROLL_PROGRESS_JS = `
       [25, 50, 75].forEach(function(t) {
         if (pct >= t && !__pdfProgressSent[t]) {
           __pdfProgressSent[t] = true;
-          window.ReactNativeWebView && window.ReactNativeWebView.postMessage('progress:' + t);
+          __pdfPost('progress:' + t);
         }
       });
       if (el.scrollTop + el.clientHeight >= el.scrollHeight - 48) {
-        window.ReactNativeWebView && window.ReactNativeWebView.postMessage('end');
+        __pdfPost('end');
       }
     }
 `;
@@ -50,8 +65,9 @@ export function normalizePdfDataUri(source: string): string {
 }
 
 /** HTML с pdf.js для Android (WebView не рендерит PDF напрямую) */
-export function pdfJsHtmlFromFile(fileUri: string): string {
+export function pdfJsHtmlFromFile(fileUri: string, theme: ThemeMode = 'light'): string {
   const safeUri = fileUri.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const c = Colors[theme];
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -59,10 +75,10 @@ export function pdfJsHtmlFromFile(fileUri: string): string {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #fff; padding: 8px; }
+    body { background: ${c.page}; padding: 8px; }
     canvas { display: block; width: 100% !important; height: auto !important; margin-bottom: 8px; }
-    #error { color: #c00; padding: 16px; font-family: sans-serif; }
-    #loading { padding: 24px; text-align: center; font-family: sans-serif; color: #666; }
+    #error { color: ${c.error}; padding: 16px; font-family: sans-serif; }
+    #loading { padding: 24px; text-align: center; font-family: sans-serif; color: ${c.neutral}; }
   </style>
 </head>
 <body>
@@ -70,7 +86,8 @@ export function pdfJsHtmlFromFile(fileUri: string): string {
   <div id="pages"></div>
   <div id="error"></div>
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    ${PDF_POST_JS}
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
     const url = '${safeUri}';
     pdfjsLib.getDocument(url).promise.then(async function(pdf) {
       document.getElementById('loading').style.display = 'none';
@@ -84,17 +101,17 @@ export function pdfJsHtmlFromFile(fileUri: string): string {
         canvas.height = viewport.height;
         await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
       }
-      window.ReactNativeWebView && window.ReactNativeWebView.postMessage('loaded');
+      __pdfPost('loaded');
       setTimeout(function() {
         var el = document.scrollingElement || document.documentElement;
         if (el.scrollHeight <= el.clientHeight + 2) {
-          window.ReactNativeWebView && window.ReactNativeWebView.postMessage('end');
+          __pdfPost('end');
         }
       }, 500);
     }).catch(function(err) {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('error').textContent = 'Ошибка загрузки PDF: ' + err.message;
-      window.ReactNativeWebView && window.ReactNativeWebView.postMessage('error');
+      __pdfPost('error');
     });
     ${PDF_SCROLL_PROGRESS_JS}
     window.addEventListener('scroll', __pdfReportProgress, { passive: true });
@@ -104,8 +121,9 @@ export function pdfJsHtmlFromFile(fileUri: string): string {
 }
 
 /** pdf.js с base64-данными (fallback, если file:// недоступен) */
-export function pdfJsHtmlFromBase64(base64: string): string {
+export function pdfJsHtmlFromBase64(base64: string, theme: ThemeMode = 'light'): string {
   const safeB64 = base64.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\s/g, '');
+  const c = Colors[theme];
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -113,10 +131,10 @@ export function pdfJsHtmlFromBase64(base64: string): string {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #fff; padding: 8px; }
+    body { background: ${c.page}; padding: 8px; }
     canvas { display: block; width: 100% !important; height: auto !important; margin-bottom: 8px; }
-    #error { color: #c00; padding: 16px; font-family: sans-serif; }
-    #loading { padding: 24px; text-align: center; font-family: sans-serif; color: #666; }
+    #error { color: ${c.error}; padding: 16px; font-family: sans-serif; }
+    #loading { padding: 24px; text-align: center; font-family: sans-serif; color: ${c.neutral}; }
   </style>
 </head>
 <body>
@@ -124,6 +142,7 @@ export function pdfJsHtmlFromBase64(base64: string): string {
   <div id="pages"></div>
   <div id="error"></div>
   <script>
+    ${PDF_POST_JS}
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const raw = atob('${safeB64}');
     const bytes = new Uint8Array(raw.length);
@@ -140,17 +159,17 @@ export function pdfJsHtmlFromBase64(base64: string): string {
         canvas.height = viewport.height;
         await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
       }
-      window.ReactNativeWebView && window.ReactNativeWebView.postMessage('loaded');
+      __pdfPost('loaded');
       setTimeout(function() {
         var el = document.scrollingElement || document.documentElement;
         if (el.scrollHeight <= el.clientHeight + 2) {
-          window.ReactNativeWebView && window.ReactNativeWebView.postMessage('end');
+          __pdfPost('end');
         }
       }, 500);
     }).catch(function(err) {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('error').textContent = 'Ошибка загрузки PDF: ' + err.message;
-      window.ReactNativeWebView && window.ReactNativeWebView.postMessage('error');
+      __pdfPost('error');
     });
     ${PDF_SCROLL_PROGRESS_JS}
     window.addEventListener('scroll', __pdfReportProgress, { passive: true });

@@ -13,7 +13,7 @@ const OPTIONS: { value: ThemePreference; label: string }[] = [
 
 export function ThemePicker() {
   const { themePreference, setThemePreference } = useTheme();
-  const { text, neutralSoft, primary } = useAppTheme();
+  const { text, neutralSoft, primary, primaryContainer } = useAppTheme();
   const glass = useGlass();
   const [open, setOpen] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
@@ -48,7 +48,7 @@ export function ThemePicker() {
           styles.row,
           {
             backgroundColor: glass.backgroundSubtle,
-            borderColor: open ? 'rgba(0, 132, 255, 0.4)' : glass.borderSubtle,
+            borderColor: open ? glass.primaryBorder : glass.borderSubtle,
           },
         ]}
       >
@@ -88,7 +88,7 @@ export function ThemePicker() {
               style={[
                 styles.option,
                 active && {
-                  backgroundColor: 'rgba(0, 132, 255, 0.12)',
+                  backgroundColor: primaryContainer,
                 },
               ]}
             >

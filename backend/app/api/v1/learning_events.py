@@ -24,7 +24,7 @@ async def create_learning_event(
             status_code=400,
             detail=f"Invalid event. Allowed pairs: {sorted(ALLOWED)}",
         )
-    row = await record_learning_event(
+    row, _ = await record_learning_event(
         db,
         user_id=user.id,
         entity_type=payload.entity_type,

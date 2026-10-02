@@ -74,6 +74,7 @@ export class RescueParameterDialogComponent {
       this._dialogData.parameter?.name ?? '',
       Validators.required
     ),
+    description: new FormControl<string>(this._dialogData.parameter?.description ?? ''),
     isHidden: new FormControl<boolean>(this._dialogData.parameter?.isHidden ?? false, { nonNullable: true }),
     type: new FormControl<'numeric' | 'timer'>(
       this._dialogData.parameter?.type === 'timer' ? 'timer' : 'numeric',
@@ -187,6 +188,9 @@ export class RescueParameterDialogComponent {
     const v = this._form.getRawValue();
     const type = v.type === 'timer' ? 'timer' : 'numeric';
     const severities = this._severitiesList();
+    // Пустое описание не сохраняем вовсе — параметр без description валиден
+    const description = v.description?.trim() ?? '';
+    const descriptionPayload = description.length > 0 ? { description } : {};
     if (type === 'timer') {
       this._ref.close({
         id: v.id!,
@@ -195,7 +199,8 @@ export class RescueParameterDialogComponent {
         type: 'timer',
         delta: 0,
         startValue: timeInputValueToSeconds(v.timerTime ?? ''),
-        severities
+        severities,
+        ...descriptionPayload
       });
       return;
     }
@@ -206,7 +211,8 @@ export class RescueParameterDialogComponent {
       type: 'numeric',
       delta: v.delta ?? 0,
       startValue: v.startValue ?? 0,
-      severities
+      severities,
+      ...descriptionPayload
     });
   }
 

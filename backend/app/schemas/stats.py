@@ -90,6 +90,9 @@ class TestResultOut(CamelModel):
     completed_at: datetime | None = Field(None, alias="completedAt")
     # Заполнено при провале теста со списком сброса: зачёты, переведённые в «не сдан»
     reset_tests: list[ResetTestOut] | None = Field(None, alias="resetTests")
+    # Достижения/награды, выданные этим завершением (дубль WS-события на случай,
+    # если сокет был не подключен): те же payload, что в achievement_unlocked
+    unlocked: list[Any] | None = None
 
 
 class TestResultCreate(CamelModel):

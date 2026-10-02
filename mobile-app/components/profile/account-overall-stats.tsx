@@ -15,18 +15,29 @@ type AccountOverallStatsProps = {
   refreshKey?: number;
 };
 
-const METRIC_COLORS = {
-  articles: '#0084FF',
-  tests: '#F59E0B',
-  rescues: '#FF6B6B',
-  overall: '#4D8B31',
-};
-
 export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps) {
-  const { primary, text, neutralSoft } = useAppTheme();
+  const {
+    primary,
+    warning,
+    success,
+    error,
+    text,
+    neutralSoft,
+    primaryContainer,
+    warningContainer,
+    errorContainer,
+    successContainer,
+  } = useAppTheme();
   const glass = useGlass();
   const { data, isLoading, error: statsError, fetchData } = useAccountOverallStats();
   const isFocused = useIsFocused();
+
+  const METRIC_COLORS = {
+    articles: primary,
+    tests: warning,
+    rescues: error,
+    overall: success,
+  };
 
   useEffect(() => {
     if (isFocused) {
@@ -40,21 +51,21 @@ export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps
       label: 'Статьи',
       value: `${data.documentsReadPercent}%`,
       color: METRIC_COLORS.articles,
-      bg: 'rgba(0, 132, 255, 0.1)',
+      bg: primaryContainer,
     },
     {
       icon: 'list.bullet.clipboard.fill' as const,
       label: 'Тесты',
       value: `${data.testsPassedPercent}%`,
       color: METRIC_COLORS.tests,
-      bg: 'rgba(245, 158, 11, 0.1)',
+      bg: warningContainer,
     },
     {
       icon: 'cross.fill' as const,
       label: 'Режимы спасения',
       value: `${data.rescuesPassedPercent}%`,
       color: METRIC_COLORS.rescues,
-      bg: 'rgba(255, 107, 107, 0.1)',
+      bg: errorContainer,
     },
     {
       icon: 'chart.bar.fill' as const,
@@ -65,7 +76,7 @@ export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps
           100,
       )}%`,
       color: METRIC_COLORS.overall,
-      bg: 'rgba(77, 139, 49, 0.1)',
+      bg: successContainer,
     },
   ];
 
@@ -80,7 +91,7 @@ export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps
 
   if (statsError) {
     return (
-      <ThemedText style={styles.errorText}>Не удалось загрузить статистику</ThemedText>
+      <ThemedText style={[styles.errorText, { color: error }]}>Не удалось загрузить статистику</ThemedText>
     );
   }
 
@@ -221,7 +232,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   errorText: {
-    color: '#FF6B6B',
     marginTop: 24,
   },
 });

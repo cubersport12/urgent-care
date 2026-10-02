@@ -160,7 +160,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
     deviceIdRef.current = deviceId;
   }, [deviceId]);
 
-  const { primary: tintColor } = useAppTheme();
+  const { primary: tintColor, onPrimary: onPrimaryColor } = useAppTheme();
   
   const tintColorRef = useRef(tintColor);
   useEffect(() => {
@@ -334,7 +334,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
             accessibilityRole="button"
             accessibilityLabel="Я все прочитал"
           >
-            <IconSymbol name="checkmark" size={26} color="#FFFFFF" />
+            <IconSymbol name="checkmark" size={26} color={onPrimaryColor} />
           </Pressable>
         </View>
       ) : null}

@@ -12,6 +12,7 @@ import {
   type BillingTariff,
 } from '@/api/billing';
 import { ApiError } from '@/api/utils';
+import { showConfirm } from '@/lib/alert';
 import {
   billingReturnUrl,
   openYookassaCheckout,
@@ -74,7 +75,22 @@ function formatPaymentDate(iso: string): string {
 }
 
 export default function SubscriptionScreen() {
-  const { primary, neutralSoft, text, error: dangerColor, success } = useAppTheme();
+  const {
+    primary,
+    neutralSoft,
+    text,
+    error: dangerColor,
+    success,
+    warning,
+    neutral,
+    warningContainer,
+    primaryContainer,
+    successContainer,
+    elevated1,
+    elevated2,
+    borderVariant,
+    onPrimary,
+  } = useAppTheme();
   const glass = useGlass();
   const glow = useGlow();
   const { contentPaddingBottom } = useNavRail();
@@ -166,7 +182,7 @@ export default function SubscriptionScreen() {
     return () => sub.remove();
   }, [loading, syncPendingPayments]);
 
-  const subscribe = async (tariff: BillingTariff) => {
+  const runSubscribe = async (tariff: BillingTariff) => {
     if (me?.tariffId === tariff.id) return;
     setBusyId(tariff.id);
     try {
@@ -220,6 +236,23 @@ export default function SubscriptionScreen() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const subscribe = (tariff: BillingTariff) => {
+    if (me?.tariffId === tariff.id) return;
+    // Переход на тариф выше при активном платном тарифе проходит мгновенно —
+    // предупреждаем о списании и о том, что остаток дней сгорает
+    const isUpgrade = me?.status === 'active' && me.priceRub > 0 && tariff.rank > me.rank;
+    if (isUpgrade) {
+      showConfirm(
+        'Переход на тариф выше',
+        'Тариф сменится сразу после оплаты. Остаток дней текущего тарифа при этом сгорает и не возвращается.',
+        () => void runSubscribe(tariff),
+        'Продолжить',
+      );
+      return;
+    }
+    void runSubscribe(tariff);
   };
 
   const performCancelRenewal = async () => {
@@ -290,7 +323,7 @@ export default function SubscriptionScreen() {
             }}
             style={[styles.btn, { backgroundColor: primary }]}
           >
-            <ThemedText style={styles.btnText}>Повторить</ThemedText>
+            <ThemedText style={[styles.btnText, { color: onPrimary }]}>Повторить</ThemedText>
           </Pressable>
         </View>
       </ScreenBackground>
@@ -315,14 +348,14 @@ export default function SubscriptionScreen() {
                       styles.currentIconBg,
                       {
                         backgroundColor:
-                          me.priceRub > 0 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(0, 132, 255, 0.12)',
+                          me.priceRub > 0 ? warningContainer : primaryContainer,
                       },
                     ]}
                   >
                     <IconSymbol
                       name={me.priceRub > 0 ? 'star.fill' : 'person.fill'}
                       size={18}
-                      color={me.priceRub > 0 ? '#F59E0B' : primary}
+                      color={me.priceRub > 0 ? warning : primary}
                     />
                   </View>
                   <View>
@@ -341,15 +374,15 @@ export default function SubscriptionScreen() {
                       backgroundColor:
                         me.priceRub > 0
                           ? me.cancelAtPeriodEnd
-                            ? 'rgba(245, 158, 11, 0.1)'
-                            : 'rgba(16, 185, 129, 0.1)'
-                          : 'rgba(107, 114, 128, 0.1)',
+                            ? warningContainer
+                            : successContainer
+                          : elevated2,
                       borderColor:
                         me.priceRub > 0
                           ? me.cancelAtPeriodEnd
-                            ? 'rgba(245, 158, 11, 0.2)'
-                            : 'rgba(16, 185, 129, 0.2)'
-                          : 'rgba(107, 114, 128, 0.2)',
+                            ? glass.warningBorder
+                            : glass.successBorder
+                          : glass.borderSubtle,
                     },
                   ]}
                 >
@@ -360,9 +393,9 @@ export default function SubscriptionScreen() {
                         backgroundColor:
                           me.priceRub > 0
                             ? me.cancelAtPeriodEnd
-                              ? '#F59E0B'
-                              : '#10B981'
-                            : '#6B7280',
+                              ? warning
+                              : success
+                            : neutral,
                       },
                     ]}
                   />
@@ -373,9 +406,9 @@ export default function SubscriptionScreen() {
                         color:
                           me.priceRub > 0
                             ? me.cancelAtPeriodEnd
-                              ? '#F59E0B'
-                              : '#10B981'
-                            : '#6B7280',
+                              ? warning
+                              : success
+                            : neutral,
                       },
                     ]}
                   >
@@ -388,7 +421,7 @@ export default function SubscriptionScreen() {
                 </View>
               </View>
 
-              <View style={[styles.cardDivider, { backgroundColor: 'rgba(128,128,128,0.15)' }]} />
+              <View style={[styles.cardDivider, { backgroundColor: borderVariant }]} />
 
               <View style={styles.currentDetails}>
                 <View style={styles.detailRow}>
@@ -402,8 +435,8 @@ export default function SubscriptionScreen() {
 
                 {me.scheduledTariffTitle && me.scheduledEffectiveAt ? (
                   <View style={[styles.detailRow, { marginTop: 6 }]}>
-                    <IconSymbol name="star.fill" size={14} color="#F59E0B" />
-                    <ThemedText style={[styles.detailText, { color: '#F59E0B' }]}>
+                    <IconSymbol name="star.fill" size={14} color={warning} />
+                    <ThemedText style={[styles.detailText, { color: warning }]}>
                       Запланирован переход на {me.scheduledTariffTitle} с {formatDate(me.scheduledEffectiveAt)}
                     </ThemedText>
                   </View>
@@ -420,8 +453,8 @@ export default function SubscriptionScreen() {
                   style={({ pressed }) => [
                     styles.cancelBtn,
                     {
-                      borderColor: 'rgba(239, 68, 68, 0.25)',
-                      backgroundColor: pressed ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
+                      borderColor: glass.dangerBorder,
+                      backgroundColor: pressed ? glass.dangerTint : 'transparent',
                     },
                   ]}
                 >
@@ -451,8 +484,8 @@ export default function SubscriptionScreen() {
           </ThemedText>
           {me?.promo ? (
             <View style={styles.promoRow}>
-              <IconSymbol name="ticket.fill" size={14} color="#10B981" />
-              <ThemedText style={[styles.promoText, { color: '#10B981' }]}>
+              <IconSymbol name="ticket.fill" size={14} color={success} />
+              <ThemedText style={[styles.promoText, { color: success }]}>
                 Промокод {me.promo.code} · −{me.promo.discountPercent}% применён к цене
               </ThemedText>
             </View>
@@ -480,23 +513,18 @@ export default function SubscriptionScreen() {
                 borderRadius={16}
                 style={[
                   styles.tariffCard,
-                  isCurrent && { borderColor: 'rgba(0, 132, 255, 0.45)', borderWidth: 1.5 },
-                  isPremium && !isCurrent && { borderColor: 'rgba(245, 158, 11, 0.25)', borderWidth: 1 },
+                  isCurrent && { borderColor: glass.primaryBorder, borderWidth: 1.5 },
+                  isPremium && !isCurrent && { borderColor: glass.warningBorder, borderWidth: 1 },
                 ]}
               >
-                {/* ponytail: badge when tariff has isPopular / similar flag from API */}
-                {/* {isPremium && (
-                  <View style={[styles.tariffBadge, { backgroundColor: 'rgba(245, 158, 11, 0.12)' }]}>
-                    <IconSymbol name="star.fill" size={10} color="#F59E0B" />
-                    <ThemedText style={styles.tariffBadgeText}>ПОПУЛЯРНЫЙ</ThemedText>
-                  </View>
-                )} */}
+                {/* ponytail: badge when tariff has isPopular / similar flag from API
+                    (bg warningContainer, иконка и текст warning) */}
 
                 <View style={styles.tariffHeader}>
                   <View style={styles.tariffTitleWrap}>
                     <ThemedText style={styles.tariffTitle}>{tariff.title}</ThemedText>
                     {activePromo ? (
-                      <ThemedText style={[styles.promoBadge, { color: '#10B981' }]}>
+                      <ThemedText style={[styles.promoBadge, { color: success, backgroundColor: successContainer }]}>
                         промокод −{activePromo.discountPercent}%
                       </ThemedText>
                     ) : null}
@@ -504,10 +532,10 @@ export default function SubscriptionScreen() {
                   <View style={styles.priceContainer}>
                     {discounted != null ? (
                       <>
-                        <ThemedText style={[styles.priceVal, styles.priceValOld]}>
+                        <ThemedText style={[styles.priceVal, styles.priceValOld, { color: neutralSoft }]}>
                           {tariff.priceRub} ₽
                         </ThemedText>
-                        <ThemedText style={[styles.priceVal, { color: '#10B981' }]}>
+                        <ThemedText style={[styles.priceVal, { color: success }]}>
                           {discounted} ₽
                         </ThemedText>
                       </>
@@ -532,14 +560,14 @@ export default function SubscriptionScreen() {
 
                 {/* Tariff Button */}
                 {isCurrent ? (
-                  <View style={[styles.tariffStatusBox, { backgroundColor: 'rgba(0, 132, 255, 0.08)', marginTop: tariff.description ? 0 : 16 }]}>
+                  <View style={[styles.tariffStatusBox, { backgroundColor: glass.primaryTint, marginTop: tariff.description ? 0 : 16 }]}>
                     <IconSymbol name="checkmark" size={14} color={primary} />
                     <ThemedText style={[styles.tariffStatusText, { color: primary }]}>
                       Ваш текущий тариф
                     </ThemedText>
                   </View>
                 ) : isScheduled ? (
-                  <View style={[styles.tariffStatusBox, { backgroundColor: 'rgba(128, 128, 128, 0.08)', marginTop: tariff.description ? 0 : 16 }]}>
+                  <View style={[styles.tariffStatusBox, { backgroundColor: elevated1, marginTop: tariff.description ? 0 : 16 }]}>
                     <IconSymbol name="clock.fill" size={14} color={neutralSoft} />
                     <ThemedText style={[styles.tariffStatusText, { color: neutralSoft }]}>
                       Запланирован к переходу
@@ -552,22 +580,22 @@ export default function SubscriptionScreen() {
                     style={({ pressed }) => [
                       styles.subscribeBtn,
                       {
-                        backgroundColor: isPremium ? '#F59E0B' : primary,
+                        backgroundColor: isPremium ? warning : primary,
                         opacity: busyId === tariff.id ? 0.6 : pressed ? 0.85 : 1,
                         marginTop: tariff.description ? 0 : 16,
                       },
                     ]}
                   >
                     {busyId === tariff.id ? (
-                      <ActivityIndicator size="small" color="#fff" />
+                      <ActivityIndicator size="small" color={onPrimary} />
                     ) : (
-                      <ThemedText style={styles.subscribeBtnText}>
+                      <ThemedText style={[styles.subscribeBtnText, { color: onPrimary }]}>
                         {me && me.priceRub > 0 ? 'Сменить тариф' : 'Подключить тариф'}
                       </ThemedText>
                     )}
                   </Pressable>
                 ) : canSelect && tariff.priceRub <= 0 && me && me.priceRub > 0 ? (
-                  <View style={[styles.tariffStatusBox, { backgroundColor: 'rgba(128, 128, 128, 0.05)', marginTop: tariff.description ? 0 : 16 }]}>
+                  <View style={[styles.tariffStatusBox, { backgroundColor: elevated1, marginTop: tariff.description ? 0 : 16 }]}>
                     <ThemedText style={[styles.tariffStatusText, { color: neutralSoft, fontSize: 12, textAlign: 'center' }]}>
                       Станет доступен после окончания текущего периода
                     </ThemedText>
@@ -607,10 +635,10 @@ export default function SubscriptionScreen() {
                         styles.paymentIconBg,
                         {
                           backgroundColor: isSucceeded
-                            ? 'rgba(16, 185, 129, 0.1)'
+                            ? successContainer
                             : isPending
-                              ? 'rgba(245, 158, 11, 0.1)'
-                              : 'rgba(239, 68, 68, 0.1)',
+                              ? warningContainer
+                              : glass.dangerTint,
                         },
                       ]}
                     >
@@ -623,7 +651,7 @@ export default function SubscriptionScreen() {
                               : 'xmark.circle.fill'
                         }
                         size={16}
-                        color={isSucceeded ? '#10B981' : isPending ? '#F59E0B' : dangerColor}
+                        color={isSucceeded ? success : isPending ? warning : dangerColor}
                       />
                     </View>
 
@@ -634,7 +662,7 @@ export default function SubscriptionScreen() {
                           style={[
                             styles.paymentStatusText,
                             {
-                              color: isSucceeded ? '#10B981' : isPending ? '#F59E0B' : dangerColor,
+                              color: isSucceeded ? success : isPending ? warning : dangerColor,
                             },
                           ]}
                         >
@@ -669,7 +697,7 @@ export default function SubscriptionScreen() {
                     ) : null}
                   </View>
                   {idx < payments.length - 1 && (
-                    <View style={[styles.paymentDivider, { backgroundColor: 'rgba(128,128,128,0.1)' }]} />
+                    <View style={[styles.paymentDivider, { backgroundColor: borderVariant }]} />
                   )}
                 </View>
               );
@@ -703,7 +731,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   btnText: {
-    color: '#fff',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -819,23 +846,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  tariffBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderBottomLeftRadius: 12,
-  },
-  tariffBadgeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#F59E0B',
-    letterSpacing: 0.5,
-  },
   tariffHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -860,7 +870,6 @@ const styles = StyleSheet.create({
   promoBadge: {
     fontSize: 11,
     fontWeight: '700',
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -869,7 +878,6 @@ const styles = StyleSheet.create({
   priceValOld: {
     fontSize: 14,
     fontWeight: '500',
-    color: 'rgba(128,128,128,0.6)',
     textDecorationLine: 'line-through',
   },
   priceVal: {
@@ -894,7 +902,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   subscribeBtnText: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: '700',
   },

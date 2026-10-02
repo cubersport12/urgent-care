@@ -21,7 +21,7 @@ import {
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { primary: tintColor, layout1, border } = useAppTheme();
+  const { primary: tintColor, layout1, border, onPrimary } = useAppTheme();
   const glass = useGlass();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -135,11 +135,12 @@ export default function RegisterScreen() {
               <View
                 style={[
                   styles.checkbox,
+                  { borderColor: border },
                   consentAccepted && { backgroundColor: tintColor, borderColor: tintColor },
                 ]}
               >
                 {consentAccepted ? (
-                  <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
+                  <IconSymbol name="checkmark" size={14} color={onPrimary} />
                 ) : null}
               </View>
               <ThemedText style={styles.consentText}>
@@ -232,7 +233,6 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: 'rgba(128,128,128,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 1,

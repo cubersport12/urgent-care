@@ -22,7 +22,7 @@ import {
 } from 'react-native';
 
 function MediaIcon({ path, locked }: { path?: string | null; locked?: boolean }) {
-  const { primary, neutralSoft } = useAppTheme();
+  const { primary, neutralSoft, warning, elevated2, warningContainer } = useAppTheme();
   const { response, isLoading } = useFileImage(path ?? '');
 
   if (!path) {
@@ -30,13 +30,13 @@ function MediaIcon({ path, locked }: { path?: string | null; locked?: boolean })
       <View
         style={[
           styles.iconBox,
-          { backgroundColor: locked ? 'rgba(128,128,128,0.1)' : 'rgba(245, 158, 11, 0.12)' },
+          { backgroundColor: locked ? elevated2 : warningContainer },
         ]}
       >
         <IconSymbol
           name="trophy.fill"
           size={22}
-          color={locked ? neutralSoft : '#F59E0B'}
+          color={locked ? neutralSoft : warning}
         />
       </View>
     );
@@ -46,7 +46,7 @@ function MediaIcon({ path, locked }: { path?: string | null; locked?: boolean })
     <View
       style={[
         styles.iconBox,
-        { backgroundColor: locked ? 'rgba(128,128,128,0.1)' : 'rgba(245, 158, 11, 0.12)' },
+        { backgroundColor: locked ? elevated2 : warningContainer },
         locked && { opacity: 0.45 },
       ]}
     >
@@ -55,7 +55,7 @@ function MediaIcon({ path, locked }: { path?: string | null; locked?: boolean })
       ) : response ? (
         <Image source={{ uri: response }} style={styles.iconImg} resizeMode="cover" />
       ) : (
-        <IconSymbol name="trophy.fill" size={22} color={locked ? neutralSoft : '#F59E0B'} />
+        <IconSymbol name="trophy.fill" size={22} color={locked ? neutralSoft : warning} />
       )}
     </View>
   );
@@ -73,7 +73,17 @@ function ruleHint(a: AchievementMe): string {
 }
 
 export default function AchievementsScreen() {
-  const { primary, neutralSoft, text, error: dangerColor } = useAppTheme();
+  const {
+    primary,
+    neutralSoft,
+    text,
+    error: dangerColor,
+    warning,
+    success,
+    onPrimary,
+    borderVariant,
+    border,
+  } = useAppTheme();
   const { contentPaddingBottom } = useNavRail();
   const [achievements, setAchievements] = useState<AchievementMe[]>([]);
   const [rewards, setRewards] = useState<RewardMe[]>([]);
@@ -133,7 +143,7 @@ export default function AchievementsScreen() {
             }}
             style={[styles.retryBtn, { backgroundColor: primary }]}
           >
-            <ThemedText style={styles.retryText}>Повторить</ThemedText>
+            <ThemedText style={[styles.retryText, { color: onPrimary }]}>Повторить</ThemedText>
           </Pressable>
         </View>
       ) : (
@@ -166,18 +176,18 @@ export default function AchievementsScreen() {
                           {a.description}
                         </ThemedText>
                       ) : null}
-                      <ThemedText type="caption" style={{ color: a.unlocked ? '#10B981' : neutralSoft }}>
+                      <ThemedText type="caption" style={{ color: a.unlocked ? success : neutralSoft }}>
                         {a.unlocked ? 'Получено' : ruleHint(a)}
                       </ThemedText>
                     </View>
                     {a.unlocked ? (
-                      <IconSymbol name="checkmark.circle.fill" size={20} color="#10B981" />
+                      <IconSymbol name="checkmark.circle.fill" size={20} color={success} />
                     ) : (
                       <IconSymbol name="lock.fill" size={18} color={neutralSoft} />
                     )}
                   </View>
                   {idx < achievements.length - 1 ? (
-                    <View style={[styles.divider, { backgroundColor: 'rgba(128,128,128,0.12)' }]} />
+                    <View style={[styles.divider, { backgroundColor: borderVariant }]} />
                   ) : null}
                 </View>
               ))}
@@ -217,14 +227,14 @@ export default function AchievementsScreen() {
                           За: {r.achievementTitles.join(', ')}
                         </ThemedText>
                       </View>
-                      <IconSymbol name="star.fill" size={18} color="#F59E0B" />
+                      <IconSymbol name="star.fill" size={18} color={warning} />
                     </View>
                     {files.length > 0 ? (
                       <View style={styles.attachments}>
                         {files.map((f, fIdx) => (
                           <Pressable
                             key={f}
-                            style={[styles.attachmentChip, { borderColor: 'rgba(128,128,128,0.25)' }]}
+                            style={[styles.attachmentChip, { borderColor: border }]}
                             onPress={() => setOpenFiles({ files, index: fIdx })}
                           >
                             <IconSymbol
@@ -244,7 +254,7 @@ export default function AchievementsScreen() {
                       </View>
                     ) : null}
                     {idx < rewards.length - 1 ? (
-                      <View style={[styles.divider, { backgroundColor: 'rgba(128,128,128,0.12)' }]} />
+                      <View style={[styles.divider, { backgroundColor: borderVariant }]} />
                     ) : null}
                   </View>
                 );
@@ -346,7 +356,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   retryText: {
-    color: '#fff',
     fontWeight: '600',
   },
 });

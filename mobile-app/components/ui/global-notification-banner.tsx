@@ -2,7 +2,6 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useImmersive } from '@/contexts/immersive-context';
 import { useNotifications } from '@/contexts/notifications-context';
-import { useTheme } from '@/contexts/theme-context';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { usePathname, useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -17,16 +16,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 export function GlobalNotificationBanner() {
   const { banner, dismissBanner } = useNotifications();
   const { isImmersive } = useImmersive();
-  const { theme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { primary, text, neutralSoft, layout1, border } = useAppTheme();
+  const { primary, text, neutralSoft, surfaceRaised, primaryContainer, border, shadow } = useAppTheme();
 
   const onNotificationsScreen = pathname?.includes('notifications') ?? false;
   const hidden = !banner || isImmersive || onNotificationsScreen;
-  // Opaque surface so page content cannot show through the toast.
-  const cardBg = theme === 'light' ? layout1 : '#1C1C1E';
 
   useEffect(() => {
     if (hidden || !banner) return;
@@ -58,13 +54,14 @@ export function GlobalNotificationBanner() {
               style={({ pressed }) => [
                 styles.card,
                 {
-                  backgroundColor: cardBg,
+                  backgroundColor: surfaceRaised,
                   borderColor: border,
+                  shadowColor: shadow,
                   opacity: pressed ? 0.96 : 1,
                 },
               ]}
             >
-              <View style={[styles.iconBg, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+              <View style={[styles.iconBg, { backgroundColor: primaryContainer }]}>
                 <IconSymbol name="bell.fill" size={16} color={primary} />
               </View>
               <View style={styles.body}>
@@ -104,7 +101,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     elevation: 16,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.28,
     shadowRadius: 12,

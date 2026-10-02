@@ -11,7 +11,7 @@ import { ScreenBackground } from '@/components/ui/screen-background';
 import { Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
@@ -31,7 +31,8 @@ const OCCUPATION_PRESETS = ['Студент', 'Врач', 'Ассистент', 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { primary, neutralSoft, border } = useAppTheme();
+  const { primary, primaryContainer, neutralSoft, border, white } = useAppTheme();
+  const glass = useGlass();
   const { contentPaddingBottom } = useNavRail();
   const { response: avatarUri } = useFileImage(user?.avatar_key ?? '');
 
@@ -132,7 +133,7 @@ export default function EditProfileScreen() {
       >
         <GlassCard padding={20} borderRadius={16}>
           <View style={styles.avatarSection}>
-            <Pressable onPress={() => void pickAvatar()} style={[styles.avatar, { borderColor: primary }]}>
+            <Pressable onPress={() => void pickAvatar()} style={[styles.avatar, { borderColor: primary, backgroundColor: glass.primaryTint }]}>
               {avatarUri ? (
                 <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
               ) : initials ? (
@@ -141,7 +142,7 @@ export default function EditProfileScreen() {
                 <IconSymbol name="person.fill" size={32} color={primary} />
               )}
               <View style={[styles.avatarEditBadge, { backgroundColor: primary }]}>
-                <IconSymbol name="photo.fill" size={13} color="#FFFFFF" />
+                <IconSymbol name="photo.fill" size={13} color={white} />
               </View>
             </Pressable>
             {uploadingAvatar ? <ActivityIndicator style={styles.avatarSpinner} /> : null}
@@ -184,7 +185,7 @@ export default function EditProfileScreen() {
                     style={[
                       styles.chip,
                       { borderColor: active ? primary : border },
-                      active && { backgroundColor: `${primary}22` },
+                      active && { backgroundColor: primaryContainer },
                     ]}
                   >
                     <ThemedText
@@ -245,7 +246,6 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 48,
     borderWidth: 1.5,
-    backgroundColor: 'rgba(0, 132, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

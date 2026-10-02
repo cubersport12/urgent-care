@@ -15,7 +15,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
  */
 export default function QrCodeScreen() {
   const { user } = useAuth();
-  const { text, neutralSoft } = useAppTheme();
+  const { text, neutralSoft, white } = useAppTheme();
   const { contentPaddingBottom } = useNavRail();
 
   const name = user?.full_name || user?.email || 'Пользователь';
@@ -31,7 +31,8 @@ export default function QrCodeScreen() {
           {user?.id ? (
             // Тёмные модули на белой плитке в обеих темах — иначе QR не сканируется
             // и не виден в тёмной теме.
-            <View style={styles.qrBox}>
+            <View style={[styles.qrBox, { backgroundColor: white }]}>
+              {/* QR: максимальный контраст для сканирования — сознательно вне темы */}
               <QRCode value={user.id} size={220} color="#111111" backgroundColor="#FFFFFF" />
             </View>
           ) : (
@@ -72,7 +73,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
   },
   name: {
     fontSize: 18,

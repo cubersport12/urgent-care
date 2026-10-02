@@ -113,6 +113,7 @@ function parameterGroup(p: NullableValue<RescueTimerParameterVm> = null): FormGr
   return new FormGroup({
     id: new FormControl<string>(p?.id ?? generateGUID(), Validators.required),
     name: new FormControl<string>(p?.name ?? '', Validators.required),
+    description: new FormControl<string>(p?.description ?? ''),
     isHidden: new FormControl<boolean>(p?.isHidden ?? false, { nonNullable: true }),
     type: new FormControl<'numeric' | 'timer'>(typ, { nonNullable: true }),
     delta: new FormControl<number>(p?.delta ?? 0),
@@ -497,6 +498,7 @@ export class RescueEditorComponent {
     const parametersList: RescueTimerParameterVm[] = (parameters ?? []).map((p: Record<string, unknown>) => {
       const type = (p['type'] as 'numeric' | 'timer' | undefined) ?? 'numeric';
       const severities = p['severities'] as RescueParameterSeverityVm[] | undefined;
+      const description = (p['description'] as string | undefined)?.trim() ?? '';
       const base: RescueTimerParameterVm = {
         id: p['id'] as string,
         name: p['name'] as string,
@@ -505,10 +507,11 @@ export class RescueEditorComponent {
         delta: type === 'timer' ? 0 : (p['delta'] as number) ?? 0,
         startValue: (p['startValue'] as number) ?? 0
       };
+      const withDescription = description.length > 0 ? { ...base, description } : base;
       if (severities != null && severities.length > 0) {
-        return { ...base, severities };
+        return { ...withDescription, severities };
       }
-      return base;
+      return withDescription;
     });
     const scenesList: RescueSceneVm[] = (scenes ?? []).map((s: Record<string, unknown>, index: number) => ({
       id: s['id'] as string,

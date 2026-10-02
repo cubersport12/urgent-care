@@ -6,8 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_current_user, get_db
 from app.api.v1._content_access import (
+    annotate_content_list,
     assert_content_visible,
-    filter_content_list,
+    content_out,
     with_default_tariff,
 )
 from app.api.v1._content_helpers import dump_create, dump_update, new_id, not_found
@@ -25,10 +26,11 @@ async def list_articles(
     user: Annotated[User, Depends(get_current_user)],
     parent_id: str | None = Query(None, alias="parentId"),
     all_items: bool = Query(False, alias="all"),
-) -> list:
+) -> list[ArticleOut]:
     repo = ArticleRepository(db)
     items = await repo.list_all() if all_items else await repo.list_by_parent(parent_id)
-    return await filter_content_list(db, user, items)
+    annotated = await annotate_content_list(db, user, items)
+    return [content_out(item, ArticleOut, locked) for item, locked in annotated]
 
 
 @router.get("/{item_id}", response_model=ArticleOut)

@@ -23,6 +23,7 @@ import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-comple
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -30,7 +31,7 @@ import { ArticleView } from './article-view';
 import { BackButton } from './explorer/back-button';
 import { ExplorerItemComponent, rescueDisplayName } from './explorer/explorer-item';
 import { StudyFolderCard } from './explorer/study-folder-card';
-import { BreadcrumbItem, ExplorerItem } from './explorer/types';
+import { BreadcrumbItem, ExplorerItem, type LockReason } from './explorer/types';
 import { RescueComplete } from './rescue/rescue-complete';
 import { RescueStart } from './rescue/rescue-start';
 import { RescueView } from './rescue/rescue-view';
@@ -51,6 +52,7 @@ import { Spacing } from '@/constants/theme';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 
 export function Explorer() {
+  const router = useRouter();
   const [currentFolderId, setCurrentFolderId] = useState<string | undefined>(undefined);
   const [selectedArticle, setSelectedArticle] = useState<AppArticleVm | null>(null);
   const [selectedTest, setSelectedTest] = useState<AppTestVm | null>(null);
@@ -434,9 +436,16 @@ export function Explorer() {
   }, [items, readArticlesMap, testsStatsMap]);
 
   const handleItemPress = (item: ExplorerItem) => {
-    // Не обрабатываем нажатия на disabled элементы
-    // (это уже обрабатывается в Pressable, но на всякий случай)
-    
+    // Заблокировано тарифом/наградой: вместо открытия — ведём к покупке/достижениям
+    if (item.data.isLocked) {
+      router.push(
+        item.data.lockedBy === 'reward'
+          ? '/(tabs)/profile/achievements'
+          : '/(tabs)/profile/subscription',
+      );
+      return;
+    }
+
     if (item.type === 'folder') {
       setIsNavigating(true);
       opacity.value = withTiming(0, { duration: 200 });
@@ -553,10 +562,8 @@ export function Explorer() {
 
   const handleFinishTest = () => {
     resetTest();
-    // Не сбрасываем selectedTest, чтобы вернуться к TestView
-    // setSelectedTest(null);
-    // setBreadcrumb(prev => prev.slice(0, -1));
-    opacity.value = withTiming(1, { duration: 300 });
+    // После завершения теста возвращаемся в папку, из которой он открывался
+    handleBackToFolder();
   };
 
   const { isWide, contentPaddingBottom } = useNavRail();
@@ -934,6 +941,7 @@ export function Explorer() {
                           name={folderItem.data.name}
                           materialCount={counts?.total ?? 0}
                           progressPercent={progressPercent}
+                          locked={(folderItem.data.lockedBy as LockReason | null) ?? undefined}
                           index={i}
                           onPress={() => handleItemPress(folderItem)}
                         />
