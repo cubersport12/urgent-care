@@ -1,7 +1,9 @@
+import { useAchievementUnlocks } from '@/contexts/achievements-context';
 import { useTest } from '@/contexts/test-context';
 import { computeTestOutcome, persistTestCompletion, resetTestCompletionGuard } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
+import type { AchievementUnlockPayload } from '@/lib/notifications-ws';
 import { useEffect, useRef, useState } from 'react';
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { TestQuestionView } from './test-taking/test-question-view';
@@ -32,6 +34,7 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
     processSkippedQuestions,
   } = useTest();
   const { deviceId } = useDeviceId();
+  const { showUnlocks } = useAchievementUnlocks();
 
   // Хук для сохранения статистики теста (вызываем всегда, но используем только когда нужно)
   const testStatsHook = useAddOrUpdateTestStats({
@@ -74,9 +77,12 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
       .then((saved) => {
         // Провал «экзамена»: бэкенд вернул зачёты, переведённые в «не сданы»
         if (saved?.resetTests?.length) setResetTests(saved.resetTests);
+        // Достижения/награды этого завершения — дублируем WS-показ (дедуп в контексте),
+        // чтобы уведомление приходило и при неподключенном сокете
+        showUnlocks(saved?.unlocked as AchievementUnlockPayload[] | null | undefined);
       })
       .catch((err) => console.error('Error persisting test completion:', err));
-  }, [isTestCompleted, test, deviceId, startedAt, finishReason, processSkippedQuestions, testStatsHook]);
+  }, [isTestCompleted, test, deviceId, startedAt, finishReason, processSkippedQuestions, testStatsHook, showUnlocks]);
 
   // Автозавершение теста при превышении лимита ошибок (ошибок стало больше maxErrors)
   useEffect(() => {

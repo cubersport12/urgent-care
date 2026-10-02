@@ -342,8 +342,10 @@ class BillingService:
                 detail="A plan change is already scheduled; cancel it first",
             )
 
-        # Paid → paid: schedule at period end
-        if current.price_rub > 0 and target.price_rub > 0:
+        # Paid → paid: апгрейд (выше рангом) — сразу, остаток дней текущего тарифа
+        # сгорает (период нового начинается с нуля в _activate_plan);
+        # даунгрейд/равный ранг — отложенно до конца текущего периода
+        if current.price_rub > 0 and target.price_rub > 0 and target.rank <= current.rank:
             change = await self.repo.create_scheduled_change(
                 user_id=user.id,
                 from_tariff_id=current.id,

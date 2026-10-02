@@ -41,6 +41,7 @@ const MAPPING = {
   'trophy.fill': 'emoji-events',
   'gift.fill': 'card-giftcard',
   'lock.fill': 'lock',
+  'crown.fill': 'workspace-premium',
   'book.fill': 'menu-book',
   'clock.fill': 'schedule',
   'globe': 'language',

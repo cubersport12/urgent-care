@@ -38,14 +38,16 @@ async def record_learning_event(
     entity_id: str,
     event: str,
     payload: dict[str, Any] | None = None,
-):
+) -> tuple[Any | None, list[dict]]:
+    """Записывает событие; на терминальных событиях синкает достижения.
+    Возвращает (row, unlock_payloads) — пейлоады дублю WS-события achievement_unlocked."""
     from app.models.learning_event import LearningEvent
 
     et = (entity_type or "").strip().lower()
     ev = (event or "").strip().lower()
     eid = (entity_id or "").strip()
     if not eid or (et, ev) not in ALLOWED:
-        return None
+        return None, []
     row = LearningEvent(
         id=uuid4(),
         user_id=user_id,
@@ -56,9 +58,10 @@ async def record_learning_event(
     )
     session.add(row)
     await session.flush()
+    unlocks: list[dict] = []
     # Unlock + WS push only on terminal events (opened/progress never unlock).
     if ev in ("completed", "finished"):
         from app.services.achievement_notify import sync_and_notify
 
-        await sync_and_notify(session, user_id)
-    return row
+        unlocks = await sync_and_notify(session, user_id)
+    return row, unlocks

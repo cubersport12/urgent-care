@@ -322,6 +322,14 @@ export type ArticleOut = {
      * Requiredrewardid
      */
     requiredRewardId: string | null;
+    /**
+     * Islocked
+     */
+    isLocked: boolean;
+    /**
+     * Lockedby
+     */
+    lockedBy: string | null;
 };
 
 /**
@@ -715,6 +723,14 @@ export type FolderOut = {
      * Requiredrewardid
      */
     requiredRewardId: string | null;
+    /**
+     * Islocked
+     */
+    isLocked: boolean;
+    /**
+     * Lockedby
+     */
+    lockedBy: string | null;
 };
 
 /**
@@ -1374,6 +1390,14 @@ export type RescueOut = {
      * Requiredrewardid
      */
     requiredRewardId: string | null;
+    /**
+     * Islocked
+     */
+    isLocked: boolean;
+    /**
+     * Lockedby
+     */
+    lockedBy: string | null;
 };
 
 /**
@@ -2201,6 +2225,14 @@ export type TestOut = {
      * Requiredrewardid
      */
     requiredRewardId: string | null;
+    /**
+     * Islocked
+     */
+    isLocked: boolean;
+    /**
+     * Lockedby
+     */
+    lockedBy: string | null;
 };
 
 /**
@@ -2295,6 +2327,10 @@ export type TestResultOut = {
      * Resettests
      */
     resetTests?: Array<ResetTestOut> | null;
+    /**
+     * Unlocked
+     */
+    unlocked?: Array<unknown> | null;
 };
 
 /**

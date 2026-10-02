@@ -17,7 +17,12 @@ export function showAlert(title: string, message?: string, onPress?: () => void)
  * Диалог подтверждения: window.confirm на web (window.alert/confirm — единственные
  * синхронные диалоги RN-web), Alert.alert с кнопками на нативе.
  */
-export function showConfirm(title: string, message: string, onConfirm: () => void): void {
+export function showConfirm(
+  title: string,
+  message: string,
+  onConfirm: () => void,
+  confirmLabel = 'Выйти',
+): void {
   if (Platform.OS === 'web') {
     if (window.confirm(message ? `${title}\n\n${message}` : title)) {
       onConfirm();
@@ -26,6 +31,6 @@ export function showConfirm(title: string, message: string, onConfirm: () => voi
   }
   Alert.alert(title, message, [
     { text: 'Отмена', style: 'cancel' },
-    { text: 'Выйти', style: 'destructive', onPress: onConfirm },
+    { text: confirmLabel, style: 'destructive', onPress: onConfirm },
   ]);
 }

@@ -29,12 +29,16 @@ async def notify_unlocks(
     session: AsyncSession,
     user_id: UUID,
     newly: list[UserAchievement],
-) -> None:
+) -> list[dict]:
+    """Показать разблокировки (WS + push + Notification). Возвращает data-пейлоады
+    (те же, что ушли в WS) — их можно продублировать клиенту в HTTP-ответе,
+    чтобы событие не терялось, если WS в момент выдачи не был подключен."""
     if not newly:
-        return
+        return []
     from app.services.reward_unlock import is_reward_unlocked
 
     repo = AchievementRepository(session)
+    payloads: list[dict] = []
     unlocked_achs = {u.achievement_id for u in await repo.list_user_unlocks(user_id)}
     for unlock in newly:
         ach = await repo.get_achievement(unlock.achievement_id)
@@ -56,28 +60,26 @@ async def notify_unlocks(
         await session.flush()
         await session.refresh(notif)
 
-        payload = {
-            "type": "achievement_unlocked",
-            "data": {
-                "notification": _notif_payload(notif),
-                "achievement": {
-                    "id": str(ach.id),
-                    "title": ach.title,
-                    "description": ach.description,
-                    "iconPath": ach.icon_path,
-                },
-                "reward": (
-                    {
-                        "title": reward.title,
-                        "description": reward.description,
-                        "iconPath": reward.icon_path,
-                    }
-                    if reward
-                    else None
-                ),
+        data = {
+            "notification": _notif_payload(notif),
+            "achievement": {
+                "id": str(ach.id),
+                "title": ach.title,
+                "description": ach.description,
+                "iconPath": ach.icon_path,
             },
+            "reward": (
+                {
+                    "title": reward.title,
+                    "description": reward.description,
+                    "iconPath": reward.icon_path,
+                }
+                if reward
+                else None
+            ),
         }
-        await notification_hub.send_user(user_id, payload)
+        payloads.append(data)
+        await notification_hub.send_user(user_id, {"type": "achievement_unlocked", "data": data})
         await push_user(
             session,
             user_id,
@@ -95,9 +97,9 @@ async def notify_unlocks(
                     reward.subscription_days,
                     source="reward",
                 )
+    return payloads
 
 
-async def sync_and_notify(session: AsyncSession, user_id: UUID) -> list[UserAchievement]:
+async def sync_and_notify(session: AsyncSession, user_id: UUID) -> list[dict]:
     newly = await AchievementRepository(session).sync_unlocks(user_id)
-    await notify_unlocks(session, user_id, newly)
-    return newly
+    return await notify_unlocks(session, user_id, newly)

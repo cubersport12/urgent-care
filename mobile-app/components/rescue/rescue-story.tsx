@@ -46,11 +46,6 @@ function findSeverityForValue(
   return null;
 }
 
-function severityBandKey(s: RescueParameterSeverityVm | null): string {
-  if (!s) return '';
-  return `${s.min ?? ''}:${s.max ?? ''}:${s.severity ?? ''}`;
-}
-
 /** Цвет значения параметра по enum серьёзности */
 function colorForSeverity(
   severity: RescueParameterSeverityEnum | undefined,
@@ -69,41 +64,13 @@ function colorForSeverity(
   }
 }
 
-/** Toast описания уровня */
-function SeverityDescriptionToast({ message }: { message: string | null }) {
-  const glass = useGlass();
-  const { surfaceRaised, shadow } = useAppTheme();
-
-  if (!message) return null;
-
-  return (
-    <View
-      style={[
-        styles.severityToast,
-        {
-          backgroundColor: surfaceRaised,
-          borderColor: glass.border,
-          shadowColor: shadow,
-        },
-      ]}
-      pointerEvents="none"
-    >
-      <ThemedText style={styles.severityToastText}>
-        {message}
-      </ThemedText>
-    </View>
-  );
-}
-
 /** Glass-карточка параметра в стиле kimi PatientParameterCard */
 function ParameterBadge({
   param,
   value,
-  onSeverityDescription,
 }: {
   param: RescueTimerParameterVm;
   value: number;
-  onSeverityDescription?: (description: string) => void;
 }) {
   const { theme } = useTheme();
   const glass = useGlass();
@@ -119,26 +86,18 @@ function ParameterBadge({
 
   const backgroundColor = useSharedValue(surfaceRaised);
   const prevValueRef = useRef(value);
-  const prevBandKeyRef = useRef(severityBandKey(severityBand));
 
   useEffect(() => {
     if (prevValueRef.current === value) return;
 
     prevValueRef.current = value;
 
-    const newBand = findSeverityForValue(value, param.severities);
-    const newKey = severityBandKey(newBand);
-    if (newKey !== prevBandKeyRef.current && newBand?.description?.trim()) {
-      onSeverityDescription?.(newBand.description.trim());
-    }
-    prevBandKeyRef.current = newKey;
-
     const { base, flash } = { base: surfaceRaised, flash: surfaceRaisedPressed };
     backgroundColor.value = withSequence(
       withTiming(flash, { duration: 160 }),
       withTiming(base, { duration: 320 }),
     );
-  }, [value, param.severities, backgroundColor, onSeverityDescription, surfaceRaised, surfaceRaisedPressed]);
+  }, [value, backgroundColor, surfaceRaised, surfaceRaisedPressed]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     backgroundColor: backgroundColor.value,
@@ -255,7 +214,6 @@ export function RescueSceneVisualNovel({
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [hasShownChoices, setHasShownChoices] = useState(false);
-  const [severityToastMessage, setSeverityToastMessage] = useState<string | null>(null);
   const [docsModalVisible, setDocsModalVisible] = useState(false);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -390,17 +348,12 @@ export function RescueSceneVisualNovel({
           ]}
           pointerEvents="box-none"
         >
-          <SeverityDescriptionToast
-            key={severityToastMessage ?? 'empty'}
-            message={severityToastMessage}
-          />
           <View style={styles.parametersGrid}>
             {parametersList.map((param) => (
               <ParameterBadge
                 key={param.id}
                 param={param}
                 value={parameterValues[param.id] ?? param.startValue}
-                onSeverityDescription={setSeverityToastMessage}
               />
             ))}
           </View>
@@ -600,27 +553,6 @@ const styles = StyleSheet.create({
   parameterFill: {
     height: '100%',
     borderRadius: Radius.pill,
-  },
-  severityToast: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    top: 0,
-    zIndex: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: Radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  severityToastText: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '500',
-    textAlign: 'center',
   },
   unreviewedSceneFrame: {
     borderWidth: 4,

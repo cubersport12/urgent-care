@@ -1,5 +1,5 @@
 # GitHub Pages publish is manual-only.
-# Production deploy + APK: see release.yml (triggered by GitHub Release).
+# Production deploy + APK: see release.yml (GitHub Release, or any push/merge to main).
 
 name: GitHub Pages (manual)
 

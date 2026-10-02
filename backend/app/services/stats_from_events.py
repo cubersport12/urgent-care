@@ -321,7 +321,7 @@ async def create_test_result(
     answers: Any | None,
     completion_type: str | None = None,
 ) -> TestResultOut:
-    row = await record_learning_event(
+    row, unlocked = await record_learning_event(
         session,
         user_id=user_id,
         entity_type="test",
@@ -352,6 +352,7 @@ async def create_test_result(
         answers=answers,
         completed_at=row.created_at,
         reset_tests=reset_tests or None,
+        unlocked=unlocked or None,
     )
 
 

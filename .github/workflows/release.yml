@@ -1,10 +1,12 @@
-# Triggered when you publish a GitHub Release.
-# - Builds TroubleDent.apk → workflow artifact (+ attaches to the GitHub Release)
-# - Builds web frontends and deploys backend + static to the VPS
+# - push to main (merge): deploy backend + static frontends to the VPS
+# - GitHub Release published: same deploy + builds TroubleDent.apk and attaches it
+# - workflow_dispatch: manual run of both
 
 name: Release
 
 on:
+  push:
+    branches: [main]
   release:
     types: [published]
   workflow_dispatch:
@@ -26,6 +28,8 @@ env:
 jobs:
   build-android:
     name: Build & publish APK
+    # APK нужен только для релизов и ручных прогонов; мерж в main — только деплой на VPS
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 

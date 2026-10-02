@@ -3,8 +3,19 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
-import { subscribeNotifications } from '@/lib/notifications-ws';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  subscribeNotifications,
+  type AchievementUnlockPayload,
+} from '@/lib/notifications-ws';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -48,6 +59,20 @@ function PopupIcon({ path, kind }: { path?: string | null; kind: UnlockPopup['ki
   );
 }
 
+type AchievementsUnlockContextValue = {
+  /** Показать разблокировки из HTTP-ответа (дубль WS-события achievement_unlocked). */
+  showUnlocks: (payloads: AchievementUnlockPayload[] | null | undefined) => void;
+};
+
+const AchievementsUnlockContext = createContext<AchievementsUnlockContextValue>({
+  showUnlocks: () => {},
+});
+
+/** Доступ к показу попапов достижений/наград из любого места дерева. */
+export function useAchievementUnlocks() {
+  return useContext(AchievementsUnlockContext);
+}
+
 /** Listens for `achievement_unlocked` on the notifications WS and shows unlock modals. */
 export function AchievementsProvider({ children }: { children: React.ReactNode }) {
   const { session, initialized } = useAuth();
@@ -55,6 +80,8 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
   const glass = useGlass();
   const [popup, setPopup] = useState<UnlockPopup | null>(null);
   const queueRef = useRef<UnlockPopup[]>([]);
+  // WS и HTTP-ответ теста могут доставить одно и то же событие — показываем один раз
+  const shownIdsRef = useRef<Set<string>>(new Set());
 
   const dismiss = useCallback(() => {
     const next = queueRef.current.shift() ?? null;
@@ -67,39 +94,53 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
     setPopup((cur) => cur ?? queueRef.current.shift() ?? null);
   }, []);
 
+  const showUnlocks = useCallback(
+    (payloads: AchievementUnlockPayload[] | null | undefined) => {
+      if (!payloads?.length) return;
+      const popups: UnlockPopup[] = [];
+      for (const { notification, achievement, reward } of payloads) {
+        const dedupId = notification?.id ?? achievement?.id;
+        if (!dedupId || shownIdsRef.current.has(dedupId)) continue;
+        shownIdsRef.current.add(dedupId);
+        popups.push({
+          kind: 'achievement',
+          title: achievement.title,
+          description: achievement.description,
+          iconPath: achievement.iconPath,
+        });
+        if (reward) {
+          popups.push({
+            kind: 'reward',
+            title: reward.title,
+            description: reward.description,
+            iconPath: reward.iconPath,
+            achievementTitle: achievement.title,
+          });
+        }
+      }
+      enqueue(popups);
+    },
+    [enqueue],
+  );
+
+  const contextValue = useMemo(() => ({ showUnlocks }), [showUnlocks]);
+
   useEffect(() => {
     if (!initialized) return;
     if (!session) {
       queueRef.current = [];
+      shownIdsRef.current.clear();
       setPopup(null);
       return;
     }
     return subscribeNotifications((ev) => {
       if (ev.type !== 'achievement_unlocked') return;
-      const { achievement, reward } = ev.data;
-      const popups: UnlockPopup[] = [
-        {
-          kind: 'achievement',
-          title: achievement.title,
-          description: achievement.description,
-          iconPath: achievement.iconPath,
-        },
-      ];
-      if (reward) {
-        popups.push({
-          kind: 'reward',
-          title: reward.title,
-          description: reward.description,
-          iconPath: reward.iconPath,
-          achievementTitle: achievement.title,
-        });
-      }
-      enqueue(popups);
+      showUnlocks([ev.data]);
     });
-  }, [initialized, session, enqueue]);
+  }, [initialized, session, showUnlocks]);
 
   return (
-    <>
+    <AchievementsUnlockContext.Provider value={contextValue}>
       {children}
       <Modal visible={!!popup} transparent animationType="fade" onRequestClose={dismiss}>
         <View style={[styles.backdrop, { backgroundColor: glass.scrim }]}>
@@ -129,7 +170,7 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
           </View>
         </View>
       </Modal>
-    </>
+    </AchievementsUnlockContext.Provider>
   );
 }
 

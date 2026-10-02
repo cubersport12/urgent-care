@@ -12,6 +12,7 @@ import {
   type BillingTariff,
 } from '@/api/billing';
 import { ApiError } from '@/api/utils';
+import { showConfirm } from '@/lib/alert';
 import {
   billingReturnUrl,
   openYookassaCheckout,
@@ -181,7 +182,7 @@ export default function SubscriptionScreen() {
     return () => sub.remove();
   }, [loading, syncPendingPayments]);
 
-  const subscribe = async (tariff: BillingTariff) => {
+  const runSubscribe = async (tariff: BillingTariff) => {
     if (me?.tariffId === tariff.id) return;
     setBusyId(tariff.id);
     try {
@@ -235,6 +236,23 @@ export default function SubscriptionScreen() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const subscribe = (tariff: BillingTariff) => {
+    if (me?.tariffId === tariff.id) return;
+    // Переход на тариф выше при активном платном тарифе проходит мгновенно —
+    // предупреждаем о списании и о том, что остаток дней сгорает
+    const isUpgrade = me?.status === 'active' && me.priceRub > 0 && tariff.rank > me.rank;
+    if (isUpgrade) {
+      showConfirm(
+        'Переход на тариф выше',
+        'Тариф сменится сразу после оплаты. Остаток дней текущего тарифа при этом сгорает и не возвращается.',
+        () => void runSubscribe(tariff),
+        'Продолжить',
+      );
+      return;
+    }
+    void runSubscribe(tariff);
   };
 
   const performCancelRenewal = async () => {

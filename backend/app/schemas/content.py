@@ -30,6 +30,9 @@ class FolderOut(CamelModel):
     parent_id: str | None = Field(None, alias="parentId")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
+    # Заблокирован тарифом/наградой: в списках отдаётся стаб (без содержимого)
+    is_locked: bool = Field(False, alias="isLocked")
+    locked_by: str | None = Field(None, alias="lockedBy")
 
 
 class FolderCreate(CamelModel):
@@ -66,6 +69,9 @@ class ArticleOut(CamelModel):
     links_to_articles: list[LinkToArticle] | None = Field(None, alias="linksToArticles")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
+    # Заблокирован тарифом/наградой: в списках отдаётся стаб (без содержимого)
+    is_locked: bool = Field(False, alias="isLocked")
+    locked_by: str | None = Field(None, alias="lockedBy")
 
 
 class ArticleCreate(CamelModel):
@@ -125,6 +131,9 @@ class TestOut(CamelModel):
     reset_test_ids: list[str] | None = Field(None, alias="resetTestIds")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
+    # Заблокирован тарифом/наградой: в списках отдаётся стаб (без questions)
+    is_locked: bool = Field(False, alias="isLocked")
+    locked_by: str | None = Field(None, alias="lockedBy")
 
 
 class TestCreate(CamelModel):
@@ -180,6 +189,9 @@ class RescueOut(CamelModel):
     data: dict[str, Any] | None = None
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
+    # Заблокирован тарифом/наградой: в списках отдаётся стаб (без data)
+    is_locked: bool = Field(False, alias="isLocked")
+    locked_by: str | None = Field(None, alias="lockedBy")
 
 
 class RescueCreate(CamelModel):

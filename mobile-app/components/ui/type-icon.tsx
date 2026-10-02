@@ -5,7 +5,16 @@ import { StyleSheet, View } from 'react-native';
 
 export type MaterialKind = 'folder' | 'article' | 'test' | 'rescue';
 
-export function TypeIcon({ kind, size = 20 }: { kind: MaterialKind; size?: number }) {
+export function TypeIcon({
+  kind,
+  size = 20,
+  locked = false,
+}: {
+  kind: MaterialKind;
+  size?: number;
+  /** Заблокирован (тариф/награда): золотой замок вместо иконки типа */
+  locked?: boolean;
+}) {
   const theme = useAppTheme();
   const glow = useGlow();
   const containerSize = size + 16;
@@ -42,7 +51,10 @@ export function TypeIcon({ kind, size = 20 }: { kind: MaterialKind; size?: numbe
     >;
   }, [theme, glow]);
 
-  const c = variant[kind];
+  const c = locked
+    ? // Платный/наградный контент помечаем золотым замком — как во всех приложениях
+      { icon: 'lock.fill', bg: theme.warningContainer, color: theme.warning, shadowColor: 'transparent' }
+    : variant[kind];
 
   return (
     <View
