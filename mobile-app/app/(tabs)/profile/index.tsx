@@ -2,6 +2,7 @@ import { billingApi, type BillingMe } from '@/api/billing';
 import { certificatesApi, type AppCertificate } from '@/api/certificates';
 import type { City } from '@/api/cities';
 import { ThemedText } from '@/components/themed-text';
+import { RefundDialog } from '@/components/refund-dialog';
 import { CityPicker } from '@/components/ui/city-picker';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
@@ -93,6 +94,7 @@ export default function ProfileScreen() {
   const { themePreference, setThemePreference } = useTheme();
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [refundVisible, setRefundVisible] = useState(false);
   const [billing, setBilling] = useState<BillingMe | null>(null);
   const [certificate, setCertificate] = useState<AppCertificate | null>(null);
   const [themeOpen, setThemeOpen] = useState(false);
@@ -510,9 +512,18 @@ export default function ProfileScreen() {
               iconColor={primary}
               label="Чат с поддержкой"
               onPress={() => router.push('/(tabs)/profile/support')}
+              isLast={false}
+            />
+            <ProfileRow
+              icon="arrow.counterclockwise"
+              iconBg={primaryContainer}
+              iconColor={primary}
+              label="Возврат средств"
+              onPress={() => setRefundVisible(true)}
               isLast={true}
             />
           </GlassCard>
+          <RefundDialog visible={refundVisible} onClose={() => setRefundVisible(false)} />
         </Animated.View>
 
         {/* Section: О ПРИЛОЖЕНИИ */}

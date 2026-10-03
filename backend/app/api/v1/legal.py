@@ -1,4 +1,4 @@
-"""Normative documents (offer, PDn policy, consent, cookies).
+"""Normative documents (offer, PDn policy, consent, consent-distribution, cookies).
 
 Публичные эндпоинты без авторизации: юридические документы должны быть
 доступны пользователю до регистрации (ссылка из чекбокса согласия).
@@ -16,6 +16,7 @@ LEGAL_DOCUMENTS: list[tuple[str, str]] = [
     ("offer", "Пользовательское соглашение (оферта)"),
     ("pdn", "Политика обработки персональных данных"),
     ("consent", "Согласие на обработку персональных данных"),
+    ("consent-distribution", "Согласие на распространение персональных данных"),
     ("cookies", "Правила использования cookie"),
 ]
 

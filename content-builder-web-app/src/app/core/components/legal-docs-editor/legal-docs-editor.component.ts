@@ -10,13 +10,14 @@ import { ApiError, apiCall } from '@/core/api/api-utils';
 import { API_BASE } from '@/core/api/api-client';
 import { legalListLegalDocuments } from '@/core/api/generated/sdk.gen';
 
-type LegalDocId = 'offer' | 'pdn' | 'consent' | 'cookies';
+type LegalDocId = 'offer' | 'pdn' | 'consent' | 'consent-distribution' | 'cookies';
 type LegalDocStatus = 'checking' | 'missing' | 'uploaded';
 
 const LEGAL_CATEGORIES: { id: LegalDocId; title: string }[] = [
   { id: 'offer', title: 'Пользовательское соглашение (оферта)' },
   { id: 'pdn', title: 'Политика обработки персональных данных' },
   { id: 'consent', title: 'Согласие на обработку персональных данных' },
+  { id: 'consent-distribution', title: 'Согласие на распространение персональных данных' },
   { id: 'cookies', title: 'Правила использования cookie' }
 ];
 
@@ -100,6 +101,7 @@ export class LegalDocsEditorComponent {
     offer: 'checking',
     pdn: 'checking',
     consent: 'checking',
+    'consent-distribution': 'checking',
     cookies: 'checking'
   });
   protected readonly _uploadingId = signal<LegalDocId | null>(null);

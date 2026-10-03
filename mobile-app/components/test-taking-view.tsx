@@ -4,6 +4,7 @@ import { computeTestOutcome, persistTestCompletion, resetTestCompletionGuard } f
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
 import type { AchievementUnlockPayload } from '@/lib/notifications-ws';
+import { NoScreenCapture } from '@/components/ui/no-screen-capture';
 import { useEffect, useRef, useState } from 'react';
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { TestQuestionView } from './test-taking/test-question-view';
@@ -232,12 +233,15 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
   // Показываем результаты только после явного завершения теста
   if (isTestCompleted) {
     return (
-      <TestResultsView
-        onBack={onBack}
-        onFinish={onFinish}
-        animatedStyle={animatedStyle}
-        resetTests={resetTests}
-      />
+      <>
+        <NoScreenCapture />
+        <TestResultsView
+          onBack={onBack}
+          onFinish={onFinish}
+          animatedStyle={animatedStyle}
+          resetTests={resetTests}
+        />
+      </>
     );
   }
     
@@ -252,19 +256,22 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
   const canNavigateToCurrentQuestion = wasCurrentQuestionVisitedBefore && !!currentAnswer;
   
   return (
-    <TestQuestionView
-      onBack={onBack}
-      onFinish={onFinish}
-      animatedStyle={animatedStyle}
-      selectedAnswers={selectedAnswers}
-      showResult={showResult}
-      isMultiSelect={isMultiSelect}
-      onAnswerToggle={handleAnswerToggle}
-      onNext={handleNext}
-      onSkip={handleSkip}
-      onPrevious={handlePrevious}
-      canNavigateToQuestion={canNavigateToCurrentQuestion}
-    />
+    <>
+      <NoScreenCapture />
+      <TestQuestionView
+        onBack={onBack}
+        onFinish={onFinish}
+        animatedStyle={animatedStyle}
+        selectedAnswers={selectedAnswers}
+        showResult={showResult}
+        isMultiSelect={isMultiSelect}
+        onAnswerToggle={handleAnswerToggle}
+        onNext={handleNext}
+        onSkip={handleSkip}
+        onPrevious={handlePrevious}
+        canNavigateToQuestion={canNavigateToCurrentQuestion}
+      />
+    </>
   );
 }
 

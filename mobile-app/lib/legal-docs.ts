@@ -6,6 +6,7 @@ export const LEGAL_DOCUMENTS = [
   { id: 'offer', title: 'Пользовательское соглашение (оферта)' },
   { id: 'pdn', title: 'Политика обработки персональных данных' },
   { id: 'consent', title: 'Согласие на обработку персональных данных' },
+  { id: 'consent-distribution', title: 'Согласие на распространение персональных данных' },
   { id: 'cookies', title: 'Правила использования cookie' },
 ] as const;
 

@@ -578,6 +578,26 @@ function Footer() {
                 </a>
               </li>
               <li>
+                <a
+                  href={LINKS.legalConsent}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:text-gray-900 dark:hover:text-white"
+                >
+                  Согласие на обработку персональных данных
+                </a>
+              </li>
+              <li>
+                <a
+                  href={LINKS.legalConsentDistribution}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:text-gray-900 dark:hover:text-white"
+                >
+                  Согласие на распространение персональных данных
+                </a>
+              </li>
+              <li>
                 <a href={LINKS.webApp} className="transition hover:text-gray-900 dark:hover:text-white">
                   Веб-версия приложения
                 </a>

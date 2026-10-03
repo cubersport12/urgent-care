@@ -15,6 +15,7 @@ import { ThemedText } from '../themed-text';
 import { GlassCard } from '../ui/glass-card';
 import { Button } from '../ui/button';
 import { IconSymbol } from '../ui/icon-symbol';
+import { NoScreenCapture } from '../ui/no-screen-capture';
 import { ScreenBackground } from '../ui/screen-background';
 
 type RescueStartProps = {
@@ -78,6 +79,7 @@ export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescue
 
   return (
     <ScreenBackground style={styles.container}>
+      <NoScreenCapture />
       <Animated.View style={styles.inner} entering={FadeIn.duration(300)}>
         {!isWide ? <BackButton onPress={onBack} label="Назад" /> : null}
         <ScrollView
