@@ -15,6 +15,7 @@ import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 import { Button } from './ui/button';
 import { IconSymbol } from './ui/icon-symbol';
+import { NoScreenCapture } from './ui/no-screen-capture';
 
 type ArticleViewProps = {
   article: AppArticleVm;
@@ -313,6 +314,7 @@ export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious =
       ]}
       pointerEvents="box-none"
     >
+      <NoScreenCapture />
       <ArticleViewContent
         key={article.id}
         pdfUri={pdfUri}

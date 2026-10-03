@@ -11,6 +11,7 @@ import { useNavRail } from '@/contexts/nav-rail-context';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { fetchArticle } from '@/hooks/api/useArticles';
 import { ArticleView } from '@/components/article-view';
+import { NoScreenCapture } from '@/components/ui/no-screen-capture';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -235,6 +236,7 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
         },
       ]}
     >
+      <NoScreenCapture />
       {/* Шапку сцены скрываем при открытом документе — у ArticleView своя кнопка «Назад» */}
       {!isWide && !selectedArticle ? (
         <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>

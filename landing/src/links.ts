@@ -10,4 +10,6 @@ export const LINKS = {
 
   legalOffer: "https://trouble-dent.ru/api/v1/legal/documents/offer/file",
   legalPdn: "https://trouble-dent.ru/api/v1/legal/documents/pdn/file",
+  legalConsent: "https://trouble-dent.ru/api/v1/legal/documents/consent/file",
+  legalConsentDistribution: "https://trouble-dent.ru/api/v1/legal/documents/consent-distribution/file",
 };

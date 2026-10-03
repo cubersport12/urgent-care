@@ -18,6 +18,7 @@ import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
 import { GlassCard } from '../ui/glass-card';
 import { IconSymbol } from '../ui/icon-symbol';
+import { NoScreenCapture } from '../ui/no-screen-capture';
 import { ScreenBackground } from '../ui/screen-background';
 
 type RescueCompleteProps = {
@@ -159,6 +160,7 @@ export function RescueComplete({
 
   return (
     <ScreenBackground style={styles.container}>
+      <NoScreenCapture />
       <Animated.View style={styles.flex} entering={FadeIn.duration(300)}>
         <ScrollView
           style={styles.scroll}
