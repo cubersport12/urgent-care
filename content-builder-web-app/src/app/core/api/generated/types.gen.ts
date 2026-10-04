@@ -322,6 +322,14 @@ export type ArticleOut = {
      * Requiredrewardid
      */
     requiredRewardId: string | null;
+    /**
+     * Islocked
+     */
+    isLocked: boolean;
+    /**
+     * Lockedby
+     */
+    lockedBy: string | null;
 };
 
 /**
@@ -715,6 +723,14 @@ export type FolderOut = {
      * Requiredrewardid
      */
     requiredRewardId: string | null;
+    /**
+     * Islocked
+     */
+    isLocked: boolean;
+    /**
+     * Lockedby
+     */
+    lockedBy: string | null;
 };
 
 /**
@@ -1279,6 +1295,38 @@ export type RecommendedArticleOut = {
 };
 
 /**
+ * RefundOut
+ */
+export type RefundOut = {
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Refundedamount
+     */
+    refundedAmount: number;
+    /**
+     * Paymentid
+     */
+    paymentId: string;
+    /**
+     * Message
+     */
+    message: string;
+};
+
+/**
+ * RefundRequest
+ */
+export type RefundRequest = {
+    /**
+     * Cancelsubscription
+     */
+    cancelSubscription?: boolean;
+};
+
+/**
  * RegisterOut
  */
 export type RegisterOut = {
@@ -1374,6 +1422,14 @@ export type RescueOut = {
      * Requiredrewardid
      */
     requiredRewardId: string | null;
+    /**
+     * Islocked
+     */
+    isLocked: boolean;
+    /**
+     * Lockedby
+     */
+    lockedBy: string | null;
 };
 
 /**
@@ -2201,6 +2257,14 @@ export type TestOut = {
      * Requiredrewardid
      */
     requiredRewardId: string | null;
+    /**
+     * Islocked
+     */
+    isLocked: boolean;
+    /**
+     * Lockedby
+     */
+    lockedBy: string | null;
 };
 
 /**
@@ -2295,6 +2359,10 @@ export type TestResultOut = {
      * Resettests
      */
     resetTests?: Array<ResetTestOut> | null;
+    /**
+     * Unlocked
+     */
+    unlocked?: Array<unknown> | null;
 };
 
 /**
@@ -3700,6 +3768,42 @@ export type BillingSyncPaymentResponses = {
 };
 
 export type BillingSyncPaymentResponse = BillingSyncPaymentResponses[keyof BillingSyncPaymentResponses];
+
+export type BillingRefundUserSubscriptionData = {
+    body: RefundRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/billing/users/{user_id}/refund';
+};
+
+export type BillingRefundUserSubscriptionErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingRefundUserSubscriptionError = BillingRefundUserSubscriptionErrors[keyof BillingRefundUserSubscriptionErrors];
+
+export type BillingRefundUserSubscriptionResponses = {
+    /**
+     * Successful Response
+     */
+    200: RefundOut;
+};
+
+export type BillingRefundUserSubscriptionResponse = BillingRefundUserSubscriptionResponses[keyof BillingRefundUserSubscriptionResponses];
 
 export type NotificationsListNotificationsData = {
     body?: never;

@@ -90,3 +90,36 @@ class YooKassaClient:
             )
             response.raise_for_status()
             return response.json()
+
+    async def create_refund(
+        self,
+        *,
+        payment_id: str,
+        amount_rub: float,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        body = {
+            "payment_id": payment_id,
+            "amount": {"value": f"{amount_rub:.2f}", "currency": "RUB"},
+        }
+        headers = {"Idempotence-Key": idempotency_key or str(uuid4())}
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{BASE}/refunds",
+                json=body,
+                headers=headers,
+                auth=self._auth(),
+            )
+            if response.is_error:
+                detail = response.text
+                try:
+                    payload = response.json()
+                    detail = payload.get("description") or payload.get("detail") or detail
+                except Exception:
+                    pass
+                raise httpx.HTTPStatusError(
+                    f"YooKassa refund failed: {detail}",
+                    request=response.request,
+                    response=response,
+                )
+            return response.json()

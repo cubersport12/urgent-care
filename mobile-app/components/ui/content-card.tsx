@@ -32,12 +32,7 @@ export function ContentCard({
   onPress,
   index = 0,
 }: ContentCardProps) {
-  const { neutralSoft, warning, onWarning } = useAppTheme();
-  const lockReason = locked
-    ? locked === 'reward'
-      ? 'Открывается за достижение'
-      : 'Доступно в тарифе выше'
-    : null;
+  const { neutralSoft, warning } = useAppTheme();
 
   return (
     <Animated.View entering={staggerEnter(index)}>
@@ -52,6 +47,9 @@ export function ContentCard({
         ]}
       >
         <GlassCard padding={16} borderRadius={12} style={styles.card}>
+          {locked ? (
+            <View pointerEvents="none" style={[styles.lockStrip, { backgroundColor: warning }]} />
+          ) : null}
           <View style={styles.row}>
             <TypeIcon kind={kind} size={20} locked={!!locked} />
             <View style={styles.body}>
@@ -65,14 +63,6 @@ export function ContentCard({
             {locked ? null : status ? <StatusBadge status={status} /> : null}
             <IconSymbol name="chevron.right" size={16} color={neutralSoft} />
           </View>
-          {lockReason ? (
-            <View style={[styles.lockBand, { backgroundColor: warning }]}>
-              <IconSymbol name="lock.fill" size={12} color={onWarning} />
-              <ThemedText style={[styles.lockBandText, { color: onWarning }]} numberOfLines={1}>
-                {lockReason}
-              </ThemedText>
-            </View>
-          ) : null}
         </GlassCard>
       </Pressable>
     </Animated.View>
@@ -100,20 +90,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
-  // Золотая полоса причины: отрицательные отступы = padding GlassCard (16),
-  // контейнер карточки overflow hidden — полоса до самых краёв с круглыми углами
-  lockBand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 12,
-    marginHorizontal: -16,
-    marginBottom: -16,
-    paddingVertical: 4,
-  },
-  lockBandText: {
-    fontSize: 12,
-    fontWeight: '600',
+  // Вертикальная золотая полоса причины слева: отрицательные отступы = padding GlassCard (16),
+  // контейнер карточки overflow hidden — полоса повторяет круглый угол карточки
+  lockStrip: {
+    position: 'absolute',
+    top: -16,
+    bottom: -16,
+    left: -16,
+    width: 4,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
   },
 });

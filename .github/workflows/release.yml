@@ -1,19 +1,29 @@
-# - push to main (merge): deploy backend + static frontends to the VPS
-# - GitHub Release published: same deploy + builds TroubleDent.apk and attaches it
-# - workflow_dispatch: manual run of both
+# - push to main/master (merge PR): automatically creates a new GitHub Release,
+#   which triggers Deploy to VPS + Android APK build attached to the release.
+# - GitHub Release published: runs Deploy to VPS + builds TroubleDent.apk and attaches it.
+# - workflow_dispatch: manual run (with optional release creation).
 
 name: Release
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create a new GitHub release?'
+        type: boolean
+        default: false
+      tag_name:
+        description: 'Release tag (optional, e.g. v0.43)'
+        required: false
+        type: string
 
 concurrency:
   group: release-${{ github.event.release.tag_name || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -26,10 +36,86 @@ env:
   DEPLOY_USER: root
 
 jobs:
+  create-release:
+    name: Create GitHub Release
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.create_release)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag_name: ${{ steps.version.outputs.tag_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next release tag
+        id: version
+        env:
+          INPUT_TAG: ${{ inputs.tag_name }}
+        run: |
+          node -e "
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+            const inputTag = (process.env.INPUT_TAG || '').trim();
+            if (inputTag) {
+              console.log('Using provided tag:', inputTag);
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, 'tag_name=' + inputTag + '\n');
+              process.exit(0);
+            }
+            let tags = [];
+            try {
+              tags = execSync('git tag -l').toString().trim().split('\n').filter(Boolean);
+            } catch (e) {
+              tags = [];
+            }
+            let maxMajor = 0, maxMinor = 42, maxPatch = 0;
+            for (const t of tags) {
+              if (t.startsWith('android-')) continue;
+              const m = t.match(/^v?[-_]?(\d+)[._-](\d+)(?:[._-](\d+))?/i) || t.match(/^(\d+)[-_](\d+)\.v$/i);
+              if (m) {
+                const major = parseInt(m[1], 10);
+                const minor = parseInt(m[2], 10);
+                const patch = m[3] ? parseInt(m[3], 10) : 0;
+                if (major > maxMajor || (major === maxMajor && minor > maxMinor) || (major === maxMajor && minor === maxMinor && patch > maxPatch)) {
+                  maxMajor = major;
+                  maxMinor = minor;
+                  maxPatch = patch;
+                }
+              }
+            }
+            let nextMinor = maxMinor + 1;
+            let nextTag = 'v' + maxMajor + '.' + nextMinor;
+            while (tags.includes(nextTag)) {
+              nextMinor++;
+              nextTag = 'v' + maxMajor + '.' + nextMinor;
+            }
+            console.log('Next release tag:', nextTag);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'tag_name=' + nextTag + '\n');
+          "
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ steps.version.outputs.tag_name }}
+        run: |
+          gh release create "$TAG_NAME" \
+            --target "${{ github.sha }}" \
+            --title "$TAG_NAME" \
+            --generate-notes
+
   build-android:
     name: Build & publish APK
-    # APK нужен только для релизов и ручных прогонов; мерж в main — только деплой на VPS
-    if: github.event_name != 'push'
+    needs: [create-release]
+    if: |
+      always() &&
+      !cancelled() &&
+      (
+        github.event_name == 'release' ||
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'push' && needs.create-release.result == 'success')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -37,7 +123,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || github.sha }}
+          ref: ${{ github.event.release.tag_name || needs.create-release.outputs.tag_name || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -51,14 +137,14 @@ jobs:
         run: npm ci
 
       - name: Set app version from release tag
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' || (needs.create-release.outputs.tag_name != '' && needs.create-release.outputs.tag_name != null)
         working-directory: mobile-app
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || needs.create-release.outputs.tag_name }}
         run: |
           node -e "
             const fs = require('fs');
-            const tag = String(process.env.RELEASE_TAG || '').replace(/^v/i, '');
+            const tag = String(process.env.RELEASE_TAG || '').replace(/^v[-_]?/i, '');
             if (!tag) process.exit(0);
             const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
             const app = JSON.parse(fs.readFileSync('./app.json', 'utf8'));
@@ -70,7 +156,7 @@ jobs:
           "
 
       - name: Append build hash (manual dispatch)
-        if: github.event_name != 'release'
+        if: github.event_name != 'release' && (needs.create-release.outputs.tag_name == '' || needs.create-release.outputs.tag_name == null)
         working-directory: mobile-app
         run: |
           export BUILD_HASH="$(git rev-parse --short HEAD)"
@@ -129,15 +215,24 @@ jobs:
           if-no-files-found: error
 
       - name: Attach APK to GitHub Release
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' || (needs.create-release.outputs.tag_name != '' && needs.create-release.outputs.tag_name != null)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.release.tag_name }}
+          tag_name: ${{ github.event.release.tag_name || needs.create-release.outputs.tag_name }}
           files: mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
           overwrite_files: true
 
   deploy:
     name: Deploy to VPS
+    needs: [create-release]
+    if: |
+      always() &&
+      !cancelled() &&
+      (
+        github.event_name == 'release' ||
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'push' && needs.create-release.result == 'success')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -145,7 +240,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || github.sha }}
+          ref: ${{ github.event.release.tag_name || needs.create-release.outputs.tag_name || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

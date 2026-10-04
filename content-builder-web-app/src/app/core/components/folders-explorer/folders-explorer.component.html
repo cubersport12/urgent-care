@@ -98,6 +98,14 @@
       <button
         type="button"
         mat-icon-button
+        (click)="_openSubscriptionRefund()"
+        matTooltip="Выполнить возврат средств за подписку"
+      >
+        <mat-icon svgIcon="credit-card" />
+      </button>
+      <button
+        type="button"
+        mat-icon-button
         (click)="_openLegalDocs()"
         matTooltip="Нормативные документы"
       >

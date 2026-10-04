@@ -1587,6 +1587,76 @@
         }
       }
     },
+    "/api/v1/billing/users/{user_id}/refund": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Refund User Subscription",
+        "operationId": "billing_refund_user_subscription",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefundOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notifications": {
       "get": {
         "tags": [
@@ -6496,6 +6566,22 @@
               }
             ],
             "title": "Requiredrewardid"
+          },
+          "isLocked": {
+            "type": "boolean",
+            "title": "Islocked",
+            "default": false
+          },
+          "lockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lockedby"
           }
         },
         "type": "object",
@@ -6511,7 +6597,9 @@
           "includeToStatistics",
           "linksToArticles",
           "requiredTariffId",
-          "requiredRewardId"
+          "requiredRewardId",
+          "isLocked",
+          "lockedBy"
         ],
         "title": "ArticleOut"
       },
@@ -7233,6 +7321,22 @@
               }
             ],
             "title": "Requiredrewardid"
+          },
+          "isLocked": {
+            "type": "boolean",
+            "title": "Islocked",
+            "default": false
+          },
+          "lockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lockedby"
           }
         },
         "type": "object",
@@ -7242,7 +7346,9 @@
           "order",
           "parentId",
           "requiredTariffId",
-          "requiredRewardId"
+          "requiredRewardId",
+          "isLocked",
+          "lockedBy"
         ],
         "title": "FolderOut"
       },
@@ -8229,6 +8335,46 @@
         ],
         "title": "RecommendedArticleOut"
       },
+      "RefundOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "refundedAmount": {
+            "type": "number",
+            "title": "Refundedamount"
+          },
+          "paymentId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Paymentid"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "refundedAmount",
+          "paymentId",
+          "message"
+        ],
+        "title": "RefundOut"
+      },
+      "RefundRequest": {
+        "properties": {
+          "cancelSubscription": {
+            "type": "boolean",
+            "title": "Cancelsubscription",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "RefundRequest"
+      },
       "RegisterOut": {
         "properties": {
           "status": {
@@ -8414,6 +8560,22 @@
               }
             ],
             "title": "Requiredrewardid"
+          },
+          "isLocked": {
+            "type": "boolean",
+            "title": "Islocked",
+            "default": false
+          },
+          "lockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lockedby"
           }
         },
         "type": "object",
@@ -8426,7 +8588,9 @@
           "description",
           "data",
           "requiredTariffId",
-          "requiredRewardId"
+          "requiredRewardId",
+          "isLocked",
+          "lockedBy"
         ],
         "title": "RescueOut"
       },
@@ -10166,6 +10330,22 @@
               }
             ],
             "title": "Requiredrewardid"
+          },
+          "isLocked": {
+            "type": "boolean",
+            "title": "Islocked",
+            "default": false
+          },
+          "lockedBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lockedby"
           }
         },
         "type": "object",
@@ -10188,7 +10368,9 @@
           "accessabilityConditions",
           "resetTestIds",
           "requiredTariffId",
-          "requiredRewardId"
+          "requiredRewardId",
+          "isLocked",
+          "lockedBy"
         ],
         "title": "TestOut"
       },
@@ -10365,6 +10547,18 @@
               }
             ],
             "title": "Resettests"
+          },
+          "unlocked": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unlocked"
           }
         },
         "type": "object",

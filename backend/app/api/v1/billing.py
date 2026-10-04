@@ -15,6 +15,8 @@ from app.schemas.billing import (
     PromoCodeCreate,
     PromoCodeOut,
     PromoCodeUpdate,
+    RefundOut,
+    RefundRequest,
     SubscribeOut,
     SubscribeRequest,
     TariffCreate,
@@ -154,6 +156,19 @@ async def sync_payment(
     user: Annotated[User, Depends(get_current_user)],
 ) -> PaymentOut:
     return await BillingService(db).sync_payment(user, payment_id)
+
+
+@router.post("/users/{user_id}/refund", response_model=RefundOut)
+async def refund_user_subscription(
+    user_id: UUID,
+    payload: RefundRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> RefundOut:
+    return await BillingService(db).refund_subscription(
+        user_id,
+        cancel_subscription=payload.cancel_subscription,
+    )
 
 
 @router.post("/webhooks/yookassa", include_in_schema=False)

@@ -29,6 +29,7 @@ from app.schemas.billing import (
     PromoCodeCreate,
     PromoCodeOut,
     PromoCodeUpdate,
+    RefundOut,
     SubscribeOut,
     TariffCreate,
     TariffOut,
@@ -473,6 +474,64 @@ class BillingService:
     async def list_payments(self, user: User) -> list[PaymentOut]:
         items = await self.repo.list_payments(user.id)
         return [PaymentOut.model_validate(p) for p in items]
+
+    async def refund_subscription(
+        self, target_user_id: UUID, cancel_subscription: bool = True
+    ) -> RefundOut:
+        user = await self.db.get(User, target_user_id)
+        if not user:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
+
+        sub = await self.repo.get_subscription(target_user_id)
+        if not sub:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Подписка пользователя не найдена")
+
+        payments = await self.repo.list_payments(target_user_id)
+        payments_sorted = sorted(payments, key=lambda p: p.created_at, reverse=True)
+        valid_payment = next(
+            (p for p in payments_sorted if p.status == "succeeded" and p.yookassa_payment_id),
+            None,
+        )
+        if not valid_payment:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Не найден успешный платёж для возврата средств",
+            )
+
+        if self.yk.configured:
+            await self.yk.create_refund(
+                payment_id=valid_payment.yookassa_payment_id,
+                amount_rub=valid_payment.amount_rub,
+            )
+        valid_payment.status = "refunded"
+        await self.repo.save_payment(valid_payment)
+
+        if cancel_subscription:
+            free = await self.repo.get_default_tariff()
+            if not free:
+                free = await self.repo.get_tariff_by_code("free")
+            if free:
+                now = datetime.now(timezone.utc)
+                sub.tariff_id = free.id
+                sub.status = "active"
+                sub.cancel_at_period_end = False
+                sub.yookassa_payment_method_id = None
+                sub.current_period_start = now
+                sub.current_period_end = now + timedelta(days=free.period_days)
+                await self.repo.save_subscription(sub)
+                await self._emit_subscription_granted(target_user_id, free, sub, "refund")
+
+            change = await self.repo.get_scheduled_change(target_user_id)
+            if change:
+                change.status = "canceled"
+                await self.repo.save_change(change)
+
+        return RefundOut(
+            status="ok",
+            refunded_amount=valid_payment.amount_rub,
+            payment_id=valid_payment.id,
+            message="Возврат средств успешно выполнен",
+        )
 
     async def handle_webhook(self, payload: dict[str, Any]) -> dict[str, str]:
         event = payload.get("event")
