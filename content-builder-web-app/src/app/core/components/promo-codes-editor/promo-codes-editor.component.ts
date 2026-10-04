@@ -21,6 +21,14 @@ import { ApiError } from '@/core/api/api-utils';
 import type { PromoCodeCreate, PromoCodeOut, PromoCodeUpdate, TariffOut } from '@/core/api/generated/types.gen';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  AppCheckboxComponent,
+  AppBadgeComponent
+} from '@/core/components/ui';
 
 type PromoDialogResult = PromoCodeCreate | PromoCodeUpdate;
 
@@ -43,13 +51,11 @@ export class PromoCodesEditorService {
   selector: 'app-promo-code-edit-dialog',
   imports: [
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatCheckbox,
-    MatButton,
-    MatIcon,
-    AppDialogWrapperComponent
+    AppDialogWrapperComponent,
+    AppButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
+    AppCheckboxComponent
   ],
   template: `
     <app-dialog-wrapper
@@ -61,54 +67,24 @@ export class PromoCodesEditorService {
     >
       <form class="flex flex-col gap-3 min-w-[320px] max-w-full" [formGroup]="_form">
         <div class="flex items-center gap-2">
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Код промокода</mat-label>
-            <input matInput formControlName="code" [readonly]="!!_data" class="font-mono uppercase tracking-wider" />
-          </mat-form-field>
+          <app-input label="Код промокода" formControlName="code" [readonly]="!!_data" class="grow" [required]="true" />
           @if (!_data) {
-            <button type="button" mat-stroked-button (click)="_generate()" class="!h-14 !rounded-xl shrink-0" matTooltip="Сгенерировать случайный код">
-              <mat-icon svgIcon="rotate-right" class="!w-4 !h-4 mr-1" />
+            <app-button (click)="_generate()" icon="rotate-right" variant="outline" class="mt-5 shrink-0" tooltip="Сгенерировать случайный код">
               Случайный
-            </button>
+            </app-button>
           }
         </div>
-        <mat-form-field appearance="fill">
-          <mat-label>Описание акции (служебная заметка)</mat-label>
-          <input matInput formControlName="title" />
-        </mat-form-field>
+        <app-input label="Описание акции (служебная заметка)" formControlName="title" />
         <div class="flex gap-2">
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Скидка, %</mat-label>
-            <input matInput type="number" formControlName="discountPercent" min="1" max="99" />
-            @if (_form.hasError('percentRange')) {
-              <mat-error>От 1 до 99</mat-error>
-            }
-          </mat-form-field>
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Макс. активаций</mat-label>
-            <input matInput type="number" formControlName="maxActivations" min="1" placeholder="Безлимитно" />
-          </mat-form-field>
+          <app-input label="Скидка, %" type="number" formControlName="discountPercent" [required]="true" class="grow" />
+          <app-input label="Макс. активаций" type="number" formControlName="maxActivations" placeholder="Безлимитно" class="grow" />
         </div>
-        <mat-form-field appearance="fill">
-          <mat-label>Целевой тариф</mat-label>
-          <mat-select formControlName="tariffId">
-            <mat-option [value]="null">— Все платные тарифы —</mat-option>
-            @for (t of _tariffs(); track t.id) {
-              <mat-option [value]="t.id">{{ t.title }} ({{ t.priceRub }} ₽ / {{ t.periodDays }} дн.)</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+        <app-select label="Целевой тариф" formControlName="tariffId" [options]="_tariffOptions()" />
         <div class="flex gap-2">
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Действует с даты</mat-label>
-            <input matInput type="datetime-local" formControlName="validFrom" />
-          </mat-form-field>
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Действует по дату</mat-label>
-            <input matInput type="datetime-local" formControlName="validUntil" />
-          </mat-form-field>
+          <app-input label="Действует с даты" type="datetime-local" formControlName="validFrom" class="grow" />
+          <app-input label="Действует по дату" type="datetime-local" formControlName="validUntil" class="grow" />
         </div>
-        <mat-checkbox formControlName="isActive">Промокод активен</mat-checkbox>
+        <app-checkbox formControlName="isActive" label="Промокод активен" />
       </form>
     </app-dialog-wrapper>
   `,
@@ -120,6 +96,10 @@ export class PromoCodeEditDialogComponent {
   protected readonly _ref = inject(MatDialogRef<PromoCodeEditDialogComponent, PromoDialogResult>);
 
   protected readonly _tariffs = signal<TariffOut[]>([]);
+  protected readonly _tariffOptions = computed(() => [
+    { value: null, label: '— Все платные тарифы —' },
+    ...this._tariffs().map((t) => ({ value: t.id, label: `${t.title} (${t.priceRub} ₽ / ${t.periodDays} дн.)` }))
+  ]);
   // Форма инициализируется значениями диалога при открытии, поэтому явный null
   // («Все платные тарифы») должен сохраниться как null, а не откатываться к старому
   protected readonly _form = new FormGroup({
@@ -194,11 +174,12 @@ export class PromoCodeEditDialogComponent {
     DatePipe,
     MatDialogModule,
     MatTableModule,
-    MatButton,
-    MatIconButton,
     MatIcon,
-    MatTooltip,
-    MatSnackBarModule
+    MatSnackBarModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppBadgeComponent
   ],
   templateUrl: './promo-codes-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush

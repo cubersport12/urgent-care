@@ -9,64 +9,57 @@
   (close)="_handleClose()"
 >
   <form class="flex flex-col w-full gap-4 p-1 min-w-[340px]" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
-    <div class="flex flex-wrap gap-4">
-      <mat-form-field appearance="fill" class="grow min-w-[200px]">
-        <mat-label>Наименование</mat-label>
-        <input matInput formControlName="name">
-      </mat-form-field>
-      <mat-form-field appearance="fill" class="grow min-w-[300px]">
-        <mat-label>Описание</mat-label>
-        <textarea matInput formControlName="description" rows="2"></textarea>
-      </mat-form-field>
+    <div class="flex flex-wrap gap-4 items-start">
+      <app-input label="Наименование" formControlName="name" class="grow min-w-[200px]" [required]="true" />
+      <app-textarea label="Описание" formControlName="description" [rows]="2" class="grow min-w-[300px]" />
       <app-tariff-select class="grow min-w-[220px]" [control]="_form.controls.requiredTariffId" />
       <app-reward-select class="grow min-w-[220px]" [control]="_form.controls.requiredRewardId" />
     </div>
 
-    <div class="flex flex-col gap-2 border border-gray-300 dark:border-gray-600 rounded p-4">
-      <span class="font-semibold">Фон по умолчанию</span>
-      <button type="button" mat-flat-button color="primary" (click)="_openDefaultBackgroundFile()">
-        <mat-icon svgIcon="file-contract" />
-        Выбрать изображение {{ _form.value.defaultBackground ? '(' + _form.value.defaultBackground + ')' : '' }}
-      </button>
+    <div class="flex flex-col gap-2 border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-900/40">
+      <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Фон по умолчанию</span>
+      <div>
+        <app-button type="button" variant="outline" (clicked)="_openDefaultBackgroundFile()" icon="file-contract">
+          Выбрать изображение {{ _form.value.defaultBackground ? '(' + _form.value.defaultBackground + ')' : '' }}
+        </app-button>
+      </div>
     </div>
 
-    <section class="border border-gray-300 dark:border-gray-600 rounded p-4">
+    <section class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900">
       <div class="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div class="flex flex-col gap-2 grow min-w-0">
-          <h5 class="font-semibold m-0">Условия завершения</h5>
-          <ul class="text-sm text-gray-700 dark:text-gray-300 list-none pl-0 m-0 space-y-2">
+          <h5 class="font-semibold m-0 text-sm">Условия завершения</h5>
+          <ul class="text-xs text-slate-600 dark:text-slate-400 list-none pl-0 m-0 space-y-1.5">
             <li class="pl-0">
-              <span class="font-medium text-gray-800 dark:text-gray-200">Успех:</span>
+              <span class="font-semibold text-slate-800 dark:text-slate-200">Успех:</span>
               {{ _completionSuccessSummary() }}
             </li>
             <li class="pl-0">
-              <span class="font-medium text-gray-800 dark:text-gray-200">Неуспех:</span>
+              <span class="font-semibold text-slate-800 dark:text-slate-200">Неуспех:</span>
               {{ _completionFailureSummary() }}
             </li>
           </ul>
         </div>
-        <button type="button" mat-stroked-button color="primary" class="shrink-0" (click)="_openCompletionDialog()">
-          <mat-icon svgIcon="sliders" />
+        <app-button type="button" variant="outline" (clicked)="_openCompletionDialog()" icon="sliders" size="sm">
           Настроить условия завершения
-        </button>
+        </app-button>
       </div>
     </section>
 
-    <section class="border border-gray-300 dark:border-gray-600 rounded p-4">
-      <div class="flex justify-between items-center mb-2">
+    <section class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900">
+      <div class="flex justify-between items-center mb-3">
         <div>
-          <h5 class="font-semibold">Общие параметры (по таймеру)</h5>
+          <h5 class="font-semibold text-sm">Общие параметры (по таймеру)</h5>
         </div>
-        <button type="button" mat-flat-button color="primary" (click)="_addParameter()">
-          <mat-icon svgIcon="plus" />
+        <app-button type="button" (clicked)="_addParameter()" icon="plus" size="sm">
           Создать
-        </button>
+        </app-button>
       </div>
-      <div class="overflow-auto">
+      <div class="overflow-hidden border border-slate-200 dark:border-slate-800 rounded-xl">
         <table
           mat-table
           [dataSource]="_parametersList()"
-          class="mat-elevation-z8 w-full"
+          class="w-full"
           cdkDropList
           (cdkDropListDropped)="_handleParameterDrop($event)"
           [cdkDropListData]="_parametersList()">
@@ -103,12 +96,8 @@
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let row; let i = index">
               <div class="flex gap-1">
-                <button mat-icon-button type="button" (click)="_editParameter(i)" title="Редактировать">
-                  <mat-icon svgIcon="pen-to-square" />
-                </button>
-                <button mat-icon-button color="warn" type="button" (click)="_removeParameter(i)" title="Удалить">
-                  <mat-icon svgIcon="trash" />
-                </button>
+                <app-icon-button icon="pen-to-square" variant="ghost" size="sm" tooltip="Редактировать" (clicked)="_editParameter(i)" />
+                <app-icon-button icon="trash" variant="ghost" size="sm" tooltip="Удалить" class="text-rose-500 hover:text-rose-600" (clicked)="_removeParameter(i)" />
               </div>
             </td>
           </ng-container>
@@ -125,22 +114,21 @@
       </div>
     </section>
 
-    <section class="border border-gray-300 dark:border-gray-600 rounded p-4">
-      <div class="flex justify-between items-center mb-2">
+    <section class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900">
+      <div class="flex justify-between items-center mb-3">
         <div>
-          <h5 class="font-semibold">Сцены</h5>
-          <p class="text-sm text-gray-600 dark:text-gray-400">Фон, текст и варианты выбора редактируются в диалоге сцены (кнопка «Редактировать»).</p>
+          <h5 class="font-semibold text-sm">Сцены</h5>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Фон, текст и варианты выбора редактируются в диалоге сцены (кнопка «Редактировать»).</p>
         </div>
-        <button type="button" mat-flat-button color="primary" (click)="_addScene()">
-          <mat-icon svgIcon="plus" />
+        <app-button type="button" (clicked)="_addScene()" icon="plus" size="sm">
           Создать
-        </button>
+        </app-button>
       </div>
-      <div class="overflow-auto">
+      <div class="overflow-hidden border border-slate-200 dark:border-slate-800 rounded-xl">
         <table
           mat-table
           [dataSource]="_scenesList()"
-          class="mat-elevation-z8 w-full"
+          class="w-full"
           cdkDropList
           (cdkDropListDropped)="_handleSceneDrop($event)"
           [cdkDropListData]="_scenesList()">
@@ -160,19 +148,15 @@
           <ng-container matColumnDef="isReviewed">
             <th mat-header-cell *matHeaderCellDef>Проверена</th>
             <td mat-cell *matCellDef="let row">
-              <mat-checkbox [formControl]="row.get('isReviewed')!">Сцена проверена (без ошибок)</mat-checkbox>
+              <app-checkbox [formControl]="row.get('isReviewed')!" label="Сцена проверена (без ошибок)" />
             </td>
           </ng-container>
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let row; let si = index">
               <div class="flex gap-1">
-                <button mat-icon-button type="button" (click)="_editScene(si)" title="Редактировать">
-                  <mat-icon svgIcon="pen-to-square" />
-                </button>
-                <button mat-icon-button color="warn" type="button" (click)="_removeScene(si)" title="Удалить">
-                  <mat-icon svgIcon="trash" />
-                </button>
+                <app-icon-button icon="pen-to-square" variant="ghost" size="sm" tooltip="Редактировать" (clicked)="_editScene(si)" />
+                <app-icon-button icon="trash" variant="ghost" size="sm" tooltip="Удалить" class="text-rose-500 hover:text-rose-600" (clicked)="_removeScene(si)" />
               </div>
             </td>
           </ng-container>

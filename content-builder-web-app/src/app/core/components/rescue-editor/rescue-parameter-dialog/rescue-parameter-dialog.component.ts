@@ -9,19 +9,23 @@ import {
 import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatOption, MatSelectModule } from '@angular/material/select';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 import { startWith, take } from 'rxjs';
 import {
   RescueParameterSeverityDialogComponent,
   RescueParameterSeverityDialogData
 } from '../rescue-parameter-severity-dialog/rescue-parameter-severity-dialog.component';
+import { AppDialogWrapperComponent } from '../../dialog-wrapper/dialog-wrapper.component';
+import {
+  AppButtonComponent,
+  AppCheckboxComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  AppTextareaComponent,
+  SelectOption
+} from '@/core/components/ui';
 
 export type RescueParameterDialogData = {
   parameter: RescueTimerParameterVm | null;
@@ -34,15 +38,14 @@ type NullableSeverity = RescueParameterSeverityEnum | null | undefined;
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    MatButton,
-    MatCheckboxModule,
-    MatIcon,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatOption,
-    MatTableModule
+    MatTableModule,
+    AppDialogWrapperComponent,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
+    AppTextareaComponent,
+    AppCheckboxComponent
   ],
   templateUrl: './rescue-parameter-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -53,6 +56,11 @@ export class RescueParameterDialogComponent {
   protected readonly _dialogData = inject<RescueParameterDialogData>(MAT_DIALOG_DATA);
   private readonly _ref = inject(MatDialogRef<RescueParameterDialogComponent, RescueTimerParameterVm>);
   private readonly _dialog = inject(MatDialog);
+
+  protected readonly _typeOptions: SelectOption[] = [
+    { value: 'numeric', label: 'Числовой' },
+    { value: 'timer', label: 'Таймер (время)' }
+  ];
 
   protected readonly _severitiesList = signal<RescueParameterSeverityVm[]>(
     [...(this._dialogData.parameter?.severities ?? [])]

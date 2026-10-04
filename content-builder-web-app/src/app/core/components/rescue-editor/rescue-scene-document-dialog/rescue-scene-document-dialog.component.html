@@ -1,23 +1,19 @@
-<h2 mat-dialog-title>{{ _dialogData.document ? 'Редактировать документ' : 'Новый документ' }}</h2>
-<mat-dialog-content>
-  <form [formGroup]="_form" class="flex flex-col gap-4 min-w-[360px]">
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Название документа</mat-label>
-      <input matInput formControlName="name" />
-    </mat-form-field>
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Документ из базы</mat-label>
-      <mat-select formControlName="articleId">
-        @for (a of _articleOptions; track a.id) {
-          <mat-option [value]="a.id">{{ a.name }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
+<app-dialog-wrapper
+  [title]="_dialogData.document ? 'Редактировать документ' : 'Новый документ'"
+  [saveText]="_dialogData.document ? 'Сохранить' : 'Добавить'"
+  [saveDisabled]="_form.invalid"
+  (save)="_submit()"
+  (close)="_cancel()"
+>
+  <form [formGroup]="_form" class="flex flex-col gap-4 min-w-[360px] pt-1">
+    <app-input
+      label="Название документа"
+      formControlName="name"
+    />
+    <app-select
+      label="Документ из базы"
+      formControlName="articleId"
+      [options]="_articleSelectOptions()"
+    />
   </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button (click)="_cancel()">Отмена</button>
-  <button mat-flat-button color="primary" (click)="_submit()" [disabled]="_form.invalid">
-    {{ _dialogData.document ? 'Сохранить' : 'Добавить' }}
-  </button>
-</mat-dialog-actions>
+</app-dialog-wrapper>

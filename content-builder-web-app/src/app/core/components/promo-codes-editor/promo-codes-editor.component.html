@@ -4,45 +4,36 @@
     <div>
       <div class="flex items-center gap-3">
         <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Промокоды и скидки</h1>
-        <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
-          {{ _items().length }}
-        </span>
+        <app-badge variant="info" size="sm">{{ _items().length }}</app-badge>
       </div>
       <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
         Управление скидочными купонами, лимитами активаций, сроками действия и привязкой к тарифам
       </p>
     </div>
 
-    <div class="flex items-center gap-3">
-      <button
-        type="button"
-        mat-flat-button
-        color="primary"
+    <div class="flex items-center gap-2">
+      <app-button
         (click)="_create()"
-        class="!rounded-xl !px-4 !py-2.5 !shadow-sm flex items-center gap-2"
+        icon="plus"
+        size="md"
       >
-        <mat-icon svgIcon="plus" class="!w-4 !h-4 mr-1" />
         Создать промокод
-      </button>
-      <button
-        type="button"
-        mat-stroked-button
+      </app-button>
+      <app-icon-button
+        icon="rotate-right"
+        variant="outline"
+        size="md"
         (click)="_reload()"
-        class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300"
-        matTooltip="Обновить список"
-      >
-        <mat-icon svgIcon="rotate-right" class="!w-4 !h-4" />
-      </button>
+        tooltip="Обновить список"
+      />
       @if (_ref) {
-        <button
-          type="button"
-          mat-icon-button
+        <app-icon-button
+          icon="times"
+          variant="ghost"
+          size="md"
           (click)="_close()"
-          matTooltip="Закрыть"
-          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-        >
-          <mat-icon svgIcon="times" class="!w-4 !h-4" />
-        </button>
+          tooltip="Закрыть"
+        />
       }
     </div>
   </div>
@@ -69,59 +60,38 @@
 
   <!-- Filters & Search Toolbar -->
   <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-    <div class="relative flex-1 max-w-md">
-      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-        <mat-icon svgIcon="magnifying-glass" class="!w-4 !h-4" />
-      </div>
-      <input
-        type="text"
+    <div class="flex-1 max-w-md">
+      <app-input
         [(ngModel)]="_searchQuery"
         placeholder="Поиск по коду промокода..."
-        class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400"
+        icon="magnifying-glass"
+        size="sm"
       />
     </div>
 
     <!-- Status Filter Buttons -->
-    <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium">
-      <button
-        type="button"
+    <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium gap-1">
+      <app-button
+        [variant]="_statusFilter() === 'all' ? 'secondary' : 'ghost'"
+        size="sm"
         (click)="_statusFilter.set('all')"
-        class="px-3 py-1.5 rounded-lg transition-colors"
-        [class.bg-white]="_statusFilter() === 'all'"
-        [class.dark:bg-slate-900]="_statusFilter() === 'all'"
-        [class.text-slate-900]="_statusFilter() === 'all'"
-        [class.dark:text-white]="_statusFilter() === 'all'"
-        [class.shadow-sm]="_statusFilter() === 'all'"
-        [class.text-slate-500]="_statusFilter() !== 'all'"
       >
         Все
-      </button>
-      <button
-        type="button"
+      </app-button>
+      <app-button
+        [variant]="_statusFilter() === 'active' ? 'secondary' : 'ghost'"
+        size="sm"
         (click)="_statusFilter.set('active')"
-        class="px-3 py-1.5 rounded-lg transition-colors"
-        [class.bg-white]="_statusFilter() === 'active'"
-        [class.dark:bg-slate-900]="_statusFilter() === 'active'"
-        [class.text-emerald-700]="_statusFilter() === 'active'"
-        [class.dark:text-emerald-400]="_statusFilter() === 'active'"
-        [class.shadow-sm]="_statusFilter() === 'active'"
-        [class.text-slate-500]="_statusFilter() !== 'active'"
       >
         Активные
-      </button>
-      <button
-        type="button"
+      </app-button>
+      <app-button
+        [variant]="_statusFilter() === 'inactive' ? 'secondary' : 'ghost'"
+        size="sm"
         (click)="_statusFilter.set('inactive')"
-        class="px-3 py-1.5 rounded-lg transition-colors"
-        [class.bg-white]="_statusFilter() === 'inactive'"
-        [class.dark:bg-slate-900]="_statusFilter() === 'inactive'"
-        [class.text-slate-800]="_statusFilter() === 'inactive'"
-        [class.dark:text-slate-200]="_statusFilter() === 'inactive'"
-        [class.shadow-sm]="_statusFilter() === 'inactive'"
-        [class.text-slate-500]="_statusFilter() !== 'inactive'"
       >
         Неактивные
-      </button>
+      </app-button>
     </div>
   </div>
 
@@ -161,15 +131,13 @@
                     <code class="px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/60 font-mono text-xs text-blue-600 dark:text-blue-400 font-bold tracking-wider">
                       {{ p.code }}
                     </code>
-                    <button
-                      type="button"
-                      mat-icon-button
+                    <app-icon-button
+                      icon="copy"
+                      variant="ghost"
+                      size="sm"
                       (click)="_copyCode(p.code)"
-                      matTooltip="Скопировать промокод"
-                      class="table-icon-btn-sm text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50"
-                    >
-                      <mat-icon svgIcon="copy" />
-                    </button>
+                      tooltip="Скопировать промокод"
+                    />
                   </div>
                 </td>
 
@@ -218,39 +186,29 @@
 
                 <!-- Status -->
                 <td class="py-3.5 px-4">
-                  @if (p.isActive) {
-                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      Активен
-                    </span>
-                  } @else {
-                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                      Неактивен
-                    </span>
-                  }
+                  <app-badge [variant]="p.isActive ? 'success' : 'neutral'" size="sm" [dot]="true">
+                    {{ p.isActive ? 'Активен' : 'Неактивен' }}
+                  </app-badge>
                 </td>
 
                 <!-- Actions -->
                 <td class="py-3.5 px-4 text-right">
                   <div class="flex items-center justify-end gap-1">
-                    <button
-                      type="button"
-                      mat-icon-button
+                    <app-icon-button
+                      icon="pen-to-square"
+                      variant="ghost"
+                      size="sm"
                       (click)="_edit(p)"
-                      matTooltip="Редактировать промокод"
-                      class="table-icon-btn text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:hover:text-blue-400"
-                    >
-                      <mat-icon svgIcon="pen-to-square" class="!w-4 !h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      mat-icon-button
+                      tooltip="Редактировать промокод"
+                    />
+                    <app-icon-button
+                      icon="trash"
+                      variant="ghost"
+                      size="sm"
                       (click)="_delete(p)"
-                      matTooltip="Удалить промокод"
-                      class="table-icon-btn text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50"
-                    >
-                      <mat-icon svgIcon="trash" class="!w-4 !h-4" />
-                    </button>
+                      tooltip="Удалить промокод"
+                      class="text-rose-500 hover:text-rose-700"
+                    />
                   </div>
                 </td>
               </tr>

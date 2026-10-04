@@ -27,6 +27,15 @@ import type { AchievementOut, RewardCreate, RewardOut, TariffOut } from '@/core/
 import { generateGUID } from '@/core/utils';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppTextareaComponent,
+  AppSelectComponent,
+  AppCheckboxComponent,
+  AppBadgeComponent
+} from '@/core/components/ui';
 
 type RewardEditData = { reward: RewardOut | null; achievements: AchievementOut[] };
 
@@ -55,14 +64,13 @@ export class RewardsEditorService {
   imports: [
     ReactiveFormsModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatCheckbox,
-    MatButton,
-    MatIconButton,
-    MatIcon,
-    AppDialogWrapperComponent
+    AppDialogWrapperComponent,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppTextareaComponent,
+    AppSelectComponent,
+    AppCheckboxComponent
   ],
   template: `
     <app-dialog-wrapper
@@ -74,45 +82,34 @@ export class RewardsEditorService {
       (close)="_ref.close()"
     >
       <form class="flex flex-col gap-3 min-w-[320px] max-w-full" [formGroup]="_form">
-        <mat-form-field appearance="fill">
-          <mat-label>Достижения (все нужны)</mat-label>
-          <mat-select formControlName="achievementIds" multiple>
-            @for (a of _data.achievements; track a.id) {
-              <mat-option [value]="a.id">{{ a.title }} ({{ a.code }})</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Название награды</mat-label>
-          <input matInput formControlName="title" />
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Описание награды</mat-label>
-          <textarea matInput formControlName="description" rows="2"></textarea>
-        </mat-form-field>
+        <app-select
+          label="Достижения (все нужны)"
+          formControlName="achievementIds"
+          [multiple]="true"
+          [options]="_achievementOptions()"
+          hint="Удерживайте Ctrl / Cmd для выбора нескольких достижений"
+          [required]="true"
+        />
+        <app-input label="Название награды" formControlName="title" [required]="true" />
+        <app-textarea label="Описание награды" formControlName="description" [rows]="2" />
         <div class="flex gap-2 items-center">
-          <mat-form-field appearance="fill" class="grow" subscriptSizing="dynamic">
-            <mat-label>Иконка награды (путь к файлу)</mat-label>
-            <input matInput formControlName="iconPath" />
-          </mat-form-field>
-          <button mat-stroked-button type="button" class="shrink-0 !h-14 !rounded-xl" (click)="_file.click()">
-            <mat-icon svgIcon="upload" class="!w-4 !h-4 mr-1" />
+          <app-input label="Иконка награды (путь к файлу)" formControlName="iconPath" class="grow" />
+          <app-button variant="outline" (click)="_file.click()" icon="upload">
             Загрузить
-          </button>
+          </app-button>
           <input #_file type="file" accept="image/*" class="hidden" (change)="_onFile($event)" />
         </div>
         <div class="flex flex-col gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
           <div class="flex gap-2 items-center justify-between">
             <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Файлы и сертификаты</span>
-            <button
-              mat-stroked-button
-              type="button"
-              class="!rounded-xl !text-xs !py-1"
+            <app-button
+              variant="outline"
+              size="sm"
               [disabled]="_uploadingFiles()"
               (click)="_filesInput.click()"
             >
               {{ _uploadingFiles() ? 'Загрузка…' : 'Прикрепить файл' }}
-            </button>
+            </app-button>
             <input
               #_filesInput
               type="file"
@@ -127,37 +124,26 @@ export class RewardsEditorService {
                 <img [src]="_thumbs()[f]" alt="" class="h-8 w-8 rounded object-cover shrink-0" />
               }
               <span class="text-xs text-slate-600 dark:text-slate-300 grow truncate">{{ _displayName(f) }}</span>
-              <button mat-icon-button type="button" (click)="_removeFile(f)" matTooltip="Убрать" class="table-icon-btn !w-7 !h-7 text-slate-400 hover:text-rose-600">
-                <mat-icon svgIcon="trash" class="!w-3.5 !h-3.5" />
-              </button>
+              <app-icon-button icon="trash" variant="ghost" size="sm" (click)="_removeFile(f)" tooltip="Убрать" class="text-slate-400 hover:text-rose-600" />
             </div>
           }
         </div>
-        <mat-form-field appearance="fill">
-          <mat-label>Порядок сортировки</mat-label>
-          <input matInput type="number" formControlName="sortOrder" />
-        </mat-form-field>
+        <app-input label="Порядок сортировки" type="number" formControlName="sortOrder" />
         <div class="flex flex-col gap-1">
           <div class="flex gap-2 items-start">
-            <mat-form-field appearance="fill" class="grow">
-              <mat-label>Привязать подписку (необязательно)</mat-label>
-              <mat-select formControlName="subscriptionTariffId">
-                <mat-option [value]="null">— Без подписки —</mat-option>
-                @for (t of _tariffs(); track t.id) {
-                  <mat-option [value]="t.id">{{ t.title }} ({{ t.periodDays }} дн.)</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="fill" class="w-32">
-              <mat-label>Дней</mat-label>
-              <input matInput type="number" formControlName="subscriptionDays" min="1" max="3650" />
-            </mat-form-field>
+            <app-select
+              label="Привязать подписку (необязательно)"
+              formControlName="subscriptionTariffId"
+              [options]="_tariffOptions()"
+              class="grow"
+            />
+            <app-input label="Дней" type="number" formControlName="subscriptionDays" class="w-32" />
           </div>
           @if (_form.hasError('subscriptionPair')) {
             <div class="text-xs text-red-600">Укажите и тариф, и срок — или очистите оба поля</div>
           }
         </div>
-        <mat-checkbox formControlName="isActive">Награда активна</mat-checkbox>
+        <app-checkbox formControlName="isActive" label="Награда активна" />
       </form>
     </app-dialog-wrapper>
   `,
@@ -175,6 +161,13 @@ export class RewardEditDialogComponent {
   protected readonly _attached = signal<string[]>(this._data.reward?.files ?? []);
   protected readonly _thumbs = signal<Record<string, string>>({});
   protected readonly _tariffs = signal<TariffOut[]>([]);
+  protected readonly _achievementOptions = computed(() =>
+    this._data.achievements.map((a) => ({ value: a.id, label: `${a.title} (${a.code})` }))
+  );
+  protected readonly _tariffOptions = computed(() => [
+    { value: null, label: '— Без подписки —' },
+    ...this._tariffs().map((t) => ({ value: t.id, label: `${t.title} (${t.periodDays} дн.)` }))
+  ]);
 
   protected readonly _form = new FormGroup(
     {
@@ -311,11 +304,12 @@ export class RewardEditDialogComponent {
     FormsModule,
     MatDialogModule,
     MatTableModule,
-    MatButton,
-    MatIconButton,
     MatIcon,
-    MatTooltip,
-    MatSnackBarModule
+    MatSnackBarModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppBadgeComponent
   ],
   templateUrl: './rewards-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -5,16 +5,18 @@ import {
   AppTestAccessablityConditionTest,
   AppTestAccessablityConditionTestScore,
   AppTestAccessablityConditionTestSuccedded,
-  AppTestAccessablityLogicalOperator } from '@/core/utils';
+  AppTestAccessablityLogicalOperator
+} from '@/core/utils';
 import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import {
+  AppButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  AppCheckboxComponent
+} from '../../ui';
 import { Store } from '@ngxs/store';
 import { merge } from 'lodash';
 
@@ -24,13 +26,11 @@ type TestParamType = AppTestAccessablityConditionTestScore['type'] | AppTestAcce
 @Component({
   selector: 'app-test-condition-item-builder',
   imports: [
-    MatIcon,
-    MatCheckboxModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
     ReactiveFormsModule,
-    MatButton
+    AppButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
+    AppCheckboxComponent
   ],
   templateUrl: './test-condition-item-builder.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -43,6 +43,29 @@ export class TestConditionItemBuilderComponent {
   protected readonly _logicalOperators: AppTestAccessablityLogicalOperator[] = [AppTestAccessablityLogicalOperator.And, AppTestAccessablityLogicalOperator.Or];
   protected readonly _conditionTypes: ConditionType[] = ['article', 'test'];
   protected readonly _testParamTypes: TestParamType[] = ['score', 'succedded'];
+
+  protected readonly _logicalOperatorOptions = this._logicalOperators.map(op => ({
+    value: op,
+    label: this._translateLogicalOperator(op)
+  }));
+
+  protected readonly _conditionTypeOptions = this._conditionTypes.map(type => ({
+    value: type,
+    label: this._translateConditionType(type)
+  }));
+
+  protected readonly _testParamTypeOptions = this._testParamTypes.map(type => ({
+    value: type,
+    label: this._translateTestParamType(type)
+  }));
+
+  protected readonly _testOptions = computed(() =>
+    this._tests().map(t => ({ value: t.id, label: t.name }))
+  );
+
+  protected readonly _articleOptions = computed(() =>
+    this._articles().map(a => ({ value: a.id, label: a.name }))
+  );
   protected readonly _form = new FormGroup({
     type: new FormControl<ConditionType>('article', Validators.required),
     logicalOperator: new FormControl<AppTestAccessablityLogicalOperator>(AppTestAccessablityLogicalOperator.And, Validators.required),

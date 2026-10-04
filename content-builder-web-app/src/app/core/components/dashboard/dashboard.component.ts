@@ -7,7 +7,7 @@ import { AppTariffsStorageService } from '@/core/api';
 import { usersListUsers } from '@/core/api/generated/sdk.gen';
 import { apiCall } from '@/core/api/api-utils';
 import type { UserListItemOut, TariffOut } from '@/core/api/generated/types.gen';
-import { DatePipe } from '@angular/common';
+import { AppIconButtonComponent, AppButtonComponent } from '../ui';
 
 interface MetricCard {
   title: string;
@@ -31,7 +31,7 @@ interface ActivityEvent {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, MatIcon, MatButtonModule, MatTooltipModule],
+  imports: [RouterLink, MatIcon, MatButtonModule, MatTooltipModule, AppIconButtonComponent],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       <!-- Welcome Header -->
@@ -44,25 +44,20 @@ interface ActivityEvent {
             Сводка активности пользователей, метрик монетизации и обучающего контента
           </p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
           <a
             routerLink="/content"
-            mat-flat-button
-            color="primary"
-            class="!rounded-xl !px-4 !py-2.5 !shadow-sm flex items-center gap-2"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm shadow-blue-500/20 inline-flex items-center gap-2 transition-colors"
           >
-            <mat-icon svgIcon="folder-open" class="!w-4 !h-4 mr-1" />
-            Конструктор контента
+            <mat-icon svgIcon="folder-open" class="!w-4 !h-4" />
+            <span>Конструктор контента</span>
           </a>
-          <button
-            type="button"
-            (click)="_reload()"
-            mat-stroked-button
-            class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300"
-            matTooltip="Обновить данные"
-          >
-            <mat-icon svgIcon="rotate-right" class="!w-4 !h-4" />
-          </button>
+          <app-icon-button
+            icon="rotate-right"
+            variant="outline"
+            tooltip="Обновить данные"
+            (clicked)="_reload()"
+          />
         </div>
       </div>
 

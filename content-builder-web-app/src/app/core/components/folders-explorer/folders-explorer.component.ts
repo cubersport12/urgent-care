@@ -57,11 +57,18 @@ type RescueOptionType = AppRescueItemVm & { type?: 'rescue' };
 type OptionType = FolderOptionType | ArticleOptionType | TestOptionType | RescueOptionType;
 type PanelSide = 'left' | 'right';
 
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  AppSelectOption
+} from '../ui';
+
 @Component({
   selector: 'app-folders-explorer',
   imports: [
     MatIcon,
-    MatIconButton,
     MatButtonModule,
     MatTooltip,
     MatDivider,
@@ -76,7 +83,11 @@ type PanelSide = 'left' | 'right';
     CdkDropList,
     CdkDrag,
     CdkDropListGroup,
-    AngularSplitModule
+    AngularSplitModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppSelectComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './folders-explorer.component.html',
@@ -136,6 +147,12 @@ export class FoldersExplorerComponent {
   /** null = показать все тарифы */
   protected readonly _filterTariffId = signal<string | null>(null);
   protected readonly _tariffs = signal<TariffOut[]>([]);
+  protected readonly _tariffFilterOptions = computed<AppSelectOption[]>(() =>
+    this._tariffs().map((t) => ({
+      value: t.id,
+      label: `${t.title} (ранг ≤${t.rank})`
+    }))
+  );
   protected readonly _defaultTariffId = computed(
     () => this._tariffs().find((t) => t.isDefault)?.id ?? null
   );

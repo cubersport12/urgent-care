@@ -1,20 +1,19 @@
-<div class="flex flex-col gap-1">
-  <h5>Правила активации теста</h5>
-  <div class="flex flex-col gap-1 p-1">
+<div class="flex flex-col gap-2">
+  <div class="flex items-center justify-between">
+    <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Правила активации теста</span>
+    <app-button (clicked)="_handleCreate()" icon="plus" size="sm" variant="outline">
+      Добавить правило
+    </app-button>
+  </div>
+  <div class="flex flex-col gap-1.5">
     @for (condition of _conditions(); track $index) {
-      <div class="flex gap-1 items-center p-1 stroke-gray-400 border rounded">
-        <button (click)="_handleEdit(condition)" type="button" mat-ripple title="Нажмите, чтобы редактировать" class="cursor-pointer text-left grow items-center text-ellipsis overflow-hidden">#{{$index + 1}}. {{_humanizeCondition()(condition, $index)}}</button>
-
-        <button type="button" (click)="_handleEdit(condition)" matIconButton color="warning" title="Редактировать">
-          <mat-icon svgIcon="pen-to-square" />
-        </button>
-        <button type="button" (click)="_handleDelete(condition)" matIconButton color="warning" title="Удалить">
-          <mat-icon svgIcon="trash" />
-        </button>
+      <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+        <div (click)="_handleEdit(condition)" role="button" tabindex="0" class="cursor-pointer text-left grow text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
+          #{{$index + 1}}. {{_humanizeCondition()(condition, $index)}}
+        </div>
+        <app-icon-button icon="pen-to-square" variant="ghost" size="sm" tooltip="Редактировать" (clicked)="_handleEdit(condition)" />
+        <app-icon-button icon="trash" variant="ghost" size="sm" tooltip="Удалить" class="text-rose-500 hover:text-rose-600" (clicked)="_handleDelete(condition)" />
       </div>
     }
-    <button (click)="_handleCreate()" mat-mini-fab size="sm" type="button" title="Добавить правило..">
-      <mat-icon svgIcon="plus" />
-    </button>
   </div>
 </div>

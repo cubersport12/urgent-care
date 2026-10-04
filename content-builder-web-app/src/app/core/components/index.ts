@@ -26,3 +26,5 @@ export * from './stats-reset-editor/stats-reset-editor.component';
 export * from './subscription-refund-editor/subscription-refund-editor.component';
 export * from './legal-docs-editor/legal-docs-editor.component';
 export * from './certificates-editor/certificates-editor.component';
+export * from './dialog-wrapper/dialog-wrapper.component';
+export * from './ui';

@@ -6,7 +6,7 @@ import {
   RescueSceneChoiceVm,
   RescueScheneChoiceImplicationVm
 } from '@/core/utils';
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -14,18 +14,21 @@ import {
   ReactiveFormsModule,
   Validators
 } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatOption, MatSelectModule } from '@angular/material/select';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 import {
   RescueChoiceImplicationDialogComponent,
   RescueChoiceImplicationDialogData
 } from '../rescue-choice-implication-dialog/rescue-choice-implication-dialog.component';
 import { take } from 'rxjs';
+import { AppDialogWrapperComponent } from '../../dialog-wrapper/dialog-wrapper.component';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  SelectOption
+} from '@/core/components/ui';
 
 export type SceneOption = { id: string; name: string };
 export type ParameterOption = { id: string; name: string };
@@ -52,14 +55,12 @@ function parameterChangeGroup(p: NullableValue<RescueChoiceParameterChangeVm> = 
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    MatButton,
-    MatIcon,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatOption,
-    MatTableModule
+    MatTableModule,
+    AppDialogWrapperComponent,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppSelectComponent
   ],
   templateUrl: './rescue-choice-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -90,6 +91,15 @@ export class RescueChoiceDialogComponent {
     const currentId = this._dialogData?.currentSceneId ?? '';
     return this._sceneOptionsList.filter(opt => opt?.id != null && opt.id !== currentId);
   }
+
+  protected readonly _paramSelectOptions = computed<SelectOption[]>(() =>
+    this._parameterOptionsList.map(p => ({ value: p.id, label: p.name }))
+  );
+
+  protected readonly _nextSceneSelectOptions = computed<SelectOption[]>(() => [
+    { value: null as any, label: '— Конец / нет перехода' },
+    ...this._nextSceneOptions.map(opt => ({ value: opt.id, label: opt.name }))
+  ]);
 
   /** id генерируется автоматически при создании */
   protected readonly _form = new FormGroup({

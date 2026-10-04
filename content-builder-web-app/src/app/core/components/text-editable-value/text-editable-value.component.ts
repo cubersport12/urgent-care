@@ -70,7 +70,7 @@ export class TextEditableValueComponent extends BaseControlValueAccessor<string>
     this._confirmRename();
   }
 
-  protected _beginRename(event: MouseEvent): void {
+  protected _beginRename(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
     this.editing.set(true);

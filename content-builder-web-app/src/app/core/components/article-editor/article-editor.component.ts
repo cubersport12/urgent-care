@@ -33,6 +33,12 @@ import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions, ArticlesState } from '@/core/store';
 import { finalize, mergeMap, Observable } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
+import {
+  AppButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  AppCheckboxComponent
+} from '../ui';
 import { RewardSelectComponent } from '../reward-select/reward-select.component';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
@@ -64,13 +70,11 @@ type ArticleLinkFormType = {
   imports: [
     FormsModule,
     ReactiveFormsModule,
-    MatButton,
     MatIcon,
-    MatCheckboxModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatOption,
+    AppButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
+    AppCheckboxComponent,
     TariffSelectComponent,
     RewardSelectComponent,
     AppDialogWrapperComponent
@@ -95,6 +99,11 @@ export class ArticleEditorComponent {
       null,
       ...result ?? []
     ];
+  });
+
+  protected readonly _nextArticleOptions = computed(() => {
+    const list = this._store.selectSignal(ArticlesState.getAllArticles)() ?? [];
+    return list.map(a => ({ value: a.id, label: a.name || 'Безымянный документ' }));
   });
 
   protected readonly _convertMessages = signal('');

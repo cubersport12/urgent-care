@@ -4,6 +4,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ToggleLightDarkButtonComponent } from '../toggle-light-dark-button';
+import { AppIconButtonComponent } from '../ui';
 import { filter } from 'rxjs';
 
 interface NavItem {
@@ -27,7 +28,8 @@ interface NavSection {
     MatIcon,
     MatButtonModule,
     MatTooltipModule,
-    ToggleLightDarkButtonComponent
+    ToggleLightDarkButtonComponent,
+    AppIconButtonComponent
   ],
   template: `
     <div class="flex h-screen w-screen overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
@@ -60,14 +62,14 @@ interface NavSection {
           </a>
 
           <!-- Mobile Close Button -->
-          <button
-            type="button"
-            mat-icon-button
-            class="lg:hidden !w-8 !h-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            (click)="_closeMobileMenu()"
-          >
-            <mat-icon svgIcon="times" class="!w-4 !h-4" />
-          </button>
+          <app-icon-button
+            icon="times"
+            variant="ghost"
+            size="sm"
+            class="lg:hidden"
+            tooltip="Закрыть"
+            (clicked)="_closeMobileMenu()"
+          />
         </div>
 
         <!-- Navigation Links Groups -->
@@ -135,14 +137,14 @@ interface NavSection {
         <!-- Top App Header -->
         <header class="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 flex items-center justify-between shrink-0 z-10 shadow-xs">
           <div class="flex items-center gap-3">
-            <button
-              type="button"
-              mat-icon-button
-              class="lg:hidden text-slate-600 dark:text-slate-300 !w-8 !h-8 flex items-center justify-center"
-              (click)="_toggleMobileMenu()"
-            >
-              <mat-icon svgIcon="bars" class="!w-5 !h-5" />
-            </button>
+            <app-icon-button
+              icon="bars"
+              variant="ghost"
+              size="sm"
+              class="lg:hidden"
+              tooltip="Меню"
+              (clicked)="_toggleMobileMenu()"
+            />
 
             <!-- Page Title Breadcrumb -->
             <div class="flex items-center gap-2 leading-none">

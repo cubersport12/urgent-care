@@ -1,25 +1,27 @@
-<form class="flex flex-col gap-1 p-3">
-  <mat-form-field class="grow">
-    <mat-label>
-      Текст ответа
-    </mat-label>
-    <textarea  [formControl]="_form.controls.answerText" matInput rows="3"></textarea>
-  </mat-form-field>
-  <mat-form-field class="grow">
-    <mat-label>
-      Баллы за ответ
-    </mat-label>
-    <input [formControl]="_form.controls.score" matInput type="number">
-  </mat-form-field>
-  <mat-checkbox [formControl]="_form.controls.isCorrect">Это правильный ответ?</mat-checkbox>
-  <div class="flex w-full justify-end gap-1">
-    <button [disabled]="!_form.dirty" (click)="_handleSubmit()" type="button" mat-flat-button color="primary">
-      <mat-icon svgIcon="check" />
+<form class="flex flex-col gap-3 p-4" [formGroup]="_form">
+  <app-textarea
+    label="Текст ответа"
+    [formControl]="_form.controls.answerText"
+    [rows]="3"
+    [required]="true"
+    class="grow"
+  />
+  <app-input
+    label="Баллы за ответ"
+    type="number"
+    [formControl]="_form.controls.score"
+    class="grow"
+  />
+  <app-checkbox
+    [formControl]="_form.controls.isCorrect"
+    label="Это правильный ответ?"
+  />
+  <div class="flex w-full justify-end gap-2 pt-2">
+    <app-button [disabled]="!_form.dirty" (clicked)="_handleSubmit()" icon="check">
       Сохранить
-    </button>
-    <button mat-button color="warn" (click)="_handleClose()" type="button">
-      <mat-icon svgIcon="xmark" />
+    </app-button>
+    <app-button variant="outline" (clicked)="_handleClose()" icon="xmark">
       Закрыть
-    </button>
+    </app-button>
   </div>
 </form>

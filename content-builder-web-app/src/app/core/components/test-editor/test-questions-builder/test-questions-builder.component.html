@@ -1,15 +1,19 @@
 <div class="w-full h-full overflow-hidden flex flex-col gap-1">
   <h5>Вопросы теста</h5>
   <div class="flex gap-1 w-full justify-end">
-    <button type="button" (click)="_handleCreate()" mat-button color="primary">
-      <mat-icon svgIcon="plus" />
+    <app-button
+      type="button"
+      (clicked)="_handleCreate()"
+      icon="plus"
+      size="sm"
+    >
       Добавить вопрос
-    </button>
+    </app-button>
   </div>
-  <div class="grow overflow-auto">
-    <table mat-table [dataSource]="_questions()" class="mat-elevation-z8" cdkDropList (cdkDropListDropped)="_handleQuestionDrop($event)" [cdkDropListData]="_questions()">
+  <div class="grow overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+    <table mat-table [dataSource]="_questions()" class="w-full" cdkDropList (cdkDropListDropped)="_handleQuestionDrop($event)" [cdkDropListData]="_questions()">
       <ng-container matColumnDef="index">
-        <th mat-header-cell *matHeaderCellDef>#</th>
+        <th mat-header-cell *matHeaderCellDef class="!w-14">#</th>
         <td mat-cell *matCellDef="let element; let i = index">
           <div class="flex items-center gap-2">
             <mat-icon class="example-drag-cursor" svgIcon="bars"/>
@@ -29,21 +33,33 @@
         <td mat-cell *matCellDef="let element">{{_getQuestionInfoTest(element)}}</td>
       </ng-container>
       <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
+        <th mat-header-cell *matHeaderCellDef class="!w-24"></th>
         <td mat-cell *matCellDef="let element">
-          <div class="flex items-center justify-center gap-1">
-            <button mat-icon-button (click)="_handleEdit(element)" type="button">
-              <mat-icon svgIcon="pen-to-square" />
-            </button>
-            <button mat-icon-button color="warn" (click)="_handleDelete(element)" type="button">
-              <mat-icon svgIcon="trash" />
-            </button>
+          <div class="flex items-center justify-end gap-1">
+            <app-icon-button
+              icon="pen-to-square"
+              variant="ghost"
+              size="sm"
+              tooltip="Редактировать"
+              (clicked)="_handleEdit(element)"
+            />
+            <app-icon-button
+              icon="trash"
+              variant="ghost"
+              size="sm"
+              tooltip="Удалить"
+              class="text-rose-500 hover:text-rose-600"
+              (clicked)="_handleDelete(element)"
+            />
           </div>
         </td>
       </ng-container>
       @let displayedColumns = ["index", "name", "info", "actions"];
-       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-       <tr cdkDrag [cdkDragData]="row" mat-row [ngClass]="{ '!bg-yellow-600': row.activationCondition != null }" *matRowDef="let row; columns: displayedColumns;"></tr>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr cdkDrag [cdkDragData]="row" mat-row [ngClass]="{ '!bg-amber-500/10 dark:!bg-amber-500/15 !text-amber-900 dark:!text-amber-200 border-l-4 border-l-amber-500': row.activationCondition != null }" *matRowDef="let row; columns: displayedColumns;"></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell text-center py-6 text-slate-400" [attr.colspan]="displayedColumns.length">Нет вопросов</td>
+      </tr>
     </table>
   </div>
 </div>

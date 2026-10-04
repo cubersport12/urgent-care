@@ -2,54 +2,49 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AppApi } from '@/core/utils';
+import { AppButtonComponent, AppInputComponent } from '@/core/components/ui';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule],
+  imports: [FormsModule, AppButtonComponent, AppInputComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="min-h-full flex items-center justify-center p-6">
       <form
-        class="w-full max-w-sm rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow p-6 flex flex-col gap-4"
+        class="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-6 flex flex-col gap-4"
         (ngSubmit)="submit()"
       >
-        <h1 class="text-xl font-semibold">Вход в конструктор</h1>
+        <h1 class="text-xl font-bold text-slate-900 dark:text-white">Вход в конструктор</h1>
 
-        <label class="flex flex-col gap-1 text-sm">
-          Почта
-          <input
-            type="email"
-            name="email"
-            autocomplete="username"
-            [(ngModel)]="email"
-            required
-            class="rounded-lg border border-neutral-300 dark:border-neutral-600 bg-transparent px-3 py-2 outline-none focus:border-blue-500"
-          />
-        </label>
+        <app-input
+          label="Почта"
+          type="email"
+          name="email"
+          [(ngModel)]="email"
+          [required]="true"
+        />
 
-        <label class="flex flex-col gap-1 text-sm">
-          Пароль
-          <input
-            type="password"
-            name="password"
-            autocomplete="current-password"
-            [(ngModel)]="password"
-            required
-            class="rounded-lg border border-neutral-300 dark:border-neutral-600 bg-transparent px-3 py-2 outline-none focus:border-blue-500"
-          />
-        </label>
+        <app-input
+          label="Пароль"
+          type="password"
+          name="password"
+          [(ngModel)]="password"
+          [required]="true"
+        />
 
         @if (error) {
-          <p class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+          <p class="text-xs text-rose-600 dark:text-rose-400">{{ error }}</p>
         }
 
-        <button
+        <app-button
           type="submit"
+          variant="primary"
           [disabled]="loading || !email || !password"
-          class="rounded-lg bg-blue-600 px-4 py-2 text-white font-medium disabled:opacity-50 hover:bg-blue-700"
+          [loading]="loading"
+          [fullWidth]="true"
         >
-          {{ loading ? 'Вход...' : 'Войти' }}
-        </button>
+          Войти
+        </app-button>
       </form>
     </div>
   `

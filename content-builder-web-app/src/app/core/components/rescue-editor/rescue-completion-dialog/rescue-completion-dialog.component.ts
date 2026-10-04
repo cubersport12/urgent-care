@@ -10,6 +10,9 @@ import {
   RescueCompletionParameterOption
 } from '../rescue-completion-condition-editor/rescue-completion-condition-editor.component';
 
+import { AppDialogWrapperComponent } from '../../dialog-wrapper/dialog-wrapper.component';
+import { AppButtonComponent } from '@/core/components/ui';
+
 export type RescueCompletionDialogData = {
   completion: AppRescueItemCompletionVm | null;
   getParameterOptions: () => RescueCompletionParameterOption[];
@@ -26,10 +29,10 @@ function cloneCondition(c: RescueCompletionConditionVm | null | undefined): Resc
   selector: 'app-rescue-completion-dialog',
   standalone: true,
   imports: [
-    MatDialogModule,
-    MatButton,
     MatDivider,
-    RescueCompletionConditionEditorComponent
+    RescueCompletionConditionEditorComponent,
+    AppDialogWrapperComponent,
+    AppButtonComponent
   ],
   templateUrl: './rescue-completion-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,

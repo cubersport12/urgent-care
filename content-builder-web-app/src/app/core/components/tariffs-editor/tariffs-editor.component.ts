@@ -19,6 +19,14 @@ import { ApiError } from '@/core/api/api-utils';
 import type { TariffCreate, TariffOut } from '@/core/api/generated/types.gen';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppTextareaComponent,
+  AppCheckboxComponent,
+  AppBadgeComponent
+} from '@/core/components/ui';
 
 @Injectable({ providedIn: 'root' })
 export class TariffsEditorService {
@@ -39,9 +47,9 @@ export class TariffsEditorService {
   selector: 'app-tariff-edit-dialog',
   imports: [
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCheckbox,
+    AppInputComponent,
+    AppTextareaComponent,
+    AppCheckboxComponent,
     AppDialogWrapperComponent
   ],
   template: `
@@ -53,40 +61,19 @@ export class TariffsEditorService {
       (close)="_ref.close()"
     >
       <form class="flex flex-col gap-3 min-w-[300px]" [formGroup]="_form">
-        <mat-form-field appearance="fill">
-          <mat-label>Код тарифа</mat-label>
-          <input matInput formControlName="code" />
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Название тарифа</mat-label>
-          <input matInput formControlName="title" />
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Описание</mat-label>
-          <textarea matInput formControlName="description" rows="2"></textarea>
-        </mat-form-field>
+        <app-input label="Код тарифа" formControlName="code" [required]="true" />
+        <app-input label="Название тарифа" formControlName="title" [required]="true" />
+        <app-textarea label="Описание" formControlName="description" [rows]="2" />
         <div class="flex gap-2">
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Цена, ₽</mat-label>
-            <input matInput type="number" formControlName="priceRub" />
-          </mat-form-field>
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Период, дней</mat-label>
-            <input matInput type="number" formControlName="periodDays" />
-          </mat-form-field>
+          <app-input label="Цена, ₽" type="number" formControlName="priceRub" class="grow" [required]="true" />
+          <app-input label="Период, дней" type="number" formControlName="periodDays" class="grow" [required]="true" />
         </div>
         <div class="flex gap-2">
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Ранг тарифа</mat-label>
-            <input matInput type="number" formControlName="rank" />
-          </mat-form-field>
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Порядок сортировки</mat-label>
-            <input matInput type="number" formControlName="sortOrder" />
-          </mat-form-field>
+          <app-input label="Ранг тарифа" type="number" formControlName="rank" class="grow" [required]="true" />
+          <app-input label="Порядок сортировки" type="number" formControlName="sortOrder" class="grow" />
         </div>
-        <mat-checkbox formControlName="isActive">Активен на витрине</mat-checkbox>
-        <mat-checkbox formControlName="isDefault">Тариф по умолчанию (бесплатный)</mat-checkbox>
+        <app-checkbox formControlName="isActive" label="Активен на витрине" />
+        <app-checkbox formControlName="isDefault" label="Тариф по умолчанию (бесплатный)" />
       </form>
     </app-dialog-wrapper>
   `,
@@ -147,11 +134,12 @@ export class TariffEditDialogComponent {
     FormsModule,
     MatDialogModule,
     MatTableModule,
-    MatButton,
-    MatIconButton,
     MatIcon,
-    MatTooltip,
-    MatSnackBarModule
+    MatSnackBarModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppBadgeComponent
   ],
   templateUrl: './tariffs-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush

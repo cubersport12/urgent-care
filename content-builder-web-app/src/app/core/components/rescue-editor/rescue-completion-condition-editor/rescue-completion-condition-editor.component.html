@@ -1,68 +1,59 @@
 @if (condition() === null) {
-  <div class="flex flex-col gap-2 border border-dashed border-gray-300 dark:border-gray-600 rounded p-3 bg-gray-50/50 dark:bg-gray-900/20">
-    <span class="text-sm text-gray-600 dark:text-gray-400">Условие не задано</span>
+  <div class="flex flex-col gap-2 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-3 bg-slate-50/50 dark:bg-slate-900/20">
+    <span class="text-sm text-slate-500 dark:text-slate-400">Условие не задано</span>
     <div class="flex flex-wrap gap-2">
-      <button type="button" mat-stroked-button color="primary" (click)="_setCompareRoot()">
+      <app-button variant="outline" size="sm" (click)="_setCompareRoot()">
         Сравнение параметра
-      </button>
-      <button type="button" mat-stroked-button color="primary" (click)="_setGroupRoot()">
+      </app-button>
+      <app-button variant="outline" size="sm" (click)="_setGroupRoot()">
         Группа (И / ИЛИ)
-      </button>
+      </app-button>
     </div>
   </div>
 } @else {
   @let c = condition()!;
   @if (c.type === 'compare') {
-    <div class="flex flex-col gap-3 border border-gray-200 dark:border-gray-700 rounded p-3">
+    <div class="flex flex-col gap-3 border border-slate-200 dark:border-slate-800 rounded-xl p-3">
       <div class="flex flex-wrap gap-2 items-center justify-between">
-        <span class="text-sm font-medium">Сравнение</span>
-        <button type="button" mat-button color="warn" (click)="_clear()">Удалить</button>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Сравнение</span>
+        <app-button variant="ghost" size="sm" class="text-rose-500 hover:text-rose-600" (click)="_clear()">Удалить</app-button>
       </div>
-      <mat-form-field appearance="fill" class="w-full min-w-[200px]">
-        <mat-label>Параметр</mat-label>
-        <mat-select
-          [value]="c.parameterId"
-          (selectionChange)="_patchCompare({ parameterId: $event.value })">
-          @for (opt of parameterOptions(); track opt.id) {
-            <mat-option [value]="opt.id">{{ opt.name }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field appearance="fill" class="w-full min-w-[180px]">
-        <mat-label>Условие</mat-label>
-        <mat-select
-          [value]="c.operator"
-          (selectionChange)="_patchCompare({ operator: $event.value })">
-          @for (op of _compareOpList; track op) {
-            <mat-option [value]="op">{{ _compareOpLabel(op) }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field appearance="fill" class="w-full max-w-xs">
-        <mat-label>Значение</mat-label>
-        <input
-          matInput
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <app-select
+          label="Параметр"
+          [ngModel]="c.parameterId"
+          (ngModelChange)="_patchCompare({ parameterId: $event })"
+          [options]="_paramSelectOptions()"
+        />
+        <app-select
+          label="Условие"
+          [ngModel]="c.operator"
+          (ngModelChange)="_patchCompare({ operator: $event })"
+          [options]="_operatorOptions"
+        />
+        <app-input
+          label="Значение"
           type="number"
-          [value]="c.value"
-          (input)="_patchCompare({ value: +($any($event.target).value) || 0 })">
-      </mat-form-field>
+          [ngModel]="c.value"
+          (ngModelChange)="_patchCompare({ value: +$event || 0 })"
+        />
+      </div>
     </div>
   } @else {
-    <div class="flex flex-col gap-3 border border-gray-200 dark:border-gray-700 rounded p-3">
+    <div class="flex flex-col gap-3 border border-slate-200 dark:border-slate-800 rounded-xl p-3">
       <div class="flex flex-wrap gap-2 items-center justify-between">
-        <span class="text-sm font-medium">Группа условий</span>
-        <button type="button" mat-button color="warn" (click)="_clear()">Удалить группу</button>
+        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Группа условий</span>
+        <app-button variant="ghost" size="sm" class="text-rose-500 hover:text-rose-600" (click)="_clear()">Удалить группу</app-button>
       </div>
-      <mat-form-field appearance="fill" class="w-full max-w-xs">
-        <mat-label>Объединение</mat-label>
-        <mat-select
-          [value]="c.logicalOperator"
-          (selectionChange)="_patchGroupOp($event.value)">
-          <mat-option [value]="LogicalOp.And">Все условия (И)</mat-option>
-          <mat-option [value]="LogicalOp.Or">Любое условие (ИЛИ)</mat-option>
-        </mat-select>
-      </mat-form-field>
-      <div class="flex flex-col gap-3 pl-2 border-l-2 border-gray-300 dark:border-gray-600">
+      <div class="max-w-xs">
+        <app-select
+          label="Объединение"
+          [ngModel]="c.logicalOperator"
+          (ngModelChange)="_patchGroupOp($event)"
+          [options]="_logicalOpOptions"
+        />
+      </div>
+      <div class="flex flex-col gap-3 pl-2 border-l-2 border-slate-300 dark:border-slate-700">
         @for (child of c.conditions; track $index) {
           <div class="flex gap-2 items-start w-full">
             <app-rescue-completion-condition-editor
@@ -74,14 +65,12 @@
         }
       </div>
       <div class="flex flex-wrap gap-2">
-        <button type="button" mat-stroked-button color="primary" (click)="_addCompareChild()">
-          <mat-icon svgIcon="plus" class="!w-4 !h-4" />
+        <app-button variant="outline" size="sm" icon="plus" (click)="_addCompareChild()">
           Сравнение
-        </button>
-        <button type="button" mat-stroked-button color="primary" (click)="_addGroupChild()">
-          <mat-icon svgIcon="plus" class="!w-4 !h-4" />
+        </app-button>
+        <app-button variant="outline" size="sm" icon="plus" (click)="_addGroupChild()">
           Вложенная группа
-        </button>
+        </app-button>
       </div>
     </div>
   }

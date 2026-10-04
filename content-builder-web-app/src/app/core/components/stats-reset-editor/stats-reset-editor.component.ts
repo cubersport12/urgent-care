@@ -23,6 +23,14 @@ export class StatsResetEditorService {
   }
 }
 
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppCheckboxComponent,
+  AppBadgeComponent
+} from '../ui';
+
 @Component({
   selector: 'app-stats-reset-editor',
   imports: [
@@ -33,7 +41,12 @@ export class StatsResetEditorService {
     MatButtonModule,
     MatIcon,
     MatTooltipModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppCheckboxComponent,
+    AppBadgeComponent
   ],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
@@ -52,25 +65,19 @@ export class StatsResetEditorService {
         </div>
 
         <div class="flex items-center gap-2">
-          <button
-            type="button"
-            mat-stroked-button
-            (click)="_load()"
-            class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300"
-            matTooltip="Обновить пользователей"
-          >
-            <mat-icon svgIcon="rotate-right" class="!w-4 !h-4" />
-          </button>
+          <app-icon-button
+            icon="rotate-right"
+            variant="outline"
+            (clicked)="_load()"
+            tooltip="Обновить пользователей"
+          />
           @if (_ref) {
-            <button
-              type="button"
-              mat-icon-button
-              (click)="_ref.close()"
-              matTooltip="Закрыть"
-              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            >
-              <mat-icon svgIcon="times" class="!w-4 !h-4" />
-            </button>
+            <app-icon-button
+              icon="times"
+              variant="ghost"
+              (clicked)="_ref.close()"
+              tooltip="Закрыть"
+            />
           }
         </div>
       </div>
@@ -90,39 +97,33 @@ export class StatsResetEditorService {
 
       <!-- Action Toolbar & Search -->
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-        <div class="relative flex-1 max-w-md">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-            <mat-icon svgIcon="magnifying-glass" class="!w-4 !h-4" />
-          </div>
-          <input
-            type="text"
-            [(ngModel)]="_searchQuery"
-            placeholder="Поиск пользователей по имени или email..."
-            class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400"
-          />
-        </div>
+        <app-input
+          [(ngModel)]="_searchQuery"
+          placeholder="Поиск пользователей по имени или email..."
+          icon="magnifying-glass"
+          size="sm"
+          class="flex-1 max-w-md"
+        />
 
         <div class="flex items-center gap-2">
-          <button
-            type="button"
-            mat-stroked-button
-            (click)="_toggleSelectAll()"
-            class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300 text-xs"
+          <app-button
+            variant="outline"
+            size="sm"
+            (clicked)="_toggleSelectAll()"
           >
             {{ _isAllSelected() ? 'Снять выделение' : 'Выбрать всех' }}
-          </button>
+          </app-button>
 
-          <button
-            type="button"
-            mat-flat-button
-            color="warn"
+          <app-button
+            variant="danger"
+            size="sm"
             [disabled]="_loading() || _resetting() || _selectedUserIds().length === 0"
-            (click)="_apply()"
-            class="!rounded-xl !px-4 !py-2 !shadow-sm flex items-center gap-2"
+            [loading]="_resetting()"
+            (clicked)="_apply()"
+            icon="trash"
           >
-            <mat-icon svgIcon="trash" class="!w-4 !h-4 mr-1" />
             {{ _resetting() ? 'Сброс…' : 'Сбросить выбранным (' + _selectedUserIds().length + ')' }}
-          </button>
+          </app-button>
         </div>
       </div>
 
@@ -145,11 +146,9 @@ export class StatsResetEditorService {
               <thead>
                 <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-medium">
                   <th class="py-3 px-4 w-12 text-center">
-                    <input
-                      type="checkbox"
+                    <app-checkbox
                       [checked]="_isAllSelected()"
-                      (change)="_toggleSelectAll()"
-                      class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      (checkedChange)="_toggleSelectAll()"
                     />
                   </th>
                   <th class="py-3 px-4">Обучающийся</th>
@@ -167,11 +166,9 @@ export class StatsResetEditorService {
                     [class.dark:bg-rose-950/10]="_isSelected(u.id)"
                   >
                     <td class="py-3 px-4 text-center" (click)="$event.stopPropagation()">
-                      <input
-                        type="checkbox"
+                      <app-checkbox
                         [checked]="_isSelected(u.id)"
-                        (change)="_toggleUser(u.id)"
-                        class="rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                        (checkedChange)="_toggleUser(u.id)"
                       />
                     </td>
                     <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">
@@ -185,9 +182,9 @@ export class StatsResetEditorService {
                     </td>
                     <td class="py-3 px-4 text-right">
                       @if (_isSelected(u.id)) {
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                        <app-badge variant="danger" size="sm">
                           К сбросу
-                        </span>
+                        </app-badge>
                       } @else {
                         <span class="text-slate-400">Не выбран</span>
                       }

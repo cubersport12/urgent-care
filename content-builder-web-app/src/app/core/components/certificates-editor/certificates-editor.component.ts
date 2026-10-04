@@ -1,11 +1,7 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
@@ -14,6 +10,13 @@ import { ApiError, apiCall } from '@/core/api/api-utils';
 import { certificatesIssue, usersListUsers } from '@/core/api/generated/sdk.gen';
 import type { CertificateOut, UserListItemOut } from '@/core/api/generated/types.gen';
 import { AppDialogService } from '@/core/services/app-dialog.service';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  AppBadgeComponent
+} from '@/core/components/ui';
 
 type CertPreview = { url: string; numberLabel: string };
 
@@ -42,13 +45,13 @@ export class CertificatesEditorService {
   imports: [
     ReactiveFormsModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatButtonModule,
-    MatIcon,
     MatTooltipModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
+    AppBadgeComponent
   ],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
@@ -57,9 +60,7 @@ export class CertificatesEditorService {
         <div>
           <div class="flex items-center gap-3">
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Выдача и реестр сертификатов</h1>
-            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
-              Электронные дипломы
-            </span>
+            <app-badge variant="purple" size="sm">Электронные дипломы</app-badge>
           </div>
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Генерация официальных номерных сертификатов о завершении обучения и подтверждении квалификации
@@ -67,25 +68,19 @@ export class CertificatesEditorService {
         </div>
 
         <div class="flex items-center gap-2">
-          <button
-            type="button"
-            mat-stroked-button
+          <app-icon-button
+            icon="rotate-right"
+            variant="outline"
             (click)="_loadUsers()"
-            class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300"
-            matTooltip="Обновить пользователей"
-          >
-            <mat-icon svgIcon="rotate-right" class="!w-4 !h-4" />
-          </button>
+            tooltip="Обновить пользователей"
+          />
           @if (_ref) {
-            <button
-              type="button"
-              mat-icon-button
+            <app-icon-button
+              icon="times"
+              variant="ghost"
               (click)="_ref.close()"
-              matTooltip="Закрыть"
-              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            >
-              <mat-icon svgIcon="times" class="!w-4 !h-4" />
-            </button>
+              tooltip="Закрыть"
+            />
           }
         </div>
       </div>
@@ -133,54 +128,41 @@ export class CertificatesEditorService {
               </div>
 
               <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  mat-stroked-button
+                <app-button
+                  variant="outline"
+                  icon="file-contract"
                   (click)="_openTab(issued.url)"
-                  class="flex-1 !rounded-xl !py-2.5"
+                  class="flex-1"
                 >
-                  <mat-icon svgIcon="file-contract" class="!w-4 !h-4 mr-1" />
                   Открыть в новой вкладке
-                </button>
-                <button
-                  type="button"
-                  mat-flat-button
-                  color="primary"
+                </app-button>
+                <app-button
+                  variant="primary"
+                  icon="plus"
                   (click)="_resetIssued()"
-                  class="flex-1 !rounded-xl !py-2.5"
+                  class="flex-1"
                 >
-                  <mat-icon svgIcon="plus" class="!w-4 !h-4 mr-1" />
                   Выдать еще один
-                </button>
+                </app-button>
               </div>
             </div>
           } @else {
             <!-- Form -->
             <form [formGroup]="_form" class="space-y-4">
-              <div>
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                  Обучающийся (пользователь)
-                </label>
-                <mat-form-field appearance="fill" class="w-full">
-                  <mat-select formControlName="userId" placeholder="Выберите пользователя...">
-                    @for (u of _users(); track u.id) {
-                      <mat-option [value]="u.id">
-                        {{ u.fullName || u.email }} ({{ u.email }})
-                      </mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
-              </div>
+              <app-select
+                label="Обучающийся (пользователь)"
+                formControlName="userId"
+                placeholder="Выберите пользователя..."
+                [options]="_userOptions()"
+                [required]="true"
+              />
 
-              <div>
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                  ФИО на сертификате
-                </label>
-                <mat-form-field appearance="fill" class="w-full">
-                  <input matInput formControlName="displayName" placeholder="Иванов Иван Иванович" />
-                  <mat-hint>Если пусто — будет автоматически взято имя из профиля</mat-hint>
-                </mat-form-field>
-              </div>
+              <app-input
+                label="ФИО на сертификате"
+                formControlName="displayName"
+                placeholder="Иванов Иван Иванович"
+                hint="Если пусто — будет автоматически взято имя из профиля"
+              />
 
               <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-1">
                 <p class="font-semibold text-slate-700 dark:text-slate-300">Сертификат включает:</p>
@@ -189,17 +171,16 @@ export class CertificatesEditorService {
                 <p>• QR-код для верификации подлинности в реестре</p>
               </div>
 
-              <button
-                type="button"
-                mat-flat-button
-                color="primary"
+              <app-button
+                variant="primary"
+                icon="certificate"
                 [disabled]="_form.invalid || _issuing()"
+                [loading]="_issuing()"
                 (click)="_issue()"
-                class="w-full !rounded-xl !py-3 !shadow-sm flex items-center justify-center gap-2"
+                [fullWidth]="true"
               >
-                <mat-icon svgIcon="certificate" class="!w-4 !h-4 mr-1" />
                 {{ _issuing() ? 'Генерация сертификата…' : 'Сгенерировать и выдать' }}
-              </button>
+              </app-button>
             </form>
           }
         </div>
@@ -244,10 +225,9 @@ export class CertificatesEditorService {
                       {{ cert.date }}
                     </td>
                     <td class="py-3 px-3 text-right">
-                      <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      <app-badge variant="success" size="sm" [dot]="true">
                         Действителен
-                      </span>
+                      </app-badge>
                     </td>
                   </tr>
                 }
@@ -267,6 +247,12 @@ export class CertificatesEditorComponent {
   private readonly _destroyRef = inject(DestroyRef);
 
   protected readonly _users = signal<UserListItemOut[]>([]);
+  protected readonly _userOptions = computed(() =>
+    this._users().map((u) => ({
+      value: u.id,
+      label: `${u.fullName || u.email} (${u.email})`
+    }))
+  );
   protected readonly _issuing = signal(false);
   protected readonly _issued = signal<CertPreview | null>(null);
 

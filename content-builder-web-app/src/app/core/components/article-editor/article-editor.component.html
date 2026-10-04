@@ -16,10 +16,12 @@
         Основная информация
       </div>
 
-      <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Наименование документа</mat-label>
-        <input matInput [formControl]="_form.controls.name" placeholder="Например: Неотложная помощь при анафилаксии" />
-      </mat-form-field>
+      <app-input
+        label="Наименование документа"
+        [formControl]="_form.controls.name"
+        placeholder="Например: Неотложная помощь при анафилаксии"
+        [required]="true"
+      />
 
       <!-- PDF File Upload Card -->
       <div class="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-4 bg-white dark:bg-slate-950/70">
@@ -40,27 +42,24 @@
 
           <div class="flex items-center gap-2 shrink-0">
             @if (_pdfUrl()) {
-              <button
-                type="button"
-                mat-stroked-button
-                class="!rounded-xl !text-xs !border-slate-300 dark:!border-slate-700"
-                (click)="_preventClick($event); _openPdfContentInWindow()"
-                matTooltip="Открыть документ в новой вкладке"
+              <app-button
+                variant="outline"
+                size="sm"
+                (clicked)="_preventClick($event); _openPdfContentInWindow()"
+                icon="window-maximize"
+                tooltip="Открыть документ в новой вкладке"
               >
-                <mat-icon svgIcon="window-maximize" class="!w-4 !h-4 mr-1" />
                 Просмотр
-              </button>
+              </app-button>
             }
-            <button
-              type="button"
-              mat-flat-button
-              color="primary"
-              class="!rounded-xl !text-xs"
-              (click)="_preventClick($event); _openFile()"
+            <app-button
+              variant="primary"
+              size="sm"
+              (clicked)="_preventClick($event); _openFile()"
+              icon="upload"
             >
-              <mat-icon svgIcon="upload" class="!w-4 !h-4 mr-1" />
               {{ _pdfUrl() ? 'Заменить' : 'Выбрать PDF' }}
-            </button>
+            </app-button>
           </div>
         </div>
 
@@ -99,41 +98,38 @@
         Последовательность и ограничения
       </div>
 
-      <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Запускать по окончанию прочтения</mat-label>
-        <mat-select [formControl]="_form.controls.nextRunArticle">
-          @for (article of _allArticles(); track $index) {
-            <mat-option [value]="article?.id ?? null">
-              {{ article?.name ?? '— Не выбрано (завершить цепочку) —' }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <app-select
+        label="Запускать по окончанию прочтения"
+        [formControl]="_form.controls.nextRunArticle"
+        [options]="_nextArticleOptions()"
+        [allowEmpty]="true"
+        emptyLabel="— Не выбрано (завершить цепочку) —"
+      />
 
-      <div class="space-y-2 pt-1">
-        <label class="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
-          <mat-checkbox [formControl]="_form.controls.disableWhileNotPrevComplete" class="shrink-0" />
-          <div class="text-xs">
-            <span class="font-medium text-slate-900 dark:text-white block">Блокировать до завершения предыдущего</span>
-            <span class="text-slate-500 dark:text-slate-400 text-[11px]">Материал будет недоступен, пока обучающийся не изучит предыдущий шаг</span>
-          </div>
-        </label>
+      <div class="space-y-3 pt-1">
+        <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40">
+          <app-checkbox
+            [formControl]="_form.controls.disableWhileNotPrevComplete"
+            label="Блокировать до завершения предыдущего"
+            description="Материал будет недоступен, пока обучающийся не изучит предыдущий шаг"
+          />
+        </div>
 
-        <label class="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
-          <mat-checkbox [formControl]="_form.controls.hideWhileNotPrevComplete" class="shrink-0" />
-          <div class="text-xs">
-            <span class="font-medium text-slate-900 dark:text-white block">Скрывать до завершения предыдущего</span>
-            <span class="text-slate-500 dark:text-slate-400 text-[11px]">Скрывать отображение карточки материала в списке до разблокировки</span>
-          </div>
-        </label>
+        <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40">
+          <app-checkbox
+            [formControl]="_form.controls.hideWhileNotPrevComplete"
+            label="Скрывать до завершения предыдущего"
+            description="Скрывать отображение карточки материала в списке до разблокировки"
+          />
+        </div>
 
-        <label class="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
-          <mat-checkbox [formControl]="_form.controls.includeToStatistics" class="shrink-0" />
-          <div class="text-xs">
-            <span class="font-medium text-slate-900 dark:text-white block">Учитывать в статистике прогресса</span>
-            <span class="text-slate-500 dark:text-slate-400 text-[11px]">Прочтение документа влияет на процент общего прогресса курса</span>
-          </div>
-        </label>
+        <div class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40">
+          <app-checkbox
+            [formControl]="_form.controls.includeToStatistics"
+            label="Учитывать в статистике прогресса"
+            description="Прочтение документа влияет на процент общего прогресса курса"
+          />
+        </div>
       </div>
     </div>
   </form>

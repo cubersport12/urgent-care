@@ -15,76 +15,70 @@
         <mat-icon svgIcon="file-circle-check" class="!w-4 !h-4 text-indigo-500" />
         Параметры теста
       </div>
-      <div class="flex flex-wrap gap-3 w-full">
-        <mat-form-field appearance="fill" class="grow min-w-[240px]">
-          <mat-label>Наименование</mat-label>
-          <input matInput [formControl]="_form.controls.name" placeholder="Например: Основы реанимации" />
-        </mat-form-field>
-        <mat-form-field appearance="fill" class="w-48">
-          <mat-label>Макс. количество ошибок</mat-label>
-          <input matInput [formControl]="_form.controls.maxErrors" type="number" />
-        </mat-form-field>
-        <mat-form-field appearance="fill" class="w-56">
-          <mat-label>Проходной балл</mat-label>
-          <input matInput [formControl]="_form.controls.minScore" type="number">
-          <button mat-icon-button matSuffix type="button" (click)="_calculateMinScore()" [title]="'Автоматически посчитать проходной балл (макс: ' + _totalCorrectScore() + ')'">
-            <mat-icon svgIcon="calculator" />
-          </button>
-          @if (_scoreValidation().type === 'error') {
-            <mat-error>{{_scoreValidation().message}}</mat-error>
-          }
-          @if (_scoreValidation().type === 'warning') {
-            <mat-hint style="color: orange;">{{_scoreValidation().message}}</mat-hint>
-          }
-        </mat-form-field>
+      <div class="flex flex-wrap gap-4 w-full items-start">
+        <app-input
+          label="Наименование"
+          [formControl]="_form.controls.name"
+          placeholder="Например: Основы реанимации"
+          [required]="true"
+          class="grow min-w-[240px]"
+        />
+        <app-input
+          label="Макс. количество ошибок"
+          type="number"
+          [formControl]="_form.controls.maxErrors"
+          class="w-48"
+        />
+        <div class="flex items-end gap-2 w-64">
+          <app-input
+            label="Проходной балл"
+            type="number"
+            [formControl]="_form.controls.minScore"
+            class="grow"
+            [error]="_scoreValidation().type === 'error' ? _scoreValidation().message : undefined"
+            [hint]="_scoreValidation().type === 'warning' ? _scoreValidation().message : undefined"
+          />
+          <app-icon-button
+            icon="calculator"
+            variant="outline"
+            (clicked)="_calculateMinScore()"
+            [tooltip]="'Автоматически посчитать проходной балл (макс: ' + _totalCorrectScore() + ')'"
+            class="mb-0.5"
+          />
+        </div>
       </div>
 
       <!-- Flags -->
-      <div class="flex gap-4 w-full flex-wrap pt-1">
-        <mat-checkbox [formControl]="_form.controls.showCorrectAnswer">
-          Показывать правильный ответ в вопросах
-        </mat-checkbox>
-        <mat-checkbox [formControl]="_form.controls.includeToStatistics">
-          Тест участвует в статистике
-        </mat-checkbox>
-        <mat-checkbox [formControl]="_form.controls.showSkipButton">
-          Показывать кнопку пропускать
-        </mat-checkbox>
-        <mat-checkbox [formControl]="_form.controls.showNavigation">
-          Показывать навигацию
-        </mat-checkbox>
-        <mat-checkbox [formControl]="_form.controls.showBackButton">
-          Показывать кнопку назад
-        </mat-checkbox>
-        <mat-checkbox [formControl]="_form.controls.hidden">
-          Скрытый
-        </mat-checkbox>
-        <mat-checkbox [formControl]="_form.controls.randomizeQuestions">
-          Случайный порядок вопросов
-        </mat-checkbox>
-        <mat-checkbox [formControl]="_form.controls.resetStatistics">
-          Сбрасывать статистику при провале
-        </mat-checkbox>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full pt-1">
+        <app-checkbox [formControl]="_form.controls.showCorrectAnswer" label="Показывать правильный ответ в вопросах" />
+        <app-checkbox [formControl]="_form.controls.includeToStatistics" label="Тест участвует в статистике" />
+        <app-checkbox [formControl]="_form.controls.showSkipButton" label="Показывать кнопку пропускать" />
+        <app-checkbox [formControl]="_form.controls.showNavigation" label="Показывать навигацию" />
+        <app-checkbox [formControl]="_form.controls.showBackButton" label="Показывать кнопку назад" />
+        <app-checkbox [formControl]="_form.controls.hidden" label="Скрытый" />
+        <app-checkbox [formControl]="_form.controls.randomizeQuestions" label="Случайный порядок вопросов" />
+        <app-checkbox [formControl]="_form.controls.resetStatistics" label="Сбрасывать статистику при провале" />
       </div>
 
       @if (_form.controls.randomizeQuestions.value) {
-        <mat-form-field appearance="fill" class="w-64">
-          <mat-label>Показывать вопросов</mat-label>
-          <input matInput type="number" min="1" [formControl]="_form.controls.questionsToShow" />
-          <mat-hint>Пусто = все из пула</mat-hint>
-        </mat-form-field>
+        <app-input
+          label="Показывать вопросов"
+          type="number"
+          [min]="1"
+          [formControl]="_form.controls.questionsToShow"
+          hint="Пусто = все из пула"
+          class="w-64"
+        />
       }
 
       @if (_form.controls.resetStatistics.value) {
-        <mat-form-field appearance="fill" class="w-full">
-          <mat-label>Сбрасываемые тесты (зачёты)</mat-label>
-          <mat-select formControlName="resetStatisticsTestIds" multiple>
-            @for (t of _resetCandidates(); track t.id) {
-              <mat-option [value]="t.id">{{ t.name }}</mat-option>
-            }
-          </mat-select>
-          <mat-hint>При провале этого теста выбранные тесты станут «не сданы»</mat-hint>
-        </mat-form-field>
+        <app-select
+          label="Сбрасываемые тесты (зачёты)"
+          formControlName="resetStatisticsTestIds"
+          [multiple]="true"
+          [options]="_resetCandidatesOptions()"
+          hint="При провале этого теста выбранные тесты станут «не сданы»"
+        />
       }
     </div>
 

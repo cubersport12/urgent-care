@@ -1,14 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIcon } from '@angular/material/icon';
 import { AppAIService } from '@/core/api';
 import { AppRescueItemDataVm, AppRescueItemVm, NullableValue } from '@/core/utils';
 import { take } from 'rxjs';
+import { AppButtonComponent, AppTextareaComponent } from '@/core/components/ui';
 import { AppDialogWrapperComponent } from '../../dialog-wrapper/dialog-wrapper.component';
 
 export type RescueAiGenerateDialogData = {
@@ -20,8 +18,8 @@ export type RescueAiGenerateDialogResult = Partial<AppRescueItemVm>;
 @Component({
   selector: 'app-rescue-ai-generate-dialog',
   imports: [
-    MatFormFieldModule,
-    MatInputModule,
+    AppButtonComponent,
+    AppTextareaComponent,
     MatProgressSpinnerModule,
     MatIcon,
     ReactiveFormsModule,

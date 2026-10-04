@@ -36,6 +36,15 @@ export class SubscriptionRefundEditorService {
   }
 }
 
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppSelectComponent,
+  AppCheckboxComponent,
+  AppBadgeComponent
+} from '../ui';
+
 @Component({
   selector: 'app-subscription-refund-editor',
   imports: [
@@ -48,7 +57,11 @@ export class SubscriptionRefundEditorService {
     MatButtonModule,
     MatIcon,
     MatTooltipModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppSelectComponent,
+    AppCheckboxComponent
   ],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
@@ -67,25 +80,19 @@ export class SubscriptionRefundEditorService {
         </div>
 
         <div class="flex items-center gap-2">
-          <button
-            type="button"
-            mat-stroked-button
-            (click)="_load()"
-            class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300"
-            matTooltip="Обновить пользователей"
-          >
-            <mat-icon svgIcon="rotate-right" class="!w-4 !h-4" />
-          </button>
+          <app-icon-button
+            icon="rotate-right"
+            variant="outline"
+            (clicked)="_load()"
+            tooltip="Обновить пользователей"
+          />
           @if (_ref) {
-            <button
-              type="button"
-              mat-icon-button
-              (click)="_ref.close()"
-              matTooltip="Закрыть"
-              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            >
-              <mat-icon svgIcon="times" class="!w-4 !h-4" />
-            </button>
+            <app-icon-button
+              icon="times"
+              variant="ghost"
+              (clicked)="_ref.close()"
+              tooltip="Закрыть"
+            />
           }
         </div>
       </div>
@@ -121,20 +128,14 @@ export class SubscriptionRefundEditorService {
           </div>
 
           <!-- User selector -->
-          <div>
-            <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              Обучающийся (пользователь)
-            </label>
-            <mat-form-field appearance="fill" class="w-full">
-              <mat-select [formControl]="_selected" placeholder="Выберите пользователя...">
-                @for (u of _users(); track u.id) {
-                  <mat-option [value]="u.id">
-                    {{ u.fullName }} ({{ u.email }})
-                  </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
+          <app-select
+            label="Обучающийся (пользователь)"
+            placeholder="Выберите пользователя..."
+            [formControl]="_selected"
+            [options]="_userOptions()"
+            [allowEmpty]="true"
+            emptyLabel="Выберите пользователя..."
+          />
 
           <!-- User Preview Card if selected -->
           @if (_selectedUser(); as user) {
@@ -154,14 +155,11 @@ export class SubscriptionRefundEditorService {
 
           <!-- Options -->
           <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-            <mat-checkbox [formControl]="_cancelSubscription" color="warn">
-              <span class="text-xs font-semibold text-slate-900 dark:text-white">
-                Аннулировать платную подписку
-              </span>
-            </mat-checkbox>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 pl-6">
-              Пользователь будет немедленно переведен на базовый (бесплатный) тарифный план
-            </p>
+            <app-checkbox
+              [formControl]="_cancelSubscription"
+              label="Аннулировать платную подписку"
+              description="Пользователь будет немедленно переведен на базовый (бесплатный) тарифный план"
+            />
           </div>
 
           <!-- Warning Notice -->
@@ -173,17 +171,17 @@ export class SubscriptionRefundEditorService {
           </div>
 
           <!-- Submit Button -->
-          <button
-            type="button"
-            mat-flat-button
-            color="warn"
+          <app-button
+            variant="danger"
+            size="lg"
+            [fullWidth]="true"
             [disabled]="_loading() || _refunding() || !_selected.value"
-            (click)="_apply()"
-            class="w-full !rounded-xl !py-3 !shadow-sm flex items-center justify-center gap-2"
+            [loading]="_refunding()"
+            (clicked)="_apply()"
+            icon="credit-card"
           >
-            <mat-icon svgIcon="credit-card" class="!w-4 !h-4 mr-1" />
             {{ _refunding() ? 'Оформление возврата…' : 'Оформить возврат платежа' }}
-          </button>
+          </app-button>
         </div>
 
         <!-- Right: Recent Refunds Table -->
@@ -255,11 +253,20 @@ export class SubscriptionRefundEditorComponent {
     nonNullable: true
   });
 
+  protected readonly _selectedId = toSignal(this._selected.valueChanges, { initialValue: this._selected.value });
+
   protected readonly _selectedUser = computed(() => {
-    const id = this._selected.value;
+    const id = this._selectedId();
     if (!id) return null;
     return this._users().find((u) => u.id === id) ?? null;
   });
+
+  protected readonly _userOptions = computed(() =>
+    this._users().map((u) => ({
+      value: u.id,
+      label: `${u.fullName || 'Без имени'} (${u.email})`
+    }))
+  );
 
   protected readonly _recentRefunds = signal<RefundHistoryItem[]>([
     {

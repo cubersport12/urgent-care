@@ -2,13 +2,15 @@ import {
   generateGUID,
   RescueSceneDocumentVm
 } from '@/core/utils';
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatOption, MatSelectModule } from '@angular/material/select';
-import { MatInputModule } from '@angular/material/input';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { AppDialogWrapperComponent } from '../../dialog-wrapper/dialog-wrapper.component';
+import {
+  AppInputComponent,
+  AppSelectComponent,
+  SelectOption
+} from '@/core/components/ui';
 
 export type ArticleOption = { id: string; name: string };
 
@@ -22,12 +24,9 @@ export type RescueSceneDocumentDialogData = {
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    MatButton,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatOption
+    AppDialogWrapperComponent,
+    AppInputComponent,
+    AppSelectComponent
   ],
   templateUrl: './rescue-scene-document-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -40,6 +39,10 @@ export class RescueSceneDocumentDialogComponent {
   protected readonly _articleOptions: ArticleOption[] = Array.isArray(this._dialogData.articleOptions)
     ? [...this._dialogData.articleOptions].sort((a, b) => a.name.localeCompare(b.name, 'ru'))
     : [];
+
+  protected readonly _articleSelectOptions = computed<SelectOption[]>(() =>
+    this._articleOptions.map(a => ({ value: a.id, label: a.name }))
+  );
 
   /** id генерируется автоматически при создании */
   protected readonly _form = new FormGroup({

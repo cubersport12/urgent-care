@@ -233,3 +233,180 @@ table .mat-mdc-icon-button.table-icon-btn-sm,
     padding: 0 !important;
   }
 }
+
+// ============================================================================
+// Angular Material Table (mat-table) - Design System Theme
+// ============================================================================
+
+table.mat-mdc-table,
+table[mat-table] {
+  width: 100% !important;
+  background-color: transparent !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  font-family: inherit !important;
+  font-size: 0.75rem !important; // text-xs
+  line-height: 1.25rem !important;
+  color: rgb(51 65 85) !important; // text-slate-700
+  box-shadow: none !important;
+
+  // Elevation reset
+  &.mat-elevation-z8,
+  &[class*="mat-elevation-z"] {
+    box-shadow: none !important;
+  }
+
+  // Header row
+  .mat-mdc-header-row {
+    background-color: rgb(248 250 252) !important; // bg-slate-50
+    border-bottom: 1px solid rgb(226 232 240) !important; // border-slate-200
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+
+  // Header cells
+  .mat-mdc-header-cell {
+    color: rgb(100 116 139) !important; // text-slate-500
+    font-size: 0.6875rem !important; // text-[11px]
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    padding: 0.5rem 0.875rem !important; // py-2 px-3.5
+    border-bottom: 1px solid rgb(226 232 240) !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+
+    &:first-child {
+      border-top-left-radius: 0.75rem;
+    }
+
+    &:last-child {
+      border-top-right-radius: 0.75rem;
+    }
+  }
+
+  // Data rows
+  .mat-mdc-row {
+    background-color: transparent !important;
+    border-bottom: 1px solid rgb(241 245 249) !important; // border-slate-100
+    min-height: 42px !important;
+    height: 42px !important;
+    transition: background-color 0.15s ease-in-out !important;
+
+    &:hover {
+      background-color: rgba(248, 250, 252, 0.85) !important; // hover:bg-slate-50/85
+    }
+
+    &:last-child .mat-mdc-cell {
+      border-bottom: none !important;
+    }
+  }
+
+  // Data cells
+  .mat-mdc-cell {
+    color: rgb(51 65 85) !important; // text-slate-700
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.875rem !important;
+    border-bottom: 1px solid rgb(241 245 249) !important;
+    vertical-align: middle !important;
+  }
+
+  // Empty / No Data Row
+  .mat-mdc-no-data-row,
+  tr.mat-row *matNoDataRow,
+  tr.mat-row td[colspan] {
+    color: rgb(148 163 184) !important; // text-slate-400
+    font-size: 0.75rem !important;
+    text-align: center !important;
+    padding: 2rem 1rem !important;
+    border-bottom: none !important;
+  }
+}
+
+// Dark theme overrides for mat-table
+html.dark {
+  table.mat-mdc-table,
+  table[mat-table] {
+    color: rgb(203 213 225) !important; // text-slate-300
+
+    .mat-mdc-header-row {
+      background-color: rgba(15, 23, 42, 0.75) !important; // dark:bg-slate-900/75
+      border-bottom: 1px solid rgb(30 41 59) !important; // border-slate-800
+    }
+
+    .mat-mdc-header-cell {
+      color: rgb(148 163 184) !important; // text-slate-400
+      border-bottom: 1px solid rgb(30 41 59) !important;
+    }
+
+    .mat-mdc-row {
+      border-bottom: 1px solid rgba(30, 41, 59, 0.75) !important;
+
+      &:hover {
+        background-color: rgba(30, 41, 59, 0.45) !important; // hover:bg-slate-800/45
+      }
+
+      &:last-child .mat-mdc-cell {
+        border-bottom: none !important;
+      }
+    }
+
+    .mat-mdc-cell {
+      color: rgb(203 213 225) !important; // text-slate-300
+      border-bottom: 1px solid rgba(30, 41, 59, 0.75) !important;
+    }
+
+    .mat-mdc-no-data-row,
+    tr.mat-row *matNoDataRow,
+    tr.mat-row td[colspan] {
+      color: rgb(100 116 139) !important; // text-slate-500
+    }
+  }
+}
+
+// Global Drag & Drop Styling for table rows
+.cdk-drag-preview {
+  box-sizing: border-box !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  background-color: rgb(255 255 255) !important;
+  border: 1px solid rgb(226 232 240) !important;
+  display: table !important;
+
+  html.dark & {
+    background-color: rgb(15 23 42) !important;
+    border-color: rgb(51 65 85) !important;
+  }
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.25 !important;
+  background-color: rgb(241 245 249) !important;
+
+  html.dark & {
+    background-color: rgb(30 41 59) !important;
+  }
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1) !important;
+}
+
+.rescue-drag-handle,
+.example-drag-cursor {
+  cursor: grab !important;
+  color: rgb(148 163 184) !important;
+  transition: color 0.15s ease !important;
+
+  &:hover {
+    color: rgb(71 85 105) !important;
+  }
+
+  html.dark &:hover {
+    color: rgb(203 213 225) !important;
+  }
+
+  &:active {
+    cursor: grabbing !important;
+  }
+}

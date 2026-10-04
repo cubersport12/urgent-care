@@ -1,68 +1,49 @@
-<form class="flex flex-col gap-1 w-full h-full p-3" [formGroup]="_form">
-  <div class="flex gap-1">
-    <mat-form-field class="grow">
-      <mat-label>
-        Наименование
-      </mat-label>
-      <input [formControl]="_form.controls.name" matInput type="text">
-    </mat-form-field>
+<form class="flex flex-col gap-3 w-full h-full p-4" [formGroup]="_form">
+  <app-input label="Наименование" [formControl]="_form.controls.name" class="w-full" />
+  <app-textarea label="Текст вопроса" [formControl]="_form.controls.questionText" [rows]="3" class="w-full" [required]="true" />
+  <div>
+    <app-button type="button" variant="outline" (clicked)="_openFile()" icon="file-contract">
+      Выбрать изображение {{_form.value.image ? '(' + _form.value.image + ')' : ''}}
+    </app-button>
   </div>
-  <div  class="flex gap-1">
-    <mat-form-field class="w-full">
-      <mat-label>
-        Текст вопроса
-      </mat-label>
-      <textarea [formControl]="_form.controls.questionText" matInput rows="3"></textarea>
-    </mat-form-field>
-  </div>
-  <button mat-flat-button type="button" color="primary" (click)="_openFile()">
-    <mat-icon svgIcon="file-contract" />
-    Выбрать изображение {{_form.value.image ? '(' + _form.value.image + ')' : ''}}
-  </button>
-  <mat-checkbox [formControl]="_form.controls.useActivationCondition">Использовать условие активации вопроса</mat-checkbox>
+  <app-checkbox [formControl]="_form.controls.useActivationCondition" label="Использовать условие активации вопроса" />
   @if (_form.value.useActivationCondition) {
-    <div class="flex gap-1 w-full flex-wrap">
-      <mat-form-field class="grow">
-        <mat-label>Вид события</mat-label>
-        <mat-select [formControl]="_form.controls.activationCondition.controls.kind">
-          @for(type of _conditionTypes; track $index) {
-            <mat-option [value]="type">
-              {{_humanizeConditionKind(type)}}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+    <div class="flex gap-3 w-full flex-wrap p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+      <app-select
+        label="Вид события"
+        [formControl]="_form.controls.activationCondition.controls.kind"
+        [options]="_conditionTypeOptions"
+        class="grow"
+      />
       @switch ($safeNavigationMigration(_form.value.activationCondition?.kind)) {
         @case (AppTestQuestionActivationConditionKind.CompleteQuestion) {
-          <mat-form-field class="grow">
-            <mat-label>Вопрос</mat-label>
-            <mat-select [formControl]="_form.controls.activationCondition.controls.relationQuestionId">
-              @for(question of _dialogData.questions; track $index) {
-                <mat-option [value]="question.id">
-                  {{question.name}}
-                </mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field class="grow">
-            <mat-label>Тип данных</mat-label>
-            <mat-select [formControl]="_form.controls.activationCondition.controls.data.controls.type">
-              @for(type of _conditionDataTypes; track $index) {
-                <mat-option [value]="type">
-                  {{_humanizeConditionDataType(type)}}
-                </mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
+          <app-select
+            label="Вопрос"
+            [formControl]="_form.controls.activationCondition.controls.relationQuestionId"
+            [options]="_relationQuestionOptions"
+            class="grow"
+          />
+          <app-select
+            label="Тип данных"
+            [formControl]="_form.controls.activationCondition.controls.data.controls.type"
+            [options]="_conditionDataTypeOptions"
+            class="grow"
+          />
           @switch (_form.getRawValue().activationCondition.data.type) {
             @case ('score') {
-              <mat-form-field class="grow">
-                <mat-label>Мин. количество баллов</mat-label>
-                <input [formControl]="_form.controls.activationCondition.controls.data.controls.score" matInput type="number">
-              </mat-form-field>
+              <app-input
+                label="Мин. количество баллов"
+                type="number"
+                [formControl]="_form.controls.activationCondition.controls.data.controls.score"
+                class="grow"
+              />
             }
             @case ('correct') {
-              <mat-checkbox class="grow" [formControl]="_form.controls.activationCondition.controls.data.controls.isCorrect">Правильный ответ?</mat-checkbox>
+              <app-checkbox
+                class="grow self-center mt-4"
+                [formControl]="_form.controls.activationCondition.controls.data.controls.isCorrect"
+                label="Правильный ответ?"
+              />
             }
           }
         }
@@ -70,15 +51,14 @@
     </div>
   }
   <div class="flex gap-1 w-full justify-end">
-    <button type="button" (click)="_handleAnswerCreate()" mat-button color="primary">
-      <mat-icon svgIcon="plus" />
+    <app-button type="button" (clicked)="_handleAnswerCreate()" icon="plus" size="sm">
       Добавить ответ
-    </button>
+    </app-button>
   </div>
-  <div class="grow overflow-auto">
-    <table mat-table [dataSource]="_form.value.answers ?? []">
+  <div class="grow overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+    <table mat-table [dataSource]="_form.value.answers ?? []" class="w-full">
       <ng-container matColumnDef="index">
-        <th mat-header-cell *matHeaderCellDef>#</th>
+        <th mat-header-cell *matHeaderCellDef class="!w-14">#</th>
         <td mat-cell *matCellDef="let element; let i = index">{{i + 1}}</td>
       </ng-container>
       <ng-container matColumnDef="answerText">
@@ -86,35 +66,45 @@
         <td mat-cell *matCellDef="let element">{{element.answerText}}</td>
       </ng-container>
       <ng-container matColumnDef="score">
-        <th mat-header-cell *matHeaderCellDef>Баллы</th>
+        <th mat-header-cell *matHeaderCellDef class="!w-24">Баллы</th>
         <td mat-cell *matCellDef="let element">{{element.score}}</td>
       </ng-container>
       <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
+        <th mat-header-cell *matHeaderCellDef class="!w-24"></th>
         <td mat-cell *matCellDef="let element">
-          <div class="flex items-center justify-center gap-1">
-            <button mat-icon-button (click)="_handleEdit(element)" type="button">
-              <mat-icon svgIcon="pen-to-square" />
-            </button>
-            <button mat-icon-button color="warn" (click)="_handleDelete(element)" type="button">
-              <mat-icon svgIcon="trash" />
-            </button>
+          <div class="flex items-center justify-end gap-1">
+            <app-icon-button
+              icon="pen-to-square"
+              variant="ghost"
+              size="sm"
+              tooltip="Редактировать"
+              (clicked)="_handleEdit(element)"
+            />
+            <app-icon-button
+              icon="trash"
+              variant="ghost"
+              size="sm"
+              tooltip="Удалить"
+              class="text-rose-500 hover:text-rose-600"
+              (clicked)="_handleDelete(element)"
+            />
           </div>
         </td>
       </ng-container>
       @let displayedColumns = ["index", "answerText", "score", "actions"];
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr [ngClass]="{ '!bg-green-700': row.isCorrect }" mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      <tr [ngClass]="{ '!bg-emerald-500/10 dark:!bg-emerald-500/15 !text-emerald-900 dark:!text-emerald-200 border-l-4 border-l-emerald-500': row.isCorrect }" mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell text-center py-6 text-slate-400" [attr.colspan]="displayedColumns.length">Нет ответов</td>
+      </tr>
     </table>
   </div>
-  <div class="flex w-full justify-end gap-1">
-    <button [disabled]="!_form.dirty" (click)="_handleSubmit()" type="button" mat-flat-button color="primary">
-      <mat-icon svgIcon="check" />
+  <div class="flex w-full justify-end gap-2 pt-2">
+    <app-button [disabled]="!_form.dirty" (clicked)="_handleSubmit()" icon="check">
       Сохранить
-    </button>
-    <button mat-button color="warn" (click)="_handleClose()" type="button">
-      <mat-icon svgIcon="xmark" />
+    </app-button>
+    <app-button variant="outline" (clicked)="_handleClose()" icon="xmark">
       Закрыть
-    </button>
+    </app-button>
   </div>
 </form>

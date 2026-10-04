@@ -2,16 +2,18 @@ import { AppLoading, TestsActions, TestsState } from '@/core/store';
 import { AppTestAccessablityCondition, AppTestQuestionVm, AppTestVm, generateGUID, NullableValue } from '@/core/utils';
 import { Component, computed, effect, inject, Injectable, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  AppCheckboxComponent
+} from '../ui';
 import { Store } from '@ngxs/store';
 import { TestConditionsBuilderComponent } from './test-condition-builder/test-conditions-builder.component';
 import { TestQuestionsBuilderComponent } from './test-questions-builder/test-questions-builder.component';
-import { MatCheckbox } from '@angular/material/checkbox';
 import { AppFilesStorageService } from '@/core/api';
 import { forkJoin, Observable, of } from 'rxjs';
 import { take } from 'rxjs/operators';
@@ -69,12 +71,11 @@ export class TestsEditorService {
   selector: 'app-test-editor',
   imports: [
     MatIcon,
-    MatButton,
     ReactiveFormsModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatCheckbox,
-    MatInputModule,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
+    AppCheckboxComponent,
     TestConditionsBuilderComponent,
     TestQuestionsBuilderComponent,
     TariffSelectComponent,
@@ -124,6 +125,10 @@ export class TestEditorComponent {
     [...this._store.selectSignal(TestsState.getAllTests)()]
       .filter((t) => t.id !== this._dialogData.id)
       .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+  );
+
+  protected readonly _resetCandidatesOptions = computed(() =>
+    this._resetCandidates().map((t) => ({ value: t.id, label: t.name }))
   );
 
   // Вычисляем сумму правильных баллов

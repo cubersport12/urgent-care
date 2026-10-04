@@ -10,6 +10,11 @@ import { ApiError, apiCall } from '@/core/api/api-utils';
 import { API_BASE } from '@/core/api/api-client';
 import { legalListLegalDocuments } from '@/core/api/generated/sdk.gen';
 import { AppDialogService } from '@/core/services/app-dialog.service';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppBadgeComponent
+} from '@/core/components/ui';
 
 type LegalDocId = 'offer' | 'pdn' | 'consent' | 'consent-distribution' | 'cookies';
 type LegalDocStatus = 'checking' | 'missing' | 'uploaded';
@@ -70,11 +75,13 @@ export class LegalDocsEditorService {
   selector: 'app-legal-docs-editor',
   imports: [
     MatDialogModule,
-    MatButtonModule,
     MatIcon,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppBadgeComponent
   ],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
@@ -83,9 +90,9 @@ export class LegalDocsEditorService {
         <div>
           <div class="flex items-center gap-3">
             <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Нормативные документы</h1>
-            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+            <app-badge variant="info" size="sm">
               PDF-файлы для сайта и мобильного приложения
-            </span>
+            </app-badge>
           </div>
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Публичные оферты, согласия на обработку ПДн и юридические документы, доступные пользователям без авторизации
@@ -93,25 +100,19 @@ export class LegalDocsEditorService {
         </div>
 
         <div class="flex items-center gap-2">
-          <button
-            type="button"
-            mat-stroked-button
+          <app-icon-button
+            icon="rotate-right"
+            variant="outline"
             (click)="_loadStatuses()"
-            class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300"
-            matTooltip="Проверить статусы документов"
-          >
-            <mat-icon svgIcon="rotate-right" class="!w-4 !h-4" />
-          </button>
+            tooltip="Проверить статусы документов"
+          />
           @if (_ref) {
-            <button
-              type="button"
-              mat-icon-button
+            <app-icon-button
+              icon="times"
+              variant="ghost"
               (click)="_ref.close()"
-              matTooltip="Закрыть"
-              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            >
-              <mat-icon svgIcon="times" class="!w-4 !h-4" />
-            </button>
+              tooltip="Закрыть"
+            />
           }
         </div>
       </div>
@@ -185,27 +186,25 @@ export class LegalDocsEditorService {
 
               <div class="flex items-center gap-2">
                 @if (_status(cat.id) === 'uploaded') {
-                  <button
-                    type="button"
-                    mat-stroked-button
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    icon="file-contract"
                     (click)="_view(cat.id)"
-                    class="!rounded-xl !border-slate-300 dark:!border-slate-700 text-xs"
                   >
-                    <mat-icon svgIcon="file-contract" class="!w-3.5 !h-3.5 mr-1" />
                     Открыть
-                  </button>
+                  </app-button>
                 }
-                <button
-                  type="button"
-                  mat-flat-button
-                  color="primary"
+                <app-button
+                  variant="primary"
+                  size="sm"
+                  icon="upload"
                   [disabled]="_uploadingId() === cat.id"
+                  [loading]="_uploadingId() === cat.id"
                   (click)="_pickFile(cat.id)"
-                  class="!rounded-xl text-xs"
                 >
-                  <mat-icon svgIcon="upload" class="!w-3.5 !h-3.5 mr-1" />
                   {{ _uploadingId() === cat.id ? 'Загрузка…' : (_status(cat.id) === 'uploaded' ? 'Заменить' : 'Загрузить') }}
-                </button>
+                </app-button>
               </div>
             </div>
           </div>

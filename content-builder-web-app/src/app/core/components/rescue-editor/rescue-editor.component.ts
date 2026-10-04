@@ -22,14 +22,16 @@ import {
   ReactiveFormsModule,
   Validators
 } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppTextareaComponent,
+  AppCheckboxComponent
+} from '../ui';
 import { Store } from '@ngxs/store';
 import { AppLoading, RescueActions } from '@/core/store';
 import { RescueParameterDialogComponent, RescueParameterDialogData } from './rescue-parameter-dialog/rescue-parameter-dialog.component';
@@ -161,39 +163,22 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
   selector: 'app-rescue-editor',
   imports: [
     MatIcon,
-    MatButton,
     ReactiveFormsModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatTableModule,
-    MatCheckboxModule,
     CdkDropList,
     CdkDrag,
     TariffSelectComponent,
     RewardSelectComponent,
-    AppDialogWrapperComponent
+    AppDialogWrapperComponent,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppTextareaComponent,
+    AppCheckboxComponent
   ],
   templateUrl: './rescue-editor.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: `
-    .cdk-drag-preview {
-      box-sizing: border-box;
-      border-radius: 4px;
-      box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
-        0 8px 10px 1px rgba(0, 0, 0, 0.14),
-        0 3px 14px 2px rgba(0, 0, 0, 0.12);
-      background-color: var(--mat-sys-surface, white);
-    }
-    .cdk-drag-placeholder {
-      opacity: 0;
-    }
-    .rescue-drag-handle {
-      cursor: move;
-    }
-    .cdk-drag-animating {
-      transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-    }
     .cdk-drop-list-dragging tr:not(.cdk-drag-placeholder) {
       transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
     }

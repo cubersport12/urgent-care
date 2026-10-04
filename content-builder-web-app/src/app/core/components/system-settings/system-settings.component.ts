@@ -5,14 +5,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { notificationsBroadcastNotification } from '@/core/api/generated/sdk.gen';
 import { apiCall, ApiError } from '@/core/api/api-utils';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  AppSelectOption,
+  AppTextareaComponent
+} from '../ui';
 
 interface AdminRoleUser {
   id: string;
@@ -26,10 +31,8 @@ interface AdminRoleUser {
   selector: 'app-admin-invite-dialog',
   imports: [
     ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
+    AppInputComponent,
+    AppSelectComponent,
     AppDialogWrapperComponent
   ],
   template: `
@@ -37,29 +40,34 @@ interface AdminRoleUser {
       title="Пригласить сотрудника"
       subtitle="Предоставление доступа сотруднику к панели управления"
       saveText="Отправить приглашение"
-      cancelText="Отмена"
+      saveIcon="paper-plane"
       [saveDisabled]="_form.invalid"
       (save)="_save()"
       (close)="_ref.close()"
     >
-      <form class="flex flex-col gap-3 min-w-[320px] max-w-full" [formGroup]="_form">
-        <mat-form-field appearance="fill">
-          <mat-label>Имя сотрудника</mat-label>
-          <input matInput formControlName="name" placeholder="Например: Иван Петров" />
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Рабочий Email</mat-label>
-          <input matInput type="email" formControlName="email" placeholder="ivan@urgent-care.ru" />
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Роль в системе</mat-label>
-          <mat-select formControlName="role">
-            <mat-option value="content_editor">Редактор контента</mat-option>
-            <mat-option value="finance">Финансовый контролер</mat-option>
-            <mat-option value="support">Служба поддержки</mat-option>
-            <mat-option value="superadmin">Суперадминистратор</mat-option>
-          </mat-select>
-        </mat-form-field>
+      <form class="flex flex-col gap-4 min-w-[320px] max-w-full" [formGroup]="_form">
+        <app-input
+          label="Имя сотрудника"
+          icon="user"
+          formControlName="name"
+          placeholder="Например: Иван Петров"
+          [required]="true"
+        />
+        <app-input
+          label="Рабочий Email"
+          type="email"
+          icon="envelope"
+          formControlName="email"
+          placeholder="ivan@urgent-care.ru"
+          [required]="true"
+        />
+        <app-select
+          label="Роль в системе"
+          icon="shield-halved"
+          formControlName="role"
+          [options]="_roleOptions"
+          [required]="true"
+        />
       </form>
     </app-dialog-wrapper>
   `,
@@ -67,6 +75,12 @@ interface AdminRoleUser {
 })
 export class AdminInviteDialogComponent {
   protected readonly _ref = inject(MatDialogRef<AdminInviteDialogComponent, AdminRoleUser | null>);
+  protected readonly _roleOptions: AppSelectOption[] = [
+    { value: 'content_editor', label: 'Редактор контента' },
+    { value: 'finance', label: 'Финансовый контролер' },
+    { value: 'support', label: 'Служба поддержки' },
+    { value: 'superadmin', label: 'Суперадминистратор' }
+  ];
   protected readonly _form = new FormGroup({
     name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
@@ -90,11 +104,13 @@ export class AdminInviteDialogComponent {
   selector: 'app-system-settings',
   imports: [
     FormsModule,
-    MatIcon,
-    MatButtonModule,
-    MatTooltipModule,
     MatSnackBarModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
+    AppTextareaComponent
   ],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
@@ -109,75 +125,48 @@ export class AdminInviteDialogComponent {
           </p>
         </div>
 
-        <button
-          type="button"
-          mat-flat-button
-          color="primary"
-          (click)="_saveAll()"
-          class="!rounded-xl !px-4 !py-2.5 !shadow-sm flex items-center gap-2 self-start md:self-auto"
+        <app-button
+          icon="check"
+          (clicked)="_saveAll()"
+          class="self-start md:self-auto"
         >
-          <mat-icon svgIcon="check" class="!w-4 !h-4 mr-1" />
           Сохранить настройки
-        </button>
+        </app-button>
       </div>
 
       <!-- Settings Tabs Navigation -->
       <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-        <button
-          type="button"
-          (click)="_activeTab.set('general')"
-          class="px-4 py-2 text-xs font-semibold rounded-xl transition-all"
-          [class.bg-blue-600]="_activeTab() === 'general'"
-          [class.text-white]="_activeTab() === 'general'"
-          [class.text-slate-600]="_activeTab() !== 'general'"
-          [class.dark:text-slate-300]="_activeTab() !== 'general'"
-          [class.hover:bg-slate-100]="_activeTab() !== 'general'"
-          [class.dark:hover:bg-slate-800]="_activeTab() !== 'general'"
+        <app-button
+          [variant]="_activeTab() === 'general' ? 'primary' : 'ghost'"
+          size="sm"
+          (clicked)="_activeTab.set('general')"
         >
           Общие параметры
-        </button>
+        </app-button>
 
-        <button
-          type="button"
-          (click)="_activeTab.set('ai')"
-          class="px-4 py-2 text-xs font-semibold rounded-xl transition-all"
-          [class.bg-blue-600]="_activeTab() === 'ai'"
-          [class.text-white]="_activeTab() === 'ai'"
-          [class.text-slate-600]="_activeTab() !== 'ai'"
-          [class.dark:text-slate-300]="_activeTab() !== 'ai'"
-          [class.hover:bg-slate-100]="_activeTab() !== 'ai'"
-          [class.dark:hover:bg-slate-800]="_activeTab() !== 'ai'"
+        <app-button
+          [variant]="_activeTab() === 'ai' ? 'primary' : 'ghost'"
+          size="sm"
+          (clicked)="_activeTab.set('ai')"
         >
           Искусственный интеллект
-        </button>
+        </app-button>
 
-        <button
-          type="button"
-          (click)="_activeTab.set('roles')"
-          class="px-4 py-2 text-xs font-semibold rounded-xl transition-all"
-          [class.bg-blue-600]="_activeTab() === 'roles'"
-          [class.text-white]="_activeTab() === 'roles'"
-          [class.text-slate-600]="_activeTab() !== 'roles'"
-          [class.dark:text-slate-300]="_activeTab() !== 'roles'"
-          [class.hover:bg-slate-100]="_activeTab() !== 'roles'"
-          [class.dark:hover:bg-slate-800]="_activeTab() !== 'roles'"
+        <app-button
+          [variant]="_activeTab() === 'roles' ? 'primary' : 'ghost'"
+          size="sm"
+          (clicked)="_activeTab.set('roles')"
         >
           Роли и сотрудники
-        </button>
+        </app-button>
 
-        <button
-          type="button"
-          (click)="_activeTab.set('notifications')"
-          class="px-4 py-2 text-xs font-semibold rounded-xl transition-all"
-          [class.bg-blue-600]="_activeTab() === 'notifications'"
-          [class.text-white]="_activeTab() === 'notifications'"
-          [class.text-slate-600]="_activeTab() !== 'notifications'"
-          [class.dark:text-slate-300]="_activeTab() !== 'notifications'"
-          [class.hover:bg-slate-100]="_activeTab() !== 'notifications'"
-          [class.dark:hover:bg-slate-800]="_activeTab() !== 'notifications'"
+        <app-button
+          [variant]="_activeTab() === 'notifications' ? 'primary' : 'ghost'"
+          size="sm"
+          (clicked)="_activeTab.set('notifications')"
         >
           Уведомления
-        </button>
+        </app-button>
       </div>
 
       <!-- Tab: General Settings -->
@@ -216,39 +205,28 @@ export class AdminInviteDialogComponent {
           <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-4">
             <h2 class="text-base font-bold text-slate-900 dark:text-white">Ограничения обучения</h2>
 
-            <div class="space-y-3">
-              <div>
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Максимум попыток сдачи теста в день
-                </label>
-                <input
-                  type="number"
-                  [(ngModel)]="_maxDailyAttempts"
-                  class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
-                />
-              </div>
+            <div class="space-y-4">
+              <app-input
+                type="number"
+                label="Максимум попыток сдачи теста в день"
+                [(ngModel)]="_maxDailyAttempts"
+                [min]="1"
+              />
 
-              <div>
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Минимальный проходной балл для спасения (%)
-                </label>
-                <input
-                  type="number"
-                  [(ngModel)]="_passPercentage"
-                  class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
-                />
-              </div>
+              <app-input
+                type="number"
+                label="Минимальный проходной балл для спасения (%)"
+                [(ngModel)]="_passPercentage"
+                [min]="1"
+                [max]="100"
+              />
 
-              <div>
-                <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Дней бесплатного пробного периода
-                </label>
-                <input
-                  type="number"
-                  [(ngModel)]="_trialDays"
-                  class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
-                />
-              </div>
+              <app-input
+                type="number"
+                label="Дней бесплатного пробного периода"
+                [(ngModel)]="_trialDays"
+                [min]="0"
+              />
             </div>
           </div>
         </div>
@@ -265,37 +243,24 @@ export class AdminInviteDialogComponent {
           </div>
 
           <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Провайдер искусственного интеллекта</label>
-              <select
-                [(ngModel)]="_aiProvider"
-                class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
-              >
-                <option value="gemini">Google Gemini</option>
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic Claude</option>
-              </select>
-            </div>
+            <app-select
+              label="Провайдер искусственного интеллекта"
+              [options]="_aiProviderOptions"
+              [(ngModel)]="_aiProvider"
+            />
 
-            <div>
-              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Модель по умолчанию</label>
-              <input
-                type="text"
-                [(ngModel)]="_aiModel"
-                placeholder="gemini-1.5-pro / gpt-4o"
-                class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
-              />
-            </div>
+            <app-input
+              label="Модель по умолчанию"
+              placeholder="gemini-1.5-pro / gpt-4o"
+              [(ngModel)]="_aiModel"
+            />
 
-            <div>
-              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Ключ доступа к API</label>
-              <input
-                type="password"
-                [(ngModel)]="_aiApiKey"
-                placeholder="sk-••••••••••••••••••••••••"
-                class="w-full px-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
-              />
-            </div>
+            <app-input
+              label="Ключ доступа к API"
+              type="password"
+              placeholder="sk-••••••••••••••••••••••••"
+              [(ngModel)]="_aiApiKey"
+            />
 
             <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
               <div>
@@ -319,15 +284,14 @@ export class AdminInviteDialogComponent {
               </p>
             </div>
 
-            <button
-              type="button"
-              mat-stroked-button
-              (click)="_inviteAdmin()"
-              class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300 text-xs"
+            <app-button
+              variant="outline"
+              size="sm"
+              icon="plus"
+              (clicked)="_inviteAdmin()"
             >
-              <mat-icon svgIcon="plus" class="!w-4 !h-4 mr-1 text-blue-600" />
               Пригласить администратора
-            </button>
+            </app-button>
           </div>
 
           <div class="overflow-x-auto">
@@ -358,15 +322,13 @@ export class AdminInviteDialogComponent {
                       </span>
                     </td>
                     <td class="py-3 px-4 text-right">
-                      <button
-                        type="button"
-                        mat-icon-button
-                        (click)="_removeAdmin(admin)"
-                        matTooltip="Отозвать доступ"
-                        class="table-icon-btn text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50"
-                      >
-                        <mat-icon svgIcon="trash" class="!w-4 !h-4" />
-                      </button>
+                      <app-icon-button
+                        icon="trash"
+                        size="sm"
+                        variant="danger"
+                        tooltip="Отозвать доступ"
+                        (clicked)="_removeAdmin(admin)"
+                      />
                     </td>
                   </tr>
                 }
@@ -387,35 +349,25 @@ export class AdminInviteDialogComponent {
           </div>
 
           <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Заголовок уведомления</label>
-              <input
-                type="text"
-                [(ngModel)]="_notifyTitle"
-                class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
-              />
-            </div>
+            <app-input
+              label="Заголовок уведомления"
+              [(ngModel)]="_notifyTitle"
+            />
 
-            <div>
-              <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Текст сообщения</label>
-              <textarea
-                rows="3"
-                [(ngModel)]="_notifyBody"
-                class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
-              ></textarea>
-            </div>
+            <app-textarea
+              label="Текст сообщения"
+              [rows]="3"
+              [(ngModel)]="_notifyBody"
+            />
 
-            <button
-              type="button"
-              mat-flat-button
-              color="primary"
-              [disabled]="_sendingNotification() || !_notifyTitle.trim() || !_notifyBody.trim()"
-              (click)="_sendBroadcastNotification()"
-              class="!rounded-xl !px-4 !py-2.5 !shadow-sm flex items-center gap-2"
+            <app-button
+              icon="bell"
+              [disabled]="!_notifyTitle.trim() || !_notifyBody.trim()"
+              [loading]="_sendingNotification()"
+              (clicked)="_sendBroadcastNotification()"
             >
-              <mat-icon svgIcon="bell" class="!w-4 !h-4 mr-1" />
               {{ _sendingNotification() ? 'Отправка…' : 'Отправить всем пользователям' }}
-            </button>
+            </app-button>
           </div>
         </div>
       }
@@ -428,6 +380,12 @@ export class SystemSettingsComponent {
   private readonly _dialogsService = inject(AppDialogService);
 
   protected readonly _activeTab = signal<'general' | 'ai' | 'roles' | 'notifications'>('general');
+
+  protected readonly _aiProviderOptions: AppSelectOption[] = [
+    { value: 'gemini', label: 'Google Gemini' },
+    { value: 'openai', label: 'OpenAI' },
+    { value: 'anthropic', label: 'Anthropic Claude' }
+  ];
 
   // General Settings State
   protected _maintenanceMode = false;

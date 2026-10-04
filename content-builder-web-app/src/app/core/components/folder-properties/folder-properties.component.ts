@@ -11,6 +11,7 @@ import { RewardSelectComponent } from '../reward-select/reward-select.component'
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
+import { AppInputComponent } from '../ui';
 
 @Injectable({ providedIn: 'root' })
 export class FolderPropertiesService {
@@ -30,12 +31,11 @@ export class FolderPropertiesService {
   selector: 'app-folder-properties',
   imports: [
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatIcon,
     TariffSelectComponent,
     RewardSelectComponent,
-    AppDialogWrapperComponent
+    AppDialogWrapperComponent,
+    AppInputComponent
   ],
   template: `
     <app-dialog-wrapper
@@ -52,10 +52,12 @@ export class FolderPropertiesService {
             <mat-icon svgIcon="folder" class="!w-4 !h-4 text-amber-500" />
             Основные сведения
           </div>
-          <mat-form-field appearance="fill" class="w-full">
-            <mat-label>Наименование папки</mat-label>
-            <input matInput formControlName="name" placeholder="Например: Педиатрия и неотложные состояния" />
-          </mat-form-field>
+          <app-input
+            label="Наименование папки"
+            formControlName="name"
+            placeholder="Например: Педиатрия и неотложные состояния"
+            [required]="true"
+          />
         </div>
 
         <!-- Access Control Card -->

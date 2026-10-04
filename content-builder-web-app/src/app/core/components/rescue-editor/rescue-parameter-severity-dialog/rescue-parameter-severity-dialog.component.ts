@@ -4,11 +4,14 @@ import {
 } from '@/core/utils';
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatOption, MatSelectModule } from '@angular/material/select';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { AppDialogWrapperComponent } from '../../dialog-wrapper/dialog-wrapper.component';
+import {
+  AppInputComponent,
+  AppSelectComponent,
+  AppTextareaComponent,
+  SelectOption
+} from '@/core/components/ui';
 
 export type RescueParameterSeverityDialogData = {
   severity: RescueParameterSeverityVm | null;
@@ -19,12 +22,10 @@ export type RescueParameterSeverityDialogData = {
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    MatButton,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatOption
+    AppDialogWrapperComponent,
+    AppInputComponent,
+    AppSelectComponent,
+    AppTextareaComponent
   ],
   templateUrl: './rescue-parameter-severity-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -36,7 +37,13 @@ export class RescueParameterSeverityDialogComponent {
     MatDialogRef<RescueParameterSeverityDialogComponent, RescueParameterSeverityVm>
   );
 
-  protected readonly _severityEnum = RescueParameterSeverityEnum;
+  protected readonly _severityOptions: SelectOption[] = [
+    { value: null as any, label: 'Не задано' },
+    { value: RescueParameterSeverityEnum.Normal, label: 'Нормальная' },
+    { value: RescueParameterSeverityEnum.Low, label: 'Низкая' },
+    { value: RescueParameterSeverityEnum.Medium, label: 'Средняя' },
+    { value: RescueParameterSeverityEnum.High, label: 'Высокая' }
+  ];
 
   protected readonly _form = new FormGroup({
     min: new FormControl<number | null>(this._dialogData.severity?.min ?? null),

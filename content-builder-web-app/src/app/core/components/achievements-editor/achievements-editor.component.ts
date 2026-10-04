@@ -30,6 +30,15 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { forkJoin, startWith } from 'rxjs';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppTextareaComponent,
+  AppSelectComponent,
+  AppCheckboxComponent,
+  AppBadgeComponent
+} from '@/core/components/ui';
 
 type TargetKind = 'article' | 'test' | 'rescue' | 'folder';
 
@@ -74,13 +83,12 @@ export class AchievementsEditorService {
   selector: 'app-achievement-edit-dialog',
   imports: [
     ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatCheckbox,
-    MatButton,
-    MatIcon,
-    AppDialogWrapperComponent
+    AppDialogWrapperComponent,
+    AppButtonComponent,
+    AppInputComponent,
+    AppTextareaComponent,
+    AppSelectComponent,
+    AppCheckboxComponent
   ],
   template: `
     <app-dialog-wrapper
@@ -91,54 +99,24 @@ export class AchievementsEditorService {
       (close)="_ref.close()"
     >
       <form class="flex flex-col gap-3 min-w-[320px] max-w-full" [formGroup]="_form">
-        <mat-form-field appearance="fill">
-          <mat-label>Название достижения</mat-label>
-          <input matInput formControlName="title" />
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Описание (условие получения)</mat-label>
-          <textarea matInput formControlName="description" rows="2"></textarea>
-        </mat-form-field>
+        <app-input label="Название достижения" formControlName="title" [required]="true" />
+        <app-textarea label="Описание (условие получения)" formControlName="description" [rows]="2" />
         <div class="flex gap-2 items-center">
-          <mat-form-field appearance="fill" class="grow" subscriptSizing="dynamic">
-            <mat-label>Путь к иконке / изображение</mat-label>
-            <input matInput formControlName="iconPath" />
-          </mat-form-field>
-          <button mat-stroked-button type="button" class="shrink-0 !h-14 !rounded-xl" (click)="_file.click()">
-            <mat-icon svgIcon="upload" class="!w-4 !h-4 mr-1" />
+          <app-input label="Путь к иконке / изображение" formControlName="iconPath" class="grow" />
+          <app-button variant="outline" (click)="_file.click()" icon="upload">
             Загрузить
-          </button>
+          </app-button>
           <input #_file type="file" accept="image/*" class="hidden" (change)="_onFile($event)" />
         </div>
         <div class="flex gap-2">
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Тип правила</mat-label>
-            <mat-select formControlName="ruleType">
-              @for (o of _ruleOptions; track o.value) {
-                <mat-option [value]="o.value">{{ o.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Порог выполнения</mat-label>
-            <input matInput type="number" formControlName="ruleThreshold" />
-          </mat-form-field>
+          <app-select label="Тип правила" formControlName="ruleType" [options]="_ruleOptions" class="grow" />
+          <app-input label="Порог выполнения" type="number" formControlName="ruleThreshold" class="grow" />
         </div>
         @if (_targetKind(); as kind) {
-          <mat-form-field appearance="fill">
-            <mat-label>{{ _targetLabel() }}</mat-label>
-            <mat-select formControlName="ruleTargetId">
-              @for (o of _targetOptions(); track o.id) {
-                <mat-option [value]="o.id">{{ o.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
+          <app-select [label]="_targetLabel()" formControlName="ruleTargetId" [options]="_targetSelectOptions()" />
         }
-        <mat-form-field appearance="fill">
-          <mat-label>Порядок сортировки</mat-label>
-          <input matInput type="number" formControlName="sortOrder" />
-        </mat-form-field>
-        <mat-checkbox formControlName="isActive">Достижение активно</mat-checkbox>
+        <app-input label="Порядок сортировки" type="number" formControlName="sortOrder" />
+        <app-checkbox formControlName="isActive" label="Достижение активно" />
       </form>
     </app-dialog-wrapper>
   `,
@@ -192,6 +170,10 @@ export class AchievementEditDialogComponent {
     const kind = this._targetKind();
     return kind ? this._byKind()[kind] : [];
   });
+
+  protected readonly _targetSelectOptions = computed(() =>
+    this._targetOptions().map((o) => ({ value: o.id, label: o.name }))
+  );
 
   constructor() {
     if (this._data) {
@@ -280,11 +262,12 @@ export class AchievementEditDialogComponent {
     FormsModule,
     MatDialogModule,
     MatTableModule,
-    MatButton,
-    MatIconButton,
     MatIcon,
-    MatTooltip,
-    MatSnackBarModule
+    MatSnackBarModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppBadgeComponent
   ],
   templateUrl: './achievements-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush

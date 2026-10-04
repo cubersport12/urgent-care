@@ -1,9 +1,9 @@
 @if (editing()) {
   <input #input (keyup.enter)="_confirmRename()" (keyup.escape)="_cancelRename()" (blur)="_confirmRename()" [ngModel]="value()" class="w-full outline-none border-b-2 overflow-hidden border-gray-500" />
 } @else {
-  <button class="cursor-text w-full" (click)="_beginRename($event)">
+  <div role="button" tabindex="0" (keydown.enter)="_beginRename($event)" class="cursor-text w-full text-left" (click)="_beginRename($event)">
     <span class="text-sm break-words w-full">
       {{value()}}
     </span>
-  </button>
+  </div>
 }

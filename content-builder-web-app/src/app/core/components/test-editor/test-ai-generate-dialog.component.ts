@@ -3,12 +3,12 @@ import { AppTestQuestionVm, AppTestVm, generateGUID, NullableValue } from '@/cor
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIcon } from '@angular/material/icon';
 import { take } from 'rxjs';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
+
+import { AppButtonComponent, AppTextareaComponent } from '../ui';
 
 export type TestAiGenerateDialogData = {
   parentId: NullableValue<string>;
@@ -19,12 +19,12 @@ export type TestAiGenerateDialogResult = Partial<AppTestVm>;
 @Component({
   selector: 'app-test-ai-generate-dialog',
   imports: [
-    MatFormFieldModule,
-    MatInputModule,
     MatProgressSpinnerModule,
     MatIcon,
     ReactiveFormsModule,
-    AppDialogWrapperComponent
+    AppDialogWrapperComponent,
+    AppButtonComponent,
+    AppTextareaComponent
   ],
   template: `
     <app-dialog-wrapper
@@ -45,26 +45,24 @@ export type TestAiGenerateDialogResult = Partial<AppTestVm>;
           </div>
           <div class="flex flex-wrap gap-1.5">
             @for (chip of _sampleChips; track chip) {
-              <button
-                type="button"
-                class="px-2.5 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors border border-slate-200/60 dark:border-slate-700/60"
-                (click)="_setPromptSample(chip)"
+              <app-button
+                variant="secondary"
+                size="sm"
+                (clicked)="_setPromptSample(chip)"
               >
                 {{ chip }}
-              </button>
+              </app-button>
             }
           </div>
         </div>
 
-        <mat-form-field class="w-full" appearance="fill">
-          <mat-label>Промпт для генерации</mat-label>
-          <textarea
-            matInput
-            rows="6"
-            [formControl]="_prompt"
-            placeholder="Например: 8 вопросов по неотложной помощи при анафилаксии, 4 варианта ответа, указать правильные..."
-          ></textarea>
-        </mat-form-field>
+        <app-textarea
+          label="Промпт для генерации"
+          [rows]="6"
+          [formControl]="_prompt"
+          placeholder="Например: 8 вопросов по неотложной помощи при анафилаксии, 4 варианта ответа, указать правильные..."
+          class="w-full"
+        />
 
         @if (_error(); as err) {
           <div class="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 text-xs border border-red-500/20">
