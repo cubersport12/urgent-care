@@ -6,7 +6,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { notificationsBroadcastNotification } from '@/core/api/generated/sdk.gen';
+import {
+  authSendResetLinkAdmin,
+  notificationsBroadcastNotification,
+  systemSettingsGetSystemSettings,
+  systemSettingsUpdateSystemSettings
+} from '@/core/api/generated/sdk.gen';
 import { apiCall, ApiError } from '@/core/api/api-utils';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
@@ -68,6 +73,9 @@ interface AdminRoleUser {
           [options]="_roleOptions"
           [required]="true"
         />
+        <p class="text-[11px] text-slate-400 -mt-1">
+          Сотрудник получит доступ администратора панели и письмо со ссылкой для задания пароля.
+        </p>
       </form>
     </app-dialog-wrapper>
   `,
@@ -127,6 +135,7 @@ export class AdminInviteDialogComponent {
 
         <app-button
           icon="check"
+          [loading]="_savingSettings()"
           (clicked)="_saveAll()"
           class="self-start md:self-auto"
         >
@@ -294,7 +303,7 @@ export class AdminInviteDialogComponent {
             </app-button>
           </div>
 
-          <div class="overflow-x-auto">
+          <div class="app-table-container overflow-auto max-h-[calc(100vh-320px)]">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-medium">
@@ -440,18 +449,54 @@ export class SystemSettingsComponent {
     }
   }
 
+  constructor() {
+    void this._loadSettings();
+  }
+
+  protected readonly _savingSettings = signal(false);
+
+  private async _loadSettings(): Promise<void> {
+    try {
+      const settings = await apiCall(() => systemSettingsGetSystemSettings());
+      this._maintenanceMode = settings.maintenanceMode ?? false;
+    } catch {
+      // оставляем локальные значения по умолчанию
+    }
+  }
+
   protected _saveAll(): void {
-    this._snack.open('Настройки успешно сохранены', 'Закрыть', { duration: 3000 });
+    void (async () => {
+      this._savingSettings.set(true);
+      try {
+        await apiCall(() =>
+          systemSettingsUpdateSystemSettings({ body: { maintenanceMode: this._maintenanceMode } })
+        );
+        this._snack.open('Настройки сохранены', 'Закрыть', { duration: 3000 });
+      } catch (err) {
+        const msg = err instanceof ApiError ? err.detail : 'Не удалось сохранить настройки';
+        this._snack.open(msg, 'Закрыть', { duration: 5000 });
+      } finally {
+        this._savingSettings.set(false);
+      }
+    })();
   }
 
   protected _inviteAdmin(): void {
     this._dialogsService
       .open(AdminInviteDialogComponent, { width: '480px' })
       .afterClosed()
-      .subscribe((newAdmin: AdminRoleUser | null | undefined) => {
+      .subscribe(async (newAdmin: AdminRoleUser | null | undefined) => {
         if (!newAdmin) return;
-        this._admins.update((list) => [...list, newAdmin]);
-        this._snack.open(`Приглашение отправлено на ${newAdmin.email}`, 'Закрыть', { duration: 3000 });
+        try {
+          await apiCall(() =>
+            authSendResetLinkAdmin({ body: { email: newAdmin.email, fullName: newAdmin.name } })
+          );
+          this._admins.update((list) => [...list, newAdmin]);
+          this._snack.open(`Приглашение отправлено на ${newAdmin.email}`, 'Закрыть', { duration: 3000 });
+        } catch (err) {
+          const msg = err instanceof ApiError ? err.detail : 'Не удалось отправить приглашение';
+          this._snack.open(msg, 'Закрыть', { duration: 5000 });
+        }
       });
   }
 

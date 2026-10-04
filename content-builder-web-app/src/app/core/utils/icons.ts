@@ -2,7 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconRegistry } from '@angular/material/icon';
 import { faSun, faMoon, faPlusCircle, faPlus, faExclamationCircle, faWindowMaximize, faTrash,
-  faFolder, faFolderOpen, faSpinner, faCheck, faTimes, faFileContract, faSlidersH, faFileCircleCheck, faEdit, faVideo, faBars, faKitMedical, faChevronRight, faChevronDown, faBolt, faUpload, faCopy, faScissors, faPaste, faArrowUp, faRotateRight, faEllipsisVertical, faTag, faBell, faTrophy, faGift, faComments, faCertificate, faCreditCard, faUsers, faChartLine, faGear, faShieldHalved, faHouse, faCoins, faGamepad, faBan, faMagnifyingGlass, faFilter } from '@fortawesome/free-solid-svg-icons';
+  faFolder, faFolderOpen, faSpinner, faCheck, faTimes, faFileContract, faSlidersH, faFileCircleCheck, faEdit, faVideo, faBars, faKitMedical, faChevronRight, faChevronDown, faBolt, faUpload, faCopy, faScissors, faPaste, faArrowUp, faRotateRight, faEllipsisVertical, faTag, faBell, faTrophy, faGift, faComments, faCertificate, faCreditCard, faUsers, faChartLine, faGear, faShieldHalved, faHouse, faCoins, faGamepad, faBan, faMagnifyingGlass, faFilter,
+  faEnvelope, faLock, faEye, faEyeSlash, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import { icon, library } from '@fortawesome/fontawesome-svg-core';
 
 @Injectable({ providedIn: 'root' })
@@ -57,7 +58,12 @@ export class AppIconsRegistry {
       faGamepad,
       faBan,
       faMagnifyingGlass,
-      faFilter
+      faFilter,
+      faEnvelope,
+      faLock,
+      faEye,
+      faEyeSlash,
+      faArrowRight
     ];
 
     icons.forEach((iconDefinition) => {

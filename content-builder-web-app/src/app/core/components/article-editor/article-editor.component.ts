@@ -43,6 +43,7 @@ import { RewardSelectComponent } from '../reward-select/reward-select.component'
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
+import { PdfViewerDialogComponent, PdfViewerDialogData } from './pdf-viewer-dialog/pdf-viewer-dialog.component';
 
 @Injectable({
   providedIn: 'root'
@@ -85,6 +86,7 @@ type ArticleLinkFormType = {
 })
 export class ArticleEditorComponent {
   private readonly _appStorage = inject(AppFilesStorageService);
+  private readonly _dialogs = inject(AppDialogService);
   private readonly _store = inject(Store);
   protected readonly _dialogData = inject<AppArticleVm>(MAT_DIALOG_DATA);
   protected readonly _ref = inject(MatDialogRef);
@@ -214,7 +216,14 @@ export class ArticleEditorComponent {
   protected _openPdfContentInWindow(): void {
     const url = this._pdfUrl();
     if (url) {
-      window.open(url, '_blank');
+      this._dialogs.open<PdfViewerDialogComponent, PdfViewerDialogData>(PdfViewerDialogComponent, {
+        width: '920px',
+        maxWidth: '95vw',
+        data: {
+          title: this._form.controls.name.value || 'Просмотр документа PDF',
+          url
+        }
+      });
     }
   }
 

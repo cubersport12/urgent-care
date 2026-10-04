@@ -55,7 +55,7 @@
       Добавить ответ
     </app-button>
   </div>
-  <div class="grow overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+  <div class="grow overflow-auto max-h-60 border border-slate-200 dark:border-slate-800 rounded-xl">
     <table mat-table [dataSource]="_form.value.answers ?? []" class="w-full">
       <ng-container matColumnDef="index">
         <th mat-header-cell *matHeaderCellDef class="!w-14">#</th>

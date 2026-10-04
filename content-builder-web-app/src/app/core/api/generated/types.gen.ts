@@ -217,6 +217,130 @@ export type ActivePromoOut = {
 };
 
 /**
+ * ActivityEventOut
+ */
+export type ActivityEventOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Kind
+     */
+    kind: 'test' | 'rescue' | 'article' | 'payment' | 'registration';
+    /**
+     * Event
+     */
+    event: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Username
+     */
+    userName?: string;
+    /**
+     * Score
+     */
+    score?: number | null;
+    /**
+     * Createdat
+     */
+    createdAt: string;
+};
+
+/**
+ * AnalyticsDayOut
+ */
+export type AnalyticsDayOut = {
+    /**
+     * Date
+     */
+    date: string;
+    /**
+     * Tests
+     */
+    tests?: number;
+    /**
+     * Rescues
+     */
+    rescues?: number;
+};
+
+/**
+ * AnalyticsSummaryOut
+ */
+export type AnalyticsSummaryOut = {
+    /**
+     * Period
+     */
+    period: string;
+    /**
+     * Userstotal
+     */
+    usersTotal?: number;
+    /**
+     * Usersnew
+     */
+    usersNew?: number;
+    /**
+     * Activesubscriptions
+     */
+    activeSubscriptions?: number;
+    /**
+     * Revenuerub
+     */
+    revenueRub?: number;
+    /**
+     * Testsfinished
+     */
+    testsFinished?: number;
+    /**
+     * Rescuesfinished
+     */
+    rescuesFinished?: number;
+    /**
+     * Articlescompleted
+     */
+    articlesCompleted?: number;
+    /**
+     * Conversionpercent
+     */
+    conversionPercent?: number;
+    /**
+     * Series
+     */
+    series?: Array<AnalyticsDayOut>;
+    /**
+     * Tariffs
+     */
+    tariffs?: Array<AnalyticsTariffOut>;
+};
+
+/**
+ * AnalyticsTariffOut
+ */
+export type AnalyticsTariffOut = {
+    /**
+     * Tariffid
+     */
+    tariffId: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Pricerub
+     */
+    priceRub?: number;
+    /**
+     * Count
+     */
+    count: number;
+};
+
+/**
  * ArticleCreate
  */
 export type ArticleCreate = {
@@ -532,6 +656,102 @@ export type BroadcastOut = {
 };
 
 /**
+ * BulkDeleteRequest
+ */
+export type BulkDeleteRequest = {
+    /**
+     * Folderids
+     */
+    folderIds?: Array<string>;
+    /**
+     * Articleids
+     */
+    articleIds?: Array<string>;
+    /**
+     * Testids
+     */
+    testIds?: Array<string>;
+    /**
+     * Rescueids
+     */
+    rescueIds?: Array<string>;
+};
+
+/**
+ * BulkMoveRequest
+ */
+export type BulkMoveRequest = {
+    /**
+     * Targetparentid
+     */
+    targetParentId?: string | null;
+    /**
+     * Folderids
+     */
+    folderIds?: Array<string>;
+    /**
+     * Articleids
+     */
+    articleIds?: Array<string>;
+    /**
+     * Testids
+     */
+    testIds?: Array<string>;
+    /**
+     * Rescueids
+     */
+    rescueIds?: Array<string>;
+};
+
+/**
+ * BulkResult
+ */
+export type BulkResult = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * Deletedcount
+     */
+    deletedCount: number;
+    /**
+     * Movedcount
+     */
+    movedCount: number;
+    /**
+     * Updatedcount
+     */
+    updatedCount: number;
+};
+
+/**
+ * BulkTariffRequest
+ */
+export type BulkTariffRequest = {
+    /**
+     * Tariffid
+     */
+    tariffId?: string | null;
+    /**
+     * Folderids
+     */
+    folderIds?: Array<string>;
+    /**
+     * Articleids
+     */
+    articleIds?: Array<string>;
+    /**
+     * Testids
+     */
+    testIds?: Array<string>;
+    /**
+     * Rescueids
+     */
+    rescueIds?: Array<string>;
+};
+
+/**
  * CertificateIssueRequest
  */
 export type CertificateIssueRequest = {
@@ -770,6 +990,91 @@ export type ForgotPassword = {
 };
 
 /**
+ * GenerateRescueRequest
+ */
+export type GenerateRescueRequest = {
+    /**
+     * Prompt
+     */
+    prompt: string;
+};
+
+/**
+ * GenerateTestRequest
+ */
+export type GenerateTestRequest = {
+    /**
+     * Prompt
+     */
+    prompt: string;
+};
+
+/**
+ * GeneratedAnswer
+ */
+export type GeneratedAnswer = {
+    /**
+     * Answertext
+     */
+    answerText: string;
+    /**
+     * Iscorrect
+     */
+    isCorrect: boolean;
+    /**
+     * Score
+     */
+    score?: number | null;
+};
+
+/**
+ * GeneratedQuestion
+ */
+export type GeneratedQuestion = {
+    /**
+     * Questiontext
+     */
+    questionText: string;
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Answers
+     */
+    answers: Array<GeneratedAnswer>;
+};
+
+/**
+ * GeneratedRescueResponse
+ */
+export type GeneratedRescueResponse = {
+    /**
+     * Parameters
+     */
+    parameters?: Array<RescueTimerParameter>;
+    /**
+     * Scenes
+     */
+    scenes?: Array<RescueScene>;
+    /**
+     * Defaultbackground
+     */
+    defaultBackground?: string | null;
+    completion?: RescueCompletion | null;
+};
+
+/**
+ * GeneratedTestResponse
+ */
+export type GeneratedTestResponse = {
+    /**
+     * Questions
+     */
+    questions: Array<GeneratedQuestion>;
+};
+
+/**
  * GrantAchievementRequest
  */
 export type GrantAchievementRequest = {
@@ -777,6 +1082,20 @@ export type GrantAchievementRequest = {
      * Userid
      */
     userId: string;
+};
+
+/**
+ * GrantBonusRequest
+ */
+export type GrantBonusRequest = {
+    /**
+     * Points
+     */
+    points: number;
+    /**
+     * Reason
+     */
+    reason?: string | null;
 };
 
 /**
@@ -1337,6 +1656,58 @@ export type RegisterOut = {
 };
 
 /**
+ * RescueChoiceParameterChange
+ */
+export type RescueChoiceParameterChange = {
+    /**
+     * Parameterid
+     */
+    parameterId: string;
+    /**
+     * Value
+     */
+    value: number;
+};
+
+/**
+ * RescueCompletion
+ */
+export type RescueCompletion = {
+    success?: RescueCompletionCondition | null;
+    failure?: RescueCompletionCondition | null;
+};
+
+/**
+ * RescueCompletionCondition
+ */
+export type RescueCompletionCondition = {
+    /**
+     * Type
+     */
+    type?: string;
+    /**
+     * Parameterid
+     */
+    parameterId?: string | null;
+    /**
+     * Operator
+     */
+    operator?: string | null;
+    /**
+     * Value
+     */
+    value?: number | null;
+    /**
+     * Logicaloperator
+     */
+    logicalOperator?: string | null;
+    /**
+     * Conditions
+     */
+    conditions?: Array<unknown> | null;
+};
+
+/**
  * RescueCreate
  */
 export type RescueCreate = {
@@ -1433,6 +1804,102 @@ export type RescueOut = {
 };
 
 /**
+ * RescueParameterSeverity
+ */
+export type RescueParameterSeverity = {
+    /**
+     * Min
+     */
+    min?: number | null;
+    /**
+     * Max
+     */
+    max?: number | null;
+    /**
+     * Severity
+     */
+    severity?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+};
+
+/**
+ * RescueScene
+ */
+export type RescueScene = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Order
+     */
+    order?: number | null;
+    /**
+     * Background
+     */
+    background?: string;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Choices
+     */
+    choices?: Array<RescueSceneChoice>;
+    /**
+     * Hidden
+     */
+    hidden?: boolean | null;
+    /**
+     * Isreviewed
+     */
+    isReviewed?: boolean | null;
+};
+
+/**
+ * RescueSceneChoice
+ */
+export type RescueSceneChoice = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Text
+     */
+    text: string;
+    /**
+     * Parameterchanges
+     */
+    parameterChanges?: Array<RescueChoiceParameterChange>;
+    /**
+     * Nextsceneid
+     */
+    nextSceneId?: string | null;
+    /**
+     * Implications
+     */
+    implications?: Array<RescueSceneChoiceImplication>;
+};
+
+/**
+ * RescueSceneChoiceImplication
+ */
+export type RescueSceneChoiceImplication = {
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Severity
+     */
+    severity?: string;
+};
+
+/**
  * RescueStatsOut
  */
 export type RescueStatsOut = {
@@ -1490,6 +1957,40 @@ export type RescueStatsUpsert = {
      * Data
      */
     data?: unknown | null;
+};
+
+/**
+ * RescueTimerParameter
+ */
+export type RescueTimerParameter = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Delta
+     */
+    delta?: number;
+    /**
+     * Startvalue
+     */
+    startValue?: number;
+    /**
+     * Type
+     */
+    type?: string;
+    /**
+     * Severities
+     */
+    severities?: Array<RescueParameterSeverity> | null;
+    /**
+     * Ishidden
+     */
+    isHidden?: boolean | null;
 };
 
 /**
@@ -1767,6 +2268,20 @@ export type RewardUpdate = {
 };
 
 /**
+ * SendResetLinkRequest
+ */
+export type SendResetLinkRequest = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Fullname
+     */
+    fullName?: string | null;
+};
+
+/**
  * SessionCreated
  */
 export type SessionCreated = {
@@ -1963,6 +2478,26 @@ export type SupportThreadOut = {
      * Lastbody
      */
     lastBody: string | null;
+};
+
+/**
+ * SystemSettingsOut
+ */
+export type SystemSettingsOut = {
+    /**
+     * Maintenancemode
+     */
+    maintenanceMode?: boolean;
+};
+
+/**
+ * SystemSettingsUpdate
+ */
+export type SystemSettingsUpdate = {
+    /**
+     * Maintenancemode
+     */
+    maintenanceMode?: boolean | null;
 };
 
 /**
@@ -2587,6 +3122,22 @@ export type UserListItemOut = {
      * Fullname
      */
     fullName: string;
+    /**
+     * Status
+     */
+    status?: string;
+    /**
+     * Phone
+     */
+    phone?: string | null;
+    /**
+     * Tariffname
+     */
+    tariffName?: string | null;
+    /**
+     * Score
+     */
+    score?: number;
 };
 
 /**
@@ -2638,6 +3189,16 @@ export type UserOut = {
      * Created At
      */
     created_at: string;
+};
+
+/**
+ * UserStatusUpdateRequest
+ */
+export type UserStatusUpdateRequest = {
+    /**
+     * Status
+     */
+    status: string;
 };
 
 /**
@@ -3249,6 +3810,35 @@ export type AuthResetPasswordResponses = {
 };
 
 export type AuthResetPasswordResponse = AuthResetPasswordResponses[keyof AuthResetPasswordResponses];
+
+export type AuthSendResetLinkAdminData = {
+    body: SendResetLinkRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/auth/send-reset-link';
+};
+
+export type AuthSendResetLinkAdminErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AuthSendResetLinkAdminError = AuthSendResetLinkAdminErrors[keyof AuthSendResetLinkAdminErrors];
+
+export type AuthSendResetLinkAdminResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type CitiesListCitiesData = {
     body?: never;
@@ -4748,6 +5338,99 @@ export type FoldersFoldersMaterialCountsResponses = {
 
 export type FoldersFoldersMaterialCountsResponse = FoldersFoldersMaterialCountsResponses[keyof FoldersFoldersMaterialCountsResponses];
 
+export type FoldersBulkDeleteContentData = {
+    body: BulkDeleteRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/folders/bulk-delete';
+};
+
+export type FoldersBulkDeleteContentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type FoldersBulkDeleteContentError = FoldersBulkDeleteContentErrors[keyof FoldersBulkDeleteContentErrors];
+
+export type FoldersBulkDeleteContentResponses = {
+    /**
+     * Successful Response
+     */
+    200: BulkResult;
+};
+
+export type FoldersBulkDeleteContentResponse = FoldersBulkDeleteContentResponses[keyof FoldersBulkDeleteContentResponses];
+
+export type FoldersBulkMoveContentData = {
+    body: BulkMoveRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/folders/bulk-move';
+};
+
+export type FoldersBulkMoveContentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type FoldersBulkMoveContentError = FoldersBulkMoveContentErrors[keyof FoldersBulkMoveContentErrors];
+
+export type FoldersBulkMoveContentResponses = {
+    /**
+     * Successful Response
+     */
+    200: BulkResult;
+};
+
+export type FoldersBulkMoveContentResponse = FoldersBulkMoveContentResponses[keyof FoldersBulkMoveContentResponses];
+
+export type FoldersBulkTariffContentData = {
+    body: BulkTariffRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/folders/bulk-tariff';
+};
+
+export type FoldersBulkTariffContentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type FoldersBulkTariffContentError = FoldersBulkTariffContentErrors[keyof FoldersBulkTariffContentErrors];
+
+export type FoldersBulkTariffContentResponses = {
+    /**
+     * Successful Response
+     */
+    200: BulkResult;
+};
+
+export type FoldersBulkTariffContentResponse = FoldersBulkTariffContentResponses[keyof FoldersBulkTariffContentResponses];
+
 export type FoldersDeleteFolderData = {
     body?: never;
     headers?: {
@@ -5872,6 +6555,74 @@ export type UsersListUsersResponses = {
 
 export type UsersListUsersResponse = UsersListUsersResponses[keyof UsersListUsersResponses];
 
+export type UsersGrantUserBonusData = {
+    body: GrantBonusRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{user_id}/bonus';
+};
+
+export type UsersGrantUserBonusErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UsersGrantUserBonusError = UsersGrantUserBonusErrors[keyof UsersGrantUserBonusErrors];
+
+export type UsersGrantUserBonusResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type UsersUpdateUserStatusData = {
+    body: UserStatusUpdateRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{user_id}/status';
+};
+
+export type UsersUpdateUserStatusErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UsersUpdateUserStatusError = UsersUpdateUserStatusErrors[keyof UsersUpdateUserStatusErrors];
+
+export type UsersUpdateUserStatusResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
 export type UsersResetUsersStatsData = {
     body: ResetStatsRequest;
     headers?: {
@@ -6212,6 +6963,204 @@ export type CertificatesVerifyCertificateResponses = {
 };
 
 export type CertificatesVerifyCertificateResponse = CertificatesVerifyCertificateResponses[keyof CertificatesVerifyCertificateResponses];
+
+export type AiGenerateTestData = {
+    body: GenerateTestRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/ai/generate-test';
+};
+
+export type AiGenerateTestErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AiGenerateTestError = AiGenerateTestErrors[keyof AiGenerateTestErrors];
+
+export type AiGenerateTestResponses = {
+    /**
+     * Successful Response
+     */
+    200: GeneratedTestResponse;
+};
+
+export type AiGenerateTestResponse = AiGenerateTestResponses[keyof AiGenerateTestResponses];
+
+export type AiGenerateRescueData = {
+    body: GenerateRescueRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/ai/generate-rescue';
+};
+
+export type AiGenerateRescueErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AiGenerateRescueError = AiGenerateRescueErrors[keyof AiGenerateRescueErrors];
+
+export type AiGenerateRescueResponses = {
+    /**
+     * Successful Response
+     */
+    200: GeneratedRescueResponse;
+};
+
+export type AiGenerateRescueResponse = AiGenerateRescueResponses[keyof AiGenerateRescueResponses];
+
+export type SystemSettingsGetSystemSettingsData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/system-settings';
+};
+
+export type SystemSettingsGetSystemSettingsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SystemSettingsGetSystemSettingsError = SystemSettingsGetSystemSettingsErrors[keyof SystemSettingsGetSystemSettingsErrors];
+
+export type SystemSettingsGetSystemSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SystemSettingsOut;
+};
+
+export type SystemSettingsGetSystemSettingsResponse = SystemSettingsGetSystemSettingsResponses[keyof SystemSettingsGetSystemSettingsResponses];
+
+export type SystemSettingsUpdateSystemSettingsData = {
+    body: SystemSettingsUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/system-settings';
+};
+
+export type SystemSettingsUpdateSystemSettingsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SystemSettingsUpdateSystemSettingsError = SystemSettingsUpdateSystemSettingsErrors[keyof SystemSettingsUpdateSystemSettingsErrors];
+
+export type SystemSettingsUpdateSystemSettingsResponses = {
+    /**
+     * Successful Response
+     */
+    200: SystemSettingsOut;
+};
+
+export type SystemSettingsUpdateSystemSettingsResponse = SystemSettingsUpdateSystemSettingsResponses[keyof SystemSettingsUpdateSystemSettingsResponses];
+
+export type AnalyticsAnalyticsSummaryData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Period
+         */
+        period?: string;
+    };
+    url: '/api/v1/analytics/summary';
+};
+
+export type AnalyticsAnalyticsSummaryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AnalyticsAnalyticsSummaryError = AnalyticsAnalyticsSummaryErrors[keyof AnalyticsAnalyticsSummaryErrors];
+
+export type AnalyticsAnalyticsSummaryResponses = {
+    /**
+     * Successful Response
+     */
+    200: AnalyticsSummaryOut;
+};
+
+export type AnalyticsAnalyticsSummaryResponse = AnalyticsAnalyticsSummaryResponses[keyof AnalyticsAnalyticsSummaryResponses];
+
+export type AnalyticsAnalyticsRecentEventsData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/analytics/recent-events';
+};
+
+export type AnalyticsAnalyticsRecentEventsErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AnalyticsAnalyticsRecentEventsError = AnalyticsAnalyticsRecentEventsErrors[keyof AnalyticsAnalyticsRecentEventsErrors];
+
+export type AnalyticsAnalyticsRecentEventsResponses = {
+    /**
+     * Response Analytics Analytics Recent Events
+     *
+     * Successful Response
+     */
+    200: Array<ActivityEventOut>;
+};
+
+export type AnalyticsAnalyticsRecentEventsResponse = AnalyticsAnalyticsRecentEventsResponses[keyof AnalyticsAnalyticsRecentEventsResponses];
 
 export type MetaHealthData = {
     body?: never;

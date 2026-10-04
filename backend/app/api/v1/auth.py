@@ -6,10 +6,10 @@ from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Response, UploadFile, status
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_current_admin, get_db
 from app.core.config import settings
 from app.core.security import hash_password, make_email_token, read_email_token, verify_password
 from app.db.repositories.login_code import LoginCodeRepository
@@ -402,3 +402,51 @@ async def reset_password(
         .values(ended_at=datetime.now(timezone.utc))
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Annotated as PydAnnotated
+
+
+class SendResetLinkRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, ser_json_by_alias=True)
+    email: str
+    full_name: PydAnnotated[str | None, Field(alias="fullName")] = None  # заполнено => приглашение сотрудника (создаём аккаунт)
+
+
+@router.post("/send-reset-link")
+async def send_reset_link_admin(
+    payload: SendResetLinkRequest,
+    background_tasks: BackgroundTasks,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(get_current_admin)],
+):
+    user = await db.scalar(select(User).where(func.lower(User.email) == payload.email.lower()))
+    created = False
+    if not user:
+        if not payload.full_name:
+            raise HTTPException(status_code=404, detail="User not found")
+        created = True
+        user = User(
+            email=payload.email.strip().lower(),
+            full_name=payload.full_name,
+            role="admin",
+            email_verified=True,
+        )
+        db.add(user)
+        await db.flush()
+        subject = "Приглашение в панель управления Urgent Care"
+        body_intro = "Вам предоставлен доступ к панели управления Urgent Care.\n\nЗадайте пароль по ссылке:"
+    else:
+        subject = "Сброс пароля"
+        body_intro = "Перейдите по ссылке, чтобы задать новый пароль:"
+
+    raw_token = await PasswordResetRepository(db).issue(user.id)
+    link = f"{settings.password_reset_url.rstrip('/')}?token={raw_token}"
+    background_tasks.add_task(
+        send_email_safe,
+        to=user.email,
+        subject=subject,
+        body=f"{body_intro}\n\n{link}\n\nСсылка действует 2 часа.",
+    )
+
+    return {"success": True, "message": "Email sent", "created": created}

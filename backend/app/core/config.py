@@ -82,6 +82,11 @@ class Settings(BaseSettings):
     embedding_timeout_seconds: int = 60
     embedding_max_retries: int = 4
 
+    # DeepSeek AI Generation (OpenAI-compatible)
+    deepseek_api_key: str = ""
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_model: str = "deepseek-flash"
+
     @property
     def yookassa_configured(self) -> bool:
         return bool(self.yookassa_shop_id and self.yookassa_secret_key)

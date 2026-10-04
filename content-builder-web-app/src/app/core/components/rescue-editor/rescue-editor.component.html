@@ -55,7 +55,7 @@
           Создать
         </app-button>
       </div>
-      <div class="overflow-hidden border border-slate-200 dark:border-slate-800 rounded-xl">
+      <div class="overflow-auto max-h-[360px] border border-slate-200 dark:border-slate-800 rounded-xl">
         <table
           mat-table
           [dataSource]="_parametersList()"
@@ -124,7 +124,7 @@
           Создать
         </app-button>
       </div>
-      <div class="overflow-hidden border border-slate-200 dark:border-slate-800 rounded-xl">
+      <div class="overflow-auto max-h-[400px] border border-slate-200 dark:border-slate-800 rounded-xl">
         <table
           mat-table
           [dataSource]="_scenesList()"
@@ -139,6 +139,16 @@
                 <mat-icon class="rescue-drag-handle" svgIcon="bars" />
                 <span>{{ si + 1 }}</span>
               </div>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="background">
+            <th mat-header-cell *matHeaderCellDef>Фон</th>
+            <td mat-cell *matCellDef="let row">
+              @if (_getBackgroundThumbnail(row.value.background); as bgUrl) {
+                <img [src]="bgUrl" class="w-10 h-7 object-cover rounded border border-slate-200 dark:border-slate-700 shadow-xs" alt="Фон" />
+              } @else {
+                <span class="text-xs text-slate-400">—</span>
+              }
             </td>
           </ng-container>
           <ng-container matColumnDef="text">

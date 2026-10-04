@@ -3,7 +3,7 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { MatIcon } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { usersListUsers } from '@/core/api/generated/sdk.gen';
+import { usersListUsers, usersUpdateUserStatus, usersGrantUserBonus, authSendResetLinkAdmin } from '@/core/api/generated/sdk.gen';
 import { apiCall, ApiError } from '@/core/api/api-utils';
 import type { UserListItemOut } from '@/core/api/generated/types.gen';
 import { AppTariffsStorageService } from '@/core/api';
@@ -174,7 +174,7 @@ export class UserBonusDialogComponent {
             <p class="text-xs">Попробуйте изменить поисковый запрос или фильтры</p>
           </div>
         } @else {
-          <div class="overflow-x-auto">
+          <div class="app-table-container overflow-auto max-h-[calc(100vh-280px)]">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-medium">
@@ -203,6 +203,14 @@ export class UserBonusDialogComponent {
                             {{ u.id }}
                           </p>
                         </div>
+                      
+                        <app-icon-button
+                          icon="key"
+                          size="sm"
+                          variant="ghost"
+                          tooltip="Отправить ссылку для сброса пароля"
+                          (clicked)="_sendResetLink(u)"
+                        />
                       </div>
                     </td>
 
@@ -252,6 +260,14 @@ export class UserBonusDialogComponent {
                           variant="ghost"
                           tooltip="Начислить бонусные баллы"
                           (clicked)="_grantReward(u)"
+                        />
+                      
+                        <app-icon-button
+                          icon="key"
+                          size="sm"
+                          variant="ghost"
+                          tooltip="Отправить ссылку для сброса пароля"
+                          (clicked)="_sendResetLink(u)"
                         />
                       </div>
                     </td>
@@ -314,41 +330,38 @@ export class UsersListComponent {
     this._loading.set(true);
     try {
       const rawUsers = await apiCall(() => usersListUsers());
-      const enhanced: EnhancedUser[] = (rawUsers || []).map((u, i) => ({
+      const enhanced: EnhancedUser[] = (rawUsers || []).map((u) => ({
         ...u,
-        status: i % 7 === 0 ? 'banned' : 'active',
-        phone: `+7 (9${Math.floor(10 + Math.random() * 89)}) ${Math.floor(100 + Math.random() * 899)}-${Math.floor(10 + Math.random() * 89)}-${Math.floor(10 + Math.random() * 89)}`,
-        tariffName: i % 3 === 0 ? 'Премиум' : i % 2 === 0 ? 'Стандарт' : 'Базовый',
-        score: Math.floor(120 + Math.random() * 800)
+        status: u.status as 'active' | 'banned',
+        phone: u.phone || '+7 (000) 000-00-00',
+        tariffName: u.tariffName || 'Нет',
+        score: u.score ?? 0
       }));
 
-      // If backend returned empty list, provide realistic sample data for admin exploration
-      if (enhanced.length === 0) {
-        this._users.set(this._generateMockUsers());
-      } else {
-        this._users.set(enhanced);
-      }
+      this._users.set(enhanced);
     } catch (err) {
       this._snack.open(
-        err instanceof ApiError ? err.detail : 'Не удалось загрузить пользователей, загружены демо-данные',
+        err instanceof ApiError ? err.detail : 'Не удалось загрузить пользователей',
         'Закрыть',
         { duration: 4000 }
       );
-      this._users.set(this._generateMockUsers());
     } finally {
       this._loading.set(false);
     }
   }
-
-  protected _toggleBlock(u: EnhancedUser): void {
+  protected async _toggleBlock(u: EnhancedUser): Promise<void> {
     const nextStatus = u.status === 'active' ? 'banned' : 'active';
     const actionText = nextStatus === 'banned' ? 'заблокирован' : 'разблокирован';
-    this._users.update((list) =>
-      list.map((item) => (item.id === u.id ? { ...item, status: nextStatus } : item))
-    );
-    this._snack.open(`Пользователь «${u.fullName}» ${actionText}`, 'Закрыть', { duration: 3000 });
+    try {
+      await apiCall(() => usersUpdateUserStatus({ path: { user_id: u.id }, body: { status: nextStatus } }));
+      this._users.update((list) =>
+        list.map((item) => (item.id === u.id ? { ...item, status: nextStatus } : item))
+      );
+      this._snack.open(`Пользователь «${u.fullName}» ${actionText}`, 'Закрыть', { duration: 3000 });
+    } catch (err) {
+      this._snack.open('Ошибка смены статуса', 'Закрыть', { duration: 3000 });
+    }
   }
-
   protected _grantReward(u: EnhancedUser): void {
     this._dialogsService
       .open(UserBonusDialogComponent, {
@@ -356,24 +369,26 @@ export class UsersListComponent {
         width: '440px'
       })
       .afterClosed()
-      .subscribe((points: number | null | undefined) => {
+      .subscribe(async (points: number | null | undefined) => {
         if (!points) return;
-        this._users.update((list) =>
-          list.map((item) => (item.id === u.id ? { ...item, score: (item.score ?? 0) + points } : item))
-        );
-        this._snack.open(`Начислено +${points} баллов пользователю «${u.fullName}»`, 'Закрыть', { duration: 3000 });
+        try {
+          await apiCall(() => usersGrantUserBonus({ path: { user_id: u.id }, body: { points, reason: 'Бонус от администратора' } }));
+          this._users.update((list) =>
+            list.map((item) => (item.id === u.id ? { ...item, score: (item.score ?? 0) + points } : item))
+          );
+          this._snack.open(`Начислено +${points} баллов пользователю «${u.fullName}»`, 'Закрыть', { duration: 3000 });
+        } catch (err) {
+          this._snack.open('Ошибка начисления баллов', 'Закрыть', { duration: 3000 });
+        }
       });
   }
 
-  private _generateMockUsers(): EnhancedUser[] {
-    return [
-      { id: 'usr-1', fullName: 'Алексей Смирнов', email: 'alexey.smirnov@mail.ru', status: 'active', phone: '+7 (916) 123-45-67', tariffName: 'Премиум', score: 940 },
-      { id: 'usr-2', fullName: 'Мария Васильева', email: 'maria.vas@yandex.ru', status: 'active', phone: '+7 (926) 234-56-78', tariffName: 'Стандарт', score: 620 },
-      { id: 'usr-3', fullName: 'Константин Попов', email: 'k.popov@gmail.com', status: 'active', phone: '+7 (903) 345-67-89', tariffName: 'Премиум', score: 1250 },
-      { id: 'usr-4', fullName: 'Анна Кузнецова', email: 'anna.kuzn@bk.ru', status: 'banned', phone: '+7 (915) 456-78-90', tariffName: 'Базовый', score: 180 },
-      { id: 'usr-5', fullName: 'Илья Федоров', email: 'fedorov.ilya@rambler.ru', status: 'active', phone: '+7 (985) 567-89-01', tariffName: 'Стандарт', score: 410 },
-      { id: 'usr-6', fullName: 'Татьяна Михайлова', email: 'tatiana.mikh@inbox.ru', status: 'active', phone: '+7 (905) 678-90-12', tariffName: 'Премиум', score: 880 },
-      { id: 'usr-7', fullName: 'Роман Давыдов', email: 'r.davydov@corp.ru', status: 'active', phone: '+7 (977) 789-01-23', tariffName: 'Базовый', score: 320 }
-    ];
+  protected async _sendResetLink(u: EnhancedUser): Promise<void> {
+    try {
+      await apiCall(() => authSendResetLinkAdmin({ body: { email: u.email } }));
+      this._snack.open(`Ссылка для сброса пароля отправлена на ${u.email}`, 'Закрыть', { duration: 3000 });
+    } catch (err) {
+      this._snack.open('Ошибка отправки ссылки', 'Закрыть', { duration: 3000 });
+    }
   }
 }

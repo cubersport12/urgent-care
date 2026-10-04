@@ -1,49 +1,15 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
+import { catchError, map, Observable, retry, throwError } from 'rxjs';
 import {
   aiGeneratedQuestionsSchema,
-  formatAiGeneratedQuestionsSchemaForPrompt,
-  formatRescueItemDataSchemaForPrompt,
-  NullableValue,
   rescueItemDataSchema
 } from '@/core/utils';
-import { environment } from '../../../environments/environment';
+import { API_BASE, getSessionId } from './api-client';
 import { z } from 'zod';
 
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
-const DEFAULT_MODEL = 'deepseek-v4-flash';
-
-type DeepSeekMessageRole = 'system' | 'user' | 'assistant';
-
-type DeepSeekMessage = {
-  role: DeepSeekMessageRole;
-  content: string;
-};
-
-type DeepSeekChatCompletionRequest = {
-  model: string;
-  messages: DeepSeekMessage[];
-  stream: false;
-};
-
-type DeepSeekChatCompletionResponse = {
-  choices?: {
-    index: number;
-    message: DeepSeekMessage;
-    finish_reason: string;
-  }[];
-  error?: {
-    message: string;
-    type?: string;
-  };
-};
-
-export type AppAIAskOptions = {
-  model?: string;
-  systemPrompt?: NullableValue<string>;
-  messages?: DeepSeekMessage[];
-};
+export type GeneratedTestResponse = z.infer<typeof aiGeneratedQuestionsSchema>;
+export type GeneratedRescueResponse = z.infer<typeof rescueItemDataSchema>;
 
 @Injectable({
   providedIn: 'root'
@@ -51,140 +17,62 @@ export type AppAIAskOptions = {
 export class AppAIService {
   private readonly _http = inject(HttpClient);
 
-  public ask(prompt: string, options?: AppAIAskOptions): Observable<string> {
-    if (!environment.deepseekToken) {
-      return throwError(() => new Error('DEEPSEEK_TOKEN не задан. Укажите переменную окружения перед сборкой или запуском.'));
-    }
-    const messages: DeepSeekMessage[] = [];
-
-    if (options?.systemPrompt) {
-      messages.push({ role: 'system', content: options.systemPrompt });
-    }
-    if (options?.messages?.length) {
-      messages.push(...options.messages);
-    }
-    messages.push({ role: 'user', content: prompt });
-
-    const body: DeepSeekChatCompletionRequest = {
-      model: options?.model ?? DEFAULT_MODEL,
-      messages,
-      stream: false
+  private _getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
     };
+    const sessionId = getSessionId();
+    if (sessionId) {
+      headers['X-Session-Id'] = sessionId;
+    }
+    return headers;
+  }
 
-    return this._http.post<DeepSeekChatCompletionResponse>(DEEPSEEK_API_URL, body, {
-      headers: {
-        'Authorization': `Bearer ${environment.deepseekToken}`,
-        'Content-Type': 'application/json'
-      }
-    }).pipe(
-      switchMap((response) => {
-        const content = response.choices?.[0]?.message?.content?.trim();
-        if (content) {
-          return of(content);
+  public generateTestQuestions(prompt: string): Observable<GeneratedTestResponse> {
+    const url = `${API_BASE}/api/v1/ai/generate-test`;
+    return this._http.post<{ questions: unknown[] }>(url, { prompt }, { headers: this._getHeaders() }).pipe(
+      map((response) => {
+        const parsed = aiGeneratedQuestionsSchema.safeParse(response);
+        if (!parsed.success) {
+          const details = parsed.error.issues
+            .map((issue) => `${issue.path.join('.') || 'корень'}: ${issue.message}`)
+            .join('; ');
+          throw new Error(`Ответ ИИ не соответствует схеме вопросов: ${details}`);
         }
-        return throwError(() => new Error(response.error?.message ?? 'Пустой ответ от DeepSeek'));
+        return parsed.data;
       }),
-      catchError((error: unknown) => {
-        if (error instanceof HttpErrorResponse) {
-          const apiMessage = error.error?.error?.message ?? error.error?.message;
-          return throwError(() => new Error(apiMessage ?? error.message));
-        }
-        if (error instanceof Error) {
-          return throwError(() => error);
-        }
-        return throwError(() => new Error('Ошибка запроса к DeepSeek'));
-      })
+      // Одна автоматическая попытка, если модель вернула ответ вне схемы или сеть моргнула
+      retry(1),
+      catchError((error: unknown) => this._handleError(error, 'Не удалось сгенерировать вопросы к тесту'))
     );
   }
 
-  public generateTestQuestions(prompt: string): Observable<z.infer<typeof aiGeneratedQuestionsSchema>> {
-    const schemaJson = formatAiGeneratedQuestionsSchemaForPrompt();
-    const userPrompt = `JSON Schema целевого ответа:
-
-${schemaJson}
-
-Задание: ${prompt}
-
-Требования:
-- Сгенерируй тест по медицинскому направлению (вопросы с вариантами ответов).
-- У каждого вопроса минимум 2 ответа, ровно один или несколько с isCorrect=true.
-- score: число баллов за ответ (обычно >0 для правильных).
-- Верни ТОЛЬКО валидный JSON-объект без markdown-обёртки и комментариев.`;
-
-    return this.ask(userPrompt, {
-      systemPrompt:
-        'Ты методист по медицинским тестам. Генерируешь чёткие вопросы с вариантами ответов.'
-    }).pipe(map((response) => this._parseAiQuestionsResponse(response)));
-  }
-
-  private _parseAiQuestionsResponse(response: string): z.infer<typeof aiGeneratedQuestionsSchema> {
-    let json: unknown;
-    try {
-      json = JSON.parse(this._extractJsonObject(response));
-    } catch {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
-      throw new Error('ИИ вернул невалидный JSON. Попробуйте уточнить промпт и повторить.');
-    }
-    const parsed = aiGeneratedQuestionsSchema.safeParse(json);
-    if (!parsed.success) {
-      const details = parsed.error.issues
-        .map((issue) => `${issue.path.join('.') || 'корень'}: ${issue.message}`)
-        .join('; ');
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
-      throw new Error(`JSON не соответствует схеме: ${details}`);
-    }
-    return parsed.data;
-  }
-
-  public generateRescue(prompt: string): Observable<z.infer<typeof rescueItemDataSchema>> {
-    const schemaJson = formatRescueItemDataSchemaForPrompt();
-    const userPrompt = `JSON Schema целевого ответа (объект AppRescueItemDataVm):
-
-${schemaJson}
-
-Задание: ${prompt}
-
-Требования:
-- Режим спасения — визуальная новелла: parameters, scenes, опционально completion.
-- Допустимы вводные слайды без choices перед первым выбором.
-- Сценарий должен быть интересным и живым, не «душным».
-- id параметров, сцен и choices — уникальные UUID-строки.
-- parameterChanges[].parameterId ссылается на parameters[].id.
-- nextSceneId ссылается на scenes[].id или null.
-- completion.success / failure — деревья compare и group по parameterId.
-- background и defaultBackground — строки-идентификаторы фона (например bg-hospital).
-- Верни ТОЛЬКО валидный JSON-объект без markdown-обёртки и комментариев.`;
-
-    return this.ask(userPrompt, {
-      systemPrompt: 'Ты топовый сценарист визуальных новелл. Ты генерируешь сцены для визуальной новеллы на основе описания в медицинском направлении.'
-    }).pipe(
-      map(response => this._parseRescueItemDataResponse(response))
+  public generateRescue(prompt: string): Observable<GeneratedRescueResponse> {
+    const url = `${API_BASE}/api/v1/ai/generate-rescue`;
+    return this._http.post<unknown>(url, { prompt }, { headers: this._getHeaders() }).pipe(
+      map((response) => {
+        const parsed = rescueItemDataSchema.safeParse(response);
+        if (!parsed.success) {
+          const details = parsed.error.issues
+            .map((issue) => `${issue.path.join('.') || 'корень'}: ${issue.message}`)
+            .join('; ');
+          throw new Error(`Ответ ИИ не соответствует схеме сценария: ${details}`);
+        }
+        return parsed.data;
+      }),
+      retry(1),
+      catchError((error: unknown) => this._handleError(error, 'Не удалось сгенерировать сценарий спасения'))
     );
   }
 
-  private _parseRescueItemDataResponse(response: string): z.infer<typeof rescueItemDataSchema> {
-    let json: unknown;
-    try {
-      json = JSON.parse(this._extractJsonObject(response));
+  private _handleError(error: unknown, fallbackMessage: string): Observable<never> {
+    if (error instanceof HttpErrorResponse) {
+      const apiMessage = error.error?.detail || error.error?.message;
+      return throwError(() => new Error(typeof apiMessage === 'string' ? apiMessage : fallbackMessage));
     }
-    catch {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
-      throw new Error('ИИ вернул невалидный JSON. Попробуйте уточнить промпт и повторить.');
+    if (error instanceof Error) {
+      return throwError(() => error);
     }
-    const parsed = rescueItemDataSchema.safeParse(json);
-    if (!parsed.success) {
-      const details = parsed.error.issues
-        .map(issue => `${issue.path.join('.') || 'корень'}: ${issue.message}`)
-        .join('; ');
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
-      throw new Error(`JSON не соответствует схеме: ${details}`);
-    }
-    return parsed.data;
-  }
-
-  private _extractJsonObject(text: string): string {
-    const trimmed = text.trim();
-    const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)```$/i);
-    return fenced ? fenced[1].trim() : trimmed;
+    return throwError(() => new Error(fallbackMessage));
   }
 }

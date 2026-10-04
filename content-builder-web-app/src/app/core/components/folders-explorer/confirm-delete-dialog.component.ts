@@ -7,6 +7,7 @@ export type ConfirmDeleteDialogData = {
   name: string;
   typeName: string;
   isFolder: boolean;
+  count?: number;
 };
 
 @Component({
@@ -14,8 +15,8 @@ export type ConfirmDeleteDialogData = {
   imports: [MatIcon, AppDialogWrapperComponent],
   template: `
     <app-dialog-wrapper
-      title="Удалить объект?"
-      [subtitle]="_data.name"
+      [title]="_data.count && _data.count > 1 ? 'Удалить выбранные объекты?' : 'Удалить объект?'"
+      [subtitle]="_data.count && _data.count > 1 ? 'Выбрано элементов: ' + _data.count : _data.name"
       saveText="Удалить"
       saveIcon="trash"
       saveColor="warn"
@@ -28,18 +29,27 @@ export type ConfirmDeleteDialogData = {
             <mat-icon svgIcon="trash" class="!w-5 !h-5" />
           </div>
           <div class="text-xs leading-relaxed space-y-1.5">
-            <div>
-              Вы действительно хотите удалить {{ _data.typeName.toLowerCase() }}
-              <strong class="font-semibold block text-slate-900 dark:text-white truncate mt-0.5">«{{ _data.name }}»</strong>?
-            </div>
-            @if (_data.isFolder) {
+            @if (_data.count && _data.count > 1) {
+              <div>
+                Вы действительно хотите удалить <strong>{{ _data.count }}</strong> выбранных элементов?
+              </div>
               <div class="text-[11px] text-red-700 dark:text-red-300 font-medium">
-                Внимание: Все вложенные папки, документы, тесты и сценарии спасения внутри этой папки также будут удалены!
+                Внимание: Будут безвозвратно удалены все выбранные папки, статьи, тесты и сценарии спасения!
               </div>
             } @else {
-              <div class="text-[11px] text-slate-500 dark:text-slate-400">
-                Это действие необратимо и удалит связанные файлы и историю.
+              <div>
+                Вы действительно хотите удалить {{ _data.typeName.toLowerCase() }}
+                <strong class="font-semibold block text-slate-900 dark:text-white truncate mt-0.5">«{{ _data.name }}»</strong>?
               </div>
+              @if (_data.isFolder) {
+                <div class="text-[11px] text-red-700 dark:text-red-300 font-medium">
+                  Внимание: Все вложенные папки, документы, тесты и сценарии спасения внутри этой папки также будут удалены!
+                </div>
+              } @else {
+                <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                  Это действие необратимо и удалит связанные файлы и историю.
+                </div>
+              }
             }
           </div>
         </div>

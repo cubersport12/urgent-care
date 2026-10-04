@@ -1,7 +1,7 @@
 <app-dialog-wrapper
   [title]="_dialogData.id ? 'Редактировать тест' : 'Новый интерактивный тест'"
   [subtitle]="_dialogData.id ? (_dialogData.name || 'Настройка вопросов, проходного балла и условий доступа') : 'Создание нового тестового сценария'"
-  [saveDisabled]="_form.invalid || !_form.dirty || _isPending()"
+  [saveDisabled]="_form.invalid || !_form.dirty || _isPending() || _conditionCycle() !== null"
   [loading]="_isPending()"
   saveText="Сохранить"
   saveIcon="check"
@@ -42,7 +42,7 @@
             icon="calculator"
             variant="outline"
             (clicked)="_calculateMinScore()"
-            [tooltip]="'Автоматически посчитать проходной балл (макс: ' + _totalCorrectScore() + ')'"
+            [tooltip]="'Рассчитать: 80% взвешенного максимума (сложные вопросы ×2) + штраф за критические ошибки. Максимум: ' + _totalCorrectScore()"
             class="mb-0.5"
           />
         </div>
@@ -91,6 +91,9 @@
     <!-- Conditions Builder -->
     <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
       <app-test-conditions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.conditions" />
+      @if (_conditionCycle(); as cycle) {
+        <p class="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">{{ cycle }}</p>
+      }
     </div>
 
     <!-- Questions Builder -->

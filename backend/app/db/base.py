@@ -61,3 +61,4 @@ from app.models.push_token import PushToken  # noqa: E402, F401
 from app.models.rescue import Rescue  # noqa: E402, F401
 from app.models.test import Test  # noqa: E402, F401
 from app.models.user import User  # noqa: E402, F401
+from app.models.user_bonus import UserBonusTransaction  # noqa: E402, F401

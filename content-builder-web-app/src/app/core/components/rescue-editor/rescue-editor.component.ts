@@ -23,6 +23,7 @@ import {
   Validators
 } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIcon } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import {
@@ -192,6 +193,7 @@ export class RescueEditorComponent {
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
   private readonly _dialog = inject(MatDialog);
+  private readonly _snack = inject(MatSnackBar);
   private readonly _filesStorage = inject(AppFilesStorageService);
 
   /** Файлы фонов сцен и фона по умолчанию для загрузки при сохранении */
@@ -205,7 +207,12 @@ export class RescueEditorComponent {
   protected readonly _scenesList = signal<FormGroup[]>([]);
 
   protected readonly _parametersDisplayedColumns: string[] = ['index', 'name', 'delta', 'startValue', 'actions'];
-  protected readonly _scenesDisplayedColumns: string[] = ['index', 'text', 'isReviewed', 'actions'];
+  protected readonly _scenesDisplayedColumns: string[] = ['index', 'background', 'text', 'isReviewed', 'actions'];
+
+  protected _getBackgroundThumbnail(backgroundId: string | null | undefined): string | null {
+    if (!backgroundId || backgroundId.trim().length === 0) return null;
+    return this._filesStorage.getFileUrl(backgroundId);
+  }
 
   protected readonly _isPending = computed(
     () =>
@@ -553,6 +560,12 @@ export class RescueEditorComponent {
 
   protected _handleSubmit(): void {
     const vm = this._getRescueVm();
+    const graphErrors = this._validateRescueGraph(vm.data);
+    if (graphErrors.length > 0) {
+      this._snack.open(`Ошибки в сценарии: ${graphErrors.join('; ')}`, 'Закрыть', { duration: 6000 });
+      return;
+    }
+
     const isNew = this._dialogData?.id == null;
     const action = isNew
       ? this._store.dispatch(new RescueActions.CreateRescueItem(vm))
@@ -566,6 +579,55 @@ export class RescueEditorComponent {
     else {
       action.subscribe(() => this._ref.close());
     }
+  }
+
+  private _validateRescueGraph(data: AppRescueItemVm['data']): string[] {
+    const scenes = data?.scenes ?? [];
+    if (scenes.length === 0) return [];
+    const errors: string[] = [];
+    const sceneIds = new Set(scenes.map(s => s.id));
+
+    let hasTerminal = false;
+    for (const scene of scenes) {
+      const choices = scene.choices ?? [];
+      if (choices.length === 0) {
+        hasTerminal = true;
+        continue;
+      }
+      for (const choice of choices) {
+        if (!choice.nextSceneId) {
+          hasTerminal = true;
+        } else if (!sceneIds.has(choice.nextSceneId)) {
+          errors.push(`Сцена "${(scene.text || '').slice(0, 20)}...": переход на неизвестную сцену`);
+        }
+      }
+    }
+
+    if (!hasTerminal) {
+      errors.push('Граф не содержит терминального исхода (сцены без выбора или выхода)');
+    }
+
+    if (scenes.length > 1) {
+      const rootId = scenes[0].id;
+      const reachable = new Set<string>([rootId]);
+      const queue = [rootId];
+      while (queue.length > 0) {
+        const currId = queue.shift()!;
+        const curr = scenes.find(s => s.id === currId);
+        if (!curr) continue;
+        for (const choice of curr.choices ?? []) {
+          if (choice.nextSceneId && sceneIds.has(choice.nextSceneId) && !reachable.has(choice.nextSceneId)) {
+            reachable.add(choice.nextSceneId);
+            queue.push(choice.nextSceneId);
+          }
+        }
+      }
+      const unreachableCount = scenes.length - reachable.size;
+      if (unreachableCount > 0) {
+        errors.push(`Обнаружено недостижимых сцен («висячие» вершины): ${unreachableCount}`);
+      }
+    }
+    return errors;
   }
 
   protected _handleClose(): void {

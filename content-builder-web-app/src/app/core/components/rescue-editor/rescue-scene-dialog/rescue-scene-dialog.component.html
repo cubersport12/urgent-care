@@ -54,7 +54,7 @@
           Создать
         </app-button>
       </div>
-      <div class="overflow-auto border border-slate-200 dark:border-slate-800 rounded-lg">
+      <div class="overflow-auto max-h-56 border border-slate-200 dark:border-slate-800 rounded-lg">
         <table mat-table [dataSource]="_choicesList()" class="w-full">
           <ng-container matColumnDef="text">
             <th mat-header-cell *matHeaderCellDef>Текст выбора</th>
@@ -107,7 +107,7 @@
           Создать
         </app-button>
       </div>
-      <div class="overflow-auto border border-slate-200 dark:border-slate-800 rounded-lg">
+      <div class="overflow-auto max-h-56 border border-slate-200 dark:border-slate-800 rounded-lg">
         <table mat-table [dataSource]="_documentsList()" class="w-full">
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Название</th>

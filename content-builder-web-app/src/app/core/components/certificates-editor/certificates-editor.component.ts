@@ -196,7 +196,7 @@ export class CertificatesEditorService {
             </div>
           </div>
 
-          <div class="overflow-x-auto">
+          <div class="app-table-container overflow-auto max-h-[calc(100vh-320px)]">
             <table class="w-full text-left border-collapse text-xs">
               <thead>
                 <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-medium">

@@ -47,10 +47,11 @@ import { MatIcon } from '@angular/material/icon';
 
         <input
           [id]="_inputId"
-          [type]="type()"
+          [type]="_effectiveType()"
           [placeholder]="placeholder()"
           [disabled]="_isDisabled()"
           [readonly]="readonly()"
+          [autocomplete]="autocomplete() ?? null"
           [min]="min() ?? null"
           [max]="max() ?? null"
           [step]="step() ?? null"
@@ -61,7 +62,16 @@ import { MatIcon } from '@angular/material/icon';
           [class]="_computedInputClasses()"
         />
 
-        @if (clearable() && _innerValue() && !_isDisabled() && !readonly()) {
+        @if (type() === 'password' && togglePassword()) {
+          <button
+            type="button"
+            (click)="_togglePasswordVisibility()"
+            [attr.aria-label]="_isPasswordVisible() ? 'Скрыть пароль' : 'Показать пароль'"
+            class="absolute right-2.5 p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer focus:outline-none"
+          >
+            <mat-icon [svgIcon]="_isPasswordVisible() ? 'eye-slash' : 'eye'" class="!w-3.5 !h-3.5 block" />
+          </button>
+        } @else if (clearable() && _innerValue() && !_isDisabled() && !readonly()) {
           <span
             role="button"
             tabindex="0"
@@ -103,6 +113,8 @@ export class AppInputComponent implements ControlValueAccessor {
   public readonly icon = input<string | undefined>(undefined);
   public readonly suffixIcon = input<string | undefined>(undefined);
   public readonly clearable = input<boolean>(false);
+  public readonly togglePassword = input<boolean>(false);
+  public readonly autocomplete = input<string | undefined>(undefined);
   public readonly hint = input<string | null | undefined>(undefined);
   public readonly error = input<string | null | undefined>(undefined);
   public readonly badge = input<string | undefined>(undefined);
@@ -122,6 +134,14 @@ export class AppInputComponent implements ControlValueAccessor {
 
   protected readonly _innerValue = signal<string>('');
   protected readonly _isDisabled = signal<boolean>(false);
+  protected readonly _isPasswordVisible = signal<boolean>(false);
+
+  protected readonly _effectiveType = computed(() => {
+    if (this.type() === 'password' && this.togglePassword() && this._isPasswordVisible()) {
+      return 'text';
+    }
+    return this.type();
+  });
 
   private _onChange: (val: string) => void = () => {};
   private _onTouched: () => void = () => {};
@@ -138,6 +158,10 @@ export class AppInputComponent implements ControlValueAccessor {
     effect(() => {
       this._isDisabled.set(this.disabled());
     }, { allowSignalWrites: true });
+  }
+
+  protected _togglePasswordVisibility(): void {
+    this._isPasswordVisible.update(visible => !visible);
   }
 
   protected readonly _computedInputClasses = computed(() => {
@@ -160,7 +184,8 @@ export class AppInputComponent implements ControlValueAccessor {
 
     // Padding (accounting for prefix and suffix icons)
     const pl = this.icon() ? 'pl-9' : 'px-3.5';
-    const pr = (this.clearable() || this.suffixIcon()) ? 'pr-9' : 'px-3.5';
+    const hasSuffixAction = this.clearable() || this.suffixIcon() || (this.type() === 'password' && this.togglePassword());
+    const pr = hasSuffixAction ? 'pr-9' : 'px-3.5';
 
     // State borders
     let borderClass = 'border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20';

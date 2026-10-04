@@ -3,10 +3,9 @@ import { RouterLink } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { AppTariffsStorageService } from '@/core/api';
-import { usersListUsers } from '@/core/api/generated/sdk.gen';
+import { analyticsAnalyticsRecentEvents, analyticsAnalyticsSummary } from '@/core/api/generated/sdk.gen';
 import { apiCall } from '@/core/api/api-utils';
-import type { UserListItemOut, TariffOut } from '@/core/api/generated/types.gen';
+import type { ActivityEventOut, AnalyticsSummaryOut } from '@/core/api/generated/types.gen';
 import { AppIconButtonComponent, AppButtonComponent } from '../ui';
 
 interface MetricCard {
@@ -20,18 +19,21 @@ interface MetricCard {
   bgDark: string;
 }
 
-interface ActivityEvent {
+interface ActivityRow {
   id: string;
   user: string;
   action: string;
   time: string;
-  type: 'subscription' | 'test' | 'reward' | 'user';
   badgeColor: string;
 }
 
+const WEEKDAY_RU = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+
+type Period = 'week' | 'month' | 'year';
+
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, MatIcon, MatButtonModule, MatTooltipModule, AppIconButtonComponent],
+  imports: [RouterLink, MatIcon, MatButtonModule, MatTooltipModule, AppIconButtonComponent, AppButtonComponent],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       <!-- Welcome Header -->
@@ -61,6 +63,22 @@ interface ActivityEvent {
         </div>
       </div>
 
+      <!-- Period Filter -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Период:</span>
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium gap-1">
+          @for (p of _periods; track p.value) {
+            <app-button
+              [variant]="_period() === p.value ? 'secondary' : 'ghost'"
+              size="sm"
+              (click)="_setPeriod(p.value)"
+            >
+              {{ p.label }}
+            </app-button>
+          }
+        </div>
+      </div>
+
       <!-- Metrics Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         @for (m of _metrics(); track m.title) {
@@ -77,17 +95,9 @@ interface ActivityEvent {
               <span class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 {{ m.value }}
               </span>
-              <span
-                class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
-                [class.text-emerald-700]="m.isPositive"
-                [class.bg-emerald-50]="m.isPositive"
-                [class.dark:text-emerald-400]="m.isPositive"
-                [class.dark:bg-emerald-950/40]="m.isPositive"
-                [class.text-rose-700]="!m.isPositive"
-                [class.bg-rose-50]="!m.isPositive"
-              >
-                {{ m.change }}
-              </span>
+              @if (m.change) {
+                <span class="text-xs font-medium text-slate-500 dark:text-slate-400">{{ m.change }}</span>
+              }
             </div>
           </div>
         }
@@ -106,9 +116,6 @@ interface ActivityEvent {
                 Завершенные тесты и симуляции спасения за последние 7 дней
               </p>
             </div>
-            <span class="text-xs px-2.5 py-1 font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg">
-              Текущая неделя
-            </span>
           </div>
 
           <!-- Chart Visual Bars -->
@@ -184,13 +191,17 @@ interface ActivityEvent {
                     <span>{{ t.percentage }}%</span>
                   </div>
                 </div>
+              } @empty {
+                <p class="text-xs text-slate-400 dark:text-slate-500">Пока нет активных подписок</p>
               }
             </div>
           </div>
 
           <div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
             <span class="text-xs text-slate-500 dark:text-slate-400">Конверсия в платную подписку</span>
-            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">18.4%</span>
+            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              {{ _summary()?.conversionPercent ?? '—' }}%
+            </span>
           </div>
         </div>
       </div>
@@ -253,7 +264,7 @@ interface ActivityEvent {
             <div>
               <h2 class="text-base font-bold text-slate-900 dark:text-white">Лента активности</h2>
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Последние действия пользователей и администраторов
+                Последние действия пользователей: обучение, оплаты, регистрации
               </p>
             </div>
             <a routerLink="/users" class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
@@ -261,6 +272,9 @@ interface ActivityEvent {
             </a>
           </div>
 
+          @if (_activity().length === 0) {
+            <p class="text-xs text-slate-400 dark:text-slate-500 py-4">Событий пока нет</p>
+          }
           <div class="divide-y divide-slate-100 dark:divide-slate-800">
             @for (event of _activity(); track event.id) {
               <div class="py-3 flex items-center justify-between gap-3 text-xs">
@@ -282,18 +296,31 @@ interface ActivityEvent {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent {
-  private readonly _tariffsStorage = inject(AppTariffsStorageService);
+  protected readonly _periods: Array<{ value: Period; label: string }> = [
+    { value: 'week', label: 'Неделя' },
+    { value: 'month', label: 'Месяц' },
+    { value: 'year', label: 'Год' }
+  ];
 
-  protected readonly _usersCount = signal<number>(0);
-  protected readonly _tariffsList = signal<TariffOut[]>([]);
+  protected readonly _period = signal<Period>('month');
+  protected readonly _summary = signal<AnalyticsSummaryOut | null>(null);
+  protected readonly _recentEvents = signal<ActivityEventOut[]>([]);
+
+  private readonly _periodLabels: Record<Period, string> = {
+    week: 'неделю',
+    month: 'месяц',
+    year: 'год'
+  };
 
   protected readonly _metrics = computed<MetricCard[]>(() => {
-    const users = this._usersCount();
+    const s = this._summary();
+    const periodLabel = this._periodLabels[this._period()];
+    const fmt = (n: number | undefined) => (n ?? 0).toLocaleString('ru-RU');
     return [
       {
         title: 'Всего пользователей',
-        value: users > 0 ? users.toLocaleString('ru-RU') : '1 420',
-        change: '+12% за месяц',
+        value: s ? fmt(s.usersTotal) : '…',
+        change: s ? `+${fmt(s.usersNew)} за ${periodLabel}` : '',
         isPositive: true,
         icon: 'users',
         color: 'text-blue-600 dark:text-blue-400',
@@ -302,8 +329,8 @@ export class DashboardComponent {
       },
       {
         title: 'Активные подписки',
-        value: '384',
-        change: '+8.4%',
+        value: s ? fmt(s.activeSubscriptions) : '…',
+        change: s ? `конверсия ${s.conversionPercent}%` : '',
         isPositive: true,
         icon: 'credit-card',
         color: 'text-emerald-600 dark:text-emerald-400',
@@ -311,9 +338,9 @@ export class DashboardComponent {
         bgDark: 'dark:bg-emerald-950/40'
       },
       {
-        title: 'Месячная выручка',
-        value: '284 500 ₽',
-        change: '+15.2%',
+        title: `Выручка за ${periodLabel}`,
+        value: s ? `${Math.round(s.revenueRub ?? 0).toLocaleString('ru-RU')} ₽` : '…',
+        change: '',
         isPositive: true,
         icon: 'coins',
         color: 'text-amber-600 dark:text-amber-400',
@@ -321,9 +348,9 @@ export class DashboardComponent {
         bgDark: 'dark:bg-amber-950/40'
       },
       {
-        title: 'Пройдено тестов',
-        value: '3 892',
-        change: '+24%',
+        title: `Пройдено тестов за ${periodLabel}`,
+        value: s ? fmt(s.testsFinished) : '…',
+        change: '',
         isPositive: true,
         icon: 'sliders',
         color: 'text-purple-600 dark:text-purple-400',
@@ -333,100 +360,114 @@ export class DashboardComponent {
     ];
   });
 
-  protected readonly _weeklyStats = signal([
-    { day: 'Пн', tests: 140, testsPercentage: 70, rescues: 45, rescuesPercentage: 35 },
-    { day: 'Вт', tests: 185, testsPercentage: 92, rescues: 60, rescuesPercentage: 48 },
-    { day: 'Ср', tests: 160, testsPercentage: 80, rescues: 50, rescuesPercentage: 40 },
-    { day: 'Чт', tests: 200, testsPercentage: 100, rescues: 75, rescuesPercentage: 60 },
-    { day: 'Пт', tests: 175, testsPercentage: 87, rescues: 65, rescuesPercentage: 52 },
-    { day: 'Сб', tests: 120, testsPercentage: 60, rescues: 80, rescuesPercentage: 64 },
-    { day: 'Вс', tests: 110, testsPercentage: 55, rescues: 70, rescuesPercentage: 56 }
-  ]);
-
-  protected readonly _tariffsSummary = computed(() => {
-    const list = this._tariffsList();
-    if (list.length === 0) {
-      return [
-        { id: '1', title: 'Базовый', priceRub: 0, usersCount: 820, percentage: 58 },
-        { id: '2', title: 'Стандарт', priceRub: 490, usersCount: 380, percentage: 27 },
-        { id: '3', title: 'Премиум', priceRub: 990, usersCount: 220, percentage: 15 }
-      ];
-    }
-    const totalEst = 1000;
-    return list.slice(0, 4).map((t, idx) => {
-      const share = idx === 0 ? 55 : idx === 1 ? 30 : 15;
-      return {
-        id: t.id,
-        title: t.title,
-        priceRub: t.priceRub,
-        usersCount: Math.round((totalEst * share) / 100),
-        percentage: share
-      };
-    });
+  protected readonly _weeklyStats = computed(() => {
+    const series = this._summary()?.series ?? [];
+    const max = Math.max(1, ...series.map(d => Math.max(d.tests ?? 0, d.rescues ?? 0)));
+    return series.map(d => ({
+      day: WEEKDAY_RU[new Date(d.date).getDay()],
+      tests: d.tests ?? 0,
+      testsPercentage: Math.round((d.tests ?? 0) / max * 100),
+      rescues: d.rescues ?? 0,
+      rescuesPercentage: Math.round((d.rescues ?? 0) / max * 100)
+    }));
   });
 
-  protected readonly _activity = signal<ActivityEvent[]>([
-    {
-      id: '1',
-      user: 'Иван Сергеев',
-      action: 'Оформил подписку «Премиум» на 30 дней',
-      time: '12 минут назад',
-      type: 'subscription',
-      badgeColor: 'bg-emerald-500'
-    },
-    {
-      id: '2',
-      user: 'Елена Кузнецова',
-      action: 'Успешно завершила симуляцию «Острая дыхательная недостаточность» (98 баллов)',
-      time: '34 минуты назад',
-      type: 'test',
-      badgeColor: 'bg-blue-500'
-    },
-    {
-      id: '3',
-      user: 'Дмитрий Власов',
-      action: 'Получил достижение «Первый спасатель» и сертификат',
-      time: '1 час назад',
-      type: 'reward',
-      badgeColor: 'bg-amber-500'
-    },
-    {
-      id: '4',
-      user: 'Ольга Морозова',
-      action: 'Активировала промокод SPRING2026 (-20%)',
-      time: '2 часа назад',
-      type: 'subscription',
-      badgeColor: 'bg-purple-500'
-    },
-    {
-      id: '5',
-      user: 'Александр Белов',
-      action: 'Зарегистрировался в системе',
-      time: '3 часа назад',
-      type: 'user',
-      badgeColor: 'bg-slate-400'
-    }
-  ]);
+  protected readonly _tariffsSummary = computed(() => {
+    const tariffs = this._summary()?.tariffs ?? [];
+    const total = tariffs.reduce((sum, t) => sum + t.count, 0);
+    return tariffs.map(t => ({
+      id: t.tariffId,
+      title: t.title,
+      priceRub: t.priceRub ?? 0,
+      usersCount: t.count,
+      percentage: total > 0 ? Math.round(t.count / total * 100) : 0
+    }));
+  });
+
+  protected readonly _activity = computed<ActivityRow[]>(() =>
+    this._recentEvents().map((e) => ({
+      id: e.id,
+      user: e.userName || e.title,
+      action: this._describeEvent(e),
+      time: this._timeAgo(e.createdAt),
+      badgeColor: this._badgeColor(e.kind)
+    }))
+  );
 
   constructor() {
     this._reload();
   }
 
-  protected _reload(): void {
-    this._tariffsStorage.listAll().subscribe({
-      next: (list) => this._tariffsList.set(list),
-      error: () => {}
-    });
+  protected _setPeriod(period: Period): void {
+    if (this._period() === period) return;
+    this._period.set(period);
+    void this._loadSummary();
+  }
 
-    void (async () => {
-      try {
-        const users = await apiCall(() => usersListUsers());
-        if (users?.length) {
-          this._usersCount.set(users.length);
-        }
-      } catch {
-        // Fallback demo count
-      }
-    })();
+  protected _reload(): void {
+    void this._loadSummary();
+    void this._loadActivity();
+  }
+
+  private async _loadSummary(): Promise<void> {
+    try {
+      const summary = await apiCall(() => analyticsAnalyticsSummary({ query: { period: this._period() } }));
+      this._summary.set(summary);
+    } catch {
+      // держим предыдущие данные / «…» при первом неудачном запросе
+    }
+  }
+
+  private async _loadActivity(): Promise<void> {
+    try {
+      const events = await apiCall(() => analyticsAnalyticsRecentEvents({ query: { limit: 20 } }));
+      this._recentEvents.set(events ?? []);
+    } catch {
+      // держим предыдущие данные
+    }
+  }
+
+  private _describeEvent(e: ActivityEventOut): string {
+    const subject = e.title ? `«${e.title}»` : '';
+    const suffix = e.score != null && e.kind === 'test' && e.event === 'finished' ? ` (${Math.round(e.score)} балл.)` : '';
+    switch (e.kind) {
+      case 'test':
+        return e.event === 'finished' ? `завершение теста ${subject}${suffix}` : `начало теста ${subject}`;
+      case 'rescue':
+        return e.event === 'finished' ? `симуляция спасения завершена ${subject}` : `начата симуляция спасения ${subject}`;
+      case 'article':
+        return e.event === 'completed' ? `прочитана статья ${subject}` : `открыта статья ${subject}`;
+      case 'payment':
+        return `оплата тарифа ${subject} — ${Math.round(e.score ?? 0).toLocaleString('ru-RU')} ₽`;
+      case 'registration':
+        return 'зарегистрировался в системе';
+    }
+  }
+
+  private _badgeColor(kind: ActivityEventOut['kind']): string {
+    switch (kind) {
+      case 'test':
+        return 'bg-blue-500';
+      case 'rescue':
+        return 'bg-emerald-500';
+      case 'article':
+        return 'bg-indigo-400';
+      case 'payment':
+        return 'bg-amber-500';
+      case 'registration':
+        return 'bg-slate-400';
+    }
+  }
+
+  private _timeAgo(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return 'только что';
+    if (min < 60) return `${min} мин. назад`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `${h} ч. назад`;
+    const d = Math.floor(h / 24);
+    if (d < 7) return `${d} дн. назад`;
+    return new Date(iso).toLocaleDateString('ru-RU');
   }
 }

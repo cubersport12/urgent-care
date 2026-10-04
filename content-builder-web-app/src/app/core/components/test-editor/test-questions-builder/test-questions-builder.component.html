@@ -10,7 +10,7 @@
       Добавить вопрос
     </app-button>
   </div>
-  <div class="grow overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+  <div class="grow overflow-auto max-h-[calc(100vh-280px)] border border-slate-200 dark:border-slate-800 rounded-xl">
     <table mat-table [dataSource]="_questions()" class="w-full" cdkDropList (cdkDropListDropped)="_handleQuestionDrop($event)" [cdkDropListData]="_questions()">
       <ng-container matColumnDef="index">
         <th mat-header-cell *matHeaderCellDef class="!w-14">#</th>
