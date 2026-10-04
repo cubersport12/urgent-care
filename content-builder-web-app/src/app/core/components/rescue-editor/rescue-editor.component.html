@@ -1,5 +1,14 @@
-<div class="flex flex-col w-full h-full overflow-hidden gap-2 p-4">
-  <form class="flex flex-col h-full w-full gap-4 overflow-auto" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
+<app-dialog-wrapper
+  [title]="_dialogData?.id ? 'Редактировать клиническое спасение' : 'Новое клиническое спасение'"
+  [subtitle]="_dialogData?.id ? (_dialogData.name || 'Настройка параметров жизнедеятельности и сцен') : 'Создание интерактивного клинического кейса'"
+  [saveDisabled]="_form.invalid || !_form.dirty || _isPending()"
+  [loading]="_isPending()"
+  saveText="Сохранить"
+  saveIcon="check"
+  (save)="_handleSubmit()"
+  (close)="_handleClose()"
+>
+  <form class="flex flex-col w-full gap-4 p-1 min-w-[340px]" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
     <div class="flex flex-wrap gap-4">
       <mat-form-field appearance="fill" class="grow min-w-[200px]">
         <mat-label>Наименование</mat-label>
@@ -180,19 +189,4 @@
       </div>
     </section>
   </form>
-  <div class="flex w-full justify-end gap-2 pt-2 border-t">
-    <button
-      type="button"
-      [disabled]="_form.invalid || !_form.dirty || _isPending()"
-      (click)="_handleSubmit()"
-      mat-flat-button
-      color="primary">
-      <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />
-      Сохранить
-    </button>
-    <button type="button" mat-button color="warn" (click)="_handleClose()">
-      <mat-icon svgIcon="xmark" />
-      Закрыть
-    </button>
-  </div>
-</div>
+</app-dialog-wrapper>

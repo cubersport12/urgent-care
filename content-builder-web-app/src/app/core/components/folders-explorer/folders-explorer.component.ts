@@ -28,7 +28,7 @@ import { TextEditableValueComponent } from '../text-editable-value';
 import { SkeletonComponent } from '../skeleton';
 import { ArticleEditorService } from '../article-editor';
 import { catchError, forkJoin, from, map, mergeMap, Observable, of } from 'rxjs';
-import { NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet, NgClass } from '@angular/common';
 import { cloneDeep, orderBy, random, range } from 'lodash';
 import { CdkDropList, CdkDrag, CdkDragDrop, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
 import { TestsEditorService } from '../test-editor';
@@ -45,6 +45,10 @@ import { FolderPropertiesService } from '../folder-properties/folder-properties.
 import { SetItemTariffService } from '../set-item-tariff/set-item-tariff.component';
 import { AppFilesStorageService, AppFoldersStorageService, AppTariffsStorageService } from '@/core/api';
 import { AngularSplitModule } from 'angular-split';
+import { AppDialogService } from '@/core/services/app-dialog.service';
+import { ConfirmDeleteDialogComponent, ConfirmDeleteDialogData } from './confirm-delete-dialog.component';
+import { ShortcutsDialogComponent } from './shortcuts-dialog.component';
+import { MatButtonModule } from '@angular/material/button';
 
 type FolderOptionType = AppFolderVm & { type?: 'folder' };
 type ArticleOptionType = AppArticleVm & { type?: 'article' };
@@ -58,6 +62,7 @@ type PanelSide = 'left' | 'right';
   imports: [
     MatIcon,
     MatIconButton,
+    MatButtonModule,
     MatTooltip,
     MatDivider,
     MatSnackBarModule,
@@ -67,6 +72,7 @@ type PanelSide = 'left' | 'right';
     SkeletonComponent,
     MatMenuModule,
     NgTemplateOutlet,
+    NgClass,
     CdkDropList,
     CdkDrag,
     CdkDropListGroup,
@@ -85,6 +91,7 @@ export class FoldersExplorerComponent {
   private readonly _document = inject(DOCUMENT);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _explorer = inject(FoldersExplorerService);
+  private readonly _appDialog = inject(AppDialogService);
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
   private readonly _articlesEditor = inject(ArticleEditorService);
@@ -248,8 +255,36 @@ export class FoldersExplorerComponent {
     return renaming === itemId && dispatched;
   }
 
+  protected readonly _leftSearchQuery = signal('');
+  protected readonly _rightSearchQuery = signal('');
+
+  protected _getPanelSearchQuery(side: PanelSide): string {
+    return side === 'left' ? this._leftSearchQuery() : this._rightSearchQuery();
+  }
+
+  protected _setPanelSearchQuery(side: PanelSide, query: string): void {
+    if (side === 'left') {
+      this._leftSearchQuery.set(query);
+    } else {
+      this._rightSearchQuery.set(query);
+    }
+  }
+
+  protected _clearPanelSearchQuery(side: PanelSide): void {
+    this._setPanelSearchQuery(side, '');
+  }
+
+  protected _getPanelTotalCount(side: PanelSide): number {
+    return (side === 'left' ? this._leftOptions() : this._rightOptions()).length;
+  }
+
   protected _getPanelOptions(side: PanelSide): OptionType[] {
-    return side === 'left' ? this._leftOptions() : this._rightOptions();
+    const raw = side === 'left' ? this._leftOptions() : this._rightOptions();
+    const query = this._getPanelSearchQuery(side).trim().toLowerCase();
+    if (!query) {
+      return raw;
+    }
+    return raw.filter((item) => item.name.toLowerCase().includes(query));
   }
 
   protected _getPanelPath(side: PanelSide): AppFolderVm[] {
@@ -435,11 +470,23 @@ export class FoldersExplorerComponent {
   }
 
   protected _navigatePanel(side: PanelSide, folderId: NullableValue<string>): void {
+    this._clearPanelSearchQuery(side);
     if (side === 'left') {
       this._leftFolderId.set(folderId ?? null);
     } else {
       this._rightFolderId.set(folderId ?? null);
     }
+  }
+
+  protected _navigateToPathIndex(side: PanelSide, index: number): void {
+    const path = this._getPanelPath(side);
+    if (index >= 0 && index < path.length) {
+      this._navigatePanel(side, path[index].id);
+    }
+  }
+
+  protected _navigateToRoot(side: PanelSide): void {
+    this._navigatePanel(side, null);
   }
 
   protected _canGoUp(side: PanelSide): boolean {
@@ -674,12 +721,27 @@ export class FoldersExplorerComponent {
       return 'file-contract';
     }
     if (option.type === 'test') {
-      return 'sliders';
+      return 'file-circle-check';
     }
     if (option.type === 'rescue') {
       return 'kit-medical';
     }
     throw new Error('Unknown option type');
+  }
+
+  protected _getItemIconBadgeClass(option: OptionType): string {
+    switch (option.type) {
+      case 'folder':
+        return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
+      case 'article':
+        return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
+      case 'test':
+        return 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20';
+      case 'rescue':
+        return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
+      default:
+        return 'text-slate-400 bg-slate-100 border-slate-200';
+    }
   }
 
   protected _getTypeLabel(option: OptionType): string {
@@ -702,6 +764,23 @@ export class FoldersExplorerComponent {
   }
 
   protected _delete(option: OptionType, side: PanelSide): void {
+    this._appDialog
+      .open<ConfirmDeleteDialogComponent, ConfirmDeleteDialogData, boolean>(ConfirmDeleteDialogComponent, {
+        width: '420px',
+        data: {
+          name: option.name,
+          typeName: this._getTypeLabel(option),
+          isFolder: option.type === 'folder'
+        }
+      })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (!confirmed) return;
+        this._executeDelete(option, side);
+      });
+  }
+
+  private _executeDelete(option: OptionType, side: PanelSide): void {
     if (this._clipboard()?.item.id === option.id) {
       this._explorer.clipboard.set(null);
     }
@@ -727,6 +806,16 @@ export class FoldersExplorerComponent {
     s?.subscribe(() => this._clearAffectOption());
   }
 
+  protected _openShortcuts(): void {
+    this._appDialog.open(ShortcutsDialogComponent, {
+      width: '640px'
+    });
+  }
+
+  protected _clearClipboard(): void {
+    this._explorer.clipboard.set(null);
+  }
+
   protected _beginRename(itemId: string, side: PanelSide): void {
     this._affectOptionId.set(itemId);
     this._affectOptionPanel.set(side);
@@ -749,8 +838,8 @@ export class FoldersExplorerComponent {
       return;
     }
 
-    // Reorder only when showing all tariffs — filtered list would corrupt global order
-    if (this._isFilterActive()) {
+    // Reorder only when showing all tariffs and no active search query — filtered list would corrupt global order
+    if (this._isFilterActive() || this._getPanelSearchQuery(side).trim().length > 0) {
       return;
     }
 

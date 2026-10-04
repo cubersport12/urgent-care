@@ -1,76 +1,263 @@
-<h2 mat-dialog-title class="flex items-center justify-between gap-2">
-  <span>Промокоды</span>
-  <button type="button" mat-icon-button (click)="_close()" matTooltip="Закрыть">
-    <mat-icon svgIcon="xmark" />
-  </button>
-</h2>
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Промокоды и скидки</h1>
+        <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+          {{ _items().length }}
+        </span>
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Управление скидочными купонами, лимитами активаций, сроками действия и привязкой к тарифам
+      </p>
+    </div>
 
-<mat-dialog-content class="!min-h-[240px]">
-  @if (_loading()) {
-    <p class="text-sm text-slate-500">Загрузка…</p>
-  } @else {
-    <table mat-table [dataSource]="_items()" class="w-full">
-      <ng-container matColumnDef="code">
-        <th mat-header-cell *matHeaderCellDef>Код</th>
-        <td mat-cell *matCellDef="let p">
-          <code>{{ p.code }}</code>
-          <button type="button" mat-icon-button (click)="_copy(p)" matTooltip="Скопировать код">
-            <mat-icon svgIcon="copy" />
-          </button>
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="discount">
-        <th mat-header-cell *matHeaderCellDef>Скидка</th>
-        <td mat-cell *matCellDef="let p">−{{ p.discountPercent }}%</td>
-      </ng-container>
-      <ng-container matColumnDef="tariff">
-        <th mat-header-cell *matHeaderCellDef>Тариф</th>
-        <td mat-cell *matCellDef="let p">{{ _tariffTitle(p.tariffId) }}</td>
-      </ng-container>
-      <ng-container matColumnDef="activations">
-        <th mat-header-cell *matHeaderCellDef>Активации</th>
-        <td mat-cell *matCellDef="let p">{{ p.activationsCount }} / {{ p.maxActivations ?? '∞' }}</td>
-      </ng-container>
-      <ng-container matColumnDef="period">
-        <th mat-header-cell *matHeaderCellDef>Период</th>
-        <td mat-cell *matCellDef="let p" class="text-xs">
-          @if (p.validFrom || p.validUntil) {
-            {{ p.validFrom ? (p.validFrom | date: 'dd.MM.yy HH:mm') : '…' }}
-            —
-            {{ p.validUntil ? (p.validUntil | date: 'dd.MM.yy HH:mm') : '…' }}
-          } @else {
-            всегда
-          }
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="flags">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let p" class="text-xs text-slate-500">
-          @if (!p.isActive) {
-            <span>неактивен</span>
-          }
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let p" class="!text-right">
-          <button type="button" mat-icon-button (click)="_edit(p)" matTooltip="Изменить">
-            <mat-icon svgIcon="pen-to-square" />
-          </button>
-          <button type="button" mat-icon-button color="warn" (click)="_delete(p)" matTooltip="Удалить">
-            <mat-icon svgIcon="trash" />
-          </button>
-        </td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="_columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: _columns"></tr>
-    </table>
-  }
-</mat-dialog-content>
+    <div class="flex items-center gap-3">
+      <button
+        type="button"
+        mat-flat-button
+        color="primary"
+        (click)="_create()"
+        class="!rounded-xl !px-4 !py-2.5 !shadow-sm flex items-center gap-2"
+      >
+        <mat-icon svgIcon="plus" class="!w-4 !h-4 mr-1" />
+        Создать промокод
+      </button>
+      <button
+        type="button"
+        mat-stroked-button
+        (click)="_reload()"
+        class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300"
+        matTooltip="Обновить список"
+      >
+        <mat-icon svgIcon="rotate-right" class="!w-4 !h-4" />
+      </button>
+      @if (_ref) {
+        <button
+          type="button"
+          mat-icon-button
+          (click)="_close()"
+          matTooltip="Закрыть"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+        >
+          <mat-icon svgIcon="times" class="!w-4 !h-4" />
+        </button>
+      }
+    </div>
+  </div>
 
-<mat-dialog-actions align="end">
-  <button type="button" mat-flat-button color="primary" (click)="_create()">
-    <mat-icon svgIcon="plus" />
-    Добавить промокод
-  </button>
-</mat-dialog-actions>
+  <!-- KPI Metrics Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+      <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Всего промокодов</div>
+      <div class="text-2xl font-bold text-slate-900 dark:text-white mt-1">{{ _stats().total }}</div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+      <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Активных купонов</div>
+      <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{{ _stats().active }}</div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+      <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Всего активаций</div>
+      <div class="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{{ _stats().totalActivations }}</div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+      <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Доля активных</div>
+      <div class="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">{{ _stats().activeShare }}</div>
+    </div>
+  </div>
+
+  <!-- Filters & Search Toolbar -->
+  <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+    <div class="relative flex-1 max-w-md">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+        <mat-icon svgIcon="magnifying-glass" class="!w-4 !h-4" />
+      </div>
+      <input
+        type="text"
+        [(ngModel)]="_searchQuery"
+        placeholder="Поиск по коду промокода..."
+        class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400"
+      />
+    </div>
+
+    <!-- Status Filter Buttons -->
+    <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium">
+      <button
+        type="button"
+        (click)="_statusFilter.set('all')"
+        class="px-3 py-1.5 rounded-lg transition-colors"
+        [class.bg-white]="_statusFilter() === 'all'"
+        [class.dark:bg-slate-900]="_statusFilter() === 'all'"
+        [class.text-slate-900]="_statusFilter() === 'all'"
+        [class.dark:text-white]="_statusFilter() === 'all'"
+        [class.shadow-sm]="_statusFilter() === 'all'"
+        [class.text-slate-500]="_statusFilter() !== 'all'"
+      >
+        Все
+      </button>
+      <button
+        type="button"
+        (click)="_statusFilter.set('active')"
+        class="px-3 py-1.5 rounded-lg transition-colors"
+        [class.bg-white]="_statusFilter() === 'active'"
+        [class.dark:bg-slate-900]="_statusFilter() === 'active'"
+        [class.text-emerald-700]="_statusFilter() === 'active'"
+        [class.dark:text-emerald-400]="_statusFilter() === 'active'"
+        [class.shadow-sm]="_statusFilter() === 'active'"
+        [class.text-slate-500]="_statusFilter() !== 'active'"
+      >
+        Активные
+      </button>
+      <button
+        type="button"
+        (click)="_statusFilter.set('inactive')"
+        class="px-3 py-1.5 rounded-lg transition-colors"
+        [class.bg-white]="_statusFilter() === 'inactive'"
+        [class.dark:bg-slate-900]="_statusFilter() === 'inactive'"
+        [class.text-slate-800]="_statusFilter() === 'inactive'"
+        [class.dark:text-slate-200]="_statusFilter() === 'inactive'"
+        [class.shadow-sm]="_statusFilter() === 'inactive'"
+        [class.text-slate-500]="_statusFilter() !== 'inactive'"
+      >
+        Неактивные
+      </button>
+    </div>
+  </div>
+
+  <!-- Promo Codes Table Card -->
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+    @if (_loading()) {
+      <div class="p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
+        <mat-icon svgIcon="spinner" class="!w-8 !h-8 animate-spin mx-auto text-blue-600" />
+        <p class="text-sm">Загрузка промокодов…</p>
+      </div>
+    } @else if (_filteredItems().length === 0) {
+      <div class="p-12 text-center text-slate-500 dark:text-slate-400 space-y-2">
+        <mat-icon svgIcon="tag" class="!w-10 !h-10 mx-auto text-slate-300 dark:text-slate-600" />
+        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Промокоды не найдены</p>
+        <p class="text-xs">Попробуйте изменить поисковый запрос или создайте новый промокод</p>
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-medium">
+              <th class="py-3.5 px-4">Код промокода</th>
+              <th class="py-3.5 px-4">Скидка</th>
+              <th class="py-3.5 px-4">Применимый тариф</th>
+              <th class="py-3.5 px-4">Активации</th>
+              <th class="py-3.5 px-4">Срок действия</th>
+              <th class="py-3.5 px-4">Статус</th>
+              <th class="py-3.5 px-4 text-right">Действия</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+            @for (p of _filteredItems(); track p.id) {
+              <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                <!-- Promo Code -->
+                <td class="py-3.5 px-4">
+                  <div class="flex items-center gap-2">
+                    <code class="px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/60 font-mono text-xs text-blue-600 dark:text-blue-400 font-bold tracking-wider">
+                      {{ p.code }}
+                    </code>
+                    <button
+                      type="button"
+                      mat-icon-button
+                      (click)="_copyCode(p.code)"
+                      matTooltip="Скопировать промокод"
+                      class="table-icon-btn-sm text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                    >
+                      <mat-icon svgIcon="copy" />
+                    </button>
+                  </div>
+                </td>
+
+                <!-- Discount -->
+                <td class="py-3.5 px-4">
+                  @if (p.discountPercent != null) {
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400">
+                      −{{ p.discountPercent }}%
+                    </span>
+                  } @else {
+                    <span class="text-slate-400">—</span>
+                  }
+                </td>
+
+                <!-- Target Tariff -->
+                <td class="py-3.5 px-4">
+                  <span class="text-slate-700 dark:text-slate-300 font-medium">
+                    {{ _tariffTitle(p.tariffId) }}
+                  </span>
+                </td>
+
+                <!-- Activations -->
+                <td class="py-3.5 px-4">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-slate-900 dark:text-white">
+                      {{ p.activationsCount ?? 0 }}
+                    </span>
+                    <span class="text-slate-400">
+                      / {{ p.maxActivations != null ? p.maxActivations : '∞' }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Period -->
+                <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-[11px]">
+                  @if (p.validFrom || p.validUntil) {
+                    <div>
+                      <span>{{ p.validFrom ? (p.validFrom | date: 'dd.MM.yy') : '—' }}</span>
+                      <span class="mx-1">→</span>
+                      <span>{{ p.validUntil ? (p.validUntil | date: 'dd.MM.yy') : '—' }}</span>
+                    </div>
+                  } @else {
+                    <span class="text-slate-400">Бессрочно</span>
+                  }
+                </td>
+
+                <!-- Status -->
+                <td class="py-3.5 px-4">
+                  @if (p.isActive) {
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Активен
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                      Неактивен
+                    </span>
+                  }
+                </td>
+
+                <!-- Actions -->
+                <td class="py-3.5 px-4 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      mat-icon-button
+                      (click)="_edit(p)"
+                      matTooltip="Редактировать промокод"
+                      class="table-icon-btn text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:hover:text-blue-400"
+                    >
+                      <mat-icon svgIcon="pen-to-square" class="!w-4 !h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      mat-icon-button
+                      (click)="_delete(p)"
+                      matTooltip="Удалить промокод"
+                      class="table-icon-btn text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                    >
+                      <mat-icon svgIcon="trash" class="!w-4 !h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

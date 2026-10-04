@@ -21,35 +21,6 @@ html.dark body {
   @apply bg-slate-950 text-slate-100;
 }
 
-html.dark .tc-table .tc-header-cell {
-  background: rgb(30 41 59);
-  color: rgb(226 232 240);
-  border-bottom-color: rgb(51 65 85);
-}
-
-html.dark .tc-table .tc-cell {
-  border-bottom-color: rgb(51 65 85);
-}
-
-html.dark .tc-table .tc-row:not(.tc-row-selected):hover .tc-cell {
-  background: rgb(30 41 59);
-}
-
-html.dark .tc-table .tc-row-selected .tc-cell {
-  background: rgb(29 78 216);
-  color: white;
-  border-bottom-color: rgb(37 99 235);
-}
-
-html.dark .tc-table .tc-row-selected .tc-cell:first-child {
-  box-shadow: inset 3px 0 0 rgb(147 197 253);
-}
-
-html.dark .tc-table .tc-row-selected .tc-type-col,
-html.dark .tc-table .tc-row-selected .tc-row-name {
-  color: white;
-}
-
 html.dark .as-split-gutter {
   background-color: rgb(71 85 105) !important;
 }
@@ -72,17 +43,171 @@ angular-editor {
   --ae-toolbar-border-radius: none;
 }
 
-.mat-mdc-button-base {
-  mat-icon {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
+// Global SVG & MatIcon scaling: ensure SVGs always fit their parent container without clipping
+mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+
+  svg,
+  .svg-inline--fa {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    display: block !important;
+    margin: auto !important;
+    vertical-align: middle !important;
   }
 }
 
-.svg-inline--fa {
-  width: inherit;
-  height: inherit;
+// Universal MDC Button & Icon Button Alignment Fix
+// Fixes root cause: removes asymmetric padding, resets display to inline-flex, and perfectly centers icons with ripples.
+.mat-mdc-icon-button,
+button[mat-icon-button],
+a[mat-icon-button] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+
+  .mat-mdc-button-touch-target {
+    display: none !important;
+  }
+
+  .mat-mdc-button-persistent-ripple,
+  .mat-ripple,
+  .mat-mdc-button-ripple {
+    border-radius: inherit !important;
+    inset: 0 !important;
+  }
+
+  .mat-icon,
+  mat-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
+    line-height: 1 !important;
+  }
+}
+
+.mat-mdc-button-base {
+  vertical-align: middle !important;
+
+  .mdc-button__label {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    gap: 0.25rem;
+  }
+
+  .mat-mdc-button-touch-target {
+    display: none !important;
+  }
+
+  mat-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    vertical-align: middle !important;
+  }
+}
+
+// Compact table action buttons (fit into table cells without clipping or expanding rows)
+table .mat-mdc-icon-button,
+.table-icon-btn.mat-mdc-icon-button {
+  --mdc-icon-button-state-layer-size: 32px !important;
+  --mat-icon-button-state-layer-size: 32px !important;
+  --mdc-icon-button-icon-size: 16px !important;
+  --mat-icon-button-icon-size: 16px !important;
+  --mat-icon-button-touch-target-display: none !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+
+  .mat-mdc-button-touch-target {
+    display: none !important;
+  }
+
+  .mat-mdc-button-persistent-ripple {
+    border-radius: 8px !important;
+  }
+
+  mat-icon {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    font-size: 16px !important;
+    line-height: 16px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    svg,
+    .svg-inline--fa {
+      width: 16px !important;
+      height: 16px !important;
+      max-width: 16px !important;
+      max-height: 16px !important;
+    }
+  }
+}
+
+// Micro table action buttons (e.g. copy button inside chips)
+table .mat-mdc-icon-button.table-icon-btn-sm,
+.table-icon-btn-sm.mat-mdc-icon-button {
+  --mdc-icon-button-state-layer-size: 24px !important;
+  --mat-icon-button-state-layer-size: 24px !important;
+  --mdc-icon-button-icon-size: 13px !important;
+  --mat-icon-button-icon-size: 13px !important;
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+
+  .mat-mdc-button-persistent-ripple {
+    border-radius: 6px !important;
+  }
+
+  mat-icon {
+    width: 13px !important;
+    height: 13px !important;
+    min-width: 13px !important;
+    min-height: 13px !important;
+    font-size: 13px !important;
+
+    svg,
+    .svg-inline--fa {
+      width: 13px !important;
+      height: 13px !important;
+      max-width: 13px !important;
+      max-height: 13px !important;
+    }
+  }
 }
 
 .mat-mdc-menu-item {
@@ -91,4 +216,20 @@ angular-editor {
 
 .mat-mdc-tab-body-wrapper {
   height: 100%;
+}
+
+// Standardized dialog backdrop and panel
+.app-dialog-backdrop {
+  background-color: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(4px);
+}
+
+.app-custom-dialog-panel {
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    border-radius: 1rem !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
 }

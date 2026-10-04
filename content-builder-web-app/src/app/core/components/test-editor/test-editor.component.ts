@@ -18,6 +18,8 @@ import { take } from 'rxjs/operators';
 import { cloneDeep, sum } from 'lodash';
 import { RewardSelectComponent } from '../reward-select/reward-select.component';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
+import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
+import { AppDialogService } from '@/core/services/app-dialog.service';
 import {
   TestAiGenerateDialogComponent,
   TestAiGenerateDialogData,
@@ -28,13 +30,12 @@ import {
   providedIn: 'root'
 })
 export class TestsEditorService {
-  private readonly _dialogs = inject(MatDialog);
+  private readonly _appDialog = inject(AppDialogService);
   public openTest(test: Partial<AppTestVm>): void {
-    this._dialogs.open(TestEditorComponent, {
-      width: '90%',
-      height: '90%',
-      maxWidth: '90%',
-      minWidth: '90%',
+    this._appDialog.open(TestEditorComponent, {
+      width: '1100px',
+      maxWidth: '96vw',
+      maxHeight: '94vh',
       hasBackdrop: true,
       autoFocus: true,
       disableClose: true,
@@ -47,7 +48,7 @@ export class TestsEditorService {
   }
 
   public openTestWithAi(parentId: NullableValue<string>): void {
-    this._dialogs
+    this._appDialog
       .open(TestAiGenerateDialogComponent, {
         data: { parentId } satisfies TestAiGenerateDialogData,
         width: '560px',
@@ -77,7 +78,8 @@ export class TestsEditorService {
     TestConditionsBuilderComponent,
     TestQuestionsBuilderComponent,
     TariffSelectComponent,
-    RewardSelectComponent
+    RewardSelectComponent,
+    AppDialogWrapperComponent
   ],
   templateUrl: './test-editor.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,

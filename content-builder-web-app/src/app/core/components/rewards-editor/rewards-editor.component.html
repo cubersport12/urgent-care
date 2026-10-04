@@ -1,51 +1,181 @@
-<h2 mat-dialog-title class="flex items-center justify-between gap-2">
-  <span>Награды</span>
-  <button type="button" mat-icon-button (click)="_close()" matTooltip="Закрыть">
-    <mat-icon svgIcon="xmark" />
-  </button>
-</h2>
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Каталог наград</h1>
+        <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+          {{ _items().length }}
+        </span>
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Управление призами, бонусами за прохождение курсов и привязкой к достижениям
+      </p>
+    </div>
 
-<mat-dialog-content class="!min-h-[240px]">
-  @if (_loading()) {
-    <p class="text-sm text-slate-500">Загрузка…</p>
-  } @else {
-    <table mat-table [dataSource]="_items()" class="w-full">
-      <ng-container matColumnDef="title">
-        <th mat-header-cell *matHeaderCellDef>Название</th>
-        <td mat-cell *matCellDef="let t">{{ t.title }}</td>
-      </ng-container>
-      <ng-container matColumnDef="achievement">
-        <th mat-header-cell *matHeaderCellDef>Достижения</th>
-        <td mat-cell *matCellDef="let t">{{ _achievementTitles(t.achievementIds) }}</td>
-      </ng-container>
-      <ng-container matColumnDef="flags">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let t" class="text-xs text-slate-500">
-          @if (!t.isActive) {
-            <span>неактивна</span>
-          }
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let t" class="!text-right">
-          <button type="button" mat-icon-button (click)="_edit(t)" matTooltip="Изменить">
-            <mat-icon svgIcon="pen-to-square" />
-          </button>
-          <button type="button" mat-icon-button color="warn" (click)="_delete(t)" matTooltip="Удалить">
-            <mat-icon svgIcon="trash" />
-          </button>
-        </td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="_columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: _columns"></tr>
-    </table>
-  }
-</mat-dialog-content>
+    <div class="flex items-center gap-3">
+      <button
+        type="button"
+        mat-flat-button
+        color="primary"
+        (click)="_create()"
+        class="!rounded-xl !px-4 !py-2.5 !shadow-sm flex items-center gap-2"
+      >
+        <mat-icon svgIcon="plus" class="!w-4 !h-4 mr-1" />
+        Добавить награду
+      </button>
+      <button
+        type="button"
+        mat-stroked-button
+        (click)="_reload()"
+        class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300"
+        matTooltip="Обновить список"
+      >
+        <mat-icon svgIcon="rotate-right" class="!w-4 !h-4" />
+      </button>
+      @if (_ref) {
+        <button
+          type="button"
+          mat-icon-button
+          (click)="_close()"
+          matTooltip="Закрыть"
+          class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+        >
+          <mat-icon svgIcon="times" class="!w-4 !h-4" />
+        </button>
+      }
+    </div>
+  </div>
 
-<mat-dialog-actions align="end">
-  <button type="button" mat-flat-button color="primary" (click)="_create()">
-    <mat-icon svgIcon="plus" />
-    Добавить награду
-  </button>
-</mat-dialog-actions>
+  <!-- KPI Metrics Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+      <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Всего наград</div>
+      <div class="text-2xl font-bold text-slate-900 dark:text-white mt-1">{{ _stats().total }}</div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+      <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Активных призов</div>
+      <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{{ _stats().active }}</div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+      <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Связано с достижениями</div>
+      <div class="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">{{ _stats().linkedToAchs }}</div>
+    </div>
+  </div>
+
+  <!-- Search Toolbar -->
+  <div class="flex items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+    <div class="relative flex-1 max-w-md">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+        <mat-icon svgIcon="magnifying-glass" class="!w-4 !h-4" />
+      </div>
+      <input
+        type="text"
+        [(ngModel)]="_searchQuery"
+        placeholder="Поиск по названию награды..."
+        class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400"
+      />
+    </div>
+  </div>
+
+  <!-- Rewards Table Card -->
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+    @if (_loading()) {
+      <div class="p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
+        <mat-icon svgIcon="spinner" class="!w-8 !h-8 animate-spin mx-auto text-blue-600" />
+        <p class="text-sm">Загрузка наград…</p>
+      </div>
+    } @else if (_filteredItems().length === 0) {
+      <div class="p-12 text-center text-slate-500 dark:text-slate-400 space-y-2">
+        <mat-icon svgIcon="gift" class="!w-10 !h-10 mx-auto text-slate-300 dark:text-slate-600" />
+        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Награды не найдены</p>
+        <p class="text-xs">Попробуйте изменить поисковый запрос или создайте новую награду</p>
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-medium">
+              <th class="py-3.5 px-4">Награда</th>
+              <th class="py-3.5 px-4">Связанные достижения</th>
+              <th class="py-3.5 px-4">Статус</th>
+              <th class="py-3.5 px-4 text-right">Действия</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+            @for (item of _filteredItems(); track item.id) {
+              <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                <!-- Title & Description -->
+                <td class="py-3.5 px-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-500 flex items-center justify-center shrink-0 border border-purple-200/50 dark:border-purple-900/50">
+                      <mat-icon svgIcon="gift" class="!w-5 !h-5" />
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-900 dark:text-white text-sm">{{ item.title }}</div>
+                      @if (item.description) {
+                        <div class="text-slate-500 dark:text-slate-400 text-xs mt-0.5 line-clamp-1 max-w-sm">
+                          {{ item.description }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Linked Achievements -->
+                <td class="py-3.5 px-4">
+                  @if ((item.achievementIds || []).length > 0) {
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+                      <mat-icon svgIcon="trophy" class="!w-3.5 !h-3.5 text-amber-500" />
+                      {{ _achievementTitles(item.achievementIds) }}
+                    </span>
+                  } @else {
+                    <span class="text-slate-400">—</span>
+                  }
+                </td>
+
+                <!-- Status Flags -->
+                <td class="py-3.5 px-4">
+                  @if (item.isActive) {
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Активна
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                      Неактивна
+                    </span>
+                  }
+                </td>
+
+                <!-- Actions -->
+                <td class="py-3.5 px-4 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      mat-icon-button
+                      (click)="_edit(item)"
+                      matTooltip="Редактировать награду"
+                      class="table-icon-btn text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:hover:text-blue-400"
+                    >
+                      <mat-icon svgIcon="pen-to-square" class="!w-4 !h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      mat-icon-button
+                      (click)="_delete(item)"
+                      matTooltip="Удалить награду"
+                      class="table-icon-btn text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                    >
+                      <mat-icon svgIcon="trash" class="!w-4 !h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

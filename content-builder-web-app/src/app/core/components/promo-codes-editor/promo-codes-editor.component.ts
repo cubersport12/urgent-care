@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injectable, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import {
@@ -19,6 +19,8 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { AppPromoCodesStorageService, AppTariffsStorageService } from '@/core/api';
 import { ApiError } from '@/core/api/api-utils';
 import type { PromoCodeCreate, PromoCodeOut, PromoCodeUpdate, TariffOut } from '@/core/api/generated/types.gen';
+import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
+import { AppDialogService } from '@/core/services/app-dialog.service';
 
 type PromoDialogResult = PromoCodeCreate | PromoCodeUpdate;
 
@@ -41,32 +43,37 @@ export class PromoCodesEditorService {
   selector: 'app-promo-code-edit-dialog',
   imports: [
     ReactiveFormsModule,
-    MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
     MatCheckbox,
     MatButton,
-    MatIcon
+    MatIcon,
+    AppDialogWrapperComponent
   ],
   template: `
-    <h2 mat-dialog-title>{{ _data ? 'Редактировать промокод' : 'Новый промокод' }}</h2>
-    <mat-dialog-content>
-      <form class="flex flex-col gap-2 pt-2 min-w-[300px]" [formGroup]="_form">
-        <div class="flex items-end gap-2">
+    <app-dialog-wrapper
+      [title]="_data ? 'Редактировать промокод' : 'Новый промокод'"
+      [subtitle]="_data ? 'Изменение скидки и условий применения' : 'Создание скидочного кода для обучающихся'"
+      [saveDisabled]="_form.invalid"
+      (save)="_save()"
+      (close)="_ref.close()"
+    >
+      <form class="flex flex-col gap-3 min-w-[320px] max-w-full" [formGroup]="_form">
+        <div class="flex items-center gap-2">
           <mat-form-field appearance="fill" class="grow">
-            <mat-label>Код</mat-label>
-            <input matInput formControlName="code" [readonly]="!!_data" class="font-mono" />
+            <mat-label>Код промокода</mat-label>
+            <input matInput formControlName="code" [readonly]="!!_data" class="font-mono uppercase tracking-wider" />
           </mat-form-field>
           @if (!_data) {
-            <button type="button" mat-stroked-button (click)="_generate()" matTooltip="Сгенерировать случайный код">
-              <mat-icon svgIcon="rotate-right" />
-              Сгенерировать
+            <button type="button" mat-stroked-button (click)="_generate()" class="!h-14 !rounded-xl shrink-0" matTooltip="Сгенерировать случайный код">
+              <mat-icon svgIcon="rotate-right" class="!w-4 !h-4 mr-1" />
+              Случайный
             </button>
           }
         </div>
         <mat-form-field appearance="fill">
-          <mat-label>Комментарий (только для админов)</mat-label>
+          <mat-label>Описание акции (служебная заметка)</mat-label>
           <input matInput formControlName="title" />
         </mat-form-field>
         <div class="flex gap-2">
@@ -79,11 +86,11 @@ export class PromoCodesEditorService {
           </mat-form-field>
           <mat-form-field appearance="fill" class="grow">
             <mat-label>Макс. активаций</mat-label>
-            <input matInput type="number" formControlName="maxActivations" min="1" placeholder="без лимита" />
+            <input matInput type="number" formControlName="maxActivations" min="1" placeholder="Безлимитно" />
           </mat-form-field>
         </div>
         <mat-form-field appearance="fill">
-          <mat-label>Тариф</mat-label>
+          <mat-label>Целевой тариф</mat-label>
           <mat-select formControlName="tariffId">
             <mat-option [value]="null">— Все платные тарифы —</mat-option>
             @for (t of _tariffs(); track t.id) {
@@ -93,24 +100,17 @@ export class PromoCodesEditorService {
         </mat-form-field>
         <div class="flex gap-2">
           <mat-form-field appearance="fill" class="grow">
-            <mat-label>Действует с</mat-label>
+            <mat-label>Действует с даты</mat-label>
             <input matInput type="datetime-local" formControlName="validFrom" />
           </mat-form-field>
           <mat-form-field appearance="fill" class="grow">
-            <mat-label>Действует до</mat-label>
+            <mat-label>Действует по дату</mat-label>
             <input matInput type="datetime-local" formControlName="validUntil" />
           </mat-form-field>
         </div>
-        <mat-checkbox formControlName="isActive">Активен</mat-checkbox>
+        <mat-checkbox formControlName="isActive">Промокод активен</mat-checkbox>
       </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="_ref.close()">Отмена</button>
-      <button mat-flat-button color="primary" type="button" [disabled]="_form.invalid" (click)="_save()">
-        <mat-icon svgIcon="check" />
-        Сохранить
-      </button>
-    </mat-dialog-actions>
+    </app-dialog-wrapper>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -190,6 +190,7 @@ export class PromoCodeEditDialogComponent {
 @Component({
   selector: 'app-promo-codes-editor',
   imports: [
+    FormsModule,
     DatePipe,
     MatDialogModule,
     MatTableModule,
@@ -205,11 +206,14 @@ export class PromoCodeEditDialogComponent {
 export class PromoCodesEditorComponent {
   private readonly _storage = inject(AppPromoCodesStorageService);
   private readonly _tariffsStorage = inject(AppTariffsStorageService);
-  private readonly _dialogs = inject(MatDialog);
+  private readonly _dialogsService = inject(AppDialogService);
   private readonly _snack = inject(MatSnackBar);
-  private readonly _ref = inject(MatDialogRef<PromoCodesEditorComponent>);
+  protected readonly _ref = inject(MatDialogRef<PromoCodesEditorComponent>, { optional: true });
 
   protected readonly _items = signal<PromoCodeOut[]>([]);
+  protected readonly _searchQuery = signal('');
+  protected readonly _statusFilter = signal<'all' | 'active' | 'inactive'>('all');
+
   private readonly _tariffList = signal<TariffOut[]>([]);
   protected readonly _tariffTitles = computed(() => {
     const map = new Map<string, string>();
@@ -217,18 +221,52 @@ export class PromoCodesEditorComponent {
     return map;
   });
   protected readonly _loading = signal(true);
-  protected readonly _columns = ['code', 'discount', 'tariff', 'activations', 'period', 'flags', 'actions'];
+
+  protected readonly _filteredItems = computed(() => {
+    const q = this._searchQuery().trim().toLowerCase();
+    const filter = this._statusFilter();
+    let list = this._items();
+
+    if (filter === 'active') {
+      list = list.filter((p) => p.isActive);
+    } else if (filter === 'inactive') {
+      list = list.filter((p) => !p.isActive);
+    }
+
+    if (q) {
+      list = list.filter((p) => p.code.toLowerCase().includes(q));
+    }
+
+    return list;
+  });
+
+  protected readonly _stats = computed(() => {
+    const list = this._items();
+    const active = list.filter((p) => p.isActive).length;
+    const totalActivations = list.reduce((sum, p) => sum + (p.activationsCount || 0), 0);
+    return {
+      total: list.length,
+      active,
+      totalActivations,
+      activeShare: list.length > 0 ? `${Math.round((active / list.length) * 100)}%` : '0%'
+    };
+  });
 
   constructor() {
     this._tariffsStorage.listAll().subscribe((list) => this._tariffList.set(list));
     this._reload();
   }
 
-  protected _close(): void {
-    this._ref.close();
+  protected _copyCode(code: string): void {
+    navigator.clipboard.writeText(code);
+    this._snack.open(`Код «${code}» скопирован`, 'OK', { duration: 2500 });
   }
 
-  protected _tariffTitle(id: string | null): string {
+  protected _close(): void {
+    this._ref?.close();
+  }
+
+  protected _tariffTitle(id?: string | null): string {
     return id ? (this._tariffTitles().get(id) ?? '—') : 'Все платные';
   }
 
@@ -247,8 +285,8 @@ export class PromoCodesEditorComponent {
   }
 
   protected _create(): void {
-    this._dialogs
-      .open(PromoCodeEditDialogComponent, { data: null, width: '480px' })
+    this._dialogsService
+      .open(PromoCodeEditDialogComponent, { data: null, width: '520px' })
       .afterClosed()
       .subscribe((body: PromoDialogResult | null | undefined) => {
         if (!body || !('code' in body)) return;
@@ -260,8 +298,8 @@ export class PromoCodesEditorComponent {
   }
 
   protected _edit(p: PromoCodeOut): void {
-    this._dialogs
-      .open(PromoCodeEditDialogComponent, { data: p, width: '480px' })
+    this._dialogsService
+      .open(PromoCodeEditDialogComponent, { data: p, width: '520px' })
       .afterClosed()
       .subscribe((body: PromoDialogResult | null | undefined) => {
         if (!body || 'code' in body) return;
@@ -286,6 +324,6 @@ export class PromoCodesEditorComponent {
 
   private _toast(err: unknown): void {
     const msg = err instanceof ApiError ? err.detail : 'Ошибка запроса';
-    this._snack.open(msg, 'OK', { duration: 5000 });
+    this._snack.open(msg, 'Закрыть', { duration: 5000 });
   }
 }

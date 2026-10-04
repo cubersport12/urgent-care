@@ -1,35 +1,67 @@
-import { ChangeDetectionStrategy, Component, ElementRef, inject, Injectable, signal, viewChild } from '@angular/core';
-import { MatButton } from '@angular/material/button';
-import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injectable, signal, viewChild } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTooltip } from '@angular/material/tooltip';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AppFilesStorageService } from '@/core/api';
 import { ApiError, apiCall } from '@/core/api/api-utils';
 import { API_BASE } from '@/core/api/api-client';
 import { legalListLegalDocuments } from '@/core/api/generated/sdk.gen';
+import { AppDialogService } from '@/core/services/app-dialog.service';
 
 type LegalDocId = 'offer' | 'pdn' | 'consent' | 'consent-distribution' | 'cookies';
 type LegalDocStatus = 'checking' | 'missing' | 'uploaded';
 
-const LEGAL_CATEGORIES: { id: LegalDocId; title: string }[] = [
-  { id: 'offer', title: 'Пользовательское соглашение (оферта)' },
-  { id: 'pdn', title: 'Политика обработки персональных данных' },
-  { id: 'consent', title: 'Согласие на обработку персональных данных' },
-  { id: 'consent-distribution', title: 'Согласие на распространение персональных данных' },
-  { id: 'cookies', title: 'Правила использования cookie' }
+interface LegalDocCategory {
+  id: LegalDocId;
+  title: string;
+  description: string;
+  lawReference: string;
+}
+
+const LEGAL_CATEGORIES: LegalDocCategory[] = [
+  {
+    id: 'offer',
+    title: 'Пользовательское соглашение (оферта)',
+    description: 'Публичная оферта об оказании образовательных услуг и условиях платной подписки.',
+    lawReference: 'ГК РФ ст. 437'
+  },
+  {
+    id: 'pdn',
+    title: 'Политика обработки персональных данных',
+    description: 'Определяет порядок сбора, хранения и защиты персональных данных пользователей платформы.',
+    lawReference: '152-ФЗ ст. 18.1'
+  },
+  {
+    id: 'consent',
+    title: 'Согласие на обработку персональных данных',
+    description: 'Индивидуальное согласие пользователя, подтверждаемое при создании учетной записи.',
+    lawReference: '152-ФЗ ст. 9'
+  },
+  {
+    id: 'consent-distribution',
+    title: 'Согласие на распространение персональных данных',
+    description: 'Отдельное согласие на передачу данных третьим лицам и публикацию в открытых реестрах.',
+    lawReference: '152-ФЗ ст. 10.1'
+  },
+  {
+    id: 'cookies',
+    title: 'Правила использования cookie',
+    description: 'Уведомление об использовании cookies и локального хранилища браузера.',
+    lawReference: 'Стандарты веб-безопасности'
+  }
 ];
 
 @Injectable({ providedIn: 'root' })
 export class LegalDocsEditorService {
-  private readonly _dialogs = inject(MatDialog);
+  private readonly _dialogsService = inject(AppDialogService);
 
   public open(): MatDialogRef<LegalDocsEditorComponent> {
-    return this._dialogs.open(LegalDocsEditorComponent, {
-      width: '560px',
-      maxWidth: '95vw',
-      hasBackdrop: true
+    return this._dialogsService.open(LegalDocsEditorComponent, {
+      width: '900px',
+      maxWidth: '95vw'
     });
   }
 }
@@ -38,61 +70,155 @@ export class LegalDocsEditorService {
   selector: 'app-legal-docs-editor',
   imports: [
     MatDialogModule,
-    MatButton,
+    MatButtonModule,
     MatIcon,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    MatTooltip
+    MatTooltipModule
   ],
   template: `
-    <h2 mat-dialog-title>
-      Нормативные документы
-      <span class="block text-xs font-normal text-slate-500 mt-1">
-        PDF-файлы. Пользователи видят их без авторизации (экран регистрации и профиль).
-      </span>
-    </h2>
-    <mat-dialog-content>
-      <div class="flex flex-col gap-3 min-w-[380px] py-1">
-        @for (cat of _categories; track cat.id) {
+    <div class="p-6 max-w-7xl mx-auto space-y-6">
+      <!-- Page Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+        <div>
           <div class="flex items-center gap-3">
-            <mat-icon svgIcon="file-contract" class="text-slate-400" />
-            <div class="grow min-w-0">
-              <div class="text-sm truncate">{{ cat.title }}</div>
-              <div class="text-xs" [class]="_statusClass(cat.id)">
-                {{ _statusLabel(cat.id) }}
+            <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Нормативные документы</h1>
+            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+              PDF-файлы для сайта и мобильного приложения
+            </span>
+          </div>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Публичные оферты, согласия на обработку ПДн и юридические документы, доступные пользователям без авторизации
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            mat-stroked-button
+            (click)="_loadStatuses()"
+            class="!rounded-xl !border-slate-300 dark:!border-slate-700 !text-slate-700 dark:!text-slate-300"
+            matTooltip="Проверить статусы документов"
+          >
+            <mat-icon svgIcon="rotate-right" class="!w-4 !h-4" />
+          </button>
+          @if (_ref) {
+            <button
+              type="button"
+              mat-icon-button
+              (click)="_ref.close()"
+              matTooltip="Закрыть"
+              class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <mat-icon svgIcon="times" class="!w-4 !h-4" />
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+          <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Всего категорий</div>
+          <div class="text-2xl font-bold text-slate-900 dark:text-white mt-1">{{ _stats().total }}</div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+          <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Загружено и доступно</div>
+          <div class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{{ _stats().uploaded }}</div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+          <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Статус соответствия</div>
+          <div class="text-base font-bold text-slate-900 dark:text-white mt-1 flex items-center gap-1.5">
+            @if (_stats().missing === 0) {
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span class="text-emerald-600 dark:text-emerald-400">100% документов загружено</span>
+            } @else {
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+              <span class="text-amber-600 dark:text-amber-400">Требуется загрузить: {{ _stats().missing }}</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Document Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        @for (cat of _categories; track cat.id) {
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+            <div class="space-y-3">
+              <div class="flex items-start justify-between gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200/50 dark:border-blue-900/50">
+                  <mat-icon svgIcon="file-contract" class="!w-5 !h-5" />
+                </div>
+                <div class="flex flex-col items-end">
+                  @if (_status(cat.id) === 'checking') {
+                    <div class="flex items-center gap-1 text-[11px] text-slate-400">
+                      <mat-spinner diameter="14" />
+                      <span>Проверка…</span>
+                    </div>
+                  } @else if (_status(cat.id) === 'uploaded') {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      PDF загружен
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      Файл отсутствует
+                    </span>
+                  }
+                  <span class="text-[10px] text-slate-400 font-mono mt-1">{{ cat.lawReference }}</span>
+                </div>
+              </div>
+
+              <div>
+                <h3 class="font-bold text-slate-900 dark:text-white text-sm">{{ cat.title }}</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  {{ cat.description }}
+                </p>
               </div>
             </div>
-            @if (_status(cat.id) === 'checking') {
-              <mat-spinner diameter="22" />
-            } @else {
-              @if (_status(cat.id) === 'uploaded') {
-                <button mat-stroked-button type="button" (click)="_view(cat.id)">
-                  Просмотреть
+
+            <div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+              <div class="text-[11px] text-slate-400 font-mono">
+                public/legal/{{ cat.id }}.pdf
+              </div>
+
+              <div class="flex items-center gap-2">
+                @if (_status(cat.id) === 'uploaded') {
+                  <button
+                    type="button"
+                    mat-stroked-button
+                    (click)="_view(cat.id)"
+                    class="!rounded-xl !border-slate-300 dark:!border-slate-700 text-xs"
+                  >
+                    <mat-icon svgIcon="file-contract" class="!w-3.5 !h-3.5 mr-1" />
+                    Открыть
+                  </button>
+                }
+                <button
+                  type="button"
+                  mat-flat-button
+                  color="primary"
+                  [disabled]="_uploadingId() === cat.id"
+                  (click)="_pickFile(cat.id)"
+                  class="!rounded-xl text-xs"
+                >
+                  <mat-icon svgIcon="upload" class="!w-3.5 !h-3.5 mr-1" />
+                  {{ _uploadingId() === cat.id ? 'Загрузка…' : (_status(cat.id) === 'uploaded' ? 'Заменить' : 'Загрузить') }}
                 </button>
-              }
-              <button
-                mat-stroked-button
-                type="button"
-                [disabled]="_uploadingId() === cat.id"
-                (click)="_pickFile(cat.id)"
-              >
-                {{ _uploadingId() === cat.id ? 'Загрузка…' : 'Загрузить' }}
-              </button>
-            }
+              </div>
+            </div>
           </div>
         }
       </div>
-      <input #fileInput type="file" accept=".pdf,application/pdf" class="hidden"
-             (change)="_onFile($event)" />
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="_ref.close()">Закрыть</button>
-    </mat-dialog-actions>
+
+      <input #fileInput type="file" accept=".pdf,application/pdf" class="hidden" (change)="_onFile($event)" />
+    </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LegalDocsEditorComponent {
-  protected readonly _ref = inject(MatDialogRef<LegalDocsEditorComponent>);
+  protected readonly _ref = inject(MatDialogRef<LegalDocsEditorComponent>, { optional: true });
   private readonly _files = inject(AppFilesStorageService);
   private readonly _snack = inject(MatSnackBar);
 
@@ -108,11 +234,23 @@ export class LegalDocsEditorComponent {
   private readonly _fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
   private _pendingId: LegalDocId | null = null;
 
+  protected readonly _stats = computed(() => {
+    const statuses = this._statuses();
+    const list = Object.values(statuses);
+    const uploaded = list.filter((s) => s === 'uploaded').length;
+    const missing = list.filter((s) => s === 'missing').length;
+    return {
+      total: list.length,
+      uploaded,
+      missing
+    };
+  });
+
   constructor() {
     void this._loadStatuses();
   }
 
-  private async _loadStatuses(): Promise<void> {
+  protected async _loadStatuses(): Promise<void> {
     let docs: Awaited<ReturnType<typeof legalListLegalDocuments>>['data'] | null = null;
     try {
       docs = await apiCall(() => legalListLegalDocuments());
@@ -134,25 +272,12 @@ export class LegalDocsEditorComponent {
     return this._statuses()[id];
   }
 
-  protected _statusLabel(id: LegalDocId): string {
-    switch (this._status(id)) {
-      case 'uploaded': return 'файл загружен (PDF)';
-      case 'missing': return 'файл не загружен';
-      case 'checking': return 'проверка…';
-    }
-  }
-
-  protected _statusClass(id: LegalDocId): string {
-    return this._status(id) === 'uploaded' ? 'text-emerald-600' : 'text-slate-400';
-  }
-
   protected _pickFile(id: LegalDocId): void {
     this._pendingId = id;
     this._fileInput().nativeElement.click();
   }
 
   protected _view(id: LegalDocId): void {
-    // Публичный роут — тот же, что использует мобильный; PDF браузер открывает нативно
     window.open(`${API_BASE}/api/v1/legal/documents/${id}/file`, '_blank', 'noopener');
   }
 
@@ -165,23 +290,19 @@ export class LegalDocsEditorComponent {
     this._uploadingId.set(id);
     const expectedKey = `public/legal/${id}.pdf`;
     try {
-      // uploadFile возвращает Observable — подпиской превращаем в Promise
       const path = await new Promise<string>((resolve, reject) => {
         this._files.uploadFile(expectedKey, file).subscribe({
           next: resolve,
           error: reject
         });
       });
-      // Подтверждаем с сервера, что файл реально доступен по ожидаемому ключу
       const docs = await apiCall(() => legalListLegalDocuments()).catch(() => null);
       const available = !!docs?.find((d) => d.id === id)?.available;
       if (available) {
         this._statuses.update((s) => ({ ...s, [id]: 'uploaded' }));
-        this._snack.open('Файл загружен', 'OK', { duration: 3000 });
+        this._snack.open('Файл загружен', 'Закрыть', { duration: 3000 });
         return;
       }
-      // Файл принят, но ответ/проверка не сходятся — почти наверняка
-      // конструктор подключён к необновлённому бэкенду
       const detail =
         typeof path === 'string'
           ? `сервер сохранил его как «${path}», но не видит по ключу legal/${id}.pdf`
@@ -189,12 +310,12 @@ export class LegalDocsEditorComponent {
       this._statuses.update((s) => ({ ...s, [id]: 'missing' }));
       this._snack.open(
         `Файл не подтверждён сервером: ${detail}. Загрузите через dev-конструктор (ng serve → localhost) или обновите бэкенд`,
-        'OK',
-        { duration: 12000 },
+        'Закрыть',
+        { duration: 12000 }
       );
     } catch (err) {
       const msg = err instanceof ApiError ? err.detail : 'Не удалось загрузить файл';
-      this._snack.open(msg, 'OK', { duration: 5000 });
+      this._snack.open(msg, 'Закрыть', { duration: 5000 });
       this._statuses.update((s) => ({ ...s, [id]: 'missing' }));
     } finally {
       this._uploadingId.set(null);

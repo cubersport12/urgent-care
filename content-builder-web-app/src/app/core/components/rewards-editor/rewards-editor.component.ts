@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
-import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+import { AbstractControl, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import {
@@ -25,6 +25,8 @@ import {
 import { ApiError } from '@/core/api/api-utils';
 import type { AchievementOut, RewardCreate, RewardOut, TariffOut } from '@/core/api/generated/types.gen';
 import { generateGUID } from '@/core/utils';
+import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
+import { AppDialogService } from '@/core/services/app-dialog.service';
 
 type RewardEditData = { reward: RewardOut | null; achievements: AchievementOut[] };
 
@@ -37,15 +39,13 @@ function subscriptionPairValidator(control: AbstractControl) {
 
 @Injectable({ providedIn: 'root' })
 export class RewardsEditorService {
-  private readonly _dialogs = inject(MatDialog);
+  private readonly _dialogsService = inject(AppDialogService);
 
   public open(): MatDialogRef<RewardsEditorComponent> {
-    return this._dialogs.open(RewardsEditorComponent, {
-      width: '780px',
+    return this._dialogsService.open(RewardsEditorComponent, {
+      width: '900px',
       maxWidth: '95vw',
-      maxHeight: '90vh',
-      hasBackdrop: true,
-      autoFocus: true
+      maxHeight: '90vh'
     });
   }
 }
@@ -61,12 +61,19 @@ export class RewardsEditorService {
     MatCheckbox,
     MatButton,
     MatIconButton,
-    MatIcon
+    MatIcon,
+    AppDialogWrapperComponent
   ],
   template: `
-    <h2 mat-dialog-title>{{ _data.reward ? 'Редактировать награду' : 'Новая награда' }}</h2>
-    <mat-dialog-content>
-      <form class="flex flex-col gap-2 pt-2 min-w-[280px]" [formGroup]="_form">
+    <app-dialog-wrapper
+      [title]="_data.reward ? 'Редактировать награду' : 'Новая награда'"
+      [subtitle]="_data.reward ? 'Настройка призового фонда и условий выдачи' : 'Создание награды для поощрения пользователей'"
+      [saveDisabled]="_form.invalid || _uploading() || _uploadingFiles()"
+      [loading]="_uploading() || _uploadingFiles()"
+      (save)="_save()"
+      (close)="_ref.close()"
+    >
+      <form class="flex flex-col gap-3 min-w-[320px] max-w-full" [formGroup]="_form">
         <mat-form-field appearance="fill">
           <mat-label>Достижения (все нужны)</mat-label>
           <mat-select formControlName="achievementIds" multiple>
@@ -76,31 +83,35 @@ export class RewardsEditorService {
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="fill">
-          <mat-label>Название</mat-label>
+          <mat-label>Название награды</mat-label>
           <input matInput formControlName="title" />
         </mat-form-field>
         <mat-form-field appearance="fill">
-          <mat-label>Описание</mat-label>
+          <mat-label>Описание награды</mat-label>
           <textarea matInput formControlName="description" rows="2"></textarea>
         </mat-form-field>
-        <div class="flex gap-2 items-end">
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Иконка (path)</mat-label>
+        <div class="flex gap-2 items-center">
+          <mat-form-field appearance="fill" class="grow" subscriptSizing="dynamic">
+            <mat-label>Иконка награды (путь к файлу)</mat-label>
             <input matInput formControlName="iconPath" />
           </mat-form-field>
-          <button mat-stroked-button type="button" (click)="_file.click()">Загрузить</button>
+          <button mat-stroked-button type="button" class="shrink-0 !h-14 !rounded-xl" (click)="_file.click()">
+            <mat-icon svgIcon="upload" class="!w-4 !h-4 mr-1" />
+            Загрузить
+          </button>
           <input #_file type="file" accept="image/*" class="hidden" (change)="_onFile($event)" />
         </div>
-        <div class="flex flex-col gap-1">
-          <div class="flex gap-2 items-center">
-            <span class="text-sm text-slate-600">Файлы (сертификаты)</span>
+        <div class="flex flex-col gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div class="flex gap-2 items-center justify-between">
+            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Файлы и сертификаты</span>
             <button
               mat-stroked-button
               type="button"
+              class="!rounded-xl !text-xs !py-1"
               [disabled]="_uploadingFiles()"
               (click)="_filesInput.click()"
             >
-              {{ _uploadingFiles() ? 'Загрузка…' : 'Прикрепить' }}
+              {{ _uploadingFiles() ? 'Загрузка…' : 'Прикрепить файл' }}
             </button>
             <input
               #_filesInput
@@ -111,25 +122,25 @@ export class RewardsEditorService {
             />
           </div>
           @for (f of _attached(); track f) {
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
               @if (_thumbs()[f]) {
-                <img [src]="_thumbs()[f]" alt="" class="h-8 w-8 rounded object-cover" />
+                <img [src]="_thumbs()[f]" alt="" class="h-8 w-8 rounded object-cover shrink-0" />
               }
-              <span class="text-xs text-slate-600 grow truncate">{{ _displayName(f) }}</span>
-              <button mat-icon-button type="button" (click)="_removeFile(f)" matTooltip="Убрать">
-                <mat-icon svgIcon="trash" />
+              <span class="text-xs text-slate-600 dark:text-slate-300 grow truncate">{{ _displayName(f) }}</span>
+              <button mat-icon-button type="button" (click)="_removeFile(f)" matTooltip="Убрать" class="table-icon-btn !w-7 !h-7 text-slate-400 hover:text-rose-600">
+                <mat-icon svgIcon="trash" class="!w-3.5 !h-3.5" />
               </button>
             </div>
           }
         </div>
         <mat-form-field appearance="fill">
-          <mat-label>Порядок</mat-label>
+          <mat-label>Порядок сортировки</mat-label>
           <input matInput type="number" formControlName="sortOrder" />
         </mat-form-field>
         <div class="flex flex-col gap-1">
           <div class="flex gap-2 items-start">
             <mat-form-field appearance="fill" class="grow">
-              <mat-label>Подписка (необязательно)</mat-label>
+              <mat-label>Привязать подписку (необязательно)</mat-label>
               <mat-select formControlName="subscriptionTariffId">
                 <mat-option [value]="null">— Без подписки —</mat-option>
                 @for (t of _tariffs(); track t.id) {
@@ -137,7 +148,7 @@ export class RewardsEditorService {
                 }
               </mat-select>
             </mat-form-field>
-            <mat-form-field appearance="fill" class="w-28">
+            <mat-form-field appearance="fill" class="w-32">
               <mat-label>Дней</mat-label>
               <input matInput type="number" formControlName="subscriptionDays" min="1" max="3650" />
             </mat-form-field>
@@ -146,16 +157,9 @@ export class RewardsEditorService {
             <div class="text-xs text-red-600">Укажите и тариф, и срок — или очистите оба поля</div>
           }
         </div>
-        <mat-checkbox formControlName="isActive">Активна</mat-checkbox>
+        <mat-checkbox formControlName="isActive">Награда активна</mat-checkbox>
       </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="_ref.close()">Отмена</button>
-      <button mat-flat-button color="primary" type="button" [disabled]="_form.invalid || _uploading()" (click)="_save()">
-        <mat-icon svgIcon="check" />
-        Сохранить
-      </button>
-    </mat-dialog-actions>
+    </app-dialog-wrapper>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -304,6 +308,7 @@ export class RewardEditDialogComponent {
 @Component({
   selector: 'app-rewards-editor',
   imports: [
+    FormsModule,
     MatDialogModule,
     MatTableModule,
     MatButton,
@@ -318,22 +323,44 @@ export class RewardEditDialogComponent {
 export class RewardsEditorComponent {
   private readonly _storage = inject(AppRewardsStorageService);
   private readonly _achievements = inject(AppAchievementsStorageService);
-  private readonly _dialogs = inject(MatDialog);
+  private readonly _dialogsService = inject(AppDialogService);
   private readonly _snack = inject(MatSnackBar);
-  private readonly _ref = inject(MatDialogRef<RewardsEditorComponent>);
+  protected readonly _ref = inject(MatDialogRef<RewardsEditorComponent>, { optional: true });
 
   protected readonly _items = signal<RewardOut[]>([]);
   protected readonly _achievementMap = signal<Record<string, string>>({});
   protected readonly _achievementsList = signal<AchievementOut[]>([]);
   protected readonly _loading = signal(true);
-  protected readonly _columns = ['title', 'achievement', 'flags', 'actions'];
+  protected readonly _searchQuery = signal('');
+
+  protected readonly _filteredItems = computed(() => {
+    const q = this._searchQuery().trim().toLowerCase();
+    const list = this._items();
+    if (!q) return list;
+    return list.filter(
+      (r) =>
+        r.title.toLowerCase().includes(q) ||
+        (r.description && r.description.toLowerCase().includes(q))
+    );
+  });
+
+  protected readonly _stats = computed(() => {
+    const list = this._items();
+    const active = list.filter((r) => r.isActive).length;
+    const linkedToAchs = list.filter((r) => (r.achievementIds || []).length > 0).length;
+    return {
+      total: list.length,
+      active,
+      linkedToAchs
+    };
+  });
 
   constructor() {
     this._reload();
   }
 
   protected _close(): void {
-    this._ref.close();
+    this._ref?.close();
   }
 
   protected _reload(): void {
@@ -371,13 +398,13 @@ export class RewardsEditorComponent {
 
   protected _create(): void {
     if (this._achievementsList().length === 0) {
-      this._snack.open('Сначала создайте достижение', 'OK', { duration: 4000 });
+      this._snack.open('Сначала создайте достижение', 'Закрыть', { duration: 4000 });
       return;
     }
-    this._dialogs
+    this._dialogsService
       .open(RewardEditDialogComponent, {
         data: { reward: null, achievements: this._achievementsList() } satisfies RewardEditData,
-        width: '440px'
+        width: '560px'
       })
       .afterClosed()
       .subscribe((body: RewardCreate | null | undefined) => {
@@ -390,10 +417,10 @@ export class RewardsEditorComponent {
   }
 
   protected _edit(item: RewardOut): void {
-    this._dialogs
+    this._dialogsService
       .open(RewardEditDialogComponent, {
         data: { reward: item, achievements: this._achievementsList() } satisfies RewardEditData,
-        width: '440px'
+        width: '560px'
       })
       .afterClosed()
       .subscribe((body: RewardCreate | null | undefined) => {
@@ -415,6 +442,6 @@ export class RewardsEditorComponent {
 
   private _toast(err: unknown): void {
     const msg = err instanceof ApiError ? err.detail : 'Ошибка запроса';
-    this._snack.open(msg, 'OK', { duration: 5000 });
+    this._snack.open(msg, 'Закрыть', { duration: 5000 });
   }
 }

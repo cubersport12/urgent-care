@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, Injectable, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, inject, Injectable, signal } from '@angular/core';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import {
@@ -17,6 +17,8 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { AppTariffsStorageService } from '@/core/api';
 import { ApiError } from '@/core/api/api-utils';
 import type { TariffCreate, TariffOut } from '@/core/api/generated/types.gen';
+import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
+import { AppDialogService } from '@/core/services/app-dialog.service';
 
 @Injectable({ providedIn: 'root' })
 export class TariffsEditorService {
@@ -37,23 +39,26 @@ export class TariffsEditorService {
   selector: 'app-tariff-edit-dialog',
   imports: [
     ReactiveFormsModule,
-    MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
     MatCheckbox,
-    MatButton,
-    MatIcon
+    AppDialogWrapperComponent
   ],
   template: `
-    <h2 mat-dialog-title>{{ _data ? 'Редактировать тариф' : 'Новый тариф' }}</h2>
-    <mat-dialog-content>
-      <form class="flex flex-col gap-2 pt-2 min-w-[280px]" [formGroup]="_form">
+    <app-dialog-wrapper
+      [title]="_data ? 'Редактировать тариф' : 'Новый тарифный план'"
+      [subtitle]="_data ? 'Настройка цен и параметров доступа' : 'Создание тарифа для витрины обучающихся'"
+      [saveDisabled]="_form.invalid"
+      (save)="_save()"
+      (close)="_ref.close()"
+    >
+      <form class="flex flex-col gap-3 min-w-[300px]" [formGroup]="_form">
         <mat-form-field appearance="fill">
-          <mat-label>Код</mat-label>
+          <mat-label>Код тарифа</mat-label>
           <input matInput formControlName="code" />
         </mat-form-field>
         <mat-form-field appearance="fill">
-          <mat-label>Название</mat-label>
+          <mat-label>Название тарифа</mat-label>
           <input matInput formControlName="title" />
         </mat-form-field>
         <mat-form-field appearance="fill">
@@ -72,25 +77,18 @@ export class TariffsEditorService {
         </div>
         <div class="flex gap-2">
           <mat-form-field appearance="fill" class="grow">
-            <mat-label>Ранг</mat-label>
+            <mat-label>Ранг тарифа</mat-label>
             <input matInput type="number" formControlName="rank" />
           </mat-form-field>
           <mat-form-field appearance="fill" class="grow">
-            <mat-label>Порядок</mat-label>
+            <mat-label>Порядок сортировки</mat-label>
             <input matInput type="number" formControlName="sortOrder" />
           </mat-form-field>
         </div>
-        <mat-checkbox formControlName="isActive">Активен</mat-checkbox>
-        <mat-checkbox formControlName="isDefault">По умолчанию (бесплатный)</mat-checkbox>
+        <mat-checkbox formControlName="isActive">Активен на витрине</mat-checkbox>
+        <mat-checkbox formControlName="isDefault">Тариф по умолчанию (бесплатный)</mat-checkbox>
       </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="_ref.close()">Отмена</button>
-      <button mat-flat-button color="primary" type="button" [disabled]="_form.invalid" (click)="_save()">
-        <mat-icon svgIcon="check" />
-        Сохранить
-      </button>
-    </mat-dialog-actions>
+    </app-dialog-wrapper>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -146,6 +144,7 @@ export class TariffEditDialogComponent {
 @Component({
   selector: 'app-tariffs-editor',
   imports: [
+    FormsModule,
     MatDialogModule,
     MatTableModule,
     MatButton,
@@ -159,20 +158,45 @@ export class TariffEditDialogComponent {
 })
 export class TariffsEditorComponent {
   private readonly _storage = inject(AppTariffsStorageService);
-  private readonly _dialogs = inject(MatDialog);
+  private readonly _dialogsService = inject(AppDialogService);
   private readonly _snack = inject(MatSnackBar);
-  private readonly _ref = inject(MatDialogRef<TariffsEditorComponent>);
+  protected readonly _ref = inject(MatDialogRef<TariffsEditorComponent>, { optional: true });
 
   protected readonly _tariffs = signal<TariffOut[]>([]);
   protected readonly _loading = signal(true);
-  protected readonly _columns = ['title', 'code', 'price', 'rank', 'flags', 'actions'];
+  protected readonly _searchQuery = signal('');
+
+  protected readonly _filteredTariffs = computed(() => {
+    const q = this._searchQuery().trim().toLowerCase();
+    const list = this._tariffs();
+    if (!q) return list;
+    return list.filter(
+      (t) =>
+        t.title.toLowerCase().includes(q) ||
+        t.code.toLowerCase().includes(q) ||
+        (t.description && t.description.toLowerCase().includes(q))
+    );
+  });
+
+  protected readonly _stats = computed(() => {
+    const list = this._tariffs();
+    const active = list.filter((t) => t.isActive).length;
+    const defaultTariff = list.find((t) => t.isDefault)?.title ?? 'Не назначен';
+    const maxPrice = list.reduce((max, t) => Math.max(max, t.priceRub), 0);
+    return {
+      total: list.length,
+      active,
+      defaultTariff,
+      maxPrice: maxPrice ? `${maxPrice.toLocaleString('ru-RU')} ₽` : '0 ₽'
+    };
+  });
 
   constructor() {
     this._reload();
   }
 
   protected _close(): void {
-    this._ref.close();
+    this._ref?.close();
   }
 
   protected _reload(): void {
@@ -190,8 +214,8 @@ export class TariffsEditorComponent {
   }
 
   protected _create(): void {
-    this._dialogs
-      .open(TariffEditDialogComponent, { data: null, width: '420px' })
+    this._dialogsService
+      .open(TariffEditDialogComponent, { data: null, width: '480px' })
       .afterClosed()
       .subscribe((body: TariffCreate | null | undefined) => {
         if (!body) return;
@@ -203,8 +227,8 @@ export class TariffsEditorComponent {
   }
 
   protected _edit(t: TariffOut): void {
-    this._dialogs
-      .open(TariffEditDialogComponent, { data: t, width: '420px' })
+    this._dialogsService
+      .open(TariffEditDialogComponent, { data: t, width: '480px' })
       .afterClosed()
       .subscribe((body: TariffCreate | null | undefined) => {
         if (!body) return;
@@ -217,7 +241,7 @@ export class TariffsEditorComponent {
 
   protected _delete(t: TariffOut): void {
     if (t.isDefault) {
-      this._snack.open('Нельзя удалить тариф по умолчанию', 'OK', { duration: 4000 });
+      this._snack.open('Нельзя удалить тариф по умолчанию', 'Закрыть', { duration: 4000 });
       return;
     }
     if (!confirm(`Удалить тариф «${t.title}»?`)) return;
@@ -229,6 +253,6 @@ export class TariffsEditorComponent {
 
   private _toast(err: unknown): void {
     const msg = err instanceof ApiError ? err.detail : 'Ошибка запроса';
-    this._snack.open(msg, 'OK', { duration: 5000 });
+    this._snack.open(msg, 'Закрыть', { duration: 5000 });
   }
 }

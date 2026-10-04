@@ -49,6 +49,8 @@ import { signal } from '@angular/core';
 import { forkJoin, take } from 'rxjs';
 import { RewardSelectComponent } from '../reward-select/reward-select.component';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
+import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
+import { AppDialogService } from '@/core/services/app-dialog.service';
 import {
   RescueAiGenerateDialogComponent,
   RescueAiGenerateDialogData,
@@ -71,14 +73,13 @@ function sortScenesByStoredOrder(scenes: RescueSceneVm[]): RescueSceneVm[] {
   providedIn: 'root'
 })
 export class RescueEditorService {
-  private readonly _dialogs = inject(MatDialog);
+  private readonly _appDialog = inject(AppDialogService);
 
   openRescue(rescue: Partial<AppRescueItemVm>): void {
-    this._dialogs.open(RescueEditorComponent, {
-      width: '90%',
-      height: '90%',
-      maxWidth: '90%',
-      minWidth: '90%',
+    this._appDialog.open(RescueEditorComponent, {
+      width: '1200px',
+      maxWidth: '96vw',
+      maxHeight: '94vh',
       hasBackdrop: true,
       autoFocus: true,
       disableClose: true,
@@ -91,7 +92,7 @@ export class RescueEditorService {
   }
 
   openRescueWithAi(parentId: NullableValue<string>): void {
-    this._dialogs
+    this._appDialog
       .open(RescueAiGenerateDialogComponent, {
         data: { parentId } satisfies RescueAiGenerateDialogData,
         width: '560px',
@@ -170,7 +171,8 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
     CdkDropList,
     CdkDrag,
     TariffSelectComponent,
-    RewardSelectComponent
+    RewardSelectComponent,
+    AppDialogWrapperComponent
   ],
   templateUrl: './rescue-editor.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
