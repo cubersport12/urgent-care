@@ -1,21 +1,19 @@
 import { AppLoading, FoldersActions } from '@/core/store';
 import { AppFolderVm, BaseRoutedClass, FoldersExplorerService, generateGUID } from '@/core/utils';
 import { Component, computed, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core';
-import { MatButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { Store } from '@ngxs/store';
 import { ArticleEditorService } from '../article-editor';
 import { AppFoldersStorageService } from '@/core/api';
 import { AppBreadcrumbsComponent } from '../app-breadcrumbs';
 import { TestsEditorService } from '../test-editor';
 import { RescueEditorService } from '../rescue-editor';
+import { AppButtonComponent } from '../ui';
 
 @Component({
   selector: 'app-navbar',
   imports: [
-    MatIcon,
-    MatButton,
-    AppBreadcrumbsComponent
+    AppBreadcrumbsComponent,
+    AppButtonComponent
   ],
   changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './app-navbar.component.html'

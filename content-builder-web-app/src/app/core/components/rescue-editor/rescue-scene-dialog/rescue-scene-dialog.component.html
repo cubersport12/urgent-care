@@ -1,103 +1,151 @@
-<h2 mat-dialog-title>{{ _dialogData.scene ? 'Редактировать сцену' : 'Новая сцена' }}</h2>
-<mat-dialog-content class="min-h-[400px] flex flex-col gap-4">
-  <form [formGroup]="_form" class="flex flex-col gap-4">
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Фон (изображение или URL)</mat-label>
-      <input matInput formControlName="background" readonly>
-    </mat-form-field>
-    <button mat-flat-button type="button" color="primary" (click)="_openFile()">
-      <mat-icon svgIcon="file-contract" />
-      Выбрать изображение {{ _form.value.background ? '(' + _form.value.background + ')' : '' }}
-    </button>
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Текст сцены</mat-label>
-      <textarea matInput formControlName="text" rows="4"></textarea>
-    </mat-form-field>
-    <mat-checkbox formControlName="hidden">Скрытая сцена</mat-checkbox>
-    <mat-checkbox formControlName="isReviewed">Сцена проверена (без ошибок)</mat-checkbox>
-  </form>
-  <section class="border border-gray-200 dark:border-gray-700 rounded p-3 flex flex-col gap-2">
-    <div class="flex justify-between items-center">
-      <span class="font-medium">Варианты выбора</span>
-      <button type="button" mat-flat-button color="primary" (click)="_addChoice()">
-        <mat-icon svgIcon="plus" />
-        Создать
-      </button>
-    </div>
-    <div class="overflow-auto">
-      <table mat-table [dataSource]="_choicesList()" class="mat-elevation-z8 w-full">
-        <ng-container matColumnDef="text">
-          <th mat-header-cell *matHeaderCellDef>Текст выбора</th>
-          <td mat-cell *matCellDef="let row">{{ row.text }}</td>
-        </ng-container>
-        <ng-container matColumnDef="nextScene">
-          <th mat-header-cell *matHeaderCellDef>Следующая сцена</th>
-          <td mat-cell *matCellDef="let row">{{ _getSceneNameById(row.nextSceneId) }}</td>
-        </ng-container>
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let row; let ci = index">
-            <div class="flex gap-1">
-              <button mat-icon-button type="button" (click)="_editChoice(ci)" title="Редактировать">
-                <mat-icon svgIcon="pen-to-square" />
-              </button>
-              <button mat-icon-button color="warn" type="button" (click)="_removeChoice(ci)" title="Удалить">
-                <mat-icon svgIcon="trash" />
-              </button>
-            </div>
-          </td>
-        </ng-container>
-        <tr mat-header-row *matHeaderRowDef="_choicesDisplayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: _choicesDisplayedColumns"></tr>
-        <tr class="mat-row" *matNoDataRow>
-          <td class="mat-cell" [attr.colspan]="_choicesDisplayedColumns.length">Нет вариантов выбора</td>
-        </tr>
-      </table>
-    </div>
-  </section>
-  <section class="border border-gray-200 dark:border-gray-700 rounded p-3 flex flex-col gap-2">
-    <div class="flex justify-between items-center">
-      <span class="font-medium">Документы</span>
-      <button type="button" mat-flat-button color="primary" (click)="_addDocument()">
-        <mat-icon svgIcon="plus" />
-        Создать
-      </button>
-    </div>
-    <div class="overflow-auto">
-      <table mat-table [dataSource]="_documentsList()" class="mat-elevation-z8 w-full">
-        <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef>Название</th>
-          <td mat-cell *matCellDef="let row">{{ row.name }}</td>
-        </ng-container>
-        <ng-container matColumnDef="article">
-          <th mat-header-cell *matHeaderCellDef>Документ из базы</th>
-          <td mat-cell *matCellDef="let row">{{ _getArticleNameById(row.articleId) }}</td>
-        </ng-container>
-        <ng-container matColumnDef="actions">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let row; let di = index">
-            <div class="flex gap-1">
-              <button mat-icon-button type="button" (click)="_editDocument(di)" title="Редактировать">
-                <mat-icon svgIcon="pen-to-square" />
-              </button>
-              <button mat-icon-button color="warn" type="button" (click)="_removeDocument(di)" title="Удалить">
-                <mat-icon svgIcon="trash" />
-              </button>
-            </div>
-          </td>
-        </ng-container>
-        <tr mat-header-row *matHeaderRowDef="_documentsDisplayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: _documentsDisplayedColumns"></tr>
-        <tr class="mat-row" *matNoDataRow>
-          <td class="mat-cell" [attr.colspan]="_documentsDisplayedColumns.length">Нет документов</td>
-        </tr>
-      </table>
-    </div>
-  </section>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button (click)="_cancel()">Отмена</button>
-  <button mat-flat-button color="primary" (click)="_submit()" [disabled]="_form.invalid">
-    {{ _dialogData.scene ? 'Сохранить' : 'Добавить' }}
-  </button>
-</mat-dialog-actions>
+<app-dialog-wrapper
+  [title]="_dialogData.scene ? 'Редактировать сцену' : 'Новая сцена'"
+  [saveText]="_dialogData.scene ? 'Сохранить' : 'Добавить'"
+  [saveDisabled]="_form.invalid"
+  (save)="_submit()"
+  (close)="_cancel()"
+>
+  <div class="flex flex-col gap-4 min-w-[360px] max-h-[80vh] overflow-auto pt-1">
+    <form [formGroup]="_form" class="flex flex-col gap-4">
+      <div class="flex items-center gap-2">
+        <app-input
+          label="Фон (изображение или URL)"
+          formControlName="background"
+          [readonly]="true"
+          class="flex-1"
+        />
+        <app-button
+          variant="outline"
+          icon="file-contract"
+          (click)="_openFile()"
+          class="mt-5 shrink-0"
+        >
+          Выбрать
+        </app-button>
+      </div>
+
+      <app-textarea
+        label="Текст сцены"
+        formControlName="text"
+        [rows]="4"
+      />
+
+      <div class="flex flex-col gap-2">
+        <app-checkbox
+          label="Скрытая сцена"
+          formControlName="hidden"
+        />
+        <app-checkbox
+          label="Сцена проверена (без ошибок)"
+          formControlName="isReviewed"
+        />
+      </div>
+    </form>
+
+    <section class="border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex flex-col gap-3">
+      <div class="flex justify-between items-center">
+        <span class="font-medium text-slate-700 dark:text-slate-300">Варианты выбора</span>
+        <app-button
+          variant="secondary"
+          size="sm"
+          icon="plus"
+          (click)="_addChoice()"
+        >
+          Создать
+        </app-button>
+      </div>
+      <div class="overflow-auto max-h-56 border border-slate-200 dark:border-slate-800 rounded-lg">
+        <table mat-table [dataSource]="_choicesList()" class="w-full">
+          <ng-container matColumnDef="text">
+            <th mat-header-cell *matHeaderCellDef>Текст выбора</th>
+            <td mat-cell *matCellDef="let row">{{ row.text }}</td>
+          </ng-container>
+          <ng-container matColumnDef="nextScene">
+            <th mat-header-cell *matHeaderCellDef>Следующая сцена</th>
+            <td mat-cell *matCellDef="let row">{{ _getSceneNameById(row.nextSceneId) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row; let ci = index">
+              <div class="flex gap-1 justify-end">
+                <app-icon-button
+                  icon="pen-to-square"
+                  variant="ghost"
+                  size="sm"
+                  (click)="_editChoice(ci)"
+                  tooltip="Редактировать"
+                />
+                <app-icon-button
+                  icon="trash"
+                  variant="ghost"
+                  size="sm"
+                  (click)="_removeChoice(ci)"
+                  tooltip="Удалить"
+                  class="text-rose-500 hover:text-rose-600"
+                />
+              </div>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="_choicesDisplayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: _choicesDisplayedColumns"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell text-center py-4 text-slate-400" [attr.colspan]="_choicesDisplayedColumns.length">Нет вариантов выбора</td>
+          </tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex flex-col gap-3">
+      <div class="flex justify-between items-center">
+        <span class="font-medium text-slate-700 dark:text-slate-300">Документы</span>
+        <app-button
+          variant="secondary"
+          size="sm"
+          icon="plus"
+          (click)="_addDocument()"
+        >
+          Создать
+        </app-button>
+      </div>
+      <div class="overflow-auto max-h-56 border border-slate-200 dark:border-slate-800 rounded-lg">
+        <table mat-table [dataSource]="_documentsList()" class="w-full">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Название</th>
+            <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+          </ng-container>
+          <ng-container matColumnDef="article">
+            <th mat-header-cell *matHeaderCellDef>Документ из базы</th>
+            <td mat-cell *matCellDef="let row">{{ _getArticleNameById(row.articleId) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row; let di = index">
+              <div class="flex gap-1 justify-end">
+                <app-icon-button
+                  icon="pen-to-square"
+                  variant="ghost"
+                  size="sm"
+                  (click)="_editDocument(di)"
+                  tooltip="Редактировать"
+                />
+                <app-icon-button
+                  icon="trash"
+                  variant="ghost"
+                  size="sm"
+                  (click)="_removeDocument(di)"
+                  tooltip="Удалить"
+                  class="text-rose-500 hover:text-rose-600"
+                />
+              </div>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="_documentsDisplayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: _documentsDisplayedColumns"></tr>
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell text-center py-4 text-slate-400" [attr.colspan]="_documentsDisplayedColumns.length">Нет документов</td>
+          </tr>
+        </table>
+      </div>
+    </section>
+  </div>
+</app-dialog-wrapper>

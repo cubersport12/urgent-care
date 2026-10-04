@@ -1,6 +1,5 @@
 import { Component, effect, signal, ChangeDetectionStrategy } from '@angular/core';
-import { MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
+import { AppIconButtonComponent } from '@/core/components/ui';
 
 const LIGHT_MODE = 'light';
 const DARK_MODE = 'dark';
@@ -9,8 +8,7 @@ const LS_KEY = 'theme';
 @Component({
   selector: 'app-toggle-light-dark-button',
   imports: [
-    MatIcon,
-    MatIconButton
+    AppIconButtonComponent
   ],
   templateUrl: './toggle-light-dark-button.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,

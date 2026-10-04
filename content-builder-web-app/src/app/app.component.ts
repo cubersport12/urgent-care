@@ -1,6 +1,5 @@
 import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { AppApi, AppIconsRegistry, NullableValue } from '@/core/utils';
-import { ToggleLightDarkButtonComponent } from '@/core/components';
 import { Store } from '@ngxs/store';
 import { FoldersActions, FoldersState } from '@/core/store';
 import { Router, RouterOutlet } from '@angular/router';
@@ -8,7 +7,6 @@ import { Router, RouterOutlet } from '@angular/router';
 @Component({
   selector: 'app-root',
   imports: [
-    ToggleLightDarkButtonComponent,
     RouterOutlet
   ],
   host: {

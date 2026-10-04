@@ -2,12 +2,13 @@ import { AppAIService } from '@/core/api';
 import { AppTestQuestionVm, AppTestVm, generateGUID, NullableValue } from '@/core/utils';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIcon } from '@angular/material/icon';
 import { take } from 'rxjs';
+import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
+
+import { AppButtonComponent, AppTextareaComponent } from '../ui';
 
 export type TestAiGenerateDialogData = {
   parentId: NullableValue<string>;
@@ -18,52 +19,66 @@ export type TestAiGenerateDialogResult = Partial<AppTestVm>;
 @Component({
   selector: 'app-test-ai-generate-dialog',
   imports: [
-    MatDialogModule,
-    MatButton,
-    MatFormFieldModule,
-    MatInputModule,
     MatProgressSpinnerModule,
-    ReactiveFormsModule
+    MatIcon,
+    ReactiveFormsModule,
+    AppDialogWrapperComponent,
+    AppButtonComponent,
+    AppTextareaComponent
   ],
   template: `
-    <h2 mat-dialog-title>Генерация теста через ИИ</h2>
-    <mat-dialog-content class="relative flex flex-col gap-4 min-w-[min(100%,480px)]">
-      <p class="text-sm text-slate-600 dark:text-slate-400 m-0">
-        Опишите тему и уровень сложности. ИИ сформирует черновик вопросов для редактирования.
-      </p>
-      <mat-form-field class="w-full" appearance="outline">
-        <mat-label>Промпт</mat-label>
-        <textarea
-          matInput
-          rows="8"
-          [formControl]="_prompt"
-          placeholder="Например: 8 вопросов по неотложной помощи при анафилаксии, 4 варианта ответа..."
-        ></textarea>
-      </mat-form-field>
-      @if (_error(); as err) {
-        <p class="text-sm text-red-600 dark:text-red-400 m-0 p-2 rounded bg-red-500/10">{{ err }}</p>
-      }
-      @if (_generating()) {
-        <div
-          class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded bg-white/80 dark:bg-slate-900/80"
-        >
-          <mat-spinner diameter="40" />
-          <span class="text-sm text-slate-600 dark:text-slate-300">Генерация вопросов…</span>
+    <app-dialog-wrapper
+      title="ИИ-генерация вопросов теста"
+      subtitle="Автоматическое создание вопросов и вариантов ответа нейросетью"
+      saveText="Сгенерировать тест"
+      saveIcon="bolt"
+      [saveDisabled]="_generating() || _prompt.invalid"
+      [loading]="_generating()"
+      (save)="_generate()"
+      (close)="_cancel()"
+    >
+      <div class="relative flex flex-col gap-4 min-w-[min(100%,480px)]">
+        <!-- Quick Starter Chips -->
+        <div class="space-y-1.5">
+          <div class="text-xs font-medium text-slate-500 dark:text-slate-400">
+            Быстрые шаблоны тем:
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            @for (chip of _sampleChips; track chip) {
+              <app-button
+                variant="secondary"
+                size="sm"
+                (clicked)="_setPromptSample(chip)"
+              >
+                {{ chip }}
+              </app-button>
+            }
+          </div>
         </div>
-      }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end" class="flex flex-wrap gap-2">
-      <button type="button" mat-button [disabled]="_generating()" (click)="_cancel()">Отмена</button>
-      <button
-        type="button"
-        mat-flat-button
-        color="primary"
-        [disabled]="_generating() || _prompt.invalid"
-        (click)="_generate()"
-      >
-        Сгенерировать
-      </button>
-    </mat-dialog-actions>
+
+        <app-textarea
+          label="Промпт для генерации"
+          [rows]="6"
+          [formControl]="_prompt"
+          placeholder="Например: 8 вопросов по неотложной помощи при анафилаксии, 4 варианта ответа, указать правильные..."
+          class="w-full"
+        />
+
+        @if (_error(); as err) {
+          <div class="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 text-xs border border-red-500/20">
+            <mat-icon svgIcon="exclamation-circle" class="!w-4 !h-4 shrink-0" />
+            <span>{{ err }}</span>
+          </div>
+        }
+
+        @if (_generating()) {
+          <div class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm">
+            <mat-spinner diameter="36" />
+            <span class="text-xs font-medium text-slate-600 dark:text-slate-300 animate-pulse">Генерация теста нейросетью…</span>
+          </div>
+        }
+      </div>
+    </app-dialog-wrapper>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -73,6 +88,18 @@ export class TestAiGenerateDialogComponent {
   );
   private readonly _data = inject<TestAiGenerateDialogData>(MAT_DIALOG_DATA);
   private readonly _ai = inject(AppAIService);
+
+  protected readonly _sampleChips = [
+    'Анафилактический шок: симптомы и первая помощь',
+    'Сердечно-легочная реанимация у взрослых',
+    'Острый коронарный синдром и инфаркт',
+    'Ожоги 1-3 степени: диагностика и ПМП'
+  ];
+
+  protected _setPromptSample(topic: string): void {
+    this._prompt.setValue(`Создай 6-8 вопросов по теме «${topic}». 4 варианта ответов на каждый вопрос, один правильный. Вопросы должны проверять клиническое мышление и алгоритмы оказания неотложной помощи.`);
+    this._prompt.markAsDirty();
+  }
 
   protected readonly _prompt = new FormControl('', {
     nonNullable: true,

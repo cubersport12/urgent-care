@@ -1,27 +1,24 @@
 import { AppTestQuestionAnswerVm, NullableValue } from '@/core/utils';
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { CdkTableModule } from "@angular/cdk/table";
+import {
+  AppButtonComponent,
+  AppInputComponent,
+  AppTextareaComponent,
+  AppCheckboxComponent
+} from '../../ui';
 
 @Component({
   selector: 'app-test-asnwer-builder',
   imports: [
-    MatIcon,
-    MatCheckboxModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
     ReactiveFormsModule,
-    MatButton,
-    CdkTableModule
-],
+    AppButtonComponent,
+    AppInputComponent,
+    AppTextareaComponent,
+    AppCheckboxComponent
+  ],
   templateUrl: './test-asnwer-builder.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: ``

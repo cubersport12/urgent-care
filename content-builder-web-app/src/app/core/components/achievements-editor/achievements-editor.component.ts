@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injectable, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import {
@@ -28,6 +28,17 @@ import type { AchievementCreate, AchievementOut } from '@/core/api/generated/typ
 import { generateGUID } from '@/core/utils';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { forkJoin, startWith } from 'rxjs';
+import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
+import { AppDialogService } from '@/core/services/app-dialog.service';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppTextareaComponent,
+  AppSelectComponent,
+  AppCheckboxComponent,
+  AppBadgeComponent
+} from '@/core/components/ui';
 
 type TargetKind = 'article' | 'test' | 'rescue' | 'folder';
 
@@ -72,72 +83,42 @@ export class AchievementsEditorService {
   selector: 'app-achievement-edit-dialog',
   imports: [
     ReactiveFormsModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatCheckbox,
-    MatButton,
-    MatIcon
+    AppDialogWrapperComponent,
+    AppButtonComponent,
+    AppInputComponent,
+    AppTextareaComponent,
+    AppSelectComponent,
+    AppCheckboxComponent
   ],
   template: `
-    <h2 mat-dialog-title>{{ _data ? 'Редактировать достижение' : 'Новое достижение' }}</h2>
-    <mat-dialog-content>
-      <form class="flex flex-col gap-2 pt-2 min-w-[280px]" [formGroup]="_form">
-        <mat-form-field appearance="fill">
-          <mat-label>Название</mat-label>
-          <input matInput formControlName="title" />
-        </mat-form-field>
-        <mat-form-field appearance="fill">
-          <mat-label>Описание</mat-label>
-          <textarea matInput formControlName="description" rows="2"></textarea>
-        </mat-form-field>
+    <app-dialog-wrapper
+      [title]="_data ? 'Редактировать достижение' : 'Новое достижение'"
+      [subtitle]="_data ? 'Настройка условий срабатывания и бейджа' : 'Создание достижения для геймификации обучения'"
+      [saveDisabled]="_form.invalid || _uploading()"
+      (save)="_save()"
+      (close)="_ref.close()"
+    >
+      <form class="flex flex-col gap-3 min-w-[320px] max-w-full" [formGroup]="_form">
+        <app-input label="Название достижения" formControlName="title" [required]="true" />
+        <app-textarea label="Описание (условие получения)" formControlName="description" [rows]="2" />
         <div class="flex gap-2 items-center">
-          <mat-form-field appearance="fill" class="grow" subscriptSizing="dynamic">
-            <mat-label>Иконка</mat-label>
-            <input matInput formControlName="iconPath" />
-          </mat-form-field>
-          <button mat-stroked-button type="button" class="shrink-0" (click)="_file.click()">Загрузить</button>
+          <app-input label="Путь к иконке / изображение" formControlName="iconPath" class="grow" />
+          <app-button variant="outline" (click)="_file.click()" icon="upload">
+            Загрузить
+          </app-button>
           <input #_file type="file" accept="image/*" class="hidden" (change)="_onFile($event)" />
         </div>
         <div class="flex gap-2">
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Условие</mat-label>
-            <mat-select formControlName="ruleType">
-              @for (o of _ruleOptions; track o.value) {
-                <mat-option [value]="o.value">{{ o.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="fill" class="grow">
-            <mat-label>Порог</mat-label>
-            <input matInput type="number" formControlName="ruleThreshold" />
-          </mat-form-field>
+          <app-select label="Тип правила" formControlName="ruleType" [options]="_ruleOptions" class="grow" />
+          <app-input label="Порог выполнения" type="number" formControlName="ruleThreshold" class="grow" />
         </div>
         @if (_targetKind(); as kind) {
-          <mat-form-field appearance="fill">
-            <mat-label>{{ _targetLabel() }}</mat-label>
-            <mat-select formControlName="ruleTargetId">
-              @for (o of _targetOptions(); track o.id) {
-                <mat-option [value]="o.id">{{ o.name }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
+          <app-select [label]="_targetLabel()" formControlName="ruleTargetId" [options]="_targetSelectOptions()" />
         }
-        <mat-form-field appearance="fill">
-          <mat-label>Порядок</mat-label>
-          <input matInput type="number" formControlName="sortOrder" />
-        </mat-form-field>
-        <mat-checkbox formControlName="isActive">Активно</mat-checkbox>
+        <app-input label="Порядок сортировки" type="number" formControlName="sortOrder" />
+        <app-checkbox formControlName="isActive" label="Достижение активно" />
       </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="_ref.close()">Отмена</button>
-      <button mat-flat-button color="primary" type="button" [disabled]="_form.invalid || _uploading()" (click)="_save()">
-        <mat-icon svgIcon="check" />
-        Сохранить
-      </button>
-    </mat-dialog-actions>
+    </app-dialog-wrapper>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -189,6 +170,10 @@ export class AchievementEditDialogComponent {
     const kind = this._targetKind();
     return kind ? this._byKind()[kind] : [];
   });
+
+  protected readonly _targetSelectOptions = computed(() =>
+    this._targetOptions().map((o) => ({ value: o.id, label: o.name }))
+  );
 
   constructor() {
     if (this._data) {
@@ -274,33 +259,59 @@ export class AchievementEditDialogComponent {
 @Component({
   selector: 'app-achievements-editor',
   imports: [
+    FormsModule,
     MatDialogModule,
     MatTableModule,
-    MatButton,
-    MatIconButton,
     MatIcon,
-    MatTooltip,
-    MatSnackBarModule
+    MatSnackBarModule,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppBadgeComponent
   ],
   templateUrl: './achievements-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AchievementsEditorComponent {
   private readonly _storage = inject(AppAchievementsStorageService);
-  private readonly _dialogs = inject(MatDialog);
+  private readonly _dialogsService = inject(AppDialogService);
   private readonly _snack = inject(MatSnackBar);
-  private readonly _ref = inject(MatDialogRef<AchievementsEditorComponent>);
+  protected readonly _ref = inject(MatDialogRef<AchievementsEditorComponent>, { optional: true });
 
   protected readonly _items = signal<AchievementOut[]>([]);
   protected readonly _loading = signal(true);
-  protected readonly _columns = ['title', 'code', 'rule', 'flags', 'actions'];
+  protected readonly _searchQuery = signal('');
+
+  protected readonly _filteredItems = computed(() => {
+    const q = this._searchQuery().trim().toLowerCase();
+    const list = this._items();
+    if (!q) return list;
+    return list.filter(
+      (a) =>
+        a.title.toLowerCase().includes(q) ||
+        a.code.toLowerCase().includes(q) ||
+        (a.description && a.description.toLowerCase().includes(q))
+    );
+  });
+
+  protected readonly _stats = computed(() => {
+    const list = this._items();
+    const active = list.filter((a) => a.isActive).length;
+    const thresholdCount = list.filter((a) => (a.ruleThreshold || 0) > 0).length;
+    return {
+      total: list.length,
+      active,
+      thresholdCount,
+      ruleTypes: new Set(list.map((a) => a.ruleType)).size
+    };
+  });
 
   constructor() {
     this._reload();
   }
 
   protected _close(): void {
-    this._ref.close();
+    this._ref?.close();
   }
 
   protected _reload(): void {
@@ -322,8 +333,8 @@ export class AchievementsEditorComponent {
   }
 
   protected _create(): void {
-    this._dialogs
-      .open(AchievementEditDialogComponent, { data: null, width: '520px' })
+    this._dialogsService
+      .open(AchievementEditDialogComponent, { data: null, width: '540px' })
       .afterClosed()
       .subscribe((body: AchievementCreate | null | undefined) => {
         if (!body) return;
@@ -335,8 +346,8 @@ export class AchievementsEditorComponent {
   }
 
   protected _edit(item: AchievementOut): void {
-    this._dialogs
-      .open(AchievementEditDialogComponent, { data: item, width: '520px' })
+    this._dialogsService
+      .open(AchievementEditDialogComponent, { data: item, width: '540px' })
       .afterClosed()
       .subscribe((body: AchievementCreate | null | undefined) => {
         if (!body) return;
@@ -357,6 +368,6 @@ export class AchievementsEditorComponent {
 
   private _toast(err: unknown): void {
     const msg = err instanceof ApiError ? err.detail : 'Ошибка запроса';
-    this._snack.open(msg, 'OK', { duration: 5000 });
+    this._snack.open(msg, 'Закрыть', { duration: 5000 });
   }
 }

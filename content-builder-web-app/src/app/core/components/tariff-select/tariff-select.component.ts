@@ -1,24 +1,19 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
 import { AppTariffsStorageService } from '@/core/api';
 import type { TariffOut } from '@/core/api/generated/types.gen';
+import { AppSelectComponent, AppSelectOption } from '../ui';
 
 @Component({
   selector: 'app-tariff-select',
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatSelectModule],
+  imports: [ReactiveFormsModule, AppSelectComponent],
   template: `
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>{{ label() }}</mat-label>
-      <mat-select [formControl]="control()">
-        @for (t of _tariffs(); track t.id) {
-          <mat-option [value]="t.id">
-            {{ t.title }} (rank {{ t.rank }}){{ t.isDefault ? ' — по умолчанию' : '' }}
-          </mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
+    <app-select
+      [label]="label()"
+      icon="tag"
+      [options]="_options()"
+      [formControl]="control()"
+    />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -29,6 +24,12 @@ export class TariffSelectComponent implements OnInit {
   public readonly label = input('Минимальный тариф');
 
   protected readonly _tariffs = signal<TariffOut[]>([]);
+  protected readonly _options = computed<AppSelectOption[]>(() =>
+    this._tariffs().map((t) => ({
+      value: t.id,
+      label: `${t.title} (rank ${t.rank})${t.isDefault ? ' — по умолчанию' : ''}`
+    }))
+  );
 
   ngOnInit(): void {
     this._storage.listAll().subscribe((list) => {

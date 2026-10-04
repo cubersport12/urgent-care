@@ -21,35 +21,6 @@ html.dark body {
   @apply bg-slate-950 text-slate-100;
 }
 
-html.dark .tc-table .tc-header-cell {
-  background: rgb(30 41 59);
-  color: rgb(226 232 240);
-  border-bottom-color: rgb(51 65 85);
-}
-
-html.dark .tc-table .tc-cell {
-  border-bottom-color: rgb(51 65 85);
-}
-
-html.dark .tc-table .tc-row:not(.tc-row-selected):hover .tc-cell {
-  background: rgb(30 41 59);
-}
-
-html.dark .tc-table .tc-row-selected .tc-cell {
-  background: rgb(29 78 216);
-  color: white;
-  border-bottom-color: rgb(37 99 235);
-}
-
-html.dark .tc-table .tc-row-selected .tc-cell:first-child {
-  box-shadow: inset 3px 0 0 rgb(147 197 253);
-}
-
-html.dark .tc-table .tc-row-selected .tc-type-col,
-html.dark .tc-table .tc-row-selected .tc-row-name {
-  color: white;
-}
-
 html.dark .as-split-gutter {
   background-color: rgb(71 85 105) !important;
 }
@@ -72,23 +43,601 @@ angular-editor {
   --ae-toolbar-border-radius: none;
 }
 
-.mat-mdc-button-base {
-  mat-icon {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
+// Global SVG & MatIcon scaling: ensure SVGs always fit their parent container without clipping
+mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+  line-height: 1 !important;
+
+  svg,
+  .svg-inline--fa {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    display: block !important;
+    margin: auto !important;
+    vertical-align: middle !important;
   }
 }
 
-.svg-inline--fa {
-  width: inherit;
-  height: inherit;
+// Universal MDC Button & Icon Button Alignment Fix
+// Fixes root cause: removes asymmetric padding, resets display to inline-flex, and perfectly centers icons with ripples.
+.mat-mdc-icon-button,
+button[mat-icon-button],
+a[mat-icon-button] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+
+  .mat-mdc-button-touch-target {
+    display: none !important;
+  }
+
+  .mat-mdc-button-persistent-ripple,
+  .mat-ripple,
+  .mat-mdc-button-ripple {
+    border-radius: inherit !important;
+    inset: 0 !important;
+  }
+
+  .mat-icon,
+  mat-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
+    line-height: 1 !important;
+  }
+}
+
+.mat-mdc-button-base {
+  vertical-align: middle !important;
+
+  .mdc-button__label {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    gap: 0.25rem;
+  }
+
+  .mat-mdc-button-touch-target {
+    display: none !important;
+  }
+
+  mat-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    vertical-align: middle !important;
+  }
+}
+
+// Compact table action buttons (fit into table cells without clipping or expanding rows)
+table .mat-mdc-icon-button,
+.table-icon-btn.mat-mdc-icon-button {
+  --mdc-icon-button-state-layer-size: 32px !important;
+  --mat-icon-button-state-layer-size: 32px !important;
+  --mdc-icon-button-icon-size: 16px !important;
+  --mat-icon-button-icon-size: 16px !important;
+  --mat-icon-button-touch-target-display: none !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+
+  .mat-mdc-button-touch-target {
+    display: none !important;
+  }
+
+  .mat-mdc-button-persistent-ripple {
+    border-radius: 8px !important;
+  }
+
+  mat-icon {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    font-size: 16px !important;
+    line-height: 16px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    svg,
+    .svg-inline--fa {
+      width: 16px !important;
+      height: 16px !important;
+      max-width: 16px !important;
+      max-height: 16px !important;
+    }
+  }
+}
+
+// Micro table action buttons (e.g. copy button inside chips)
+table .mat-mdc-icon-button.table-icon-btn-sm,
+.table-icon-btn-sm.mat-mdc-icon-button {
+  --mdc-icon-button-state-layer-size: 24px !important;
+  --mat-icon-button-state-layer-size: 24px !important;
+  --mdc-icon-button-icon-size: 13px !important;
+  --mat-icon-button-icon-size: 13px !important;
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+
+  .mat-mdc-button-persistent-ripple {
+    border-radius: 6px !important;
+  }
+
+  mat-icon {
+    width: 13px !important;
+    height: 13px !important;
+    min-width: 13px !important;
+    min-height: 13px !important;
+    font-size: 13px !important;
+
+    svg,
+    .svg-inline--fa {
+      width: 13px !important;
+      height: 13px !important;
+      max-width: 13px !important;
+      max-height: 13px !important;
+    }
+  }
+}
+
+// ============================================================================
+// Angular Material Menu (mat-menu) - Design System Theme
+// ============================================================================
+
+.mat-mdc-menu-panel {
+  border-radius: 0.75rem !important; // rounded-xl (12px)
+  background-color: rgb(255 255 255) !important;
+  border: 1px solid rgb(226 232 240) !important; // border-slate-200
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+  overflow: hidden !important;
+  min-width: 180px !important;
+  padding: 0 !important;
+
+  .mat-mdc-menu-content {
+    padding: 0.375rem !important; // p-1.5 (6px)
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+    background: transparent !important;
+  }
+
+  .mat-divider {
+    margin: 0.25rem 0 !important;
+    border-top-color: rgb(241 245 249) !important; // border-slate-100
+  }
 }
 
 .mat-mdc-menu-item {
-  min-height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 0.625rem !important; // px-2.5
+  border-radius: 0.5rem !important; // rounded-lg (8px)
+  color: rgb(51 65 85) !important; // text-slate-700
+  font-size: 0.8125rem !important; // text-[13px]
+  font-weight: 500 !important;
+  font-family: inherit !important;
+  line-height: 1.25rem !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+
+  .mat-mdc-menu-item-text {
+    display: inline-flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    font-size: inherit !important;
+    color: inherit !important;
+  }
+
+  .mat-icon,
+  mat-icon {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    font-size: 16px !important;
+    line-height: 16px !important;
+    margin-right: 0.625rem !important;
+    margin-left: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  .mat-mdc-button-persistent-ripple,
+  .mat-ripple,
+  .mat-mdc-menu-item-ripple {
+    border-radius: 0.5rem !important;
+  }
+
+  &:hover:not([disabled]),
+  &.cdk-program-focused:not([disabled]),
+  &.cdk-keyboard-focused:not([disabled]) {
+    background-color: rgb(241 245 249) !important; // bg-slate-100
+    color: rgb(15 23 42) !important; // text-slate-900
+  }
+
+  &[disabled] {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+  }
+
+  // Destructive / danger menu item
+  &[class*="text-red"],
+  &[class*="text-rose"],
+  &.mat-menu-item-danger {
+    color: rgb(225 29 72) !important; // text-rose-600
+
+    .mat-icon,
+    mat-icon {
+      color: rgb(225 29 72) !important;
+    }
+
+    &:hover:not([disabled]) {
+      background-color: rgb(255 241 242) !important; // bg-rose-50
+      color: rgb(190 18 60) !important; // text-rose-700
+
+      .mat-icon,
+      mat-icon {
+        color: rgb(190 18 60) !important;
+      }
+    }
+  }
+
+  .mat-mdc-menu-submenu-icon {
+    color: rgb(148 163 184) !important; // text-slate-400
+    margin-left: auto !important;
+  }
+}
+
+// Dark theme overrides for mat-menu
+html.dark {
+  .mat-mdc-menu-panel {
+    background-color: rgb(15 23 42) !important; // bg-slate-900
+    border-color: rgb(30 41 59) !important; // border-slate-800
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
+
+    .mat-divider {
+      border-top-color: rgb(30 41 59) !important; // border-slate-800
+    }
+  }
+
+  .mat-mdc-menu-item {
+    color: rgb(226 232 240) !important; // text-slate-200
+
+    &:hover:not([disabled]),
+    &.cdk-program-focused:not([disabled]),
+    &.cdk-keyboard-focused:not([disabled]) {
+      background-color: rgb(30 41 59) !important; // bg-slate-800
+      color: rgb(255 255 255) !important; // text-white
+    }
+
+    // Destructive in dark theme
+    &[class*="text-red"],
+    &[class*="text-rose"],
+    &.mat-menu-item-danger {
+      color: rgb(251 113 133) !important; // text-rose-400
+
+      .mat-icon,
+      mat-icon {
+        color: rgb(251 113 133) !important;
+      }
+
+      &:hover:not([disabled]) {
+        background-color: rgba(225, 29, 72, 0.15) !important; // bg-rose-950/40
+        color: rgb(253 164 175) !important; // text-rose-300
+
+        .mat-icon,
+        mat-icon {
+          color: rgb(253 164 175) !important;
+        }
+      }
+    }
+
+    .mat-mdc-menu-submenu-icon {
+      color: rgb(100 116 139) !important; // text-slate-500
+    }
+  }
 }
 
 .mat-mdc-tab-body-wrapper {
   height: 100%;
+}
+
+// Standardized dialog backdrop and panel
+.app-dialog-backdrop {
+  background-color: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(4px);
+}
+
+.app-custom-dialog-panel {
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    border-radius: 1rem !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}
+
+// ============================================================================
+// Angular Material Table (mat-table) - Design System Theme
+// ============================================================================
+
+table.mat-mdc-table,
+table[mat-table] {
+  width: 100% !important;
+  background-color: transparent !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  font-family: inherit !important;
+  font-size: 0.75rem !important; // text-xs
+  line-height: 1.25rem !important;
+  color: rgb(51 65 85) !important; // text-slate-700
+  box-shadow: none !important;
+
+  // Elevation reset
+  &.mat-elevation-z8,
+  &[class*="mat-elevation-z"] {
+    box-shadow: none !important;
+  }
+
+  // Header row
+  .mat-mdc-header-row {
+    background-color: rgb(248 250 252) !important; // bg-slate-50
+    border-bottom: 1px solid rgb(226 232 240) !important; // border-slate-200
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+
+  // Header cells
+  .mat-mdc-header-cell {
+    color: rgb(100 116 139) !important; // text-slate-500
+    font-size: 0.6875rem !important; // text-[11px]
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    padding: 0.5rem 0.875rem !important; // py-2 px-3.5
+    border-bottom: 1px solid rgb(226 232 240) !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+
+    &:first-child {
+      border-top-left-radius: 0.75rem;
+    }
+
+    &:last-child {
+      border-top-right-radius: 0.75rem;
+    }
+  }
+
+  // Data rows
+  .mat-mdc-row {
+    background-color: transparent !important;
+    border-bottom: 1px solid rgb(241 245 249) !important; // border-slate-100
+    min-height: 42px !important;
+    height: 42px !important;
+    transition: background-color 0.15s ease-in-out !important;
+
+    &:hover {
+      background-color: rgba(248, 250, 252, 0.85) !important; // hover:bg-slate-50/85
+    }
+
+    &:last-child .mat-mdc-cell {
+      border-bottom: none !important;
+    }
+  }
+
+  // Data cells
+  .mat-mdc-cell {
+    color: rgb(51 65 85) !important; // text-slate-700
+    font-size: 0.75rem !important;
+    padding: 0.5rem 0.875rem !important;
+    border-bottom: 1px solid rgb(241 245 249) !important;
+    vertical-align: middle !important;
+  }
+
+  // Empty / No Data Row
+  .mat-mdc-no-data-row,
+  tr.mat-row *matNoDataRow,
+  tr.mat-row td[colspan] {
+    color: rgb(148 163 184) !important; // text-slate-400
+    font-size: 0.75rem !important;
+    text-align: center !important;
+    padding: 2rem 1rem !important;
+    border-bottom: none !important;
+  }
+}
+
+// Dark theme overrides for mat-table
+html.dark {
+  table.mat-mdc-table,
+  table[mat-table] {
+    color: rgb(203 213 225) !important; // text-slate-300
+
+    .mat-mdc-header-row {
+      background-color: rgba(15, 23, 42, 0.75) !important; // dark:bg-slate-900/75
+      border-bottom: 1px solid rgb(30 41 59) !important; // border-slate-800
+    }
+
+    .mat-mdc-header-cell {
+      color: rgb(148 163 184) !important; // text-slate-400
+      border-bottom: 1px solid rgb(30 41 59) !important;
+    }
+
+    .mat-mdc-row {
+      border-bottom: 1px solid rgba(30, 41, 59, 0.75) !important;
+
+      &:hover {
+        background-color: rgba(30, 41, 59, 0.45) !important; // hover:bg-slate-800/45
+      }
+
+      &:last-child .mat-mdc-cell {
+        border-bottom: none !important;
+      }
+    }
+
+    .mat-mdc-cell {
+      color: rgb(203 213 225) !important; // text-slate-300
+      border-bottom: 1px solid rgba(30, 41, 59, 0.75) !important;
+    }
+
+    .mat-mdc-no-data-row,
+    tr.mat-row *matNoDataRow,
+    tr.mat-row td[colspan] {
+      color: rgb(100 116 139) !important; // text-slate-500
+    }
+  }
+}
+
+// ============================================================================
+// Constrained Table Containers (Scroll with sticky headers)
+// ============================================================================
+
+.app-table-container,
+.overflow-x-auto:has(> table) {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  max-height: calc(100vh - 280px) !important;
+  position: relative !important;
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(100, 116, 139, 0.6);
+  }
+
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  thead tr {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: rgb(248 250 252) !important; // bg-slate-50
+    box-shadow: inset 0 -1px 0 rgb(226 232 240) !important; // border-slate-200
+  }
+}
+
+html.dark {
+  .app-table-container,
+  .overflow-x-auto:has(> table) {
+    thead th {
+      background-color: rgb(30 41 59) !important; // bg-slate-800
+      box-shadow: inset 0 -1px 0 rgb(51 65 85) !important; // border-slate-700
+    }
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(100, 116, 139, 0.4);
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(148, 163, 184, 0.6);
+    }
+  }
+}
+
+// Dialog tables constrained to dialog viewport
+.mat-mdc-dialog-container {
+  .app-table-container,
+  .overflow-x-auto:has(> table),
+  .overflow-auto:has(> table) {
+    max-height: min(48vh, 320px) !important;
+  }
+}
+
+// Global Drag & Drop Styling for table rows
+.cdk-drag-preview {
+  box-sizing: border-box !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  background-color: rgb(255 255 255) !important;
+  border: 1px solid rgb(226 232 240) !important;
+  display: table !important;
+
+  html.dark & {
+    background-color: rgb(15 23 42) !important;
+    border-color: rgb(51 65 85) !important;
+  }
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.25 !important;
+  background-color: rgb(241 245 249) !important;
+
+  html.dark & {
+    background-color: rgb(30 41 59) !important;
+  }
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1) !important;
+}
+
+.rescue-drag-handle,
+.example-drag-cursor {
+  cursor: grab !important;
+  color: rgb(148 163 184) !important;
+  transition: color 0.15s ease !important;
+
+  &:hover {
+    color: rgb(71 85 105) !important;
+  }
+
+  html.dark &:hover {
+    color: rgb(203 213 225) !important;
+  }
+
+  &:active {
+    cursor: grabbing !important;
+  }
 }

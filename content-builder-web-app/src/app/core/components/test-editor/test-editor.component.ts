@@ -1,23 +1,36 @@
 import { AppLoading, TestsActions, TestsState } from '@/core/store';
-import { AppTestAccessablityCondition, AppTestQuestionVm, AppTestVm, generateGUID, NullableValue } from '@/core/utils';
+import {
+  AppTestAccessablityCondition,
+  AppTestAccessablityConditionTest,
+  AppTestQuestionVm,
+  AppTestVm,
+  generateGUID,
+  NullableValue
+} from '@/core/utils';
 import { Component, computed, effect, inject, Injectable, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { findCyclePath } from '@/core/utils/graph';
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  AppCheckboxComponent
+} from '../ui';
 import { Store } from '@ngxs/store';
 import { TestConditionsBuilderComponent } from './test-condition-builder/test-conditions-builder.component';
 import { TestQuestionsBuilderComponent } from './test-questions-builder/test-questions-builder.component';
-import { MatCheckbox } from '@angular/material/checkbox';
 import { AppFilesStorageService } from '@/core/api';
 import { forkJoin, Observable, of } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { cloneDeep, sum } from 'lodash';
 import { RewardSelectComponent } from '../reward-select/reward-select.component';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
+import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
+import { AppDialogService } from '@/core/services/app-dialog.service';
 import {
   TestAiGenerateDialogComponent,
   TestAiGenerateDialogData,
@@ -28,13 +41,12 @@ import {
   providedIn: 'root'
 })
 export class TestsEditorService {
-  private readonly _dialogs = inject(MatDialog);
+  private readonly _appDialog = inject(AppDialogService);
   public openTest(test: Partial<AppTestVm>): void {
-    this._dialogs.open(TestEditorComponent, {
-      width: '90%',
-      height: '90%',
-      maxWidth: '90%',
-      minWidth: '90%',
+    this._appDialog.open(TestEditorComponent, {
+      width: '1100px',
+      maxWidth: '96vw',
+      maxHeight: '94vh',
       hasBackdrop: true,
       autoFocus: true,
       disableClose: true,
@@ -47,7 +59,7 @@ export class TestsEditorService {
   }
 
   public openTestWithAi(parentId: NullableValue<string>): void {
-    this._dialogs
+    this._appDialog
       .open(TestAiGenerateDialogComponent, {
         data: { parentId } satisfies TestAiGenerateDialogData,
         width: '560px',
@@ -68,16 +80,16 @@ export class TestsEditorService {
   selector: 'app-test-editor',
   imports: [
     MatIcon,
-    MatButton,
     ReactiveFormsModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatCheckbox,
-    MatInputModule,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
+    AppCheckboxComponent,
     TestConditionsBuilderComponent,
     TestQuestionsBuilderComponent,
     TariffSelectComponent,
-    RewardSelectComponent
+    RewardSelectComponent,
+    AppDialogWrapperComponent
   ],
   templateUrl: './test-editor.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -124,6 +136,10 @@ export class TestEditorComponent {
       .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
   );
 
+  protected readonly _resetCandidatesOptions = computed(() =>
+    this._resetCandidates().map((t) => ({ value: t.id, label: t.name }))
+  );
+
   // Вычисляем сумму правильных баллов
   protected readonly _totalCorrectScore = computed(() => {
     const questions = this._form.value.questions ?? [];
@@ -152,14 +168,44 @@ export class TestEditorComponent {
       };
     }
 
-    if (minScore !== totalScore) {
-      return {
-        type: 'warning',
-        message: `Проходной балл (${minScore}) не равен максимально возможному баллу (${totalScore})`
-      };
-    }
-
     return { type: null, message: null };
+  });
+
+  /** Условия доступа из формы — как сигнал, для реактивной проверки циклов. */
+  private readonly _formConditions = toSignal(
+    this._form.controls.conditions.valueChanges,
+    { initialValue: this._form.controls.conditions.value }
+  );
+
+  /**
+   * Цикл в графе условий доступа: тест A требует сдачи B, B — сдачи A (напрямую или
+   * через цепочку) — такие тесты взаимоисключающе блокируют друг друга.
+   * ponytail: отдельного типа вопроса «упорядочивание этапов» в модели нет,
+   * поэтому граф строится только по test-условиям.
+   */
+  protected readonly _conditionCycle = computed<string | null>(() => {
+    const allTests = this._store.selectSignal(TestsState.getAllTests)();
+    const selfId = this._dialogData.id ?? '__new__';
+    const nameOf = (id: string): string =>
+      id === selfId
+        ? (this._form.value.name || 'Этот тест')
+        : (allTests.find(t => t.id === id)?.name ?? id);
+
+    const edges = new Map<string, string[]>();
+    for (const t of allTests) {
+      if (t.id === this._dialogData.id) continue; // условия текущего теста берём из формы
+      edges.set(t.id, (t.accessabilityConditions ?? [])
+        .filter((c): c is AppTestAccessablityConditionTest => c.type === 'test')
+        .map(c => c.testId));
+    }
+    edges.set(selfId, (this._formConditions() ?? [])
+      .filter((c): c is AppTestAccessablityConditionTest => c.type === 'test')
+      .map(c => c.testId));
+
+    const cycle = findCyclePath(edges, selfId);
+    return cycle
+      ? `Циклическая зависимость: ${cycle.map(nameOf).join(' → ')} — тесты заблокируют друг друга`
+      : null;
   });
 
   constructor() {
@@ -199,9 +245,29 @@ export class TestEditorComponent {
     });
   }
 
+  /**
+   * Рекомендация проходного балла: 80% от взвешенного максимума, где сложные
+   * вопросы (несколько правильных ответов) весят ×2; критические ошибки
+   * (отрицательный балл у неверного ответа) добавляют свой худший штраф.
+   * Итог не превышает достижимый максимум.
+   */
   protected _calculateMinScore(): void {
-    const totalScore = this._totalCorrectScore();
-    this._form.patchValue({ minScore: totalScore });
+    let weightedMax = 0;
+    let criticalPenalty = 0;
+    let achievableMax = 0;
+    for (const q of this._form.value.questions ?? []) {
+      const answers = q.answers ?? [];
+      if (answers.length === 0) continue;
+      const correctAnswers = answers.filter(a => a.isCorrect);
+      const correctMax = sum(correctAnswers.map(a => Math.max(a.score ?? 0, 0)));
+      achievableMax += correctMax;
+      weightedMax += correctMax * (correctAnswers.length > 1 ? 2 : 1);
+      criticalPenalty += Math.max(0, ...answers
+        .filter(a => !a.isCorrect)
+        .map(a => -(a.score ?? 0)));
+    }
+    const recommended = Math.min(achievableMax, Math.round(weightedMax * 0.8 + criticalPenalty));
+    this._form.patchValue({ minScore: recommended });
     this._form.controls.minScore.markAsDirty();
   }
 
@@ -273,6 +339,7 @@ export class TestEditorComponent {
   }
 
   protected _handleSubmit(): void {
+    if (this._conditionCycle() != null) return; // инлайн-ошибка показана у блока условий
     const isNew = this._dialogData.id == null;
     if (isNew) {
       this._createTest();

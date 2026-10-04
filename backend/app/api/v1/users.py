@@ -13,6 +13,12 @@ from app.db.repositories.achievements import AchievementRepository
 from app.models.achievement import Reward, UserAchievement
 from app.models.learning_event import LearningEvent
 from app.models.user import User
+from app.models.user_bonus import UserBonusTransaction
+from app.schemas.users import GrantBonusRequest, UserStatusUpdateRequest
+from app.models.billing import UserSubscription, Tariff
+from sqlalchemy.orm import selectinload
+from sqlalchemy import select, func, update
+
 from app.schemas.users import (
     QrProfileOut,
     QrRewardOut,
@@ -32,12 +38,70 @@ async def list_users(
     db: Annotated[AsyncSession, Depends(get_db)],
     _admin: Annotated[User, Depends(get_current_admin)],
 ) -> list[UserListItemOut]:
-    result = await db.execute(select(User).order_by(User.full_name, User.email))
-    return [
-        UserListItemOut(id=u.id, full_name=u.full_name, email=u.email)
-        for u in result.scalars().all()
-    ]
+    # Query users with their total score and active tariff
+    stmt = (
+        select(
+            User,
+            func.coalesce(func.sum(UserBonusTransaction.amount), 0).label("score"),
+            Tariff.title.label("tariff_name")
+        )
+        .outerjoin(UserBonusTransaction, User.id == UserBonusTransaction.user_id)
+        .outerjoin(
+            UserSubscription, 
+            (User.id == UserSubscription.user_id) & (UserSubscription.status == "active")
+        )
+        .outerjoin(Tariff, UserSubscription.tariff_id == Tariff.id)
+        .group_by(User.id, Tariff.title)
+        .order_by(User.full_name, User.email)
+    )
+    result = await db.execute(stmt)
+    
+    out = []
+    for user, score, tariff_name in result.all():
+        out.append(UserListItemOut(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            status="active" if user.is_active else "banned",
+            score=int(score),
+            tariff_name=tariff_name
+        ))
+    return out
 
+@router.post("/users/{user_id}/bonus")
+async def grant_user_bonus(
+    user_id: UUID,
+    payload: GrantBonusRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(get_current_admin)],
+):
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    txn = UserBonusTransaction(
+        user_id=user_id,
+        amount=payload.points,
+        reason=payload.reason or "Admin bonus"
+    )
+    db.add(txn)
+    await db.commit()
+    return {"success": True}
+
+@router.patch("/users/{user_id}/status")
+async def update_user_status(
+    user_id: UUID,
+    payload: UserStatusUpdateRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(get_current_admin)],
+):
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.is_active = (payload.status == "active")
+    await db.commit()
+    return {"success": True}
 
 @router.post(
     "/users/reset-stats",

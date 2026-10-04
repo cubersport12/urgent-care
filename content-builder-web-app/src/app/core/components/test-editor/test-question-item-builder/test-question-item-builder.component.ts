@@ -2,13 +2,8 @@ import { AppTestQuestionActivationConditionKind, AppTestQuestionAnswerVm, AppTes
 import { NgClass } from '@angular/common';
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { take } from 'rxjs';
 import { TestAsnwerBuilderComponent } from '../test-asnwer-builder/test-asnwer-builder.component';
@@ -16,18 +11,27 @@ import { cloneDeep } from 'lodash';
 import { TestEditorComponent } from '../test-editor.component';
 import { AppFilesStorageService } from '@/core/api';
 
+import {
+  AppButtonComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppTextareaComponent,
+  AppSelectComponent,
+  AppCheckboxComponent
+} from '../../ui';
+
 @Component({
   selector: 'app-test-question-item-builder',
   imports: [
-    MatIcon,
-    MatCheckboxModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
     ReactiveFormsModule,
-    MatButton,
     MatTableModule,
-    NgClass
+    NgClass,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppTextareaComponent,
+    AppSelectComponent,
+    AppCheckboxComponent
   ],
   templateUrl: './test-question-item-builder.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -44,6 +48,21 @@ export class TestQuestionItemBuilderComponent {
   protected readonly AppTestQuestionActivationConditionKind = AppTestQuestionActivationConditionKind;
   protected readonly _conditionDataTypes = ['score', 'correct'];
   protected readonly _conditionTypes: AppTestQuestionActivationConditionKind[] = [AppTestQuestionActivationConditionKind.CompleteQuestion];
+
+  protected readonly _conditionTypeOptions = this._conditionTypes.map(type => ({
+    value: type,
+    label: this._humanizeConditionKind(type)
+  }));
+
+  protected readonly _relationQuestionOptions = (this._dialogData.questions ?? []).map(q => ({
+    value: q.id,
+    label: q.name || 'Безымянный вопрос'
+  }));
+
+  protected readonly _conditionDataTypeOptions = this._conditionDataTypes.map(type => ({
+    value: type,
+    label: this._humanizeConditionDataType(type)
+  }));
 
   protected readonly _form = new FormGroup({
     name: new FormControl<string>(''),

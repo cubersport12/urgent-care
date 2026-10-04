@@ -43,4 +43,12 @@ export class AppFilesStorageService {
         .catch((err: unknown) => obs.error(err));
     });
   }
+
+  public getFileUrl(fileName: string): string {
+    if (!fileName) return '';
+    if (fileName.startsWith('http://') || fileName.startsWith('https://') || fileName.startsWith('data:')) {
+      return fileName;
+    }
+    return this._api.getFileUrl(fileName);
+  }
 }

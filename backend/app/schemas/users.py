@@ -40,6 +40,17 @@ class UserListItemOut(CamelModel):
     id: UUID
     email: str
     full_name: str = Field(alias="fullName")
+    status: str = "active"
+    phone: str | None = None
+    tariff_name: str | None = Field(None, alias="tariffName")
+    score: int = 0
+
+class GrantBonusRequest(CamelModel):
+    points: int
+    reason: str | None = None
+
+class UserStatusUpdateRequest(CamelModel):
+    status: str
 
 
 class ResetStatsRequest(CamelModel):
@@ -48,3 +59,4 @@ class ResetStatsRequest(CamelModel):
 
 class ResetStatsOut(CamelModel):
     users_count: int = Field(alias="usersCount")
+

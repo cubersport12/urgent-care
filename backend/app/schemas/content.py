@@ -222,3 +222,34 @@ class FolderMaterialCountOut(CamelModel):
     folder_id: str = Field(alias="folderId")
     total: int = 0
     completed: int = 0
+
+
+class BulkDeleteRequest(CamelModel):
+    folder_ids: list[str] = Field(default_factory=list, alias="folderIds")
+    article_ids: list[str] = Field(default_factory=list, alias="articleIds")
+    test_ids: list[str] = Field(default_factory=list, alias="testIds")
+    rescue_ids: list[str] = Field(default_factory=list, alias="rescueIds")
+
+
+class BulkMoveRequest(CamelModel):
+    target_parent_id: str | None = Field(None, alias="targetParentId")
+    folder_ids: list[str] = Field(default_factory=list, alias="folderIds")
+    article_ids: list[str] = Field(default_factory=list, alias="articleIds")
+    test_ids: list[str] = Field(default_factory=list, alias="testIds")
+    rescue_ids: list[str] = Field(default_factory=list, alias="rescueIds")
+
+
+class BulkTariffRequest(CamelModel):
+    tariff_id: UUID | None = Field(None, alias="tariffId")
+    folder_ids: list[str] = Field(default_factory=list, alias="folderIds")
+    article_ids: list[str] = Field(default_factory=list, alias="articleIds")
+    test_ids: list[str] = Field(default_factory=list, alias="testIds")
+    rescue_ids: list[str] = Field(default_factory=list, alias="rescueIds")
+
+
+class BulkResult(CamelModel):
+    success: bool = True
+    deleted_count: int = Field(0, alias="deletedCount")
+    moved_count: int = Field(0, alias="movedCount")
+    updated_count: int = Field(0, alias="updatedCount")
+

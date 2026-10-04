@@ -3,10 +3,16 @@ import { AppArticleVm, AppFolderVm, AppRescueItemVm, AppTestVm, NullableValue } 
 
 export type ExplorerItemType = 'folder' | 'article' | 'test' | 'rescue';
 
+export type ExplorerClipboardItem = {
+  type: ExplorerItemType;
+  item: AppFolderVm | AppArticleVm | AppTestVm | AppRescueItemVm;
+};
+
 export type ExplorerClipboardEntry = {
   type: ExplorerItemType;
   item: AppFolderVm | AppArticleVm | AppTestVm | AppRescueItemVm;
   mode: 'copy' | 'cut';
+  items?: ExplorerClipboardItem[];
 };
 
 @Injectable({

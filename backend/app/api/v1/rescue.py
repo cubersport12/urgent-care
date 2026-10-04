@@ -46,12 +46,20 @@ async def get_rescue(
     return item
 
 
+from app.core.errors import AppError
+from app.services.rescue_graph import validate_rescue_graph
+
+
 @router.post("", response_model=RescueOut, status_code=status.HTTP_201_CREATED)
 async def create_rescue(
     payload: RescueCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
     _: Annotated[User, Depends(get_current_admin)],
 ):
+    if payload.data:
+        errs = validate_rescue_graph(payload.data)
+        if errs:
+            raise AppError(detail="; ".join(errs), status_code=400)
     fields = await with_default_tariff(db, dump_create(payload))
     if fields.get("created_at") is None:
         fields["created_at"] = datetime.now(timezone.utc)
@@ -67,6 +75,10 @@ async def update_rescue(
     db: Annotated[AsyncSession, Depends(get_db)],
     _: Annotated[User, Depends(get_current_admin)],
 ):
+    if payload.data:
+        errs = validate_rescue_graph(payload.data)
+        if errs:
+            raise AppError(detail="; ".join(errs), status_code=400)
     item = await RescueRepository(db).update(item_id, **dump_update(payload))
     if not item:
         raise not_found("Rescue")

@@ -11,15 +11,15 @@ import { ArticlesState, TestsState } from '@/core/store';
 import { upperFirst } from 'lodash';
 import { MatRipple } from '@angular/material/core';
 
+import { AppButtonComponent, AppIconButtonComponent } from '../../ui';
+
 type ControlValueType = AppTestAccessablityCondition[];
 
 @Component({
   selector: 'app-test-conditions-builder',
   imports: [
-    MatMiniFabButton,
-    MatIcon,
-    MatIconButton,
-    MatRipple
+    AppButtonComponent,
+    AppIconButtonComponent
   ],
   templateUrl: './test-conditions-builder.component.html',
   styles: ``,

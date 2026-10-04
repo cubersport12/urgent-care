@@ -702,6 +702,64 @@
         }
       }
     },
+    "/api/v1/auth/send-reset-link": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Send Reset Link Admin",
+        "operationId": "auth_send_reset_link_admin",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendResetLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/cities": {
       "get": {
         "tags": [
@@ -3296,6 +3354,186 @@
         }
       }
     },
+    "/api/v1/folders/bulk-delete": {
+      "post": {
+        "tags": [
+          "folders"
+        ],
+        "summary": "Bulk Delete Content",
+        "operationId": "folders_bulk_delete_content",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkDeleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/folders/bulk-move": {
+      "post": {
+        "tags": [
+          "folders"
+        ],
+        "summary": "Bulk Move Content",
+        "operationId": "folders_bulk_move_content",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkMoveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/folders/bulk-tariff": {
+      "post": {
+        "tags": [
+          "folders"
+        ],
+        "summary": "Bulk Tariff Content",
+        "operationId": "folders_bulk_tariff_content",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkTariffRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/folders/{item_id}": {
       "get": {
         "tags": [
@@ -5270,6 +5508,142 @@
         }
       }
     },
+    "/api/v1/users/{user_id}/bonus": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Grant User Bonus",
+        "operationId": "users_grant_user_bonus",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GrantBonusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}/status": {
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update User Status",
+        "operationId": "users_update_user_status",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/reset-stats": {
       "post": {
         "tags": [
@@ -5832,6 +6206,360 @@
         }
       }
     },
+    "/api/v1/ai/generate-test": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Generate Test",
+        "operationId": "ai_generate_test",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateTestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratedTestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/generate-rescue": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Generate Rescue",
+        "operationId": "ai_generate_rescue",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateRescueRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratedRescueResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system-settings": {
+      "get": {
+        "tags": [
+          "system-settings"
+        ],
+        "summary": "Get System Settings",
+        "operationId": "system-settings_get_system_settings",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "system-settings"
+        ],
+        "summary": "Update System Settings",
+        "operationId": "system-settings_update_system_settings",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemSettingsUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/summary": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Analytics Summary",
+        "operationId": "analytics_analytics_summary",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "month",
+              "title": "Period"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsSummaryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/recent-events": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Analytics Recent Events",
+        "operationId": "analytics_analytics_recent_events",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActivityEventOut"
+                  },
+                  "title": "Response Analytics Analytics Recent Events"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -5845,6 +6573,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "additionalProperties": true,
                   "type": "object",
                   "title": "Response Meta Health"
                 }
@@ -5867,6 +6596,7 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "additionalProperties": true,
                   "type": "object",
                   "title": "Response Meta Ready"
                 }
@@ -6302,6 +7032,182 @@
           "discountPercent"
         ],
         "title": "ActivePromoOut"
+      },
+      "ActivityEventOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "test",
+              "rescue",
+              "article",
+              "payment",
+              "registration"
+            ],
+            "title": "Kind"
+          },
+          "event": {
+            "type": "string",
+            "title": "Event"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "userName": {
+            "type": "string",
+            "title": "Username",
+            "default": ""
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "event",
+          "title",
+          "createdAt"
+        ],
+        "title": "ActivityEventOut"
+      },
+      "AnalyticsDayOut": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "tests": {
+            "type": "integer",
+            "title": "Tests",
+            "default": 0
+          },
+          "rescues": {
+            "type": "integer",
+            "title": "Rescues",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "date"
+        ],
+        "title": "AnalyticsDayOut"
+      },
+      "AnalyticsSummaryOut": {
+        "properties": {
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "usersTotal": {
+            "type": "integer",
+            "title": "Userstotal",
+            "default": 0
+          },
+          "usersNew": {
+            "type": "integer",
+            "title": "Usersnew",
+            "default": 0
+          },
+          "activeSubscriptions": {
+            "type": "integer",
+            "title": "Activesubscriptions",
+            "default": 0
+          },
+          "revenueRub": {
+            "type": "number",
+            "title": "Revenuerub",
+            "default": 0
+          },
+          "testsFinished": {
+            "type": "integer",
+            "title": "Testsfinished",
+            "default": 0
+          },
+          "rescuesFinished": {
+            "type": "integer",
+            "title": "Rescuesfinished",
+            "default": 0
+          },
+          "articlesCompleted": {
+            "type": "integer",
+            "title": "Articlescompleted",
+            "default": 0
+          },
+          "conversionPercent": {
+            "type": "number",
+            "title": "Conversionpercent",
+            "default": 0
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsDayOut"
+            },
+            "type": "array",
+            "title": "Series"
+          },
+          "tariffs": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsTariffOut"
+            },
+            "type": "array",
+            "title": "Tariffs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period"
+        ],
+        "title": "AnalyticsSummaryOut"
+      },
+      "AnalyticsTariffOut": {
+        "properties": {
+          "tariffId": {
+            "type": "string",
+            "title": "Tariffid"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "priceRub": {
+            "type": "integer",
+            "title": "Pricerub",
+            "default": 0
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tariffId",
+          "title",
+          "count"
+        ],
+        "title": "AnalyticsTariffOut"
       },
       "ArticleCreate": {
         "properties": {
@@ -7009,6 +7915,163 @@
         ],
         "title": "BroadcastOut"
       },
+      "BulkDeleteRequest": {
+        "properties": {
+          "folderIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Folderids"
+          },
+          "articleIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Articleids"
+          },
+          "testIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Testids"
+          },
+          "rescueIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rescueids"
+          }
+        },
+        "type": "object",
+        "title": "BulkDeleteRequest"
+      },
+      "BulkMoveRequest": {
+        "properties": {
+          "targetParentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetparentid"
+          },
+          "folderIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Folderids"
+          },
+          "articleIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Articleids"
+          },
+          "testIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Testids"
+          },
+          "rescueIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rescueids"
+          }
+        },
+        "type": "object",
+        "title": "BulkMoveRequest"
+      },
+      "BulkResult": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "deletedCount": {
+            "type": "integer",
+            "title": "Deletedcount",
+            "default": 0
+          },
+          "movedCount": {
+            "type": "integer",
+            "title": "Movedcount",
+            "default": 0
+          },
+          "updatedCount": {
+            "type": "integer",
+            "title": "Updatedcount",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "deletedCount",
+          "movedCount",
+          "updatedCount"
+        ],
+        "title": "BulkResult"
+      },
+      "BulkTariffRequest": {
+        "properties": {
+          "tariffId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tariffid"
+          },
+          "folderIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Folderids"
+          },
+          "articleIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Articleids"
+          },
+          "testIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Testids"
+          },
+          "rescueIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rescueids"
+          }
+        },
+        "type": "object",
+        "title": "BulkTariffRequest"
+      },
       "CertificateIssueRequest": {
         "properties": {
           "userId": {
@@ -7429,6 +8492,152 @@
         ],
         "title": "ForgotPassword"
       },
+      "GenerateRescueRequest": {
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "title": "GenerateRescueRequest"
+      },
+      "GenerateTestRequest": {
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "title": "GenerateTestRequest"
+      },
+      "GeneratedAnswer": {
+        "properties": {
+          "answerText": {
+            "type": "string",
+            "title": "Answertext"
+          },
+          "isCorrect": {
+            "type": "boolean",
+            "title": "Iscorrect"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "answerText",
+          "isCorrect"
+        ],
+        "title": "GeneratedAnswer"
+      },
+      "GeneratedQuestion": {
+        "properties": {
+          "questionText": {
+            "type": "string",
+            "title": "Questiontext"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/GeneratedAnswer"
+            },
+            "type": "array",
+            "title": "Answers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "questionText",
+          "answers"
+        ],
+        "title": "GeneratedQuestion"
+      },
+      "GeneratedRescueResponse": {
+        "properties": {
+          "parameters": {
+            "items": {
+              "$ref": "#/components/schemas/RescueTimerParameter"
+            },
+            "type": "array",
+            "title": "Parameters"
+          },
+          "scenes": {
+            "items": {
+              "$ref": "#/components/schemas/RescueScene"
+            },
+            "type": "array",
+            "title": "Scenes"
+          },
+          "defaultBackground": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defaultbackground",
+            "default": "bg-hospital"
+          },
+          "completion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RescueCompletion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "GeneratedRescueResponse"
+      },
+      "GeneratedTestResponse": {
+        "properties": {
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/GeneratedQuestion"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "questions"
+        ],
+        "title": "GeneratedTestResponse"
+      },
       "GrantAchievementRequest": {
         "properties": {
           "userId": {
@@ -7442,6 +8651,30 @@
           "userId"
         ],
         "title": "GrantAchievementRequest"
+      },
+      "GrantBonusRequest": {
+        "properties": {
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "points"
+        ],
+        "title": "GrantBonusRequest"
       },
       "HTTPValidationError": {
         "properties": {
@@ -7479,6 +8712,7 @@
           "payload": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -7518,6 +8752,7 @@
           "payload": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -8386,6 +9621,118 @@
         "type": "object",
         "title": "RegisterOut"
       },
+      "RescueChoiceParameterChange": {
+        "properties": {
+          "parameterId": {
+            "type": "string",
+            "title": "Parameterid"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "parameterId",
+          "value"
+        ],
+        "title": "RescueChoiceParameterChange"
+      },
+      "RescueCompletion": {
+        "properties": {
+          "success": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RescueCompletionCondition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RescueCompletionCondition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "RescueCompletion"
+      },
+      "RescueCompletionCondition": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "compare"
+          },
+          "parameterId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameterid"
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator",
+            "default": "gte"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "logicalOperator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logicaloperator"
+          },
+          "conditions": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditions"
+          }
+        },
+        "type": "object",
+        "title": "RescueCompletionCondition"
+      },
       "RescueCreate": {
         "properties": {
           "id": {
@@ -8445,6 +9792,7 @@
           "data": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -8529,6 +9877,7 @@
           "data": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -8593,6 +9942,181 @@
           "lockedBy"
         ],
         "title": "RescueOut"
+      },
+      "RescueParameterSeverity": {
+        "properties": {
+          "min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min"
+          },
+          "max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity",
+            "default": "normal"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "RescueParameterSeverity"
+      },
+      "RescueScene": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order"
+          },
+          "background": {
+            "type": "string",
+            "title": "Background",
+            "default": "bg-hospital"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/RescueSceneChoice"
+            },
+            "type": "array",
+            "title": "Choices"
+          },
+          "hidden": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hidden"
+          },
+          "isReviewed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isreviewed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "RescueScene"
+      },
+      "RescueSceneChoice": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "parameterChanges": {
+            "items": {
+              "$ref": "#/components/schemas/RescueChoiceParameterChange"
+            },
+            "type": "array",
+            "title": "Parameterchanges"
+          },
+          "nextSceneId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextsceneid"
+          },
+          "implications": {
+            "items": {
+              "$ref": "#/components/schemas/RescueSceneChoiceImplication"
+            },
+            "type": "array",
+            "title": "Implications"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "RescueSceneChoice"
+      },
+      "RescueSceneChoiceImplication": {
+        "properties": {
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity",
+            "default": "normal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "description"
+        ],
+        "title": "RescueSceneChoiceImplication"
       },
       "RescueStatsOut": {
         "properties": {
@@ -8713,6 +10237,64 @@
         ],
         "title": "RescueStatsUpsert"
       },
+      "RescueTimerParameter": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "delta": {
+            "type": "number",
+            "title": "Delta",
+            "default": 0.0
+          },
+          "startValue": {
+            "type": "number",
+            "title": "Startvalue",
+            "default": 0.0
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "numeric"
+          },
+          "severities": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RescueParameterSeverity"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severities"
+          },
+          "isHidden": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ishidden"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "RescueTimerParameter"
+      },
       "RescueUpdate": {
         "properties": {
           "name": {
@@ -8762,6 +10344,7 @@
           "data": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -9302,6 +10885,30 @@
         "type": "object",
         "title": "RewardUpdate"
       },
+      "SendResetLinkRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "fullName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fullname"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "SendResetLinkRequest"
+      },
       "SessionCreated": {
         "properties": {
           "session_id": {
@@ -9679,6 +11286,34 @@
           "lastBody"
         ],
         "title": "SupportThreadOut"
+      },
+      "SystemSettingsOut": {
+        "properties": {
+          "maintenanceMode": {
+            "type": "boolean",
+            "title": "Maintenancemode",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "SystemSettingsOut"
+      },
+      "SystemSettingsUpdate": {
+        "properties": {
+          "maintenanceMode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maintenancemode"
+          }
+        },
+        "type": "object",
+        "title": "SystemSettingsUpdate"
       },
       "TariffCreate": {
         "properties": {
@@ -11036,6 +12671,38 @@
           "fullName": {
             "type": "string",
             "title": "Fullname"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "active"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "tariffName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tariffname"
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score",
+            "default": 0
           }
         },
         "type": "object",
@@ -11145,6 +12812,19 @@
           "created_at"
         ],
         "title": "UserOut"
+      },
+      "UserStatusUpdateRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "UserStatusUpdateRequest"
       },
       "UserUpdate": {
         "properties": {

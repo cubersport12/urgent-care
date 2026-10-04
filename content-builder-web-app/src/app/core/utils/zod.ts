@@ -89,12 +89,47 @@ export const testSchema = z.object({
   resetTestIds: z.array(z.string()).nullable().optional()
 });
 
+function normalizeRescueSeverity(val: unknown): RescueParameterSeverityEnum {
+  if (typeof val === 'string') {
+    const v = val.toLowerCase().trim();
+    if (v === 'normal' || v === 'low' || v === 'medium' || v === 'high') {
+      return v as RescueParameterSeverityEnum;
+    }
+    if (v === 'critical' || v === 'fatal' || v === 'danger' || v === 'severe') {
+      return RescueParameterSeverityEnum.High;
+    }
+    if (v === 'warning' || v === 'warn' || v === 'moderate') {
+      return RescueParameterSeverityEnum.Medium;
+    }
+    if (v === 'minor' || v === 'mild' || v === 'slight') {
+      return RescueParameterSeverityEnum.Low;
+    }
+  }
+  return RescueParameterSeverityEnum.Normal;
+}
+
+function normalizeRescueCompareOperator(val: unknown): RescueCompletionCompareOperator {
+  if (typeof val === 'string') {
+    const v = val.toLowerCase().trim();
+    if (['eq', 'neq', 'gt', 'gte', 'lt', 'lte'].includes(v)) {
+      return v as RescueCompletionCompareOperator;
+    }
+    if (v === '>=' || v === '=>') return RescueCompletionCompareOperator.Gte;
+    if (v === '<=' || v === '=<') return RescueCompletionCompareOperator.Lte;
+    if (v === '>') return RescueCompletionCompareOperator.Gt;
+    if (v === '<') return RescueCompletionCompareOperator.Lt;
+    if (v === '==' || v === '=') return RescueCompletionCompareOperator.Eq;
+    if (v === '!=' || v === '<>') return RescueCompletionCompareOperator.Neq;
+  }
+  return RescueCompletionCompareOperator.Gte;
+}
+
 /** Уровень серьёзности параметра (диапазон + метка) */
 export const rescueParameterSeveritySchema = z.object({
-  min: z.number().optional(),
-  max: z.number().optional(),
-  severity: z.nativeEnum(RescueParameterSeverityEnum).optional(),
-  description: z.string().optional()
+  min: z.number().nullable().optional(),
+  max: z.number().nullable().optional(),
+  severity: z.preprocess((v) => (v != null ? normalizeRescueSeverity(v) : undefined), z.nativeEnum(RescueParameterSeverityEnum).optional()),
+  description: z.string().nullable().optional()
 });
 
 /** Схема параметра по таймеру (id, name, delta, startValue, type?, severities?) */
@@ -104,7 +139,7 @@ export const rescueTimerParameterSchema = z.object({
   delta: z.number().describe('Изменение за тик таймера; для type=timer обычно 0'),
   startValue: z.number().describe('Стартовое значение: число или секунды суток для timer'),
   type: z.enum(['numeric', 'timer']).optional().describe('numeric — число; timer — время'),
-  severities: z.array(rescueParameterSeveritySchema).optional().describe('Диапазоны и уровни серьёзности'),
+  severities: z.array(rescueParameterSeveritySchema).nullable().optional().describe('Диапазоны и уровни серьёзности'),
   isHidden: z.boolean().nullable().optional().describe('Скрыть параметр в UI')
 });
 
@@ -117,16 +152,16 @@ export const rescueChoiceParameterChangeSchema = z.object({
 /** Последствие выбора в сцене (описание + серьёзность) */
 export const rescueSceneChoiceImplicationSchema = z.object({
   description: z.string().describe('Текст последствия выбора'),
-  severity: z.nativeEnum(RescueParameterSeverityEnum).describe('Уровень серьёзности: normal | low | medium | high')
+  severity: z.preprocess(normalizeRescueSeverity, z.nativeEnum(RescueParameterSeverityEnum)).describe('Уровень серьёзности: normal | low | medium | high')
 });
 
 /** Вариант выбора в сцене */
 export const rescueSceneChoiceSchema = z.object({
   id: z.string().describe('UUID варианта выбора'),
   text: z.string().describe('Текст кнопки / действия игрока'),
-  parameterChanges: z.array(rescueChoiceParameterChangeSchema).optional().describe('Изменения параметров после выбора'),
+  parameterChanges: z.array(rescueChoiceParameterChangeSchema).nullable().optional().default([]).describe('Изменения параметров после выбора'),
   nextSceneId: z.string().nullable().optional().describe('id следующей сцены; null — конец ветки'),
-  implications: z.array(rescueSceneChoiceImplicationSchema).default([]).describe('Последствия выбора')
+  implications: z.array(rescueSceneChoiceImplicationSchema).nullable().optional().default([]).describe('Последствия выбора')
 });
 
 /** Сцена визуальной новеллы */
@@ -135,7 +170,7 @@ export const rescueSceneSchema = z.object({
   order: z.number().nullable().optional().describe('Порядок сцены в сценарии'),
   background: z.string().describe('URL или id файла фона'),
   text: z.string().describe('Текст сцены — описание ситуации'),
-  choices: z.array(rescueSceneChoiceSchema).optional().describe('Варианты действий; пустой массив — вводный слайд без выбора'),
+  choices: z.array(rescueSceneChoiceSchema).nullable().optional().default([]).describe('Варианты действий; пустой массив — вводный слайд без выбора'),
   hidden: z.boolean().nullable().optional().describe('Скрыть сцену'),
   isReviewed: z.boolean().nullable().optional().describe('Сцена проверена редактором')
 });
@@ -151,12 +186,12 @@ export const rescueSceneDocumentSchema = z.object({
 export const rescueCompletionCompareSchema = z.object({
   type: z.literal('compare'),
   parameterId: z.string().describe('id из parameters'),
-  operator: z.nativeEnum(RescueCompletionCompareOperator).describe('eq | neq | gt | gte | lt | lte'),
+  operator: z.preprocess(normalizeRescueCompareOperator, z.nativeEnum(RescueCompletionCompareOperator)).describe('eq | neq | gt | gte | lt | lte'),
   value: z.number().describe('Константа для сравнения')
 });
 
 /** Рекурсивное условие завершения спасения (compare | group) */
-export const rescueCompletionConditionSchema: z.ZodType<RescueCompletionConditionVm> = z.lazy(() =>
+export const rescueCompletionConditionSchema: z.ZodType<RescueCompletionConditionVm, z.ZodTypeDef, any> = z.lazy(() =>
   z.discriminatedUnion('type', [
     rescueCompletionCompareSchema,
     z.object({

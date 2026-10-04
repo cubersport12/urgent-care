@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIcon } from '@angular/material/icon';
 import { AppAIService } from '@/core/api';
 import { AppRescueItemDataVm, AppRescueItemVm, NullableValue } from '@/core/utils';
 import { take } from 'rxjs';
+import { AppButtonComponent, AppTextareaComponent } from '@/core/components/ui';
+import { AppDialogWrapperComponent } from '../../dialog-wrapper/dialog-wrapper.component';
 
 export type RescueAiGenerateDialogData = {
   parentId: NullableValue<string>;
@@ -18,12 +18,12 @@ export type RescueAiGenerateDialogResult = Partial<AppRescueItemVm>;
 @Component({
   selector: 'app-rescue-ai-generate-dialog',
   imports: [
-    MatDialogModule,
-    MatButton,
-    MatFormFieldModule,
-    MatInputModule,
+    AppButtonComponent,
+    AppTextareaComponent,
     MatProgressSpinnerModule,
-    ReactiveFormsModule
+    MatIcon,
+    ReactiveFormsModule,
+    AppDialogWrapperComponent
   ],
   templateUrl: './rescue-ai-generate-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -32,6 +32,18 @@ export class RescueAiGenerateDialogComponent {
   private readonly _ref = inject(MatDialogRef<RescueAiGenerateDialogComponent, RescueAiGenerateDialogResult | undefined>);
   private readonly _data = inject<RescueAiGenerateDialogData>(MAT_DIALOG_DATA);
   private readonly _ai = inject(AppAIService);
+
+  protected readonly _sampleChips = [
+    'Отек Квинке и анафилаксия в общественном месте',
+    'ДТП: открытый перелом и артериальное кровотечение',
+    'Потеря сознания и судорожный припадок на улице',
+    'Термический ожог кипятком у ребенка'
+  ];
+
+  protected _setPromptSample(topic: string): void {
+    this._prompt.setValue(`Клинический случай неотложной помощи: «${topic}». Включи начальное состояние пациента, развилки действий спасателя, критические ошибки и успешный исход.`);
+    this._prompt.markAsDirty();
+  }
 
   protected readonly _prompt = new FormControl('', {
     nonNullable: true,

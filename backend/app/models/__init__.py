@@ -21,8 +21,10 @@ from app.models.promo import PromoActivation, PromoCode
 from app.models.push_token import PushToken
 from app.models.rescue import Rescue
 from app.models.support import SupportMessage, SupportThread
+from app.models.system_setting import SystemSetting
 from app.models.test import Test
 from app.models.user import User
+from app.models.user_bonus import UserBonusTransaction
 
 __all__ = [
     "User",
@@ -52,4 +54,6 @@ __all__ = [
     "Certificate",
     "PromoCode",
     "PromoActivation",
+    "SystemSetting",
+    "UserBonusTransaction",
 ]

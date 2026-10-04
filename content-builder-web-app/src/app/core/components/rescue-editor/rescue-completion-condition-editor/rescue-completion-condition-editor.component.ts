@@ -5,12 +5,14 @@ import {
   RescueCompletionGroupVm,
   RescueCompletionLogicalOperator
 } from '@/core/utils';
-import { Component, forwardRef, input, output, ChangeDetectionStrategy } from '@angular/core';
-import { MatButton } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatOption, MatSelectModule } from '@angular/material/select';
+import { Component, forwardRef, input, output, computed, ChangeDetectionStrategy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import {
+  AppButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  SelectOption
+} from '@/core/components/ui';
 
 export type RescueCompletionParameterOption = { id: string; name: string };
 
@@ -18,12 +20,10 @@ export type RescueCompletionParameterOption = { id: string; name: string };
   selector: 'app-rescue-completion-condition-editor',
   standalone: true,
   imports: [
-    MatButton,
-    MatIcon,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    MatOption,
+    FormsModule,
+    AppButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
     forwardRef(() => RescueCompletionConditionEditorComponent)
   ],
   templateUrl: './rescue-completion-condition-editor.component.html',
@@ -62,6 +62,24 @@ export class RescueCompletionConditionEditorComponent {
     };
     return m[op] ?? op;
   }
+
+  protected readonly _paramSelectOptions = computed<SelectOption[]>(() =>
+    this.parameterOptions().map(opt => ({ value: opt.id, label: opt.name }))
+  );
+
+  protected readonly _operatorOptions: SelectOption[] = [
+    { value: RescueCompletionCompareOperator.Eq, label: 'равно' },
+    { value: RescueCompletionCompareOperator.Neq, label: 'не равно' },
+    { value: RescueCompletionCompareOperator.Gt, label: 'больше' },
+    { value: RescueCompletionCompareOperator.Gte, label: 'больше или равно' },
+    { value: RescueCompletionCompareOperator.Lt, label: 'меньше' },
+    { value: RescueCompletionCompareOperator.Lte, label: 'меньше или равно' }
+  ];
+
+  protected readonly _logicalOpOptions: SelectOption[] = [
+    { value: RescueCompletionLogicalOperator.And, label: 'Все условия (И)' },
+    { value: RescueCompletionLogicalOperator.Or, label: 'Любое условие (ИЛИ)' }
+  ];
 
   protected _setCompareRoot(): void {
     const id = this.parameterOptions()[0]?.id ?? '';

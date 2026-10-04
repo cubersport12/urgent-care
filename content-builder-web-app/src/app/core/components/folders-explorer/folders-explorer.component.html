@@ -1,157 +1,170 @@
-<div class="flex flex-col flex-1 min-h-0 bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
-  <div class="flex items-center gap-0.5 border-b border-slate-200 bg-white px-1 py-0.5 shrink-0 dark:border-slate-700 dark:bg-slate-800">
-    <div class="flex items-center">
-      <button type="button" mat-icon-button [disabled]="_isCreating()" (click)="_createNewFolder()" matTooltip="Создать папку">
-        <mat-icon [svgIcon]="_isCreating() ? 'spinner' : 'folder'" />
-      </button>
-      <button type="button" mat-icon-button [disabled]="_isCreating()" (click)="_createArticle()" matTooltip="Добавить текстовый документ">
-        <mat-icon svgIcon="file-contract" />
-      </button>
-      <button type="button" mat-icon-button [matMenuTriggerFor]="testCreateMenu" matTooltip="Создать тест">
-        <mat-icon svgIcon="file-circle-check" />
-      </button>
-      <mat-menu #testCreateMenu="matMenu">
-        <button mat-menu-item (click)="_createTest()">
-          <mat-icon svgIcon="pen-to-square" />
-          Добавить вручную
-        </button>
-        <button mat-menu-item (click)="_createTestWithAi()">
-          <mat-icon svgIcon="bolt" />
-          Сгенерировать через ИИ
-        </button>
-      </mat-menu>
-      <button type="button" mat-icon-button [matMenuTriggerFor]="rescueCreateMenu" matTooltip="Создать спасение">
-        <mat-icon svgIcon="kit-medical" />
-      </button>
-      <mat-menu #rescueCreateMenu="matMenu">
-        <button mat-menu-item (click)="_createRescueManual()">
-          <mat-icon svgIcon="pen-to-square" />
-          Добавить вручную
-        </button>
-        <button mat-menu-item (click)="_createRescueWithAi()">
-          <mat-icon svgIcon="bolt" />
-          Сгенерировать через ИИ
-        </button>
-      </mat-menu>
+<div class="flex flex-col flex-1 min-h-0 bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 select-none">
+  <!-- Top Command Ribbon / Toolbar -->
+  <header class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 shrink-0 z-20 shadow-xs">
+    <!-- Action Clusters -->
+    <div class="flex items-center flex-wrap gap-1.5 min-w-0">
+      <!-- Create Group -->
+      <div class="flex items-center h-9 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 p-0.5 border border-slate-200 dark:border-slate-700/80">
+        <app-button
+          variant="ghost"
+          size="sm"
+          [icon]="_isCreating() ? 'spinner' : 'folder'"
+          [disabled]="_isCreating()"
+          tooltip="Создать новую папку"
+          (clicked)="_createNewFolder()"
+        >
+          Папка
+        </app-button>
+
+        <app-button
+          variant="ghost"
+          size="sm"
+          icon="file-contract"
+          [disabled]="_isCreating()"
+          tooltip="Добавить текстовый документ (PDF)"
+          (clicked)="_createArticle()"
+        >
+          Документ
+        </app-button>
+
+        <app-button
+          variant="ghost"
+          size="sm"
+          icon="file-circle-check"
+          iconRight="chevron-down"
+          [matMenuTriggerFor]="testCreateMenu"
+          tooltip="Создать интерактивный тест"
+        >
+          Тест
+        </app-button>
+        <mat-menu #testCreateMenu="matMenu">
+          <button mat-menu-item (click)="_createTest()">
+            <mat-icon svgIcon="edit" class="text-indigo-500" />
+            <span>Добавить вручную</span>
+          </button>
+          <button mat-menu-item (click)="_createTestWithAi()">
+            <mat-icon svgIcon="bolt" class="text-amber-500" />
+            <span>Сгенерировать через ИИ</span>
+          </button>
+        </mat-menu>
+
+        <app-button
+          variant="ghost"
+          size="sm"
+          icon="kit-medical"
+          iconRight="chevron-down"
+          [matMenuTriggerFor]="rescueCreateMenu"
+          tooltip="Создать клинический режим спасения"
+        >
+          Спасение
+        </app-button>
+        <mat-menu #rescueCreateMenu="matMenu">
+          <button mat-menu-item (click)="_createRescueManual()">
+            <mat-icon svgIcon="edit" class="text-rose-500" />
+            <span>Добавить вручную</span>
+          </button>
+          <button mat-menu-item (click)="_createRescueWithAi()">
+            <mat-icon svgIcon="bolt" class="text-amber-500" />
+            <span>Сгенерировать через ИИ</span>
+          </button>
+        </mat-menu>
+      </div>
+
+      <!-- Clipboard Group -->
+      <div class="flex items-center h-9 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 p-0.5 border border-slate-200 dark:border-slate-700/80">
+        <app-icon-button
+          icon="copy"
+          size="sm"
+          tooltip="Копировать (Ctrl+C / F5)"
+          [disabled]="!_hasSelection()"
+          (clicked)="_copySelected()"
+        />
+
+        <app-icon-button
+          icon="scissors"
+          size="sm"
+          tooltip="Вырезать (Ctrl+X / F6)"
+          [disabled]="!_hasSelection()"
+          (clicked)="_cutSelected()"
+        />
+
+        <app-icon-button
+          icon="paste"
+          size="sm"
+          tooltip="Вставить в активную папку (Ctrl+V)"
+          [disabled]="!_canPasteTo(_getPanelFolderId(_activePanel()))"
+          [badge]="_clipboard() ? true : undefined"
+          badgeColor="bg-blue-500"
+          (clicked)="_pasteToActivePanel()"
+        />
+      </div>
+
+      <!-- Item Action Group -->
+      <div class="flex items-center h-9 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 p-0.5 border border-slate-200 dark:border-slate-700/80">
+        <app-icon-button
+          icon="edit"
+          size="sm"
+          tooltip="Переименовать (F2)"
+          [disabled]="!_hasSelection()"
+          (clicked)="_renameSelected()"
+        />
+
+        <app-icon-button
+          icon="tag"
+          size="sm"
+          tooltip="Назначить тарифный план"
+          [disabled]="!_hasSelection()"
+          (clicked)="_setTariffOnSelected()"
+        />
+
+        <app-icon-button
+          icon="trash"
+          size="sm"
+          variant="danger"
+          tooltip="Удалить выбранное (Delete)"
+          [disabled]="!_hasSelection()"
+          (clicked)="_deleteSelected()"
+        />
+      </div>
+
+      <app-icon-button
+        icon="rotate-right"
+        size="md"
+        tooltip="Обновить данные активной панели"
+        (clicked)="_refreshActivePanel()"
+      />
     </div>
 
-    <mat-divider [vertical]="true" class="!h-7 mx-0.5" />
+    <!-- Right Controls: Tariff filter + Shortcuts -->
+    <div class="flex items-center gap-2">
+      <div class="w-48">
+        <app-select
+          id="tc-tariff-filter"
+          [options]="_tariffFilterOptions()"
+          [value]="_filterTariffId() ?? ''"
+          (valueChange)="_onFilterTariffChange($event)"
+          [allowEmpty]="true"
+          emptyLabel="Все тарифы"
+          emptyValue=""
+          size="sm"
+          icon="filter"
+        />
+      </div>
 
-    <div class="flex items-center">
-      <button type="button" mat-icon-button (click)="_copySelected()" [disabled]="!_hasSelection()" matTooltip="Ctrl+C — копировать">
-        <mat-icon svgIcon="copy" />
-      </button>
-      <button type="button" mat-icon-button (click)="_cutSelected()" [disabled]="!_hasSelection()" matTooltip="Ctrl+X — вырезать">
-        <mat-icon svgIcon="scissors" />
-      </button>
-      <button type="button" mat-icon-button (click)="_pasteToActivePanel()" [disabled]="!_canPasteTo(_getPanelFolderId(_activePanel()))" matTooltip="Ctrl+V — вставить">
-        <mat-icon svgIcon="paste" />
-      </button>
+      <app-button
+        size="sm"
+        variant="outline"
+        icon="gear"
+        tooltip="Справка по горячим клавишам"
+        (clicked)="_openShortcuts()"
+      >
+        Клавиши
+      </app-button>
     </div>
+  </header>
 
-    <mat-divider [vertical]="true" class="!h-7 mx-0.5" />
-
-    <div class="flex items-center">
-      <button type="button" mat-icon-button (click)="_renameSelected()" [disabled]="!_hasSelection()" matTooltip="F2 — переименовать">
-        <mat-icon svgIcon="pen-to-square" />
-      </button>
-      <button type="button" mat-icon-button color="warn" (click)="_deleteSelected()" [disabled]="!_hasSelection()" matTooltip="Delete — удалить">
-        <mat-icon svgIcon="trash" />
-      </button>
-      <button
-        type="button"
-        mat-icon-button
-        (click)="_setTariffOnSelected()"
-        [disabled]="!_hasSelection()"
-        matTooltip="Назначить тариф выбранному"
-      >
-        <mat-icon svgIcon="tag" />
-      </button>
-    </div>
-
-    <mat-divider [vertical]="true" class="!h-7 mx-0.5" />
-
-    <div class="flex items-center">
-      <button type="button" mat-icon-button (click)="_refreshActivePanel()" matTooltip="Обновить">
-        <mat-icon svgIcon="rotate-right" />
-      </button>
-      <button type="button" mat-icon-button (click)="_openTariffs()" matTooltip="Тарифы">
-        <mat-icon svgIcon="sliders" />
-      </button>
-      <button type="button" mat-icon-button (click)="_openPromoCodes()" matTooltip="Промокоды">
-        <mat-icon svgIcon="tag" />
-      </button>
-      <button type="button" mat-icon-button (click)="_openAchievements()" matTooltip="Достижения">
-        <mat-icon svgIcon="trophy" />
-      </button>
-      <button type="button" mat-icon-button (click)="_openRewards()" matTooltip="Награды">
-        <mat-icon svgIcon="gift" />
-      </button>
-      <button
-        type="button"
-        mat-icon-button
-        (click)="_openStatsReset()"
-        matTooltip="Сбросить статистику"
-      >
-        <mat-icon svgIcon="trash" />
-      </button>
-      <button
-        type="button"
-        mat-icon-button
-        (click)="_openSubscriptionRefund()"
-        matTooltip="Выполнить возврат средств за подписку"
-      >
-        <mat-icon svgIcon="credit-card" />
-      </button>
-      <button
-        type="button"
-        mat-icon-button
-        (click)="_openLegalDocs()"
-        matTooltip="Нормативные документы"
-      >
-        <mat-icon svgIcon="file-contract" />
-      </button>
-      <button
-        type="button"
-        mat-icon-button
-        (click)="_openCertificates()"
-        matTooltip="Выдача сертификатов"
-      >
-        <mat-icon svgIcon="certificate" />
-      </button>
-      <button
-        type="button"
-        mat-icon-button
-        (click)="_sendTestNotification()"
-        matTooltip="Тестовое уведомление"
-      >
-        <mat-icon svgIcon="bell" />
-      </button>
-    </div>
-
-    <div class="flex items-center gap-1 ml-1">
-      <label class="tc-tariff-filter-label text-[11px] text-slate-500 dark:text-slate-400 select-none whitespace-nowrap" for="tc-tariff-filter">
-        Тариф
-      </label>
-      <select
-        id="tc-tariff-filter"
-        class="tc-tariff-filter"
-        [value]="_filterTariffId() ?? ''"
-        (change)="_onFilterSelectChange($event)"
-      >
-        <option value="">Все</option>
-        @for (t of _tariffs(); track t.id) {
-          <option [value]="t.id">{{ t.title }} (≤{{ t.rank }})</option>
-        }
-      </select>
-    </div>
-
-    <p class="ml-auto min-w-0 shrink px-2 text-[11px] leading-snug text-slate-400 truncate select-none dark:text-slate-500">
-      ↑↓ выбор · ←/→ панели · Ctrl+C копировать · Ctrl+X вырезать · Ctrl+V вставить · F2 переименовать · Delete удалить · Enter открыть · Backspace вверх · F5/F6 копировать/вырезать
-    </p>
-  </div>
-
-  <as-split direction="horizontal" unit="percent" class="flex-1 min-h-0">
+  <!-- Dual Split Panes -->
+  <as-split direction="horizontal" unit="percent" class="flex-1 min-h-0 bg-slate-100 dark:bg-slate-950 p-2">
     <as-split-area [size]="50" [minSize]="25">
       <ng-container *ngTemplateOutlet="panelTemplate; context: { side: 'left', fetching: _leftFetching() }" />
     </as-split-area>
@@ -160,88 +173,187 @@
     </as-split-area>
   </as-split>
 
-  <div class="border-t border-slate-200 bg-slate-100 px-2 py-1 text-xs text-slate-600 truncate shrink-0 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-    {{ _statusText() }}
-  </div>
+  <!-- Bottom Status Bar -->
+  <footer class="flex items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400 shrink-0 z-20">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="flex items-center gap-1.5 font-medium shrink-0">
+        <span
+          class="w-2 h-2 rounded-full"
+          [class.bg-blue-500]="_activePanel() === 'left'"
+          [class.bg-slate-400]="_activePanel() !== 'left'"
+        ></span>
+        <span class="text-slate-700 dark:text-slate-300">
+          {{ _activePanel() === 'left' ? 'Левая панель' : 'Правая панель' }}
+        </span>
+      </div>
+
+      <span class="text-slate-300 dark:text-slate-700">|</span>
+
+      <span class="truncate">
+        {{ _statusText() }}
+      </span>
+    </div>
+
+    @if (_clipboard(); as clip) {
+      <div class="flex items-center gap-2 px-2.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 text-xs shrink-0">
+        <mat-icon svgIcon="paste" class="!w-3.5 !h-3.5" />
+        <span>Буфер: {{ clip.mode === 'copy' ? 'Копия' : 'Перенос' }} «{{ clip.item.name }}»</span>
+        <app-button
+          variant="ghost"
+          size="sm"
+          (clicked)="_clearClipboard()"
+        >
+          Очистить
+        </app-button>
+      </div>
+    }
+  </footer>
 </div>
 
-<button type="button" class="hidden" #contextMenuTrigger [matMenuTriggerFor]="contextMenu"></button>
+<!-- Context Menu Trigger & MatMenu -->
+<div class="hidden" #contextMenuTrigger [matMenuTriggerFor]="contextMenu"></div>
 <mat-menu #contextMenu="matMenu">
   @if (_contextMenuItem(); as item) {
     <button mat-menu-item (click)="_open(_contextMenuPanel(), item)">
-      <mat-icon svgIcon="folder-open" />
-      Открыть
+      <mat-icon svgIcon="folder-open" class="text-blue-500" />
+      <span>Открыть</span>
     </button>
     <button mat-menu-item (click)="_beginRename(item.id, _contextMenuPanel())">
-      <mat-icon svgIcon="pen-to-square" />
-      Переименовать
+      <mat-icon svgIcon="edit" class="text-slate-500" />
+      <span>Переименовать</span>
     </button>
     @if (item.type === 'folder') {
       <button mat-menu-item (click)="_openFolderProperties(item)">
-        <mat-icon svgIcon="sliders" />
-        Свойства папки
+        <mat-icon svgIcon="sliders-h" class="text-amber-500" />
+        <span>Свойства папки</span>
       </button>
     }
     <button mat-menu-item (click)="_setTariffOnItem(item)">
-      <mat-icon svgIcon="tag" />
-      Назначить тариф
+      <mat-icon svgIcon="tag" class="text-blue-500" />
+      <span>Назначить тариф</span>
     </button>
+    <mat-divider />
     <button mat-menu-item (click)="_copy(item, _contextMenuPanel())">
       <mat-icon svgIcon="copy" />
-      Копировать
+      <span>Копировать</span>
     </button>
     <button mat-menu-item (click)="_cut(item, _contextMenuPanel())">
       <mat-icon svgIcon="scissors" />
-      Вырезать
+      <span>Вырезать</span>
     </button>
     @if (_clipboard() && _canPasteTo(_getPanelFolderId(_contextMenuPanel()))) {
       <button mat-menu-item (click)="_paste(_getPanelFolderId(_contextMenuPanel()))">
         <mat-icon svgIcon="paste" />
-        Вставить сюда
+        <span>Вставить сюда</span>
       </button>
     }
     @if (item.type === 'folder' && _clipboard() && _canPasteTo(item.id)) {
       <button mat-menu-item (click)="_paste(item.id)">
         <mat-icon svgIcon="paste" />
-        Вставить в папку
+        <span>Вставить в папку</span>
       </button>
     }
-    <button mat-menu-item (click)="_delete(item, _contextMenuPanel())">
-      <mat-icon svgIcon="trash" />
-      Удалить
+    <mat-divider />
+    <button mat-menu-item (click)="_delete(item, _contextMenuPanel())" class="!text-red-600 dark:!text-red-400">
+      <mat-icon svgIcon="trash" class="text-red-500" />
+      <span>Удалить</span>
     </button>
   }
 </mat-menu>
 
+<!-- Template for each Explorer Panel -->
 <ng-template #panelTemplate let-side="side" let-fetching="fetching">
   <section
-    class="flex flex-col h-full min-h-0 border-2 transition-colors bg-white dark:bg-slate-950"
+    class="flex flex-col h-full min-h-0 rounded-2xl bg-white dark:bg-slate-900 border overflow-hidden shadow-xs transition-all duration-150 relative"
     [class.border-blue-500]="_isPanelActive(side)"
-    [class.border-transparent]="!_isPanelActive(side)"
+    [class.ring-2]="_isPanelActive(side)"
+    [class.ring-blue-500/20]="_isPanelActive(side)"
+    [class.border-slate-200]="!_isPanelActive(side)"
+    [class.dark:border-slate-800]="!_isPanelActive(side)"
     (mousedown)="_activatePanel(side)"
     (click)="_clearSelection(side)"
   >
+    <!-- Panel Header: Breadcrumb trail + Panel Search + Counter -->
+    <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/80 shrink-0">
+      <!-- Left side: Breadcrumb path -->
+      <div class="flex items-center gap-1 min-w-0 flex-1 overflow-x-auto no-scrollbar">
+        <!-- Root Button -->
+        <app-button
+          [variant]="_getPanelPath(side).length === 0 ? 'secondary' : 'ghost'"
+          size="sm"
+          icon="house"
+          tooltip="Корневая папка"
+          (clicked)="_navigateToRoot(side); $event.stopPropagation()"
+        >
+          Корень
+        </app-button>
+
+        @for (folder of _getPanelPath(side); track folder.id; let idx = $index; let isLast = $last) {
+          <mat-icon svgIcon="chevron-right" class="!w-3 !h-3 text-slate-400 shrink-0" />
+          <app-button
+            [variant]="isLast ? 'secondary' : 'ghost'"
+            size="sm"
+            [tooltip]="folder.name"
+            (clicked)="_navigateToPathIndex(side, idx); $event.stopPropagation()"
+          >
+            {{ folder.name }}
+          </app-button>
+        }
+      </div>
+
+      <!-- Right side: Quick Search Input & Count Badge -->
+      <div class="flex items-center gap-2 shrink-0">
+        <app-input
+          size="sm"
+          placeholder="Поиск..."
+          icon="magnifying-glass"
+          [clearable]="true"
+          [value]="_getPanelSearchQuery(side)"
+          (valueChange)="_setPanelSearchQuery(side, $event)"
+          (cleared)="_clearPanelSearchQuery(side)"
+          class="w-28 sm:w-36"
+          (click)="$event.stopPropagation()"
+        />
+
+        <span class="px-2 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+          {{ _getPanelOptions(side).length }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Table Container -->
     <div class="relative flex-1 min-h-0 overflow-auto" cdkDropListGroup (click)="$event.stopPropagation()">
       @if (fetching) {
-        <div class="absolute inset-0 z-10 bg-white/50 dark:bg-slate-950/50"></div>
+        <div class="absolute inset-0 z-10 bg-white/60 dark:bg-slate-900/60 backdrop-blur-[1px] flex items-center justify-center">
+          <mat-icon svgIcon="spinner" class="!w-6 !h-6 text-blue-500 animate-spin" />
+        </div>
       }
 
-      <table class="w-full tc-table text-left">
+      <table class="w-full tc-table text-left border-collapse">
         <thead>
           <tr>
-            <th class="tc-header-cell">Имя</th>
-            <th class="tc-header-cell tc-tariff-col">Тариф</th>
-            <th class="tc-header-cell tc-type-col">Тип</th>
+            <th class="tc-header-cell">НАИМЕНОВАНИЕ</th>
+            <th class="tc-header-cell tc-tariff-col">ТАРИФ</th>
+            <th class="tc-header-cell tc-type-col">ТИП</th>
+            <th class="tc-header-cell tc-actions-col">ДЕЙСТВИЯ</th>
           </tr>
         </thead>
+
         @if (_canGoUp(side)) {
           <tbody>
             <tr
-              class="tc-parent-row cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+              class="tc-parent-row cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
               (dblclick)="_handleGoUpClick(side, $event)"
+              (click)="_handleGoUpClick(side, $event)"
             >
-              <td class="tc-cell" colspan="3">
-                <span class="font-bold text-lg leading-none tracking-widest text-slate-600 dark:text-slate-300">...</span>
+              <td class="tc-cell" colspan="4">
+                <div class="flex items-center gap-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  <div class="w-6 h-6 rounded-md bg-slate-200/70 dark:bg-slate-800 flex items-center justify-center shrink-0 text-slate-500">
+                    <mat-icon svgIcon="arrow-up" class="!w-3 !h-3" />
+                  </div>
+                  <span>.. На уровень выше</span>
+                  <span class="text-[11px] font-normal text-slate-400">(Backspace или клик)</span>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -257,26 +369,34 @@
         >
           @for (item of _getPanelOptions(side); track item.id) {
             <tr
-              class="tc-row cursor-pointer"
+              class="tc-row cursor-pointer group"
               [class.tc-row-selected]="_isSelected(side, item)"
               [attr.data-tc-item-id]="item.id"
               [attr.data-tc-side]="side"
               cdkDrag
               [cdkDragData]="item"
-              [style.opacity]="_isHidden(item) || _isCut(item) ? 0.5 : 1"
+              [style.opacity]="_isHidden(item) || _isCut(item) ? 0.45 : 1"
               (click)="_handleItemSelect(side, item, $event)"
               (dblclick)="_handleItemOpen(side, item, $event)"
               (contextmenu)="_onRowContextMenu($event, side, item)"
             >
               <td class="tc-cell">
                 @if (_isPending(side, item.id)) {
-                  <div class="flex items-center gap-2 py-0.5">
-                    <app-skeleton shape="circle" size="20px" />
-                    <app-skeleton height="16px" borderRadius="4px" width="70%" />
+                  <div class="flex items-center gap-2 py-1">
+                    <app-skeleton shape="circle" size="24px" />
+                    <app-skeleton height="16px" borderRadius="4px" width="60%" />
                   </div>
                 } @else {
-                  <div class="flex items-center gap-2 min-w-0 py-0.5 text-left">
-                    <mat-icon class="!w-5 !h-5 shrink-0 text-amber-500" [svgIcon]="_getSvgIcon(item)" cdkDragHandle />
+                  <div class="flex items-center gap-2.5 min-w-0 py-0.5 text-left">
+                    <div
+                      class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border cursor-grab active:cursor-grabbing transition-transform group-hover:scale-105"
+                      [ngClass]="_getItemIconBadgeClass(item)"
+                      cdkDragHandle
+                      matTooltip="Потяните для изменения порядка или перемещения"
+                    >
+                      <mat-icon class="!w-4 !h-4" [svgIcon]="_getSvgIcon(item)" />
+                    </div>
+
                     @if (_isRenaming(side, item.id)) {
                       <app-text-editable-value
                         class="min-w-0 flex-1 text-left"
@@ -285,25 +405,77 @@
                         (valueChange)="_confirmRename(item, $event)"
                       />
                     } @else {
-                      <span class="tc-row-name min-w-0 flex-1 truncate text-left text-sm text-slate-900 dark:text-slate-100">{{ item.name }}</span>
+                      <span class="tc-row-name min-w-0 flex-1 truncate text-left text-xs font-medium text-slate-900 dark:text-slate-100">
+                        {{ item.name }}
+                      </span>
                     }
                   </div>
                 }
               </td>
+
               <td class="tc-cell tc-tariff-col">
-                <span class="tc-tariff-badge" [title]="_getTariffLabel(item)">{{ _getTariffLabel(item) }}</span>
+                <span class="tc-tariff-badge" [title]="_getTariffLabel(item)">
+                  {{ _getTariffLabel(item) }}
+                </span>
               </td>
-              <td class="tc-cell tc-type-col text-xs text-slate-500 dark:text-slate-400">
-                {{ _getTypeLabel(item) }}
+
+              <td class="tc-cell tc-type-col">
+                <span class="text-xs text-slate-500 dark:text-slate-400">
+                  {{ _getTypeLabel(item) }}
+                </span>
+              </td>
+
+              <td class="tc-cell tc-actions-col">
+                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  @if (item.type === 'folder') {
+                    <app-icon-button
+                      icon="sliders-h"
+                      size="sm"
+                      tooltip="Свойства папки"
+                      (clicked)="_openFolderProperties(item); $event.stopPropagation()"
+                    />
+                  }
+                  <app-icon-button
+                    icon="tag"
+                    size="sm"
+                    tooltip="Назначить тариф"
+                    (clicked)="_setTariffOnItem(item); $event.stopPropagation()"
+                  />
+                  <app-icon-button
+                    icon="ellipsis-vertical"
+                    size="sm"
+                    tooltip="Ещё действия"
+                    (clicked)="_onRowContextMenu($event, side, item); $event.stopPropagation()"
+                  />
+                </div>
               </td>
             </tr>
           }
         </tbody>
       </table>
 
+      <!-- Empty State -->
       @if (_getPanelOptions(side).length === 0 && !_canGoUp(side)) {
-        <div class="flex h-full min-h-24 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
-          Папка пуста
+        <div class="flex flex-col items-center justify-center p-8 text-center h-full min-h-48 text-slate-400 dark:text-slate-500">
+          <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-center mb-3 text-slate-400">
+            <mat-icon svgIcon="folder-open" class="!w-6 !h-6" />
+          </div>
+          @if (_getPanelSearchQuery(side)) {
+            <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 m-0">Ничего не найдено</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 m-0">По запросу «{{ _getPanelSearchQuery(side) }}» элементов нет</p>
+            <app-button
+              variant="ghost"
+              size="sm"
+              (clicked)="_clearPanelSearchQuery(side)"
+            >
+              Сбросить поиск
+            </app-button>
+          } @else {
+            <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 m-0">Папка пуста</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 m-0 max-w-xs">
+              Создайте вложенную папку или добавьте материалы с помощью верхней панели управления
+            </p>
+          }
         </div>
       }
     </div>

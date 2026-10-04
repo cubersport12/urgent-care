@@ -208,4 +208,9 @@ export class AppApi {
     }
     return res.blob();
   }
+
+  getFileUrl(fileName: string): string {
+    const path = fileName.startsWith('public/') ? fileName : `public/${fileName}`;
+    return `${API_BASE}/api/v1/media/${path}`;
+  }
 }

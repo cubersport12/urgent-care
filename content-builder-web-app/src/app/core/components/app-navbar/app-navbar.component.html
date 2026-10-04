@@ -1,23 +1,33 @@
-<nav class="px-1 py-1 w-full flex flex-wrap gap-2 bg-primary items-center">
-    <app-breadcrumbs [path]="_path()" (onItemClick)="_navigate($event)" labelKey="name" valueKey="id" />
-    <button [disabled]="_isCreating()" size="sm" (click)="_createNewFolder()" mat-flat-button color="primary">
-        <mat-icon [svgIcon]="_isCreating() ? 'spinner' : 'folder'"></mat-icon>
-        Создать папку
-    </button>
-    <button [disabled]="_isCreating()" size="sm" (click)="_createArticle()" mat-flat-button color="primary">
-      <mat-icon svgIcon="file-contract"></mat-icon>
-        Добавить текстовый документ
-    </button>
-    <button (click)="_createTest()" size="sm" mat-flat-button color="primary">
-      <mat-icon svgIcon="file-circle-check"></mat-icon>
-      Создать тест
-    </button>
-    <button (click)="_createRescue()" size="sm" mat-flat-button color="primary">
-      <mat-icon svgIcon="file-circle-check"></mat-icon>
-      Создать спасение
-    </button>
-    <!-- <button [disabled]="true" size="sm" mat-flat-button color="primary">
-      <mat-icon svgIcon="video"></mat-icon>
-      Добавить видео
-    </button> -->
+<nav class="px-2 py-1.5 w-full flex flex-wrap gap-2 bg-slate-900 border-b border-slate-800 items-center">
+  <app-breadcrumbs [path]="_path()" (onItemClick)="_navigate($event)" labelKey="name" valueKey="id" />
+  <app-button
+    [disabled]="_isCreating()"
+    size="sm"
+    [icon]="_isCreating() ? 'spinner' : 'folder'"
+    (clicked)="_createNewFolder()"
+  >
+    Создать папку
+  </app-button>
+  <app-button
+    [disabled]="_isCreating()"
+    size="sm"
+    icon="file-contract"
+    (clicked)="_createArticle()"
+  >
+    Добавить текстовый документ
+  </app-button>
+  <app-button
+    size="sm"
+    icon="file-circle-check"
+    (clicked)="_createTest()"
+  >
+    Создать тест
+  </app-button>
+  <app-button
+    size="sm"
+    icon="kit-medical"
+    (clicked)="_createRescue()"
+  >
+    Создать спасение
+  </app-button>
 </nav>

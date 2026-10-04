@@ -33,17 +33,27 @@ import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions, ArticlesState } from '@/core/store';
 import { finalize, mergeMap, Observable } from 'rxjs';
 import { DomSanitizer } from '@angular/platform-browser';
+import {
+  AppButtonComponent,
+  AppInputComponent,
+  AppSelectComponent,
+  AppCheckboxComponent
+} from '../ui';
 import { RewardSelectComponent } from '../reward-select/reward-select.component';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
+import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
+import { AppDialogService } from '@/core/services/app-dialog.service';
+import { PdfViewerDialogComponent, PdfViewerDialogData } from './pdf-viewer-dialog/pdf-viewer-dialog.component';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ArticleEditorService {
-  private readonly _dialogs = inject(MatDialog);
+  private readonly _dialogs = inject(AppDialogService);
   public openArticle(article: Partial<AppArticleVm>): void {
     this._dialogs.open(ArticleEditorComponent, {
-      minWidth: '400px',
+      width: '680px',
+      maxWidth: '95vw',
       hasBackdrop: true,
       autoFocus: true,
       disableClose: true,
@@ -61,16 +71,14 @@ type ArticleLinkFormType = {
   imports: [
     FormsModule,
     ReactiveFormsModule,
-    MatButton,
-    MatMiniFabButton,
     MatIcon,
-    MatCheckboxModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatOption,
+    AppButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
+    AppCheckboxComponent,
     TariffSelectComponent,
-    RewardSelectComponent
+    RewardSelectComponent,
+    AppDialogWrapperComponent
   ],
   templateUrl: './article-editor.component.html',
   styles: ``,
@@ -78,9 +86,10 @@ type ArticleLinkFormType = {
 })
 export class ArticleEditorComponent {
   private readonly _appStorage = inject(AppFilesStorageService);
+  private readonly _dialogs = inject(AppDialogService);
   private readonly _store = inject(Store);
-  private readonly _dialogData = inject<AppArticleVm>(MAT_DIALOG_DATA);
-  private readonly _ref = inject(MatDialogRef);
+  protected readonly _dialogData = inject<AppArticleVm>(MAT_DIALOG_DATA);
+  protected readonly _ref = inject(MatDialogRef);
   private readonly _sanitizer = inject(DomSanitizer);
   private readonly _dispatched = inject(AppLoading);
   private readonly _isUploadingFile = signal(false);
@@ -94,6 +103,11 @@ export class ArticleEditorComponent {
     ];
   });
 
+  protected readonly _nextArticleOptions = computed(() => {
+    const list = this._store.selectSignal(ArticlesState.getAllArticles)() ?? [];
+    return list.map(a => ({ value: a.id, label: a.name || 'Безымянный документ' }));
+  });
+
   protected readonly _convertMessages = signal('');
   protected readonly _isPending = computed(
     () =>
@@ -102,7 +116,7 @@ export class ArticleEditorComponent {
       || this._isUploadingFile()
   );
 
-  private readonly _pdfFile = signal<File | null>(null);
+  protected readonly _pdfFile = signal<File | null>(null);
   protected readonly _pdfUrl = signal<string | null>(null);
 
   protected readonly _form = new FormGroup({
@@ -202,7 +216,14 @@ export class ArticleEditorComponent {
   protected _openPdfContentInWindow(): void {
     const url = this._pdfUrl();
     if (url) {
-      window.open(url, '_blank');
+      this._dialogs.open<PdfViewerDialogComponent, PdfViewerDialogData>(PdfViewerDialogComponent, {
+        width: '920px',
+        maxWidth: '95vw',
+        data: {
+          title: this._form.controls.name.value || 'Просмотр документа PDF',
+          url
+        }
+      });
     }
   }
 

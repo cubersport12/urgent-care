@@ -430,6 +430,186 @@ export const ActivePromoOutSchema = {
     title: 'ActivePromoOut'
 } as const;
 
+export const ActivityEventOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        kind: {
+            type: 'string',
+            enum: [
+                'test',
+                'rescue',
+                'article',
+                'payment',
+                'registration'
+            ],
+            title: 'Kind'
+        },
+        event: {
+            type: 'string',
+            title: 'Event'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        userName: {
+            type: 'string',
+            title: 'Username',
+            default: ''
+        },
+        score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Score'
+        },
+        createdAt: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Createdat'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'kind',
+        'event',
+        'title',
+        'createdAt'
+    ],
+    title: 'ActivityEventOut'
+} as const;
+
+export const AnalyticsDayOutSchema = {
+    properties: {
+        date: {
+            type: 'string',
+            format: 'date',
+            title: 'Date'
+        },
+        tests: {
+            type: 'integer',
+            title: 'Tests',
+            default: 0
+        },
+        rescues: {
+            type: 'integer',
+            title: 'Rescues',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: [
+        'date'
+    ],
+    title: 'AnalyticsDayOut'
+} as const;
+
+export const AnalyticsSummaryOutSchema = {
+    properties: {
+        period: {
+            type: 'string',
+            title: 'Period'
+        },
+        usersTotal: {
+            type: 'integer',
+            title: 'Userstotal',
+            default: 0
+        },
+        usersNew: {
+            type: 'integer',
+            title: 'Usersnew',
+            default: 0
+        },
+        activeSubscriptions: {
+            type: 'integer',
+            title: 'Activesubscriptions',
+            default: 0
+        },
+        revenueRub: {
+            type: 'number',
+            title: 'Revenuerub',
+            default: 0
+        },
+        testsFinished: {
+            type: 'integer',
+            title: 'Testsfinished',
+            default: 0
+        },
+        rescuesFinished: {
+            type: 'integer',
+            title: 'Rescuesfinished',
+            default: 0
+        },
+        articlesCompleted: {
+            type: 'integer',
+            title: 'Articlescompleted',
+            default: 0
+        },
+        conversionPercent: {
+            type: 'number',
+            title: 'Conversionpercent',
+            default: 0
+        },
+        series: {
+            items: {
+                $ref: '#/components/schemas/AnalyticsDayOut'
+            },
+            type: 'array',
+            title: 'Series'
+        },
+        tariffs: {
+            items: {
+                $ref: '#/components/schemas/AnalyticsTariffOut'
+            },
+            type: 'array',
+            title: 'Tariffs'
+        }
+    },
+    type: 'object',
+    required: [
+        'period'
+    ],
+    title: 'AnalyticsSummaryOut'
+} as const;
+
+export const AnalyticsTariffOutSchema = {
+    properties: {
+        tariffId: {
+            type: 'string',
+            title: 'Tariffid'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        priceRub: {
+            type: 'integer',
+            title: 'Pricerub',
+            default: 0
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: [
+        'tariffId',
+        'title',
+        'count'
+    ],
+    title: 'AnalyticsTariffOut'
+} as const;
+
 export const ArticleCreateSchema = {
     properties: {
         id: {
@@ -1145,6 +1325,167 @@ export const BroadcastOutSchema = {
     title: 'BroadcastOut'
 } as const;
 
+export const BulkDeleteRequestSchema = {
+    properties: {
+        folderIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Folderids'
+        },
+        articleIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Articleids'
+        },
+        testIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Testids'
+        },
+        rescueIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Rescueids'
+        }
+    },
+    type: 'object',
+    title: 'BulkDeleteRequest'
+} as const;
+
+export const BulkMoveRequestSchema = {
+    properties: {
+        targetParentId: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Targetparentid'
+        },
+        folderIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Folderids'
+        },
+        articleIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Articleids'
+        },
+        testIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Testids'
+        },
+        rescueIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Rescueids'
+        }
+    },
+    type: 'object',
+    title: 'BulkMoveRequest'
+} as const;
+
+export const BulkResultSchema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success',
+            default: true
+        },
+        deletedCount: {
+            type: 'integer',
+            title: 'Deletedcount',
+            default: 0
+        },
+        movedCount: {
+            type: 'integer',
+            title: 'Movedcount',
+            default: 0
+        },
+        updatedCount: {
+            type: 'integer',
+            title: 'Updatedcount',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'deletedCount',
+        'movedCount',
+        'updatedCount'
+    ],
+    title: 'BulkResult'
+} as const;
+
+export const BulkTariffRequestSchema = {
+    properties: {
+        tariffId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tariffid'
+        },
+        folderIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Folderids'
+        },
+        articleIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Articleids'
+        },
+        testIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Testids'
+        },
+        rescueIds: {
+            items: {
+                type: 'string'
+            },
+            type: 'array',
+            title: 'Rescueids'
+        }
+    },
+    type: 'object',
+    title: 'BulkTariffRequest'
+} as const;
+
 export const CertificateIssueRequestSchema = {
     properties: {
         userId: {
@@ -1575,6 +1916,158 @@ export const ForgotPasswordSchema = {
     title: 'ForgotPassword'
 } as const;
 
+export const GenerateRescueRequestSchema = {
+    properties: {
+        prompt: {
+            type: 'string',
+            title: 'Prompt'
+        }
+    },
+    type: 'object',
+    required: [
+        'prompt'
+    ],
+    title: 'GenerateRescueRequest'
+} as const;
+
+export const GenerateTestRequestSchema = {
+    properties: {
+        prompt: {
+            type: 'string',
+            title: 'Prompt'
+        }
+    },
+    type: 'object',
+    required: [
+        'prompt'
+    ],
+    title: 'GenerateTestRequest'
+} as const;
+
+export const GeneratedAnswerSchema = {
+    properties: {
+        answerText: {
+            type: 'string',
+            title: 'Answertext'
+        },
+        isCorrect: {
+            type: 'boolean',
+            title: 'Iscorrect'
+        },
+        score: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Score',
+            default: 1
+        }
+    },
+    type: 'object',
+    required: [
+        'answerText',
+        'isCorrect'
+    ],
+    title: 'GeneratedAnswer'
+} as const;
+
+export const GeneratedQuestionSchema = {
+    properties: {
+        questionText: {
+            type: 'string',
+            title: 'Questiontext'
+        },
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        answers: {
+            items: {
+                $ref: '#/components/schemas/GeneratedAnswer'
+            },
+            type: 'array',
+            title: 'Answers'
+        }
+    },
+    type: 'object',
+    required: [
+        'questionText',
+        'answers'
+    ],
+    title: 'GeneratedQuestion'
+} as const;
+
+export const GeneratedRescueResponseSchema = {
+    properties: {
+        parameters: {
+            items: {
+                $ref: '#/components/schemas/RescueTimerParameter'
+            },
+            type: 'array',
+            title: 'Parameters'
+        },
+        scenes: {
+            items: {
+                $ref: '#/components/schemas/RescueScene'
+            },
+            type: 'array',
+            title: 'Scenes'
+        },
+        defaultBackground: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Defaultbackground',
+            default: 'bg-hospital'
+        },
+        completion: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/RescueCompletion'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    },
+    type: 'object',
+    title: 'GeneratedRescueResponse'
+} as const;
+
+export const GeneratedTestResponseSchema = {
+    properties: {
+        questions: {
+            items: {
+                $ref: '#/components/schemas/GeneratedQuestion'
+            },
+            type: 'array',
+            title: 'Questions'
+        }
+    },
+    type: 'object',
+    required: [
+        'questions'
+    ],
+    title: 'GeneratedTestResponse'
+} as const;
+
 export const GrantAchievementRequestSchema = {
     properties: {
         userId: {
@@ -1588,6 +2081,31 @@ export const GrantAchievementRequestSchema = {
         'userId'
     ],
     title: 'GrantAchievementRequest'
+} as const;
+
+export const GrantBonusRequestSchema = {
+    properties: {
+        points: {
+            type: 'integer',
+            title: 'Points'
+        },
+        reason: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Reason'
+        }
+    },
+    type: 'object',
+    required: [
+        'points'
+    ],
+    title: 'GrantBonusRequest'
 } as const;
 
 export const HTTPValidationErrorSchema = {
@@ -1627,6 +2145,7 @@ export const LearningEventCreateSchema = {
         payload: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -1667,6 +2186,7 @@ export const LearningEventOutSchema = {
         payload: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -2559,6 +3079,121 @@ export const RegisterOutSchema = {
     title: 'RegisterOut'
 } as const;
 
+export const RescueChoiceParameterChangeSchema = {
+    properties: {
+        parameterId: {
+            type: 'string',
+            title: 'Parameterid'
+        },
+        value: {
+            type: 'number',
+            title: 'Value'
+        }
+    },
+    type: 'object',
+    required: [
+        'parameterId',
+        'value'
+    ],
+    title: 'RescueChoiceParameterChange'
+} as const;
+
+export const RescueCompletionSchema = {
+    properties: {
+        success: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/RescueCompletionCondition'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        },
+        failure: {
+            anyOf: [
+                {
+                    $ref: '#/components/schemas/RescueCompletionCondition'
+                },
+                {
+                    type: 'null'
+                }
+            ]
+        }
+    },
+    type: 'object',
+    title: 'RescueCompletion'
+} as const;
+
+export const RescueCompletionConditionSchema = {
+    properties: {
+        type: {
+            type: 'string',
+            title: 'Type',
+            default: 'compare'
+        },
+        parameterId: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Parameterid'
+        },
+        operator: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Operator',
+            default: 'gte'
+        },
+        value: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Value'
+        },
+        logicalOperator: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Logicaloperator'
+        },
+        conditions: {
+            anyOf: [
+                {
+                    items: {},
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Conditions'
+        }
+    },
+    type: 'object',
+    title: 'RescueCompletionCondition'
+} as const;
+
 export const RescueCreateSchema = {
     properties: {
         id: {
@@ -2618,6 +3253,7 @@ export const RescueCreateSchema = {
         data: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -2703,6 +3339,7 @@ export const RescueOutSchema = {
         data: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -2767,6 +3404,185 @@ export const RescueOutSchema = {
         'lockedBy'
     ],
     title: 'RescueOut'
+} as const;
+
+export const RescueParameterSeveritySchema = {
+    properties: {
+        min: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Min'
+        },
+        max: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Max'
+        },
+        severity: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Severity',
+            default: 'normal'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        }
+    },
+    type: 'object',
+    title: 'RescueParameterSeverity'
+} as const;
+
+export const RescueSceneSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        order: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Order'
+        },
+        background: {
+            type: 'string',
+            title: 'Background',
+            default: 'bg-hospital'
+        },
+        text: {
+            type: 'string',
+            title: 'Text'
+        },
+        choices: {
+            items: {
+                $ref: '#/components/schemas/RescueSceneChoice'
+            },
+            type: 'array',
+            title: 'Choices'
+        },
+        hidden: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Hidden'
+        },
+        isReviewed: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Isreviewed'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'text'
+    ],
+    title: 'RescueScene'
+} as const;
+
+export const RescueSceneChoiceSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        text: {
+            type: 'string',
+            title: 'Text'
+        },
+        parameterChanges: {
+            items: {
+                $ref: '#/components/schemas/RescueChoiceParameterChange'
+            },
+            type: 'array',
+            title: 'Parameterchanges'
+        },
+        nextSceneId: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Nextsceneid'
+        },
+        implications: {
+            items: {
+                $ref: '#/components/schemas/RescueSceneChoiceImplication'
+            },
+            type: 'array',
+            title: 'Implications'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'text'
+    ],
+    title: 'RescueSceneChoice'
+} as const;
+
+export const RescueSceneChoiceImplicationSchema = {
+    properties: {
+        description: {
+            type: 'string',
+            title: 'Description'
+        },
+        severity: {
+            type: 'string',
+            title: 'Severity',
+            default: 'normal'
+        }
+    },
+    type: 'object',
+    required: [
+        'description'
+    ],
+    title: 'RescueSceneChoiceImplication'
 } as const;
 
 export const RescueStatsOutSchema = {
@@ -2890,6 +3706,65 @@ export const RescueStatsUpsertSchema = {
     title: 'RescueStatsUpsert'
 } as const;
 
+export const RescueTimerParameterSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        delta: {
+            type: 'number',
+            title: 'Delta',
+            default: 0
+        },
+        startValue: {
+            type: 'number',
+            title: 'Startvalue',
+            default: 0
+        },
+        type: {
+            type: 'string',
+            title: 'Type',
+            default: 'numeric'
+        },
+        severities: {
+            anyOf: [
+                {
+                    items: {
+                        $ref: '#/components/schemas/RescueParameterSeverity'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Severities'
+        },
+        isHidden: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Ishidden'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'name'
+    ],
+    title: 'RescueTimerParameter'
+} as const;
+
 export const RescueUpdateSchema = {
     properties: {
         name: {
@@ -2939,6 +3814,7 @@ export const RescueUpdateSchema = {
         data: {
             anyOf: [
                 {
+                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -3489,6 +4365,31 @@ export const RewardUpdateSchema = {
     title: 'RewardUpdate'
 } as const;
 
+export const SendResetLinkRequestSchema = {
+    properties: {
+        email: {
+            type: 'string',
+            title: 'Email'
+        },
+        fullName: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fullname'
+        }
+    },
+    type: 'object',
+    required: [
+        'email'
+    ],
+    title: 'SendResetLinkRequest'
+} as const;
+
 export const SessionCreatedSchema = {
     properties: {
         session_id: {
@@ -3874,6 +4775,36 @@ export const SupportThreadOutSchema = {
         'lastBody'
     ],
     title: 'SupportThreadOut'
+} as const;
+
+export const SystemSettingsOutSchema = {
+    properties: {
+        maintenanceMode: {
+            type: 'boolean',
+            title: 'Maintenancemode',
+            default: false
+        }
+    },
+    type: 'object',
+    title: 'SystemSettingsOut'
+} as const;
+
+export const SystemSettingsUpdateSchema = {
+    properties: {
+        maintenanceMode: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Maintenancemode'
+        }
+    },
+    type: 'object',
+    title: 'SystemSettingsUpdate'
 } as const;
 
 export const TariffCreateSchema = {
@@ -5247,6 +6178,38 @@ export const UserListItemOutSchema = {
         fullName: {
             type: 'string',
             title: 'Fullname'
+        },
+        status: {
+            type: 'string',
+            title: 'Status',
+            default: 'active'
+        },
+        phone: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Phone'
+        },
+        tariffName: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Tariffname'
+        },
+        score: {
+            type: 'integer',
+            title: 'Score',
+            default: 0
         }
     },
     type: 'object',
@@ -5357,6 +6320,20 @@ export const UserOutSchema = {
         'created_at'
     ],
     title: 'UserOut'
+} as const;
+
+export const UserStatusUpdateRequestSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            title: 'Status'
+        }
+    },
+    type: 'object',
+    required: [
+        'status'
+    ],
+    title: 'UserStatusUpdateRequest'
 } as const;
 
 export const UserUpdateSchema = {

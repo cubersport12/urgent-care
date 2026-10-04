@@ -1,8 +1,7 @@
 import { AppTestQuestionVm, NullableValue } from '@/core/utils';
 import { Component, inject, Injector, input, signal, ViewContainerRef, ChangeDetectionStrategy } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { MatMiniFabButton, MatIconButton, MatButton } from '@angular/material/button';
-import { MatRipple } from '@angular/material/core';
+import { AppButtonComponent, AppIconButtonComponent } from '../../ui';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -18,36 +17,16 @@ type ControlValueType = AppTestQuestionVm[];
 @Component({
   selector: 'app-test-questions-builder',
   imports: [
-    MatMiniFabButton,
     MatIcon,
-    MatIconButton,
-    MatRipple,
     MatTableModule,
-    MatButton,
     NgClass,
     CdkDropList,
-    CdkDrag
+    CdkDrag,
+    AppButtonComponent,
+    AppIconButtonComponent
   ],
   templateUrl: './test-questions-builder.component.html',
   styles: `
-    .cdk-drag-preview {
-      box-sizing: border-box;
-      border-radius: 4px;
-      box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
-        0 8px 10px 1px rgba(0, 0, 0, 0.14),
-        0 3px 14px 2px rgba(0, 0, 0, 0.12);
-      background-color: white;
-    }
-    .cdk-drag-placeholder {
-      opacity: 0;
-    }
-    .example-drag-cursor {
-      cursor: move;
-    }
-    .cdk-drag-animating {
-      transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-    }
-
     .cdk-drop-list-dragging .mat-row:not(.cdk-drag-placeholder) {
       transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
     }

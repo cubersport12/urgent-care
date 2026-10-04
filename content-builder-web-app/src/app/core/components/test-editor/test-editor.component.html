@@ -1,88 +1,104 @@
-<div class="flex flex-col w-full h-full overflow-hidden gap-1 p-2">
-  <form class="flex flex-col h-full w-full gap-1 p-4 overflow-hidden" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
-    <div class="flex gap-1 w-full">
-      <mat-form-field appearance="fill" class="grow">
-        <mat-label>Наименование</mat-label>
-        <input matInput [formControl]="_form.controls.name">
-      </mat-form-field>
-      <mat-form-field appearance="fill" class="grow">
-        <mat-label>Макс. количество ошибок</mat-label>
-        <input matInput [formControl]="_form.controls.maxErrors">
-      </mat-form-field>
-      <mat-form-field appearance="fill" class="grow">
-        <mat-label>Проходной балл</mat-label>
-        <input matInput [formControl]="_form.controls.minScore" type="number">
-        <button mat-icon-button matSuffix type="button" (click)="_calculateMinScore()" [title]="'Автоматически посчитать проходной балл (макс: ' + _totalCorrectScore() + ')'">
-          <mat-icon svgIcon="calculator" />
-        </button>
-        @if (_scoreValidation().type === 'error') {
-          <mat-error>{{_scoreValidation().message}}</mat-error>
-        }
-        @if (_scoreValidation().type === 'warning') {
-          <mat-hint style="color: orange;">{{_scoreValidation().message}}</mat-hint>
-        }
-      </mat-form-field>
-    </div>
-    <div class="flex gap-1 w-full flex-wrap">
-      <mat-checkbox [formControl]="_form.controls.showCorrectAnswer">
-        Показывать правильный ответ в вопросах
-      </mat-checkbox>
-      <mat-checkbox [formControl]="_form.controls.includeToStatistics">
-        Тест участвует в статистике
-      </mat-checkbox>
-      <mat-checkbox [formControl]="_form.controls.showSkipButton">
-        Показывать кнопку пропускать
-      </mat-checkbox>
-      <mat-checkbox [formControl]="_form.controls.showNavigation">
-        Показывать навигацию
-      </mat-checkbox>
-      <mat-checkbox [formControl]="_form.controls.showBackButton">
-        Показывать кнопку назад
-      </mat-checkbox>
-      <mat-checkbox [formControl]="_form.controls.hidden">
-        Скрытый
-      </mat-checkbox>
-      <mat-checkbox [formControl]="_form.controls.randomizeQuestions">
-        Тест со случайным порядком вопросов
-      </mat-checkbox>
-      <mat-checkbox [formControl]="_form.controls.resetStatistics">
-        Сбрасывать статистику по тестам (при провале)
-      </mat-checkbox>
-    </div>
-    @if (_form.controls.randomizeQuestions.value) {
-      <mat-form-field appearance="fill" class="w-64">
-        <mat-label>Показывать вопросов</mat-label>
-        <input matInput type="number" min="1" [formControl]="_form.controls.questionsToShow" />
-        <mat-hint>Пусто = все из пула</mat-hint>
-      </mat-form-field>
-    }
-    @if (_form.controls.resetStatistics.value) {
-      <mat-form-field appearance="fill" class="w-full">
-        <mat-label>Сбрасываемые тесты (зачёты)</mat-label>
-        <mat-select formControlName="resetStatisticsTestIds" multiple>
-          @for (t of _resetCandidates(); track t.id) {
-            <mat-option [value]="t.id">{{ t.name }}</mat-option>
-          }
-        </mat-select>
-        <mat-hint>При провале этого теста выбранные тесты станут «не сданы»</mat-hint>
-      </mat-form-field>
-    }
-    <app-tariff-select [control]="_form.controls.requiredTariffId" />
-    <app-reward-select [control]="_form.controls.requiredRewardId" />
-    <app-test-conditions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.conditions" />
-    <app-test-questions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.questions" />
-  </form>
-  <div class="grow overflow-auto">
+<app-dialog-wrapper
+  [title]="_dialogData.id ? 'Редактировать тест' : 'Новый интерактивный тест'"
+  [subtitle]="_dialogData.id ? (_dialogData.name || 'Настройка вопросов, проходного балла и условий доступа') : 'Создание нового тестового сценария'"
+  [saveDisabled]="_form.invalid || !_form.dirty || _isPending() || _conditionCycle() !== null"
+  [loading]="_isPending()"
+  saveText="Сохранить"
+  saveIcon="check"
+  (save)="_handleSubmit()"
+  (close)="_handleClose()"
+>
+  <form class="flex flex-col w-full gap-4 p-1 min-w-[340px]" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
+    <!-- Base Info Section -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 p-4 space-y-4">
+      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+        <mat-icon svgIcon="file-circle-check" class="!w-4 !h-4 text-indigo-500" />
+        Параметры теста
+      </div>
+      <div class="flex flex-wrap gap-4 w-full items-start">
+        <app-input
+          label="Наименование"
+          [formControl]="_form.controls.name"
+          placeholder="Например: Основы реанимации"
+          [required]="true"
+          class="grow min-w-[240px]"
+        />
+        <app-input
+          label="Макс. количество ошибок"
+          type="number"
+          [formControl]="_form.controls.maxErrors"
+          class="w-48"
+        />
+        <div class="flex items-end gap-2 w-64">
+          <app-input
+            label="Проходной балл"
+            type="number"
+            [formControl]="_form.controls.minScore"
+            class="grow"
+            [error]="_scoreValidation().type === 'error' ? _scoreValidation().message : undefined"
+            [hint]="_scoreValidation().type === 'warning' ? _scoreValidation().message : undefined"
+          />
+          <app-icon-button
+            icon="calculator"
+            variant="outline"
+            (clicked)="_calculateMinScore()"
+            [tooltip]="'Рассчитать: 80% взвешенного максимума (сложные вопросы ×2) + штраф за критические ошибки. Максимум: ' + _totalCorrectScore()"
+            class="mb-0.5"
+          />
+        </div>
+      </div>
 
-  </div>
-  <div class="flex w-full justify-end gap-1">
-    <button [disabled]="_form.invalid || !_form.dirty || _isPending()" (click)="_handleSubmit()" type="submit" mat-flat-button color="primary">
-      <mat-icon [svgIcon]="_isPending() ? 'spinner' : 'check'" />
-      Сохранить
-    </button>
-    <button mat-button color="warn" (click)="_handleClose()">
-      <mat-icon svgIcon="xmark" />
-      Закрыть
-    </button>
-  </div>
-</div>
+      <!-- Flags -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full pt-1">
+        <app-checkbox [formControl]="_form.controls.showCorrectAnswer" label="Показывать правильный ответ в вопросах" />
+        <app-checkbox [formControl]="_form.controls.includeToStatistics" label="Тест участвует в статистике" />
+        <app-checkbox [formControl]="_form.controls.showSkipButton" label="Показывать кнопку пропускать" />
+        <app-checkbox [formControl]="_form.controls.showNavigation" label="Показывать навигацию" />
+        <app-checkbox [formControl]="_form.controls.showBackButton" label="Показывать кнопку назад" />
+        <app-checkbox [formControl]="_form.controls.hidden" label="Скрытый" />
+        <app-checkbox [formControl]="_form.controls.randomizeQuestions" label="Случайный порядок вопросов" />
+        <app-checkbox [formControl]="_form.controls.resetStatistics" label="Сбрасывать статистику при провале" />
+      </div>
+
+      @if (_form.controls.randomizeQuestions.value) {
+        <app-input
+          label="Показывать вопросов"
+          type="number"
+          [min]="1"
+          [formControl]="_form.controls.questionsToShow"
+          hint="Пусто = все из пула"
+          class="w-64"
+        />
+      }
+
+      @if (_form.controls.resetStatistics.value) {
+        <app-select
+          label="Сбрасываемые тесты (зачёты)"
+          formControlName="resetStatisticsTestIds"
+          [multiple]="true"
+          [options]="_resetCandidatesOptions()"
+          hint="При провале этого теста выбранные тесты станут «не сданы»"
+        />
+      }
+    </div>
+
+    <!-- Monetization & Rewards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <app-tariff-select [control]="_form.controls.requiredTariffId" />
+      <app-reward-select [control]="_form.controls.requiredRewardId" />
+    </div>
+
+    <!-- Conditions Builder -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+      <app-test-conditions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.conditions" />
+      @if (_conditionCycle(); as cycle) {
+        <p class="mt-2 text-xs font-medium text-rose-600 dark:text-rose-400">{{ cycle }}</p>
+      }
+    </div>
+
+    <!-- Questions Builder -->
+    <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+      <app-test-questions-builder [folderId]="_dialogData.parentId!" [formControl]="_form.controls.questions" />
+    </div>
+  </form>
+</app-dialog-wrapper>

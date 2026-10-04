@@ -1,90 +1,69 @@
-<div class="flex flex-col gap-1 p-3" [formGroup]="_form">
-  <mat-form-field>
-    <mat-label>Лог. оператор</mat-label>
-    <mat-select [formControl]="_form.controls.logicalOperator">
-      @for(operator of _logicalOperators; track $index) {
-        <mat-option [value]="operator">
-          {{_translateLogicalOperator(operator)}}
-        </mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
-  <mat-form-field>
-    <mat-label>Тип документа</mat-label>
-    <mat-select [formControl]="_form.controls.type">
-      @for(type of _conditionTypes; track $index) {
-        <mat-option [value]="type">
-          {{_translateConditionType(type)}}
-        </mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
+<div class="flex flex-col gap-3 p-4" [formGroup]="_form">
+  <app-select
+    label="Лог. оператор"
+    [formControl]="_form.controls.logicalOperator"
+    [options]="_logicalOperatorOptions"
+  />
+
+  <app-select
+    label="Тип документа"
+    [formControl]="_form.controls.type"
+    [options]="_conditionTypeOptions"
+  />
+
   @switch (_form.value.type) {
     @case ('test') {
-      <mat-form-field>
-        <mat-label>Тест</mat-label>
-        <mat-select [formControl]="_form.controls.test.controls.testId">
-          @for(test of _tests(); track $index) {
-            <mat-option [value]="test.id">
-              {{test.name}}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-form-field>
-        <mat-label>Тип параметра</mat-label>
-        <mat-select [formControl]="_form.controls.test.controls.type">
-          @for(type of _testParamTypes; track $index) {
-            <mat-option [value]="type">
-              {{_translateTestParamType(type)}}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <app-select
+        label="Тест"
+        [formControl]="_form.controls.test.controls.testId"
+        [options]="_testOptions()"
+      />
+
+      <app-select
+        label="Тип параметра"
+        [formControl]="_form.controls.test.controls.type"
+        [options]="_testParamTypeOptions"
+      />
+
       @switch (_form.value.test?.type) {
         @case ('score') {
-          <mat-form-field>
-            <mat-label>
-              Количество баллов
-            </mat-label>
-            <input [formControl]="_form.controls.test.controls.score" matInput type="number">
-          </mat-form-field>
+          <app-input
+            label="Количество баллов"
+            type="number"
+            [formControl]="_form.controls.test.controls.score"
+          />
         }
         @case ('succedded') {
-          <mat-checkbox [formControl]="_form.controls.test.controls.success">
-            Тест завершен успешно
-          </mat-checkbox>
+          <app-checkbox
+            [formControl]="_form.controls.test.controls.success"
+            label="Тест завершен успешно"
+          />
         }
       }
     }
     @case ('article') {
-      <mat-form-field>
-        <mat-label>Текстовый документ</mat-label>
-        <mat-select [formControl]="_form.controls.article.controls.articleId">
-          @for(test of _articles(); track $index) {
-            <mat-option [value]="test.id">
-              {{test.name}}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <mat-checkbox [formControl]="_form.controls.article.controls.isReaded">
-        Документ прочтен
-      </mat-checkbox>
+      <app-select
+        label="Текстовый документ"
+        [formControl]="_form.controls.article.controls.articleId"
+        [options]="_articleOptions()"
+      />
+
+      <app-checkbox
+        [formControl]="_form.controls.article.controls.isReaded"
+        label="Документ прочтен"
+      />
     }
     @default {
-      <h5>Неизвестный тип</h5>
+      <h5 class="text-xs text-slate-500">Неизвестный тип</h5>
     }
   }
 
-  <div class="flex w-full justify-end gap-1">
-    <button [disabled]="!_form.dirty" (click)="_handleSubmit()" type="submit" mat-flat-button color="primary">
-      <mat-icon svgIcon="check" />
+  <div class="flex w-full justify-end gap-2 pt-2">
+    <app-button [disabled]="!_form.dirty" (clicked)="_handleSubmit()" icon="check">
       Сохранить
-    </button>
-    <button mat-button color="warn" (click)="_handleClose()">
-      <mat-icon svgIcon="xmark" />
+    </app-button>
+    <app-button variant="outline" (clicked)="_handleClose()" icon="xmark">
       Закрыть
-    </button>
+    </app-button>
   </div>
 </div>

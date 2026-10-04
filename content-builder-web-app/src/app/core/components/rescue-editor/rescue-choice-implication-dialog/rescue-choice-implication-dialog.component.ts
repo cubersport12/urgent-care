@@ -4,11 +4,9 @@ import {
 } from '@/core/utils';
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatOption, MatSelectModule } from '@angular/material/select';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { AppDialogWrapperComponent } from '../../dialog-wrapper/dialog-wrapper.component';
+import { AppSelectComponent, AppTextareaComponent, SelectOption } from '@/core/components/ui';
 
 export type RescueChoiceImplicationDialogData = {
   implication: RescueScheneChoiceImplicationVm | null;
@@ -19,12 +17,9 @@ export type RescueChoiceImplicationDialogData = {
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    MatButton,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatOption
+    AppDialogWrapperComponent,
+    AppTextareaComponent,
+    AppSelectComponent
   ],
   templateUrl: './rescue-choice-implication-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -36,7 +31,12 @@ export class RescueChoiceImplicationDialogComponent {
     MatDialogRef<RescueChoiceImplicationDialogComponent, RescueScheneChoiceImplicationVm>
   );
 
-  protected readonly _severityEnum = RescueParameterSeverityEnum;
+  protected readonly _severityOptions: SelectOption[] = [
+    { value: RescueParameterSeverityEnum.Normal, label: 'Нормальная' },
+    { value: RescueParameterSeverityEnum.Low, label: 'Низкая' },
+    { value: RescueParameterSeverityEnum.Medium, label: 'Средняя' },
+    { value: RescueParameterSeverityEnum.High, label: 'Высокая' }
+  ];
 
   protected readonly _form = new FormGroup({
     description: new FormControl<string>(

@@ -1,57 +1,75 @@
-<h2 mat-dialog-title>{{ _dialogData.choice ? 'Редактировать выбор' : 'Новый выбор' }}</h2>
-<mat-dialog-content>
-  <form [formGroup]="_form" class="flex flex-col gap-4 min-w-[360px] pt-2 max-h-[70vh] overflow-auto">
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Текст выбора</mat-label>
-      <input matInput formControlName="text">
-    </mat-form-field>
-    <mat-form-field appearance="fill" class="w-full">
-      <mat-label>Следующая сцена</mat-label>
-      <mat-select formControlName="nextSceneId">
-        <mat-option [value]="null">— Конец / нет перехода</mat-option>
-        @for (opt of _nextSceneOptions; track opt.id) {
-          <mat-option [value]="opt.id">{{ opt.name }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
+<app-dialog-wrapper
+  [title]="_dialogData.choice ? 'Редактировать выбор' : 'Новый выбор'"
+  [saveText]="_dialogData.choice ? 'Сохранить' : 'Добавить'"
+  [saveDisabled]="_form.invalid"
+  (save)="_submit()"
+  (close)="_cancel()"
+>
+  <form [formGroup]="_form" class="flex flex-col gap-4 min-w-[360px] pt-1 max-h-[70vh] overflow-auto">
+    <app-input
+      label="Текст выбора"
+      formControlName="text"
+    />
+
+    <app-select
+      label="Следующая сцена"
+      formControlName="nextSceneId"
+      [options]="_nextSceneSelectOptions()"
+    />
+
     <div>
-      <div class="text-sm font-medium mb-2">Изменения параметров при выборе</div>
+      <div class="text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">Изменения параметров при выборе</div>
       <div formArrayName="parameterChanges" class="flex flex-col gap-2">
         @for (pc of _parameterChanges.controls; track pc.value.parameterId + pc.value.value; let pci = $index) {
           <div class="flex items-center gap-2" [formGroupName]="pci">
-            <mat-form-field appearance="fill" class="flex-1 min-w-[120px]">
-              <mat-label>Параметр</mat-label>
-              <mat-select formControlName="parameterId">
-                @for (param of _parameterOptionsList; track param.id) {
-                  <mat-option [value]="param.id">{{ param.name }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="fill" class="w-24">
-              <mat-label>Значение</mat-label>
-              <input matInput type="number" formControlName="value">
-            </mat-form-field>
-            <button type="button" mat-icon-button (click)="_removeParameterChange(pci)">
-              <mat-icon svgIcon="trash" />
-            </button>
+            <app-select
+              label="Параметр"
+              formControlName="parameterId"
+              [options]="_paramSelectOptions()"
+              class="flex-1 min-w-[120px]"
+            />
+            <app-input
+              type="number"
+              label="Значение"
+              formControlName="value"
+              class="w-24"
+            />
+            <app-icon-button
+              icon="trash"
+              variant="ghost"
+              (click)="_removeParameterChange(pci)"
+              tooltip="Удалить"
+              class="text-rose-500 hover:text-rose-600 mt-1"
+            />
           </div>
         }
-        <button type="button" mat-button (click)="_addParameterChange()">
-          <mat-icon svgIcon="plus" />
-          Добавить изменение параметра
-        </button>
+        <div>
+          <app-button
+            variant="outline"
+            size="sm"
+            icon="plus"
+            (click)="_addParameterChange()"
+          >
+            Добавить изменение параметра
+          </app-button>
+        </div>
       </div>
     </div>
-    <section class="border border-gray-200 dark:border-gray-700 rounded p-3 flex flex-col gap-2">
+
+    <section class="border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex flex-col gap-3">
       <div class="flex justify-between items-center">
-        <span class="font-medium">Последствия выбора</span>
-        <button type="button" mat-flat-button color="primary" (click)="_addImplication()">
-          <mat-icon svgIcon="plus" />
+        <span class="font-medium text-slate-700 dark:text-slate-300">Последствия выбора</span>
+        <app-button
+          variant="secondary"
+          size="sm"
+          icon="plus"
+          (click)="_addImplication()"
+        >
           Создать
-        </button>
+        </app-button>
       </div>
-      <div class="overflow-auto">
-        <table mat-table [dataSource]="_implicationsList()" class="mat-elevation-z8 w-full">
+      <div class="overflow-auto max-h-60 border border-slate-200 dark:border-slate-800 rounded-lg">
+        <table mat-table [dataSource]="_implicationsList()" class="w-full">
           <ng-container matColumnDef="description">
             <th mat-header-cell *matHeaderCellDef>Описание</th>
             <td mat-cell *matCellDef="let row" [title]="row.description">{{ _formatImplicationDescription(row) }}</td>
@@ -63,29 +81,32 @@
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let row; let ii = index">
-              <div class="flex gap-1">
-                <button mat-icon-button type="button" (click)="_editImplication(ii)" title="Редактировать">
-                  <mat-icon svgIcon="pen-to-square" />
-                </button>
-                <button mat-icon-button color="warn" type="button" (click)="_removeImplication(ii)" title="Удалить">
-                  <mat-icon svgIcon="trash" />
-                </button>
+              <div class="flex gap-1 justify-end">
+                <app-icon-button
+                  icon="pen-to-square"
+                  variant="ghost"
+                  size="sm"
+                  (click)="_editImplication(ii)"
+                  tooltip="Редактировать"
+                />
+                <app-icon-button
+                  icon="trash"
+                  variant="ghost"
+                  size="sm"
+                  (click)="_removeImplication(ii)"
+                  tooltip="Удалить"
+                  class="text-rose-500 hover:text-rose-600"
+                />
               </div>
             </td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="_implicationsDisplayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: _implicationsDisplayedColumns"></tr>
           <tr class="mat-row" *matNoDataRow>
-            <td class="mat-cell" [attr.colspan]="_implicationsDisplayedColumns.length">Нет последствий</td>
+            <td class="mat-cell text-center py-4 text-slate-400" [attr.colspan]="_implicationsDisplayedColumns.length">Нет последствий</td>
           </tr>
         </table>
       </div>
     </section>
   </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button (click)="_cancel()">Отмена</button>
-  <button mat-flat-button color="primary" (click)="_submit()" [disabled]="_form.invalid">
-    {{ _dialogData.choice ? 'Сохранить' : 'Добавить' }}
-  </button>
-</mat-dialog-actions>
+</app-dialog-wrapper>

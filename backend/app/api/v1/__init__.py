@@ -2,9 +2,11 @@
 from fastapi import APIRouter
 
 from app.api.v1.achievements import router as achievements_router
+from app.api.v1.analytics import router as analytics_router
 from app.api.v1.articles import router as articles_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.billing import router as billing_router
+from app.api.v1.ai import router as ai_router
 from app.api.v1.certificates import router as certificates_router
 from app.api.v1.cities import router as cities_router
 from app.api.v1.folders import router as folders_router
@@ -14,6 +16,7 @@ from app.api.v1.media import router as media_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.push import router as push_router
 from app.api.v1.rescue import router as rescue_router
+from app.api.v1.settings import router as settings_router
 from app.api.v1.stats import router as stats_router
 from app.api.v1.support import router as support_router
 from app.api.v1.tests import router as tests_router
@@ -39,3 +42,6 @@ api_router.include_router(users_router)
 api_router.include_router(legal_router)
 api_router.include_router(media_router)
 api_router.include_router(certificates_router)
+api_router.include_router(ai_router)
+api_router.include_router(settings_router)
+api_router.include_router(analytics_router)

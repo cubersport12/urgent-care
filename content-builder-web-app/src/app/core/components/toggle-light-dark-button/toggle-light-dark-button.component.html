@@ -1,3 +1,6 @@
-<button mat-icon-button color="primary" (click)="_handleToggle()">
-  <mat-icon [svgIcon]="_currentMode() === 'dark' ? 'moon' : 'sun'"></mat-icon>
-</button>
+<app-icon-button
+  [icon]="_currentMode() === 'dark' ? 'moon' : 'sun'"
+  variant="ghost"
+  (click)="_handleToggle()"
+  [tooltip]="_currentMode() === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'"
+/>

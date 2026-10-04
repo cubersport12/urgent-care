@@ -7,13 +7,8 @@ import {
 } from '@/core/utils';
 import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Store } from '@ngxs/store';
 import { openFile } from '@/core/utils';
 import { ArticlesState, ArticlesActions } from '@/core/store';
@@ -23,6 +18,14 @@ import {
   RescueSceneDocumentDialogData
 } from '../rescue-scene-document-dialog/rescue-scene-document-dialog.component';
 import { take } from 'rxjs';
+import { AppDialogWrapperComponent } from '../../dialog-wrapper/dialog-wrapper.component';
+import {
+  AppButtonComponent,
+  AppCheckboxComponent,
+  AppIconButtonComponent,
+  AppInputComponent,
+  AppTextareaComponent
+} from '@/core/components/ui';
 
 export type ParameterOption = { id: string; name: string };
 export type ArticleOption = { id: string; name: string };
@@ -43,13 +46,13 @@ export type RescueSceneDialogData = {
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    MatButton,
-    MatIcon,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
     MatTableModule,
-    MatCheckboxModule
+    AppDialogWrapperComponent,
+    AppButtonComponent,
+    AppIconButtonComponent,
+    AppInputComponent,
+    AppTextareaComponent,
+    AppCheckboxComponent
   ],
   templateUrl: './rescue-scene-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
