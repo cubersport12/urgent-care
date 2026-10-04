@@ -147,3 +147,14 @@ class PromoActivateRequest(CamelModel):
 
 class PromoActivateOut(ActivePromoOut):
     message: str
+
+
+class RefundRequest(CamelModel):
+    cancel_subscription: bool = Field(True, alias="cancelSubscription")
+
+
+class RefundOut(CamelModel):
+    status: str
+    refunded_amount: float = Field(alias="refundedAmount")
+    payment_id: UUID = Field(alias="paymentId")
+    message: str

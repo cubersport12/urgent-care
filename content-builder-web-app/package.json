@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "prestart": "node scripts/write-environment.mjs",
-    "start": "ng serve",
+    "start": "ng serve --host 127.0.0.1",
     "prebuild": "node scripts/write-environment.mjs",
     "build": "ng build --base-href=/urgent-care/content-builder/ --configuration production",
     "prebuild:vps": "node scripts/write-environment.mjs",

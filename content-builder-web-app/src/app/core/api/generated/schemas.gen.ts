@@ -694,6 +694,22 @@ export const ArticleOutSchema = {
                 }
             ],
             title: 'Requiredrewardid'
+        },
+        isLocked: {
+            type: 'boolean',
+            title: 'Islocked',
+            default: false
+        },
+        lockedBy: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Lockedby'
         }
     },
     type: 'object',
@@ -709,7 +725,9 @@ export const ArticleOutSchema = {
         'includeToStatistics',
         'linksToArticles',
         'requiredTariffId',
-        'requiredRewardId'
+        'requiredRewardId',
+        'isLocked',
+        'lockedBy'
     ],
     title: 'ArticleOut'
 } as const;
@@ -1446,6 +1464,22 @@ export const FolderOutSchema = {
                 }
             ],
             title: 'Requiredrewardid'
+        },
+        isLocked: {
+            type: 'boolean',
+            title: 'Islocked',
+            default: false
+        },
+        lockedBy: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Lockedby'
         }
     },
     type: 'object',
@@ -1455,7 +1489,9 @@ export const FolderOutSchema = {
         'order',
         'parentId',
         'requiredTariffId',
-        'requiredRewardId'
+        'requiredRewardId',
+        'isLocked',
+        'lockedBy'
     ],
     title: 'FolderOut'
 } as const;
@@ -2469,6 +2505,48 @@ export const RecommendedArticleOutSchema = {
     title: 'RecommendedArticleOut'
 } as const;
 
+export const RefundOutSchema = {
+    properties: {
+        status: {
+            type: 'string',
+            title: 'Status'
+        },
+        refundedAmount: {
+            type: 'number',
+            title: 'Refundedamount'
+        },
+        paymentId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Paymentid'
+        },
+        message: {
+            type: 'string',
+            title: 'Message'
+        }
+    },
+    type: 'object',
+    required: [
+        'status',
+        'refundedAmount',
+        'paymentId',
+        'message'
+    ],
+    title: 'RefundOut'
+} as const;
+
+export const RefundRequestSchema = {
+    properties: {
+        cancelSubscription: {
+            type: 'boolean',
+            title: 'Cancelsubscription',
+            default: true
+        }
+    },
+    type: 'object',
+    title: 'RefundRequest'
+} as const;
+
 export const RegisterOutSchema = {
     properties: {
         status: {
@@ -2656,6 +2734,22 @@ export const RescueOutSchema = {
                 }
             ],
             title: 'Requiredrewardid'
+        },
+        isLocked: {
+            type: 'boolean',
+            title: 'Islocked',
+            default: false
+        },
+        lockedBy: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Lockedby'
         }
     },
     type: 'object',
@@ -2668,7 +2762,9 @@ export const RescueOutSchema = {
         'description',
         'data',
         'requiredTariffId',
-        'requiredRewardId'
+        'requiredRewardId',
+        'isLocked',
+        'lockedBy'
     ],
     title: 'RescueOut'
 } as const;
@@ -4434,6 +4530,22 @@ export const TestOutSchema = {
                 }
             ],
             title: 'Requiredrewardid'
+        },
+        isLocked: {
+            type: 'boolean',
+            title: 'Islocked',
+            default: false
+        },
+        lockedBy: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Lockedby'
         }
     },
     type: 'object',
@@ -4456,7 +4568,9 @@ export const TestOutSchema = {
         'accessabilityConditions',
         'resetTestIds',
         'requiredTariffId',
-        'requiredRewardId'
+        'requiredRewardId',
+        'isLocked',
+        'lockedBy'
     ],
     title: 'TestOut'
 } as const;
@@ -4636,6 +4750,18 @@ export const TestResultOutSchema = {
                 }
             ],
             title: 'Resettests'
+        },
+        unlocked: {
+            anyOf: [
+                {
+                    items: {},
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Unlocked'
         }
     },
     type: 'object',

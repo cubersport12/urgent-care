@@ -27,7 +27,7 @@ export function StudyFolderCard({
   onPress,
   index,
 }: StudyFolderCardProps) {
-  const { primary, neutralSoft, warning, onWarning, warningContainer } = useAppTheme();
+  const { primary, neutralSoft, warning, warningContainer } = useAppTheme();
   const glass = useGlass();
   const glow = useGlow();
   const completed = Math.round((progressPercent / 100) * materialCount);
@@ -37,11 +37,6 @@ export function StudyFolderCard({
       : materialCount < 5
         ? `${materialCount} материала`
         : `${materialCount} материалов`;
-  const lockReason = locked
-    ? locked === 'reward'
-      ? 'За достижение'
-      : 'Тариф выше'
-    : null;
 
   return (
     <Animated.View entering={staggerEnter(index)} style={styles.wrapper}>
@@ -55,6 +50,9 @@ export function StudyFolderCard({
         ]}
       >
         <GlassCard padding={20} borderRadius={16}>
+          {locked ? (
+            <View pointerEvents="none" style={[styles.lockStrip, { backgroundColor: warning }]} />
+          ) : null}
           <View
             style={[
               styles.iconCircle,
@@ -74,14 +72,6 @@ export function StudyFolderCard({
           <View style={styles.progress}>
             <ProgressBar current={completed} total={materialCount || 1} height={4} />
           </View>
-          {lockReason ? (
-            <View style={[styles.lockBand, { backgroundColor: warning }]}>
-              <IconSymbol name="lock.fill" size={12} color={onWarning} />
-              <ThemedText style={[styles.lockBandText, { color: onWarning }]} numberOfLines={1}>
-                {lockReason}
-              </ThemedText>
-            </View>
-          ) : null}
         </GlassCard>
       </Pressable>
     </Animated.View>
@@ -116,20 +106,15 @@ const styles = StyleSheet.create({
   progress: {
     marginTop: 12,
   },
-  // Золотая полоса причины: отрицательные отступы = padding GlassCard (20),
-  // контейнер карточки overflow hidden — полоса до самых краёв с круглыми углами
-  lockBand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 12,
-    marginHorizontal: -20,
-    marginBottom: -20,
-    paddingVertical: 4,
-  },
-  lockBandText: {
-    fontSize: 12,
-    fontWeight: '600',
+  // Вертикальная золотая полоса причины слева: отрицательные отступы = padding GlassCard (20),
+  // контейнер карточки overflow hidden — полоса повторяет круглый угол карточки
+  lockStrip: {
+    position: 'absolute',
+    top: -20,
+    bottom: -20,
+    left: -20,
+    width: 4,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
   },
 });

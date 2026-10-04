@@ -37,6 +37,8 @@ export type AppArticleVm = Omit<
   | 'hideWhileNotPrevComplete'
   | 'includeToStatistics'
   | 'linksToArticles'
+  | 'isLocked'
+  | 'lockedBy'
 > & {
   order?: NullableValue<number>;
   parentId?: NullableValue<string>;
@@ -46,6 +48,8 @@ export type AppArticleVm = Omit<
   hideWhileNotPrevComplete?: NullableValue<boolean>;
   includeToStatistics?: NullableValue<boolean>;
   linksToArticles?: NullableValue<AppLinkToArticleVm[]>;
+  isLocked?: boolean;
+  lockedBy?: NullableValue<string>;
 };
 
 export type AppTestQuestionAnswerVm = {
