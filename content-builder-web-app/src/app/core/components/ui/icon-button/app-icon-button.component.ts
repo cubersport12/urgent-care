@@ -47,13 +47,10 @@ export type AppIconButtonSize = 'xs' | 'sm' | 'md' | 'lg';
       }
     </button>
   `,
-  styles: `
-    :host {
-      display: inline-flex;
-      vertical-align: middle;
-    }
-  `,
   host: {
+    // display задаётся utility-классами (а не :host-стилем), иначе компонентный
+    // стиль перебивает display-утилиты с точек использования (например lg:hidden).
+    class: 'inline-flex align-middle',
     '[class.pointer-events-none]': 'disabled() || loading()',
     '[class.cursor-not-allowed]': 'disabled() || loading()'
   },

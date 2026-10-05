@@ -6,6 +6,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ToggleLightDarkButtonComponent } from '../toggle-light-dark-button';
 import { AppIconButtonComponent } from '../ui';
 import { filter } from 'rxjs';
+import { authMe } from '@/core/api/generated/sdk.gen';
+import type { UserOut } from '@/core/api/generated/types.gen';
+import { apiCall } from '@/core/api/api-utils';
+import { SupportStoreService } from '@/core/services/support-store.service';
 
 interface NavItem {
   label: string;
@@ -50,10 +54,10 @@ interface NavSection {
         <!-- App Brand Header -->
         <div class="flex items-center justify-between h-16 px-5 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <a routerLink="/dashboard" class="flex items-center gap-3 group">
-            <img src="logo.png" alt="Urgent Care" class="w-9 h-9 rounded-xl object-contain shadow-sm group-hover:scale-105 transition-transform shrink-0" />
+            <img src="logo.png" alt="Trouble Dent" class="w-9 h-9 rounded-xl object-contain shadow-sm group-hover:scale-105 transition-transform shrink-0" />
             <div>
               <div class="font-bold text-sm tracking-tight text-slate-900 dark:text-white leading-tight">
-                Urgent Care
+                Trouble Dent
               </div>
               <div class="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
                 Панель управления
@@ -74,7 +78,7 @@ interface NavSection {
 
         <!-- Navigation Links Groups -->
         <nav class="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-6">
-          @for (sec of _navSections; track sec.title) {
+          @for (sec of _navSections(); track sec.title) {
             <div>
               <div class="px-3 mb-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 {{ sec.title }}
@@ -96,7 +100,7 @@ interface NavSection {
                       <span>{{ item.label }}</span>
                     </div>
                     @if (item.badge) {
-                      <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300">
+                      <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-rose-500 text-white min-w-5 text-center">
                         {{ item.badge }}
                       </span>
                     }
@@ -111,13 +115,13 @@ interface NavSection {
         <div class="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
           <div class="flex items-center justify-between p-2 rounded-xl">
             <div class="flex items-center gap-2.5 min-w-0">
-              <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center text-xs shrink-0">
-                А
-              </div>
-              <div class="truncate">
-                <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">Администратор</p>
-                <p class="text-[10px] text-slate-400 truncate">admin&#64;urgent-care.ru</p>
-              </div>
+            <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center text-xs shrink-0">
+              {{ _initial() }}
+            </div>
+            <div class="truncate">
+              <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{{ _displayName() }}</p>
+              <p class="text-[10px] text-slate-400 truncate">{{ _me()?.email }}</p>
+            </div>
             </div>
 
             <a
@@ -173,58 +177,72 @@ interface NavSection {
 })
 export class AdminLayoutComponent {
   private readonly _router = inject(Router);
+  private readonly _supportStore = inject(SupportStoreService);
 
   protected readonly _isMobileOpen = signal(false);
   protected readonly _currentUrl = signal<string>(this._router.url);
+  protected readonly _me = signal<UserOut | null>(null);
 
-  protected readonly _navSections: NavSection[] = [
-    {
-      title: 'Обзор',
-      items: [
-        { label: 'Дашборд и Аналитика', route: '/dashboard', icon: 'chart-line' }
-      ]
-    },
-    {
-      title: 'Обучение и контент',
-      items: [
-        { label: 'Файловый менеджер', route: '/content', icon: 'folder-open' }
-      ]
-    },
-    {
-      title: 'Пользователи',
-      items: [
-        { label: 'Управление пользователями', route: '/users', icon: 'users' }
-      ]
-    },
-    {
-      title: 'Монетизация',
-      items: [
-        { label: 'Тарифные планы', route: '/tariffs', icon: 'sliders' },
-        { label: 'Промокоды', route: '/promo-codes', icon: 'tag' },
-        { label: 'Возврат подписок', route: '/refunds', icon: 'credit-card' }
-      ]
-    },
-    {
-      title: 'Геймификация',
-      items: [
-        { label: 'Достижения', route: '/achievements', icon: 'trophy' },
-        { label: 'Награды', route: '/rewards', icon: 'gift' },
-        { label: 'Сброс статистики', route: '/stats-reset', icon: 'trash' }
-      ]
-    },
-    {
-      title: 'Система',
-      items: [
-        { label: 'Нормативные документы', route: '/legal-docs', icon: 'file-contract' },
-        { label: 'Сертификаты', route: '/certificates', icon: 'certificate' },
-        { label: 'Настройки платформы', route: '/settings', icon: 'gear' }
-      ]
-    }
-  ];
+  protected readonly _displayName = computed(() => this._me()?.full_name || 'Администратор');
+  protected readonly _initial = computed(() => (this._displayName()[0] || 'А').toUpperCase());
+
+  protected readonly _navSections = computed<NavSection[]>(() => {
+    const unread = this._supportStore.unreadCount();
+    return [
+      {
+        title: 'Обзор',
+        items: [
+          { label: 'Дашборд и Аналитика', route: '/dashboard', icon: 'chart-line' }
+        ]
+      },
+      {
+        title: 'Обучение и контент',
+        items: [
+          { label: 'Файловый менеджер', route: '/content', icon: 'folder-open' }
+        ]
+      },
+      {
+        title: 'Пользователи',
+        items: [
+          { label: 'Управление пользователями', route: '/users', icon: 'users' },
+          {
+            label: 'Служба поддержки',
+            route: '/support',
+            icon: 'comments',
+            badge: unread > 0 ? String(unread) : undefined
+          }
+        ]
+      },
+      {
+        title: 'Монетизация',
+        items: [
+          { label: 'Тарифные планы', route: '/tariffs', icon: 'sliders' },
+          { label: 'Промокоды', route: '/promo-codes', icon: 'tag' },
+          { label: 'Возврат подписок', route: '/refunds', icon: 'credit-card' }
+        ]
+      },
+      {
+        title: 'Геймификация',
+        items: [
+          { label: 'Достижения', route: '/achievements', icon: 'trophy' },
+          { label: 'Награды', route: '/rewards', icon: 'gift' },
+          { label: 'Сброс статистики', route: '/stats-reset', icon: 'trash' }
+        ]
+      },
+      {
+        title: 'Система',
+        items: [
+          { label: 'Нормативные документы', route: '/legal-docs', icon: 'file-contract' },
+          { label: 'Сертификаты', route: '/certificates', icon: 'certificate' },
+          { label: 'Настройки платформы', route: '/settings', icon: 'gear' }
+        ]
+      }
+    ];
+  });
 
   protected readonly _currentRouteTitle = computed(() => {
     const url = this._currentUrl();
-    for (const sec of this._navSections) {
+    for (const sec of this._navSections()) {
       for (const item of sec.items) {
         if (url.startsWith(item.route)) {
           return item.label;
@@ -235,6 +253,12 @@ export class AdminLayoutComponent {
   });
 
   constructor() {
+    this._supportStore.init();
+    void apiCall(() => authMe())
+      .then((me) => this._me.set(me))
+      .catch(() => {
+        // 401 обработит глобальный редирект на /login
+      });
     this._router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
       .subscribe((event) => {

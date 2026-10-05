@@ -17,6 +17,7 @@ from app.schemas.billing import (
     PromoCodeUpdate,
     RefundOut,
     RefundRequest,
+    RefundJournalOut,
     SubscribeOut,
     SubscribeRequest,
     TariffCreate,
@@ -169,6 +170,14 @@ async def refund_user_subscription(
         user_id,
         cancel_subscription=payload.cancel_subscription,
     )
+
+
+@router.get("/refunds", response_model=RefundJournalOut)
+async def list_refund_journal(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> RefundJournalOut:
+    return await BillingService(db).list_refund_journal()
 
 
 @router.post("/webhooks/yookassa", include_in_schema=False)

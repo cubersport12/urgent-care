@@ -36,6 +36,13 @@ export const routes: Routes = [
           import('./core/components/users-list/users-list.component').then((x) => x.UsersListComponent)
       },
       {
+        path: 'support',
+        loadComponent: () =>
+          import('./core/components/support-inbox/support-inbox.component').then(
+            (x) => x.SupportInboxComponent
+          )
+      },
+      {
         path: 'tariffs',
         loadComponent: () =>
           import('./core/components/tariffs-editor/tariffs-editor.component').then(

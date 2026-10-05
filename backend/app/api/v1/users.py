@@ -2,19 +2,29 @@
 from __future__ import annotations
 
 from typing import Annotated
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, status
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_current_user, get_db
+from app.core.config import settings
+from app.core.security import hash_password
 from app.db.repositories.achievements import AchievementRepository
+from app.db.repositories.password_reset import PasswordResetRepository
+from app.db.repositories.user import UserRepository
 from app.models.achievement import Reward, UserAchievement
 from app.models.learning_event import LearningEvent
 from app.models.user import User
 from app.models.user_bonus import UserBonusTransaction
-from app.schemas.users import GrantBonusRequest, UserStatusUpdateRequest
+from app.schemas.users import (
+    AdminActionOut,
+    GrantBonusRequest,
+    UserAdminCreate,
+    UserAdminUpdate,
+    UserStatusUpdateRequest,
+)
 from app.models.billing import UserSubscription, Tariff
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select, func, update
@@ -29,6 +39,8 @@ from app.schemas.users import (
 )
 from app.services.reward_unlock import is_reward_unlocked, reward_unlocked_at
 from app.services.stats_from_events import count_distinct_completed
+from app.utils.email import send_email_safe
+from app.utils.s3 import get_s3_client
 
 router = APIRouter(tags=["users"])
 
@@ -64,9 +76,113 @@ async def list_users(
             full_name=user.full_name,
             status="active" if user.is_active else "banned",
             score=int(score),
-            tariff_name=tariff_name
+            tariff_name=tariff_name,
+            role=user.role,
+            occupation=user.occupation,
+            birth_year=user.birth_year,
         ))
     return out
+
+
+@router.post("/users", status_code=status.HTTP_201_CREATED, response_model=AdminActionOut)
+async def admin_create_user(
+    payload: UserAdminCreate,
+    background_tasks: BackgroundTasks,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(get_current_admin)],
+) -> AdminActionOut:
+    """Создание пользователя администратором. Без пароля — уйдёт письмо со ссылкой установки."""
+    email = payload.email.lower()
+    if await db.scalar(select(User.id).where(User.email == email)):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Пользователь с таким email уже существует",
+        )
+
+    from app.services.billing import BillingService
+
+    user = await UserRepository(db).create(
+        id=uuid4(),
+        email=email,
+        full_name=payload.full_name,
+        hashed_password=hash_password(payload.password) if payload.password else None,
+        role=payload.role,
+        occupation=payload.occupation,
+        birth_year=payload.birth_year,
+        is_active=True,
+        email_verified=True,
+    )
+    await BillingService(db).ensure_subscription(user)
+
+    message = "Пользователь создан"
+    if not payload.password:
+        raw_token = await PasswordResetRepository(db).issue(user.id)
+        link = f"{settings.password_reset_url.rstrip('/')}?token={raw_token}"
+        background_tasks.add_task(
+            send_email_safe,
+            to=user.email,
+            subject="Приглашение в Trouble Dent",
+            body=(
+                f"{user.full_name or 'Пользователь'}, вам создан аккаунт в Trouble Dent.\n\n"
+                f"Задайте пароль по ссылке:\n{link}\n\nСсылка действует 2 часа."
+            ),
+        )
+        message = "Пользователь создан. Ссылка для установки пароля отправлена на email"
+
+    return AdminActionOut(success=True, message=message)
+
+
+@router.patch("/users/{user_id}", response_model=AdminActionOut)
+async def admin_update_user(
+    user_id: UUID,
+    payload: UserAdminUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    admin: Annotated[User, Depends(get_current_admin)],
+):
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Семантика явного null: переданное поле применяется, включая null (очистка occupation/birthYear).
+    fields = payload.model_fields_set
+    if "role" in fields and payload.role is not None:
+        if user.id == admin.id and payload.role != user.role:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Нельзя изменить собственную роль",
+            )
+        user.role = payload.role
+    if "full_name" in fields and payload.full_name is not None:
+        user.full_name = payload.full_name
+    if "occupation" in fields:
+        user.occupation = payload.occupation
+    if "birth_year" in fields:
+        user.birth_year = payload.birth_year
+
+    await db.commit()
+    return AdminActionOut(success=True, message="Изменения сохранены")
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
+async def admin_delete_user(
+    user_id: UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    admin: Annotated[User, Depends(get_current_admin)],
+) -> Response:
+    """Полное удаление аккаунта и всех связанных данных (каскад по FK, как DELETE /auth/me)."""
+    if user_id == admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Нельзя удалить собственный аккаунт",
+        )
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.avatar_key:
+        await get_s3_client().delete_file(key=user.avatar_key)
+    await db.execute(delete(User).where(User.id == user.id))
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.post("/users/{user_id}/bonus")
 async def grant_user_bonus(

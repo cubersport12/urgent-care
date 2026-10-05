@@ -63,7 +63,7 @@ interface AdminRoleUser {
           type="email"
           icon="envelope"
           formControlName="email"
-          placeholder="ivan@urgent-care.ru"
+          placeholder="ivan@trouble-dent.ru"
           [required]="true"
         />
         <app-select
@@ -112,6 +112,7 @@ export class AdminInviteDialogComponent {
   selector: 'app-system-settings',
   imports: [
     FormsModule,
+    MatIcon,
     MatSnackBarModule,
     MatSlideToggleModule,
     AppButtonComponent,
@@ -141,6 +142,14 @@ export class AdminInviteDialogComponent {
         >
           Сохранить настройки
         </app-button>
+      </div>
+
+      <!-- Test-mode notice -->
+      <div class="flex items-start gap-2.5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300">
+        <mat-icon svgIcon="exclamation-circle" class="!w-4 !h-4 text-amber-600 shrink-0 mt-0.5" />
+        <div>
+          <span class="font-semibold">Тестовая форма.</span> Внесённые здесь данные нигде не применяются и ни на что не влияют.
+        </div>
       </div>
 
       <!-- Settings Tabs Navigation -->
@@ -411,16 +420,16 @@ export class SystemSettingsComponent {
   protected _aiMedicalValidation = true;
 
   // Notifications State
-  protected _notifyTitle = 'Плановое обновление платформы Urgent Care';
+  protected _notifyTitle = 'Плановое обновление платформы Trouble Dent';
   protected _notifyBody = 'В субботу с 02:00 до 03:00 МСК будут проводиться технические работы.';
   protected readonly _sendingNotification = signal(false);
 
   // Admins List
   protected readonly _admins = signal<AdminRoleUser[]>([
-    { id: '1', name: 'Главный Администратор', email: 'admin@urgent-care.ru', role: 'superadmin', status: 'active' },
-    { id: '2', name: 'Ольга Куратор', email: 'olga.content@urgent-care.ru', role: 'content_editor', status: 'active' },
-    { id: '3', name: 'Виктор Финансист', email: 'victor.billing@urgent-care.ru', role: 'finance', status: 'active' },
-    { id: '4', name: 'Техническая Поддержка', email: 'support@urgent-care.ru', role: 'support', status: 'active' }
+    { id: '1', name: 'Главный Администратор', email: 'admin@trouble-dent.ru', role: 'superadmin', status: 'active' },
+    { id: '2', name: 'Ольга Куратор', email: 'olga.content@trouble-dent.ru', role: 'content_editor', status: 'active' },
+    { id: '3', name: 'Виктор Финансист', email: 'victor.billing@trouble-dent.ru', role: 'finance', status: 'active' },
+    { id: '4', name: 'Техническая Поддержка', email: 'support@trouble-dent.ru', role: 'support', status: 'active' }
   ]);
 
   protected _getRoleLabel(role: AdminRoleUser['role']): string {

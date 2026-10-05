@@ -50,3 +50,8 @@ class ActivityEventOut(CamelModel):
     user_name: Annotated[str, Field(alias="userName")] = ""
     score: float | None = None
     created_at: Annotated[datetime, Field(alias="createdAt")]
+
+
+class ActivityFeedOut(CamelModel):
+    items: list[ActivityEventOut] = Field(default_factory=list)
+    total: int = 0

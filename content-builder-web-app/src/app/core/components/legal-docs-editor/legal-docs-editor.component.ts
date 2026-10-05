@@ -142,7 +142,7 @@ export class LegalDocsEditorService {
       </div>
 
       <!-- Document Cards Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         @for (cat of _categories; track cat.id) {
           <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
             <div class="space-y-3">

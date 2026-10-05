@@ -6,7 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { analyticsAnalyticsRecentEvents, analyticsAnalyticsSummary } from '@/core/api/generated/sdk.gen';
 import { apiCall } from '@/core/api/api-utils';
 import type { ActivityEventOut, AnalyticsSummaryOut } from '@/core/api/generated/types.gen';
-import { AppIconButtonComponent, AppButtonComponent } from '../ui';
+import { AppIconButtonComponent, AppButtonComponent, AppPaginationComponent } from '../ui';
 
 interface MetricCard {
   title: string;
@@ -33,14 +33,14 @@ type Period = 'week' | 'month' | 'year';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, MatIcon, MatButtonModule, MatTooltipModule, AppIconButtonComponent, AppButtonComponent],
+  imports: [RouterLink, MatIcon, MatButtonModule, MatTooltipModule, AppIconButtonComponent, AppButtonComponent, AppPaginationComponent],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
       <!-- Welcome Header -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
         <div>
           <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Панель управления Urgent Care
+            Панель управления Trouble Dent
           </h1>
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Сводка активности пользователей, метрик монетизации и обучающего контента
@@ -289,6 +289,13 @@ type Period = 'week' | 'month' | 'year';
               </div>
             }
           </div>
+
+          <app-pagination
+            [page]="_page()"
+            [pageSize]="_pageSize"
+            [total]="_activityTotal()"
+            (pageChange)="_onPageChange($event)"
+          />
         </div>
       </div>
     </div>
@@ -305,6 +312,9 @@ export class DashboardComponent {
   protected readonly _period = signal<Period>('month');
   protected readonly _summary = signal<AnalyticsSummaryOut | null>(null);
   protected readonly _recentEvents = signal<ActivityEventOut[]>([]);
+  protected readonly _page = signal(1);
+  protected readonly _activityTotal = signal(0);
+  protected readonly _pageSize = 10;
 
   private readonly _periodLabels: Record<Period, string> = {
     week: 'неделю',
@@ -404,6 +414,11 @@ export class DashboardComponent {
     void this._loadSummary();
   }
 
+  protected _onPageChange(page: number): void {
+    this._page.set(page);
+    void this._loadActivity();
+  }
+
   protected _reload(): void {
     void this._loadSummary();
     void this._loadActivity();
@@ -420,8 +435,13 @@ export class DashboardComponent {
 
   private async _loadActivity(): Promise<void> {
     try {
-      const events = await apiCall(() => analyticsAnalyticsRecentEvents({ query: { limit: 20 } }));
-      this._recentEvents.set(events ?? []);
+      const feed = await apiCall(() =>
+        analyticsAnalyticsRecentEvents({
+          query: { offset: (this._page() - 1) * this._pageSize, limit: this._pageSize }
+        })
+      );
+      this._recentEvents.set(feed?.items ?? []);
+      this._activityTotal.set(feed?.total ?? 0);
     } catch {
       // держим предыдущие данные
     }

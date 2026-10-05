@@ -251,6 +251,34 @@ export type ActivityEventOut = {
 };
 
 /**
+ * ActivityFeedOut
+ */
+export type ActivityFeedOut = {
+    /**
+     * Items
+     */
+    items?: Array<ActivityEventOut>;
+    /**
+     * Total
+     */
+    total?: number;
+};
+
+/**
+ * AdminActionOut
+ */
+export type AdminActionOut = {
+    /**
+     * Success
+     */
+    success: boolean;
+    /**
+     * Message
+     */
+    message: string;
+};
+
+/**
  * AnalyticsDayOut
  */
 export type AnalyticsDayOut = {
@@ -1614,6 +1642,50 @@ export type RecommendedArticleOut = {
 };
 
 /**
+ * RefundJournalItem
+ */
+export type RefundJournalItem = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Userid
+     */
+    userId: string;
+    /**
+     * Username
+     */
+    userName: string;
+    /**
+     * Useremail
+     */
+    userEmail: string;
+    /**
+     * Amountrub
+     */
+    amountRub: number;
+    /**
+     * Refundedat
+     */
+    refundedAt: string;
+};
+
+/**
+ * RefundJournalOut
+ */
+export type RefundJournalOut = {
+    /**
+     * Items
+     */
+    items: Array<RefundJournalItem>;
+    /**
+     * Gatewayconfigured
+     */
+    gatewayConfigured: boolean;
+};
+
+/**
  * RefundOut
  */
 export type RefundOut = {
@@ -2421,6 +2493,16 @@ export type SupportMessageOut = {
 };
 
 /**
+ * SupportThreadCreate
+ */
+export type SupportThreadCreate = {
+    /**
+     * Userid
+     */
+    userId: string;
+};
+
+/**
  * SupportThreadDetailOut
  */
 export type SupportThreadDetailOut = {
@@ -2478,6 +2560,10 @@ export type SupportThreadOut = {
      * Lastbody
      */
     lastBody: string | null;
+    /**
+     * Unreadcount
+     */
+    unreadCount: number;
 };
 
 /**
@@ -3089,6 +3175,58 @@ export type UnreadCountOut = {
 };
 
 /**
+ * UserAdminCreate
+ */
+export type UserAdminCreate = {
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Fullname
+     */
+    fullName: string;
+    /**
+     * Role
+     */
+    role?: 'user' | 'admin';
+    /**
+     * Occupation
+     */
+    occupation?: string | null;
+    /**
+     * Birthyear
+     */
+    birthYear?: number | null;
+    /**
+     * Password
+     */
+    password?: string | null;
+};
+
+/**
+ * UserAdminUpdate
+ */
+export type UserAdminUpdate = {
+    /**
+     * Fullname
+     */
+    fullName?: string | null;
+    /**
+     * Role
+     */
+    role?: 'user' | 'admin' | null;
+    /**
+     * Occupation
+     */
+    occupation?: string | null;
+    /**
+     * Birthyear
+     */
+    birthYear?: number | null;
+};
+
+/**
  * UserCreate
  */
 export type UserCreate = {
@@ -3138,6 +3276,18 @@ export type UserListItemOut = {
      * Score
      */
     score?: number;
+    /**
+     * Role
+     */
+    role?: string;
+    /**
+     * Occupation
+     */
+    occupation?: string | null;
+    /**
+     * Birthyear
+     */
+    birthYear?: number | null;
 };
 
 /**
@@ -4395,6 +4545,37 @@ export type BillingRefundUserSubscriptionResponses = {
 
 export type BillingRefundUserSubscriptionResponse = BillingRefundUserSubscriptionResponses[keyof BillingRefundUserSubscriptionResponses];
 
+export type BillingListRefundJournalData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/refunds';
+};
+
+export type BillingListRefundJournalErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingListRefundJournalError = BillingListRefundJournalErrors[keyof BillingListRefundJournalErrors];
+
+export type BillingListRefundJournalResponses = {
+    /**
+     * Successful Response
+     */
+    200: RefundJournalOut;
+};
+
+export type BillingListRefundJournalResponse = BillingListRefundJournalResponses[keyof BillingListRefundJournalResponses];
+
 export type NotificationsListNotificationsData = {
     body?: never;
     headers?: {
@@ -5128,6 +5309,104 @@ export type SupportListThreadsResponses = {
 };
 
 export type SupportListThreadsResponse = SupportListThreadsResponses[keyof SupportListThreadsResponses];
+
+export type SupportCreateThreadForUserData = {
+    body: SupportThreadCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/support/threads';
+};
+
+export type SupportCreateThreadForUserErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SupportCreateThreadForUserError = SupportCreateThreadForUserErrors[keyof SupportCreateThreadForUserErrors];
+
+export type SupportCreateThreadForUserResponses = {
+    /**
+     * Successful Response
+     */
+    201: SupportThreadDetailOut;
+};
+
+export type SupportCreateThreadForUserResponse = SupportCreateThreadForUserResponses[keyof SupportCreateThreadForUserResponses];
+
+export type SupportSupportUnreadCountData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/support/threads/unread-count';
+};
+
+export type SupportSupportUnreadCountErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SupportSupportUnreadCountError = SupportSupportUnreadCountErrors[keyof SupportSupportUnreadCountErrors];
+
+export type SupportSupportUnreadCountResponses = {
+    /**
+     * Successful Response
+     */
+    200: UnreadCountOut;
+};
+
+export type SupportSupportUnreadCountResponse = SupportSupportUnreadCountResponses[keyof SupportSupportUnreadCountResponses];
+
+export type SupportMarkThreadReadData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Thread Id
+         */
+        thread_id: string;
+    };
+    query?: never;
+    url: '/api/v1/support/threads/{thread_id}/read';
+};
+
+export type SupportMarkThreadReadErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SupportMarkThreadReadError = SupportMarkThreadReadErrors[keyof SupportMarkThreadReadErrors];
+
+export type SupportMarkThreadReadResponses = {
+    /**
+     * Successful Response
+     */
+    200: UnreadCountOut;
+};
+
+export type SupportMarkThreadReadResponse = SupportMarkThreadReadResponses[keyof SupportMarkThreadReadResponses];
 
 export type SupportGetThreadData = {
     body?: never;
@@ -6555,6 +6834,109 @@ export type UsersListUsersResponses = {
 
 export type UsersListUsersResponse = UsersListUsersResponses[keyof UsersListUsersResponses];
 
+export type UsersAdminCreateUserData = {
+    body: UserAdminCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/users';
+};
+
+export type UsersAdminCreateUserErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UsersAdminCreateUserError = UsersAdminCreateUserErrors[keyof UsersAdminCreateUserErrors];
+
+export type UsersAdminCreateUserResponses = {
+    /**
+     * Successful Response
+     */
+    201: AdminActionOut;
+};
+
+export type UsersAdminCreateUserResponse = UsersAdminCreateUserResponses[keyof UsersAdminCreateUserResponses];
+
+export type UsersAdminDeleteUserData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{user_id}';
+};
+
+export type UsersAdminDeleteUserErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UsersAdminDeleteUserError = UsersAdminDeleteUserErrors[keyof UsersAdminDeleteUserErrors];
+
+export type UsersAdminDeleteUserResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type UsersAdminDeleteUserResponse = UsersAdminDeleteUserResponses[keyof UsersAdminDeleteUserResponses];
+
+export type UsersAdminUpdateUserData = {
+    body: UserAdminUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{user_id}';
+};
+
+export type UsersAdminUpdateUserErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UsersAdminUpdateUserError = UsersAdminUpdateUserErrors[keyof UsersAdminUpdateUserErrors];
+
+export type UsersAdminUpdateUserResponses = {
+    /**
+     * Successful Response
+     */
+    200: AdminActionOut;
+};
+
+export type UsersAdminUpdateUserResponse = UsersAdminUpdateUserResponses[keyof UsersAdminUpdateUserResponses];
+
 export type UsersGrantUserBonusData = {
     body: GrantBonusRequest;
     headers?: {
@@ -7135,6 +7517,10 @@ export type AnalyticsAnalyticsRecentEventsData = {
     path?: never;
     query?: {
         /**
+         * Offset
+         */
+        offset?: number;
+        /**
          * Limit
          */
         limit?: number;
@@ -7153,11 +7539,9 @@ export type AnalyticsAnalyticsRecentEventsError = AnalyticsAnalyticsRecentEvents
 
 export type AnalyticsAnalyticsRecentEventsResponses = {
     /**
-     * Response Analytics Analytics Recent Events
-     *
      * Successful Response
      */
-    200: Array<ActivityEventOut>;
+    200: ActivityFeedOut;
 };
 
 export type AnalyticsAnalyticsRecentEventsResponse = AnalyticsAnalyticsRecentEventsResponses[keyof AnalyticsAnalyticsRecentEventsResponses];

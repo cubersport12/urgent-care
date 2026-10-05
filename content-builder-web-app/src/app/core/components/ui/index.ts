@@ -6,3 +6,4 @@ export * from './textarea/app-textarea.component';
 export * from './checkbox/app-checkbox.component';
 export * from './badge/app-badge.component';
 export * from './card/app-card.component';
+export * from './pagination/app-pagination.component';

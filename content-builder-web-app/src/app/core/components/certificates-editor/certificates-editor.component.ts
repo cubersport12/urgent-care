@@ -7,7 +7,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import { AppFilesStorageService } from '@/core/api';
 import { ApiError, apiCall } from '@/core/api/api-utils';
-import { certificatesIssue, usersListUsers } from '@/core/api/generated/sdk.gen';
+import { certificatesIssue, certificatesListCertificates, usersListUsers } from '@/core/api/generated/sdk.gen';
 import type { CertificateOut, UserListItemOut } from '@/core/api/generated/types.gen';
 import { AppDialogService } from '@/core/services/app-dialog.service';
 import {
@@ -19,14 +19,6 @@ import {
 } from '@/core/components/ui';
 
 type CertPreview = { url: string; numberLabel: string };
-
-interface IssuedLogItem {
-  numberLabel: string;
-  name: string;
-  course: string;
-  date: string;
-  status: 'valid' | 'revoked';
-}
 
 @Injectable({ providedIn: 'root' })
 export class CertificatesEditorService {
@@ -89,11 +81,11 @@ export class CertificatesEditorService {
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
           <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Всего выдано</div>
-          <div class="text-2xl font-bold text-slate-900 dark:text-white mt-1">128 сертификатов</div>
+          <div class="text-2xl font-bold text-slate-900 dark:text-white mt-1">{{ _issuedRegistry().length }}</div>
         </div>
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
           <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Формат документа</div>
-          <div class="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">PNG / PDF (HD)</div>
+          <div class="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">PNG</div>
         </div>
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
           <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Валидация QR-кодом</div>
@@ -202,32 +194,34 @@ export class CertificatesEditorService {
                 <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-medium">
                   <th class="py-3 px-3">Номер</th>
                   <th class="py-3 px-3">Владелец</th>
-                  <th class="py-3 px-3">Программа</th>
                   <th class="py-3 px-3">Дата выдачи</th>
                   <th class="py-3 px-3 text-right">Статус</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
-                @for (cert of _issuedRegistry(); track cert.numberLabel) {
+                @for (cert of _issuedRegistry(); track cert.id) {
                   <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                     <td class="py-3 px-3">
                       <code class="font-mono text-purple-600 dark:text-purple-400 font-bold">
-                        {{ cert.numberLabel }}
+                        {{ _numberLabel(cert) }}
                       </code>
                     </td>
                     <td class="py-3 px-3 font-semibold text-slate-900 dark:text-white">
-                      {{ cert.name }}
-                    </td>
-                    <td class="py-3 px-3 text-slate-600 dark:text-slate-300">
-                      {{ cert.course }}
+                      {{ cert.fullName }}
                     </td>
                     <td class="py-3 px-3 text-slate-400">
-                      {{ cert.date }}
+                      {{ _fmtDate(cert.issuedAt) }}
                     </td>
                     <td class="py-3 px-3 text-right">
                       <app-badge variant="success" size="sm" [dot]="true">
                         Действителен
                       </app-badge>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="py-8 px-3 text-center text-slate-400">
+                      Выданных сертификатов ещё нет
                     </td>
                   </tr>
                 }
@@ -256,29 +250,7 @@ export class CertificatesEditorComponent {
   protected readonly _issuing = signal(false);
   protected readonly _issued = signal<CertPreview | null>(null);
 
-  protected readonly _issuedRegistry = signal<IssuedLogItem[]>([
-    {
-      numberLabel: 'TD-2026-000128',
-      name: 'Алексей Смирнов',
-      course: 'Базовый курс реанимации СЛР',
-      date: 'Сегодня, 10:15',
-      status: 'valid'
-    },
-    {
-      numberLabel: 'TD-2026-000127',
-      name: 'Елена Кузнецова',
-      course: 'Острая дыхательная недостаточность',
-      date: 'Вчера, 17:40',
-      status: 'valid'
-    },
-    {
-      numberLabel: 'TD-2026-000126',
-      name: 'Константин Попов',
-      course: 'Протокол анафилактического шока',
-      date: '01.10.2026',
-      status: 'valid'
-    }
-  ]);
+  protected readonly _issuedRegistry = signal<CertificateOut[]>([]);
 
   protected readonly _form = new FormGroup({
     userId: new FormControl<string | null>(null, { validators: [Validators.required] }),
@@ -287,6 +259,7 @@ export class CertificatesEditorComponent {
 
   constructor() {
     void this._loadUsers();
+    void this._loadRegistry();
     this._form.controls.userId.valueChanges.subscribe((id) => {
       const user = this._users().find((u) => u.id === id);
       if (user?.fullName) {
@@ -316,6 +289,19 @@ export class CertificatesEditorComponent {
     }
   }
 
+  protected async _loadRegistry(): Promise<void> {
+    try {
+      const certs = await apiCall(() => certificatesListCertificates());
+      this._issuedRegistry.set(certs);
+    } catch (err) {
+      this._snack.open(
+        err instanceof ApiError ? err.detail : 'Не удалось загрузить реестр сертификатов',
+        'OK',
+        { duration: 6000 }
+      );
+    }
+  }
+
   protected _openTab(url: string): void {
     window.open(url, '_blank', 'noopener');
   }
@@ -325,9 +311,13 @@ export class CertificatesEditorComponent {
     this._form.reset();
   }
 
-  private _numberLabel(cert: CertificateOut): string {
+  protected _numberLabel(cert: CertificateOut): string {
     const year = new Date(cert.issuedAt).getFullYear();
     return `TD-${year}-${String(cert.number).padStart(6, '0')}`;
+  }
+
+  protected _fmtDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('ru-RU');
   }
 
   protected async _issue(): Promise<void> {
@@ -349,16 +339,7 @@ export class CertificatesEditorComponent {
       const numberLabel = this._numberLabel(cert);
       this._issued.set({ url, numberLabel });
 
-      this._issuedRegistry.update((list) => [
-        {
-          numberLabel,
-          name: v.displayName?.trim() || 'Обучающийся',
-          course: 'Курс неотложной помощи',
-          date: 'Только что',
-          status: 'valid'
-        },
-        ...list
-      ]);
+      void this._loadRegistry();
     } catch (err) {
       this._snack.open(
         err instanceof ApiError ? err.detail : 'Не удалось выдать сертификат',

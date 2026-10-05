@@ -11,6 +11,10 @@ class SupportMessageCreate(CamelModel):
     body: str = Field(min_length=1, max_length=4000)
 
 
+class SupportThreadCreate(CamelModel):
+    user_id: UUID = Field(alias="userId")
+
+
 class SupportMessageOut(CamelModel):
     id: UUID
     thread_id: UUID = Field(alias="threadId")
@@ -28,6 +32,11 @@ class SupportThreadOut(CamelModel):
     last_message_at: datetime | None = Field(None, alias="lastMessageAt")
     updated_at: datetime = Field(alias="updatedAt")
     last_body: str | None = Field(None, alias="lastBody")
+    unread_count: int = Field(0, alias="unreadCount")
+
+
+class UnreadCountOut(CamelModel):
+    count: int
 
 
 class SupportThreadDetailOut(CamelModel):
