@@ -35,6 +35,11 @@ class SupportThread(Base):
     last_message_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
     )
+    # Водяной знак «админ дочитал сюда»: сообщения пользователя со created_at больше
+    # этого значения считаются непрочитанными.
+    admin_read_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class SupportMessage(Base):

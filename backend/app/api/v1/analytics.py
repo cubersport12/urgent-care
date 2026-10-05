@@ -15,7 +15,7 @@ from app.models.learning_event import LearningEvent
 from app.models.rescue import Rescue
 from app.models.test import Test
 from app.models.user import User
-from app.schemas.analytics import ActivityEventOut, AnalyticsDayOut, AnalyticsSummaryOut, AnalyticsTariffOut
+from app.schemas.analytics import ActivityEventOut, ActivityFeedOut, AnalyticsDayOut, AnalyticsSummaryOut, AnalyticsTariffOut
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -113,19 +113,23 @@ async def analytics_summary(
     )
 
 
-@router.get("/recent-events", response_model=list[ActivityEventOut])
+@router.get("/recent-events", response_model=ActivityFeedOut)
 async def analytics_recent_events(
     db: Annotated[AsyncSession, Depends(get_db)],
     _admin: Annotated[User, Depends(get_current_admin)],
-    limit: Annotated[int, Query(ge=1, le=100)] = 30,
-) -> list[ActivityEventOut]:
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 10,
+) -> ActivityFeedOut:
+    # Фид — слияние трёх источников. Чтобы корректно отдать срез [offset:offset+limit]
+    # объединённого списка, из каждого источника достаточно взять первые offset+limit записей.
+    window = offset + limit
     events: list[ActivityEventOut] = []
 
     learning = (await db.execute(
         select(LearningEvent, User.full_name)
         .join(User, LearningEvent.user_id == User.id)
         .order_by(LearningEvent.created_at.desc())
-        .limit(limit)
+        .limit(window)
     )).all()
 
     # Resolve entity names in batch (events store only ids)
@@ -162,7 +166,7 @@ async def analytics_recent_events(
         .join(Tariff, Payment.tariff_id == Tariff.id)
         .where(Payment.status == "succeeded")
         .order_by(Payment.created_at.desc())
-        .limit(limit)
+        .limit(window)
     )).all()
     for p, user_name, tariff_title in payments:
         events.append(ActivityEventOut(
@@ -176,7 +180,7 @@ async def analytics_recent_events(
         ))
 
     registrations = (await db.execute(
-        select(User).order_by(User.created_at.desc()).limit(limit)
+        select(User).order_by(User.created_at.desc()).limit(window)
     )).scalars().all()
     for u in registrations:
         events.append(ActivityEventOut(
@@ -189,4 +193,9 @@ async def analytics_recent_events(
         ))
 
     events.sort(key=lambda e: e.created_at, reverse=True)
-    return events[:limit]
+    total = sum([
+        await db.scalar(select(func.count(LearningEvent.id))) or 0,
+        await db.scalar(select(func.count(Payment.id)).where(Payment.status == "succeeded")) or 0,
+        await db.scalar(select(func.count(User.id))) or 0,
+    ])
+    return ActivityFeedOut(items=events[offset:offset + limit], total=total)

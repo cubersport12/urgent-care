@@ -3,26 +3,28 @@ import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } 
 import { MatIcon } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { usersListUsers, usersUpdateUserStatus, usersGrantUserBonus, authSendResetLinkAdmin } from '@/core/api/generated/sdk.gen';
+import { firstValueFrom } from 'rxjs';
+import { usersListUsers, usersUpdateUserStatus, usersGrantUserBonus, authSendResetLinkAdmin, usersAdminCreateUser, usersAdminUpdateUser, usersAdminDeleteUser } from '@/core/api/generated/sdk.gen';
 import { apiCall, ApiError } from '@/core/api/api-utils';
-import type { UserListItemOut } from '@/core/api/generated/types.gen';
+import type { UserAdminCreate, UserAdminUpdate, UserListItemOut } from '@/core/api/generated/types.gen';
 import { AppTariffsStorageService } from '@/core/api';
 import { RouterLink } from '@angular/router';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
+import { ConfirmDeleteDialogComponent, ConfirmDeleteDialogData } from '../folders-explorer/confirm-delete-dialog.component';
 import {
   AppButtonComponent,
   AppIconButtonComponent,
   AppInputComponent,
+  AppSelectComponent,
+  AppSelectOption,
   AppBadgeComponent
 } from '../ui';
 
 interface EnhancedUser extends UserListItemOut {
   status: 'active' | 'banned';
-  phone?: string;
-  tariffName?: string;
-  registeredAt?: string;
-  score?: number;
+  tariffName: string;
+  score: number;
 }
 
 @Component({
@@ -76,6 +78,167 @@ export class UserBonusDialogComponent {
   }
 }
 
+type UserDialogResult =
+  | { mode: 'create'; body: UserAdminCreate }
+  | { mode: 'edit'; body: UserAdminUpdate };
+
+@Component({
+  selector: 'app-user-edit-dialog',
+  imports: [
+    ReactiveFormsModule,
+    AppInputComponent,
+    AppSelectComponent,
+    AppIconButtonComponent,
+    AppDialogWrapperComponent
+  ],
+  template: `
+    <app-dialog-wrapper
+      [title]="_data ? 'Редактировать пользователя' : 'Новый пользователь'"
+      [subtitle]="_data ? _data.email : 'Аккаунт обучающегося или администратора платформы'"
+      [saveText]="_data ? 'Сохранить' : 'Создать'"
+      saveIcon="check"
+      [saveDisabled]="_form.invalid"
+      (save)="_save()"
+      (close)="_ref.close()"
+    >
+      <form class="flex flex-col gap-4 min-w-[340px] max-w-full" [formGroup]="_form">
+        @if (!_data) {
+          <app-input
+            label="Email"
+            type="email"
+            icon="envelope"
+            formControlName="email"
+            placeholder="user@example.com"
+            [required]="true"
+          />
+          <app-select
+            label="Способ задания пароля"
+            icon="lock"
+            formControlName="passwordMode"
+            [options]="_passwordModeOptions"
+          />
+          @if (_form.controls.passwordMode.value === 'manual') {
+            <div class="flex items-center gap-2">
+              <app-input
+                label="Пароль"
+                class="flex-1"
+                formControlName="password"
+                hint="Передайте пароль пользователю самостоятельно"
+                [required]="true"
+              />
+              <app-icon-button
+                icon="rotate-right"
+                variant="outline"
+                size="md"
+                tooltip="Сгенерировать надёжный пароль"
+                (clicked)="_generatePassword()"
+              />
+            </div>
+          }
+        } @else {
+          <app-input
+            label="Email"
+            icon="envelope"
+            [value]="_data.email"
+            [readonly]="true"
+            hint="Email — идентификатор входа, изменению не подлежит"
+          />
+        }
+
+        <app-input
+          label="ФИО"
+          formControlName="fullName"
+          placeholder="Иванов Иван Иванович"
+          [required]="true"
+        />
+        <app-select label="Роль" icon="shield-halved" formControlName="role" [options]="_roleOptions" />
+
+        <div class="grid grid-cols-2 gap-3">
+          <app-input label="Должность" formControlName="occupation" placeholder="Необязательно" />
+          <app-input label="Год рождения" type="number" formControlName="birthYear" [min]="1900" [max]="2100" />
+        </div>
+      </form>
+    </app-dialog-wrapper>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class UserEditDialogComponent {
+  protected readonly _data = inject<EnhancedUser | null>(MAT_DIALOG_DATA);
+  protected readonly _ref = inject(MatDialogRef<UserEditDialogComponent, UserDialogResult>);
+
+  protected readonly _roleOptions: AppSelectOption[] = [
+    { value: 'user', label: 'Пользователь' },
+    { value: 'admin', label: 'Администратор' }
+  ];
+  protected readonly _passwordModeOptions: AppSelectOption[] = [
+    { value: 'email', label: 'Отправить ссылку на email' },
+    { value: 'manual', label: 'Задать пароль сейчас' }
+  ];
+
+  protected readonly _form = new FormGroup({
+    email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+    passwordMode: new FormControl<'email' | 'manual'>('email', { nonNullable: true }),
+    password: new FormControl<string | null>(null, { validators: [Validators.minLength(6), Validators.maxLength(100)] }),
+    fullName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    role: new FormControl<'user' | 'admin'>('user', { nonNullable: true }),
+    occupation: new FormControl<string | null>(null),
+    birthYear: new FormControl<number | null>(null)
+  });
+
+  constructor() {
+    const u = this._data;
+    if (u) {
+      this._form.patchValue({
+        email: u.email,
+        fullName: u.fullName || '',
+        role: (u.role as 'user' | 'admin') || 'user',
+        occupation: u.occupation ?? null,
+        birthYear: u.birthYear ?? null
+      });
+    }
+    this._form.controls.passwordMode.valueChanges.subscribe((mode) => {
+      const pw = this._form.controls.password;
+      if (mode === 'manual') {
+        pw.addValidators(Validators.required);
+      } else {
+        pw.removeValidators(Validators.required);
+        pw.setValue(null);
+      }
+      pw.updateValueAndValidity();
+    });
+  }
+
+  protected _generatePassword(): void {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    const rnd = new Uint32Array(12);
+    crypto.getRandomValues(rnd);
+    this._form.controls.password.setValue(Array.from(rnd, (n) => alphabet[n % alphabet.length]).join(''));
+  }
+
+  protected _save(): void {
+    if (this._form.invalid) return;
+    const v = this._form.getRawValue();
+    const shared = {
+      fullName: v.fullName.trim(),
+      role: v.role,
+      occupation: v.occupation?.trim() || null,
+      birthYear: v.birthYear
+    };
+    if (this._data) {
+      this._ref.close({ mode: 'edit', body: shared });
+    } else {
+      this._ref.close({
+        mode: 'create',
+        body: {
+          email: v.email.trim(),
+          ...shared,
+          ...(v.passwordMode === 'manual' && v.password ? { password: v.password } : {})
+        }
+      });
+    }
+  }
+}
+
 @Component({
   selector: 'app-users-list',
   imports: [
@@ -102,11 +265,14 @@ export class UserBonusDialogComponent {
             </span>
           </div>
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Просмотр списка обучающихся, управление доступом, блокировка и ручное начисление бонусов
+            Создание, редактирование и удаление пользователей, управление доступом и начисление бонусов
           </p>
         </div>
 
         <div class="flex items-center gap-2">
+          <app-button variant="primary" icon="plus" (clicked)="_createUser()">
+            Создать пользователя
+          </app-button>
           <a routerLink="/stats-reset">
             <app-button variant="outline" icon="trash">
               Сброс статистики
@@ -127,7 +293,7 @@ export class UserBonusDialogComponent {
         <app-input
           [value]="_searchQuery()"
           (valueChange)="_searchQuery.set($event)"
-          placeholder="Поиск по имени, телефону или ID..."
+          placeholder="Поиск по имени, email или ID..."
           icon="magnifying-glass"
           [clearable]="true"
           class="flex-1 max-w-md"
@@ -199,9 +365,6 @@ export class UserBonusDialogComponent {
                           <p class="font-semibold text-slate-900 dark:text-white truncate">
                             {{ u.fullName || 'Без имени' }}
                           </p>
-                          <p class="text-[11px] font-mono text-slate-400 truncate">
-                            {{ u.id }}
-                          </p>
                         </div>
                       
                         <app-icon-button
@@ -216,7 +379,7 @@ export class UserBonusDialogComponent {
 
                     <!-- Contact -->
                     <td class="py-3 px-4 text-slate-600 dark:text-slate-300">
-                      {{ u.phone || '+7 (999) 000-00-00' }}
+                      <div class="font-mono text-[11px] truncate max-w-[220px]">{{ u.email }}</div>
                     </td>
 
                     <!-- Tariff -->
@@ -241,12 +404,19 @@ export class UserBonusDialogComponent {
 
                     <!-- Scores -->
                     <td class="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
-                      {{ u.score ?? 150 }} баллов
+                      {{ u.score ?? 0 }} баллов
                     </td>
 
                     <!-- Actions -->
                     <td class="py-3 px-4 text-right">
                       <div class="flex items-center justify-end gap-1">
+                        <app-icon-button
+                          icon="edit"
+                          size="sm"
+                          variant="ghost"
+                          tooltip="Редактировать пользователя"
+                          (clicked)="_editUser(u)"
+                        />
                         <app-icon-button
                           [icon]="u.status === 'active' ? 'ban' : 'check'"
                           size="sm"
@@ -261,13 +431,20 @@ export class UserBonusDialogComponent {
                           tooltip="Начислить бонусные баллы"
                           (clicked)="_grantReward(u)"
                         />
-                      
+
                         <app-icon-button
                           icon="key"
                           size="sm"
                           variant="ghost"
                           tooltip="Отправить ссылку для сброса пароля"
                           (clicked)="_sendResetLink(u)"
+                        />
+                        <app-icon-button
+                          icon="trash"
+                          size="sm"
+                          variant="danger"
+                          tooltip="Удалить пользователя"
+                          (clicked)="_deleteUser(u)"
                         />
                       </div>
                     </td>
@@ -306,7 +483,7 @@ export class UsersListComponent {
         (u) =>
           u.fullName.toLowerCase().includes(q) ||
           u.id.toLowerCase().includes(q) ||
-          (u.phone && u.phone.includes(q))
+          u.email.toLowerCase().includes(q)
       );
     }
 
@@ -318,7 +495,7 @@ export class UsersListComponent {
   }
 
   protected _getInitials(name: string): string {
-    if (!name) return 'UC';
+    if (!name) return 'TD';
     const parts = name.trim().split(/\s+/);
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -333,7 +510,6 @@ export class UsersListComponent {
       const enhanced: EnhancedUser[] = (rawUsers || []).map((u) => ({
         ...u,
         status: u.status as 'active' | 'banned',
-        phone: u.phone || '+7 (000) 000-00-00',
         tariffName: u.tariffName || 'Нет',
         score: u.score ?? 0
       }));
@@ -349,6 +525,62 @@ export class UsersListComponent {
       this._loading.set(false);
     }
   }
+
+  protected _toast(err: unknown, fallback: string): void {
+    this._snack.open(err instanceof ApiError ? err.detail : fallback, 'Закрыть', { duration: 5000 });
+  }
+
+  protected _createUser(): void {
+    this._dialogsService
+      .open(UserEditDialogComponent, { data: null, width: '520px' })
+      .afterClosed()
+      .subscribe(async (res) => {
+        if (!res || res.mode !== 'create') return;
+        try {
+          const out = await apiCall(() => usersAdminCreateUser({ body: res.body }));
+          this._snack.open(out.message, 'Закрыть', { duration: 5000 });
+          await this._loadUsers();
+        } catch (err) {
+          this._toast(err, 'Не удалось создать пользователя');
+        }
+      });
+  }
+
+  protected _editUser(u: EnhancedUser): void {
+    this._dialogsService
+      .open(UserEditDialogComponent, { data: u, width: '520px' })
+      .afterClosed()
+      .subscribe(async (res) => {
+        if (!res || res.mode !== 'edit') return;
+        try {
+          await apiCall(() => usersAdminUpdateUser({ path: { user_id: u.id }, body: res.body }));
+          this._snack.open('Изменения сохранены', 'Закрыть', { duration: 3000 });
+          await this._loadUsers();
+        } catch (err) {
+          this._toast(err, 'Не удалось сохранить изменения');
+        }
+      });
+  }
+
+  protected async _deleteUser(u: EnhancedUser): Promise<void> {
+    const confirmed = await firstValueFrom(
+      this._dialogsService
+        .open<ConfirmDeleteDialogComponent, ConfirmDeleteDialogData, boolean>(ConfirmDeleteDialogComponent, {
+          width: '420px',
+          data: { name: u.fullName || u.email, typeName: 'пользователя', isFolder: false }
+        })
+        .afterClosed()
+    );
+    if (!confirmed) return;
+    try {
+      await apiCall(() => usersAdminDeleteUser({ path: { user_id: u.id } }));
+      this._snack.open(`Пользователь «${u.fullName || u.email}» удалён`, 'Закрыть', { duration: 3000 });
+      await this._loadUsers();
+    } catch (err) {
+      this._toast(err, 'Не удалось удалить пользователя');
+    }
+  }
+
   protected async _toggleBlock(u: EnhancedUser): Promise<void> {
     const nextStatus = u.status === 'active' ? 'banned' : 'active';
     const actionText = nextStatus === 'banned' ? 'заблокирован' : 'разблокирован';

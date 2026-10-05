@@ -158,3 +158,17 @@ class RefundOut(CamelModel):
     refunded_amount: float = Field(alias="refundedAmount")
     payment_id: UUID = Field(alias="paymentId")
     message: str
+
+
+class RefundJournalItem(CamelModel):
+    id: UUID
+    user_id: UUID = Field(alias="userId")
+    user_name: str = Field(alias="userName")
+    user_email: str = Field(alias="userEmail")
+    amount_rub: float = Field(alias="amountRub")
+    refunded_at: datetime = Field(alias="refundedAt")
+
+
+class RefundJournalOut(CamelModel):
+    items: list[RefundJournalItem]
+    gateway_configured: bool = Field(alias="gatewayConfigured")

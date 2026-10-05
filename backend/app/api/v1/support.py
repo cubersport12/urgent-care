@@ -17,8 +17,10 @@ from app.realtime.support_hub import admin_support_hub, support_hub
 from app.schemas.support import (
     SupportMessageCreate,
     SupportMessageOut,
+    SupportThreadCreate,
     SupportThreadDetailOut,
     SupportThreadOut,
+    UnreadCountOut,
 )
 from app.utils.email import send_email
 
@@ -106,7 +108,9 @@ async def list_threads(
     db: Annotated[AsyncSession, Depends(get_db)],
     _admin: Annotated[User, Depends(get_current_admin)],
 ) -> list[SupportThreadOut]:
-    rows = await SupportRepository(db).list_threads()
+    repo = SupportRepository(db)
+    rows = await repo.list_threads()
+    unread = await repo.unread_counts()
     return [
         SupportThreadOut(
             id=t.id,
@@ -116,9 +120,56 @@ async def list_threads(
             last_message_at=t.last_message_at,
             updated_at=t.updated_at,
             last_body=last,
+            unread_count=unread.get(t.id, 0),
         )
         for t, u, last in rows
     ]
+
+
+@router.post("/threads", response_model=SupportThreadDetailOut, status_code=201)
+async def create_thread_for_user(
+    payload: SupportThreadCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(get_current_admin)],
+) -> SupportThreadDetailOut:
+    """Открыть (или получить существующий) диалог с пользователем — карандаш в инбоксе."""
+    repo = SupportRepository(db)
+    user = await UserRepository(db).get(payload.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    thread = await repo.get_or_create_thread(payload.user_id)
+    msgs = await repo.list_messages(thread.id)
+    return SupportThreadDetailOut(
+        id=thread.id,
+        user_id=thread.user_id,
+        user_email=user.email,
+        user_full_name=user.full_name,
+        messages=[_msg_out(m) for m in msgs],
+    )
+
+
+@router.get("/threads/unread-count", response_model=UnreadCountOut)
+async def support_unread_count(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(get_current_admin)],
+) -> UnreadCountOut:
+    unread = await SupportRepository(db).unread_counts()
+    return UnreadCountOut(count=sum(unread.values()))
+
+
+@router.post("/threads/{thread_id}/read", response_model=UnreadCountOut)
+async def mark_thread_read(
+    thread_id: UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(get_current_admin)],
+) -> UnreadCountOut:
+    repo = SupportRepository(db)
+    thread = await repo.get(thread_id)
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    await repo.mark_admin_read(thread_id)
+    unread = await repo.unread_counts()
+    return UnreadCountOut(count=sum(unread.values()))
 
 
 @router.get("/threads/{thread_id}", response_model=SupportThreadDetailOut)
@@ -164,6 +215,7 @@ async def post_admin_message(
         sender_id=admin.id,
         body=payload.body,
     )
+    await repo.mark_admin_read(thread.id)
     thread_user = await UserRepository(db).get(thread.user_id)
     if thread_user and thread_user.email:
         background_tasks.add_task(

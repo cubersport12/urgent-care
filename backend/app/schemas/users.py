@@ -1,9 +1,10 @@
 """Public profile surfaced via QR scan DTOs."""
 from __future__ import annotations
 
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class CamelModel(BaseModel):
@@ -44,6 +45,25 @@ class UserListItemOut(CamelModel):
     phone: str | None = None
     tariff_name: str | None = Field(None, alias="tariffName")
     score: int = 0
+    role: str = "user"
+    occupation: str | None = None
+    birth_year: int | None = Field(None, alias="birthYear")
+
+
+class UserAdminCreate(CamelModel):
+    email: EmailStr
+    full_name: str = Field(alias="fullName", min_length=1, max_length=200)
+    role: Literal["user", "admin"] = "user"
+    occupation: str | None = Field(None, max_length=100)
+    birth_year: int | None = Field(None, alias="birthYear", ge=1900, le=2100)
+    password: str | None = Field(None, min_length=6, max_length=100)
+
+
+class UserAdminUpdate(CamelModel):
+    full_name: str | None = Field(None, alias="fullName", min_length=1, max_length=200)
+    role: Literal["user", "admin"] | None = None
+    occupation: str | None = Field(None, max_length=100)
+    birth_year: int | None = Field(None, alias="birthYear", ge=1900, le=2100)
 
 class GrantBonusRequest(CamelModel):
     points: int
@@ -51,6 +71,11 @@ class GrantBonusRequest(CamelModel):
 
 class UserStatusUpdateRequest(CamelModel):
     status: str
+
+
+class AdminActionOut(CamelModel):
+    success: bool
+    message: str
 
 
 class ResetStatsRequest(CamelModel):

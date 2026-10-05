@@ -40,7 +40,7 @@ const REMEMBERED_EMAIL_KEY = 'cb_remembered_email';
             <mat-icon svgIcon="kit-medical" class="!w-4 !h-4" />
           </div>
           <div class="hidden sm:flex flex-col">
-            <span class="text-xs font-bold tracking-tight text-slate-900 dark:text-white leading-none">Urgent Care Portal</span>
+            <span class="text-xs font-bold tracking-tight text-slate-900 dark:text-white leading-none">Trouble Dent Portal</span>
             <span class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Система управления контентом</span>
           </div>
         </div>
@@ -73,7 +73,7 @@ const REMEMBERED_EMAIL_KEY = 'cb_remembered_email';
               <div class="relative mb-4 group">
                 <div class="absolute -inset-1 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 opacity-25 blur transition-opacity group-hover:opacity-40"></div>
                 <div class="relative w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-md flex items-center justify-center p-2.5">
-                  <img src="logo.png" alt="Urgent Care" class="w-full h-full object-contain" />
+                  <img src="logo.png" alt="Trouble Dent" class="w-full h-full object-contain" />
                 </div>
               </div>
 
@@ -98,7 +98,7 @@ const REMEMBERED_EMAIL_KEY = 'cb_remembered_email';
                 type="email"
                 name="email"
                 icon="envelope"
-                placeholder="admin@urgentcare.ru"
+                placeholder="admin@trouble-dent.ru"
                 autocomplete="username"
                 [(ngModel)]="email"
                 [required]="true"
@@ -144,7 +144,7 @@ const REMEMBERED_EMAIL_KEY = 'cb_remembered_email';
                 <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-xs text-slate-600 dark:text-slate-300 flex items-start gap-2.5">
                   <mat-icon svgIcon="exclamation-circle" class="!w-4 !h-4 text-blue-500 shrink-0 mt-0.5" />
                   <div class="flex-1 text-[11px] leading-relaxed">
-                    Сброс пароля осуществляется супер-администратором платформы Urgent Care. Обратитесь к куратору вашей системы.
+                    Сброс пароля осуществляется супер-администратором платформы Trouble Dent. Обратитесь к куратору вашей системы.
                   </div>
                   <button
                     type="button"
@@ -202,7 +202,7 @@ const REMEMBERED_EMAIL_KEY = 'cb_remembered_email';
       <!-- Bottom Page Footer -->
       <footer class="relative z-10 w-full py-4 px-6 text-center text-xs text-slate-400 dark:text-slate-500">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px]">
-          <div>&copy; {{ currentYear }} Urgent Care Medical Systems. Все права защищены.</div>
+          <div>&copy; {{ currentYear }} Trouble Dent. Все права защищены.</div>
           <div class="flex items-center gap-4 text-slate-500 dark:text-slate-400">
             <span>Безопасность</span>
             <span>Конфиденциальность</span>

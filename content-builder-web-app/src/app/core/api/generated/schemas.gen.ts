@@ -488,6 +488,44 @@ export const ActivityEventOutSchema = {
     title: 'ActivityEventOut'
 } as const;
 
+export const ActivityFeedOutSchema = {
+    properties: {
+        items: {
+            items: {
+                $ref: '#/components/schemas/ActivityEventOut'
+            },
+            type: 'array',
+            title: 'Items'
+        },
+        total: {
+            type: 'integer',
+            title: 'Total',
+            default: 0
+        }
+    },
+    type: 'object',
+    title: 'ActivityFeedOut'
+} as const;
+
+export const AdminActionOutSchema = {
+    properties: {
+        success: {
+            type: 'boolean',
+            title: 'Success'
+        },
+        message: {
+            type: 'string',
+            title: 'Message'
+        }
+    },
+    type: 'object',
+    required: [
+        'success',
+        'message'
+    ],
+    title: 'AdminActionOut'
+} as const;
+
 export const AnalyticsDayOutSchema = {
     properties: {
         date: {
@@ -3025,6 +3063,70 @@ export const RecommendedArticleOutSchema = {
     title: 'RecommendedArticleOut'
 } as const;
 
+export const RefundJournalItemSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        userId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Userid'
+        },
+        userName: {
+            type: 'string',
+            title: 'Username'
+        },
+        userEmail: {
+            type: 'string',
+            title: 'Useremail'
+        },
+        amountRub: {
+            type: 'number',
+            title: 'Amountrub'
+        },
+        refundedAt: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Refundedat'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'userId',
+        'userName',
+        'userEmail',
+        'amountRub',
+        'refundedAt'
+    ],
+    title: 'RefundJournalItem'
+} as const;
+
+export const RefundJournalOutSchema = {
+    properties: {
+        items: {
+            items: {
+                $ref: '#/components/schemas/RefundJournalItem'
+            },
+            type: 'array',
+            title: 'Items'
+        },
+        gatewayConfigured: {
+            type: 'boolean',
+            title: 'Gatewayconfigured'
+        }
+    },
+    type: 'object',
+    required: [
+        'items',
+        'gatewayConfigured'
+    ],
+    title: 'RefundJournalOut'
+} as const;
+
 export const RefundOutSchema = {
     properties: {
         status: {
@@ -4648,6 +4750,21 @@ export const SupportMessageOutSchema = {
     title: 'SupportMessageOut'
 } as const;
 
+export const SupportThreadCreateSchema = {
+    properties: {
+        userId: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Userid'
+        }
+    },
+    type: 'object',
+    required: [
+        'userId'
+    ],
+    title: 'SupportThreadCreate'
+} as const;
+
 export const SupportThreadDetailOutSchema = {
     properties: {
         id: {
@@ -4762,6 +4879,11 @@ export const SupportThreadOutSchema = {
                 }
             ],
             title: 'Lastbody'
+        },
+        unreadCount: {
+            type: 'integer',
+            title: 'Unreadcount',
+            default: 0
         }
     },
     type: 'object',
@@ -4772,7 +4894,8 @@ export const SupportThreadOutSchema = {
         'userFullName',
         'lastMessageAt',
         'updatedAt',
-        'lastBody'
+        'lastBody',
+        'unreadCount'
     ],
     title: 'SupportThreadOut'
 } as const;
@@ -6130,6 +6253,135 @@ export const UnreadCountOutSchema = {
     title: 'UnreadCountOut'
 } as const;
 
+export const UserAdminCreateSchema = {
+    properties: {
+        email: {
+            type: 'string',
+            format: 'email',
+            title: 'Email'
+        },
+        fullName: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Fullname'
+        },
+        role: {
+            type: 'string',
+            enum: [
+                'user',
+                'admin'
+            ],
+            title: 'Role',
+            default: 'user'
+        },
+        occupation: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Occupation'
+        },
+        birthYear: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 2100,
+                    minimum: 1900
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Birthyear'
+        },
+        password: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100,
+                    minLength: 6
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Password'
+        }
+    },
+    type: 'object',
+    required: [
+        'email',
+        'fullName'
+    ],
+    title: 'UserAdminCreate'
+} as const;
+
+export const UserAdminUpdateSchema = {
+    properties: {
+        fullName: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 200,
+                    minLength: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Fullname'
+        },
+        role: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: [
+                        'user',
+                        'admin'
+                    ]
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Role'
+        },
+        occupation: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Occupation'
+        },
+        birthYear: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 2100,
+                    minimum: 1900
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Birthyear'
+        }
+    },
+    type: 'object',
+    title: 'UserAdminUpdate'
+} as const;
+
 export const UserCreateSchema = {
     properties: {
         email: {
@@ -6210,6 +6462,33 @@ export const UserListItemOutSchema = {
             type: 'integer',
             title: 'Score',
             default: 0
+        },
+        role: {
+            type: 'string',
+            title: 'Role',
+            default: 'user'
+        },
+        occupation: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Occupation'
+        },
+        birthYear: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Birthyear'
         }
     },
     type: 'object',

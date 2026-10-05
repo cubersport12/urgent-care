@@ -30,6 +30,8 @@ from app.schemas.billing import (
     PromoCodeOut,
     PromoCodeUpdate,
     RefundOut,
+    RefundJournalItem,
+    RefundJournalOut,
     SubscribeOut,
     TariffCreate,
     TariffOut,
@@ -532,6 +534,28 @@ class BillingService:
             payment_id=valid_payment.id,
             message="Возврат средств успешно выполнен",
         )
+
+    async def list_refund_journal(self) -> RefundJournalOut:
+        """Журнал возвратов: платежи со статусом refunded (отметка после возврата в YooKassa)."""
+        rows = await self.db.execute(
+            select(Payment, User)
+            .join(User, User.id == Payment.user_id)
+            .where(Payment.status == "refunded")
+            .order_by(Payment.updated_at.desc())
+            .limit(200)
+        )
+        items = [
+            RefundJournalItem(
+                id=payment.id,
+                user_id=user.id,
+                user_name=user.full_name or user.email,
+                user_email=user.email,
+                amount_rub=payment.amount_rub,
+                refunded_at=payment.updated_at,
+            )
+            for payment, user in rows.all()
+        ]
+        return RefundJournalOut(items=items, gateway_configured=self.yk.configured)
 
     async def handle_webhook(self, payload: dict[str, Any]) -> dict[str, str]:
         event = payload.get("event")

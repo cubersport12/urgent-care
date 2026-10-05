@@ -94,3 +94,41 @@ async def test_billing_service_refund_without_cancellation():
     # save_subscription should NOT be called when cancel_subscription is False
     service.repo.save_subscription.assert_not_called()
 
+
+@pytest.mark.asyncio
+async def test_list_refund_journal():
+    from datetime import datetime, timezone
+    from app.schemas.billing import RefundJournalOut
+
+    mock_db = AsyncMock()
+    service = BillingService(mock_db)
+
+    payment = MagicMock(spec=Payment)
+    payment.id = uuid.uuid4()
+    payment.amount_rub = 990.0
+    payment.updated_at = datetime(2026, 10, 5, 12, 0, tzinfo=timezone.utc)
+    user = MagicMock(spec=User)
+    user.id = uuid.uuid4()
+    user.full_name = "Иван Иванов"
+    user.email = "ivan@example.com"
+    rows = MagicMock()
+    rows.all.return_value = [(payment, user)]
+    mock_db.execute = AsyncMock(return_value=rows)
+
+    res = await service.list_refund_journal()
+    assert isinstance(res, RefundJournalOut)
+    assert len(res.items) == 1
+    item = res.items[0]
+    assert item.user_name == "Иван Иванов"
+    assert item.user_email == "ivan@example.com"
+    assert item.amount_rub == 990.0
+    assert item.refunded_at == payment.updated_at
+    dumped = item.model_dump(by_alias=True)
+    assert dumped["userName"] == "Иван Иванов"
+    assert dumped["refundedAt"] is not None
+    # query filters refunded payments and joins users
+    query = mock_db.execute.call_args[0][0]
+    compiled = query.compile()
+    assert "refunded" in str(list(compiled.params.values()))
+    assert "users" in str(compiled)
+

@@ -10,19 +10,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiError, apiCall } from '@/core/api/api-utils';
-import type { UserListItemOut, RefundOut } from '@/core/api/generated/types.gen';
-import { usersListUsers, billingRefundUserSubscription } from '@/core/api/generated/sdk.gen';
+import type { UserListItemOut, RefundOut, RefundJournalItem } from '@/core/api/generated/types.gen';
+import { usersListUsers, billingRefundUserSubscription, billingListRefundJournal } from '@/core/api/generated/sdk.gen';
 import { AppDialogService } from '@/core/services/app-dialog.service';
-
-interface RefundHistoryItem {
-  id: string;
-  userName: string;
-  userEmail: string;
-  amountRub: number;
-  date: string;
-  status: 'completed' | 'failed';
-  provider: string;
-}
 
 @Injectable({ providedIn: 'root' })
 export class SubscriptionRefundEditorService {
@@ -83,8 +73,8 @@ import {
           <app-icon-button
             icon="rotate-right"
             variant="outline"
-            (clicked)="_load()"
-            tooltip="Обновить пользователей"
+            (clicked)="_refreshAll()"
+            tooltip="Обновить"
           />
           @if (_ref) {
             <app-icon-button
@@ -101,17 +91,23 @@ import {
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
           <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Возвратов за месяц</div>
-          <div class="text-2xl font-bold text-slate-900 dark:text-white mt-1">3 операции</div>
+          <div class="text-2xl font-bold text-slate-900 dark:text-white mt-1">{{ _monthStats().count }} операций</div>
         </div>
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Сумма возвратов</div>
-          <div class="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">2 970 ₽</div>
+          <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Сумма возвратов за месяц</div>
+          <div class="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">{{ _monthStats().sum.toLocaleString('ru-RU') }} ₽</div>
         </div>
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
           <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Платежный шлюз</div>
-          <div class="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            ЮKassa API (Активен)
+          <div
+            class="text-base font-bold mt-1 flex items-center gap-1.5"
+            [class.text-emerald-600]="_gatewayConfigured()"
+            [class.dark:text-emerald-400]="_gatewayConfigured()"
+            [class.text-rose-600]="!_gatewayConfigured()"
+            [class.dark:text-rose-400]="!_gatewayConfigured()"
+          >
+            <span class="w-2 h-2 rounded-full" [class.bg-emerald-500]="_gatewayConfigured()" [class.bg-rose-500]="!_gatewayConfigured()"></span>
+            ЮKassa API ({{ _gatewayConfigured() ? 'Настроен' : 'Не настроен' }})
           </div>
         </div>
       </div>
@@ -214,19 +210,25 @@ import {
                       <div class="text-[11px] text-slate-400 font-mono">{{ item.userEmail }}</div>
                     </td>
                     <td class="py-3 px-3 font-bold text-rose-600 dark:text-rose-400">
-                      −{{ item.amountRub }} ₽
+                      −{{ item.amountRub.toLocaleString('ru-RU') }} ₽
                     </td>
                     <td class="py-3 px-3 text-slate-500 dark:text-slate-400">
-                      {{ item.date }}
+                      {{ _fmtDate(item.refundedAt) }}
                     </td>
                     <td class="py-3 px-3 text-slate-600 dark:text-slate-300">
-                      {{ item.provider }}
+                      ЮKassa
                     </td>
                     <td class="py-3 px-3 text-right">
                       <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                         Успешно
                       </span>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="py-8 px-3 text-center text-slate-400">
+                      Операций возврата ещё не было
                     </td>
                   </tr>
                 }
@@ -268,38 +270,51 @@ export class SubscriptionRefundEditorComponent {
     }))
   );
 
-  protected readonly _recentRefunds = signal<RefundHistoryItem[]>([
-    {
-      id: 'ref-1',
-      userName: 'Владимир Новиков',
-      userEmail: 'vladimir.nov@gmail.com',
-      amountRub: 990,
-      date: 'Сегодня, 11:20',
-      status: 'completed',
-      provider: 'ЮKassa'
-    },
-    {
-      id: 'ref-2',
-      userName: 'Ирина Сидорова',
-      userEmail: 'irina.sidorova@mail.ru',
-      amountRub: 990,
-      date: 'Вчера, 16:45',
-      status: 'completed',
-      provider: 'ЮKassa'
-    },
-    {
-      id: 'ref-3',
-      userName: 'Михаил Захаров',
-      userEmail: 'm.zakharov@yandex.ru',
-      amountRub: 990,
-      date: '02.10.2026',
-      status: 'completed',
-      provider: 'ЮKassa'
-    }
-  ]);
+  protected readonly _recentRefunds = signal<RefundJournalItem[]>([]);
+
+  protected readonly _gatewayConfigured = signal(true);
+
+  protected readonly _monthStats = computed(() => {
+    const now = new Date();
+    const month = this._recentRefunds().filter((r) => {
+      const d = new Date(r.refundedAt);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    return {
+      count: month.length,
+      sum: month.reduce((s, r) => s + r.amountRub, 0)
+    };
+  });
 
   constructor() {
     void this._load();
+    void this._loadJournal();
+  }
+
+  protected async _loadJournal(): Promise<void> {
+    try {
+      const journal = await apiCall(() => billingListRefundJournal());
+      this._recentRefunds.set(journal.items);
+      this._gatewayConfigured.set(journal.gatewayConfigured);
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.detail : 'Ошибка загрузки журнала возвратов';
+      this._snack.open(msg, 'OK', { duration: 5000 });
+    }
+  }
+
+  protected _fmtDate(iso: string): string {
+    return new Date(iso).toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  protected _refreshAll(): void {
+    void this._load();
+    void this._loadJournal();
   }
 
   protected async _load(): Promise<void> {
@@ -328,21 +343,7 @@ export class SubscriptionRefundEditorComponent {
         })
       );
 
-      const user = this._selectedUser();
-      if (user) {
-        this._recentRefunds.update((list) => [
-          {
-            id: `ref-${Date.now()}`,
-            userName: user.fullName,
-            userEmail: user.email,
-            amountRub: res.refundedAmount,
-            date: 'Только что',
-            status: 'completed',
-            provider: 'ЮKassa'
-          },
-          ...list
-        ]);
-      }
+      void this._loadJournal();
 
       this._snack.open(
         `Возврат выполнен: ${res.refundedAmount} ₽. ${res.message}`,

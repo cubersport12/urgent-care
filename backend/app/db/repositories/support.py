@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from sqlalchemy import desc, select, update
+from sqlalchemy import desc, func, or_, select, update
 
 from app.db.repositories.base import BaseRepository
 from app.models.support import SupportMessage, SupportThread
@@ -75,3 +75,28 @@ class SupportRepository(BaseRepository[SupportThread]):
             ).scalar_one_or_none()
             result.append((thread, user, last))
         return result
+
+    async def unread_counts(self) -> dict[UUID, int]:
+        """Непрочитанные сообщения пользователей по тредам (одним запросом)."""
+        stmt = (
+            select(SupportMessage.thread_id, func.count(SupportMessage.id))
+            .join(SupportThread, SupportThread.id == SupportMessage.thread_id)
+            .where(
+                SupportMessage.sender_role == "user",
+                or_(
+                    SupportThread.admin_read_at.is_(None),
+                    SupportMessage.created_at > SupportThread.admin_read_at,
+                ),
+            )
+            .group_by(SupportMessage.thread_id)
+        )
+        rows = (await self.session.execute(stmt)).all()
+        return {thread_id: int(n) for thread_id, n in rows}
+
+    async def mark_admin_read(self, thread_id: UUID) -> None:
+        await self.session.execute(
+            update(SupportThread)
+            .where(SupportThread.id == thread_id)
+            .values(admin_read_at=datetime.now(timezone.utc))
+        )
+        await self.session.flush()
