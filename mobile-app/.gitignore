@@ -43,4 +43,4 @@ app-example
 /android
 
 # release keystore (never commit)
-keystores/
+# keystores/
