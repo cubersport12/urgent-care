@@ -555,16 +555,17 @@ function Pricing() {
 
   return (
     <section id="pricing" className="scroll-mt-20">
-      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:py-24">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:py-24">
         <SectionHead eyebrow="Тарифы" title="Одна подписка — весь контент">
           Выберите удобный срок — тарифы отличаются только им. Часть материалов доступна
           бесплатно, расширенные темы и «Режим спасения» — по подписке.
         </SectionHead>
 
         {tariffs === null ? (
-          <div className="space-y-4" aria-hidden="true">
-            <div className="h-24 animate-pulse rounded-2xl bg-gray-200/70 dark:bg-white/[0.06]" />
-            <div className="h-24 animate-pulse rounded-2xl bg-gray-200/70 dark:bg-white/[0.06]" />
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+            <div className="h-64 animate-pulse rounded-2xl bg-gray-200/70 dark:bg-white/[0.06]" />
+            <div className="h-64 animate-pulse rounded-2xl bg-gray-200/70 dark:bg-white/[0.06]" />
+            <div className="h-64 animate-pulse rounded-2xl bg-gray-200/70 dark:bg-white/[0.06]" />
           </div>
         ) : tariffs.length === 0 ? (
           <div className="text-center">
@@ -578,57 +579,36 @@ function Pricing() {
           </div>
         ) : (
           <>
-            <div className="space-y-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {tariffs.map((t) => (
                 <div
                   key={t.id}
-                  className="flex flex-col gap-5 rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-brand/40 sm:flex-row sm:items-center sm:justify-between sm:p-7 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-brand-bright/40"
+                  className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-brand/40 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-brand-bright/40"
                 >
-                  <div>
-                    <h3 className="text-lg font-semibold">{t.title}</h3>
-                    <p className="mt-1">
-                      <span className="text-3xl font-bold tracking-tight">
-                        {t.priceRub.toLocaleString("ru-RU")} ₽
-                      </span>
-                      <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                        за {formatPeriod(t.periodDays)}
-                      </span>
+                  <h3 className="text-lg font-semibold">{t.title}</h3>
+                  {t.description && (
+                    <p className="mt-1.5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                      {t.description}
                     </p>
-                    {t.description && (
-                      <p className="mt-1.5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                        {t.description}
-                      </p>
-                    )}
+                  )}
+                  <p className="mt-5">
+                    <span className="text-4xl font-bold tracking-tight">
+                      {t.priceRub.toLocaleString("ru-RU")} ₽
+                    </span>
+                    <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                      за {formatPeriod(t.periodDays)}
+                    </span>
+                  </p>
+                  <div className="mt-auto pt-6">
+                    <a
+                      href={LINKS.webApp}
+                      className="block rounded-xl bg-brand px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-brand/90 dark:bg-brand-bright dark:hover:bg-brand-bright/90"
+                    >
+                      Подписаться
+                    </a>
                   </div>
-                  <a
-                    href={LINKS.webApp}
-                    className="inline-block shrink-0 rounded-xl bg-brand px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-brand/90 dark:bg-brand-bright dark:hover:bg-brand-bright/90"
-                  >
-                    Подписаться
-                  </a>
                 </div>
               ))}
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 dark:border-white/10 dark:bg-white/[0.04]">
-              <h3 className="font-semibold">Что входит в подписку</h3>
-              <ul className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-                {[
-                  "Полный доступ ко всем материалам, тестам и «Режиму спасения»",
-                  "Статистика, разбор ошибок и режим повторения",
-                  "Именной сертификат с публичной проверкой",
-                  "Доступ с телефона и из веб-версии",
-                ].map((f) => (
-                  <li key={f} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand dark:bg-brand-bright/15 dark:text-brand-bright">
-                      <I className="h-3 w-3">
-                        <path d="M20 6 9 17l-5-5" />
-                      </I>
-                    </span>
-                    <span className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">{f}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
           </>
         )}
