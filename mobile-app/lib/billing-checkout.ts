@@ -1,6 +1,7 @@
 /**
  * YooKassa checkout via AuthSession + payment status polling.
  * Pattern from gymai mobile billing-checkout.
+ * RuStore-покупки (rustore-сборка) идут через rustoreCheckout ниже.
  */
 import { billingApi, type BillingMe, type BillingPayment } from '@/api/billing';
 import * as Linking from 'expo-linking';
@@ -81,4 +82,51 @@ export async function openYookassaCheckout(
 
   const me = await billingApi.me();
   return { payment, me, browserResult };
+}
+
+export type RustoreCheckoutOutcome = {
+  payment: BillingPayment | null;
+  me: BillingMe;
+  cancelled: boolean;
+};
+
+/**
+ * Покупка подписки через RuStore Pay SDK (только rustore-сборка).
+ * developerPayload = id платежа: по нему бекенд связывает покупку с платежом.
+ * Мост подгружается динамически — web-бандл не тянет нативный модуль.
+ */
+export async function rustoreCheckout(
+  paymentId: string,
+  productId: string,
+): Promise<RustoreCheckoutOutcome> {
+  const { RuStoreReactPay, isPurchaseCancelled } = await import('./rustore-pay');
+
+  const result = await RuStoreReactPay.purchase({
+    productId,
+    orderId: paymentId,
+    developerPayload: paymentId,
+    preferredPurchaseType: 'ONE_STEP',
+  });
+  if (!result.purchaseId) {
+    throw new Error('RuStore не вернул purchaseId');
+  }
+  // Деньги получены RuStore — подтверждаем выдачу и фиксируем на бекенде
+  await RuStoreReactPay.confirm(result.purchaseId, paymentId);
+  await billingApi.confirmRustore(paymentId, result.purchaseId);
+
+  const payment = await pollPaymentUntilSettled(paymentId).catch(() => null);
+  const me = await billingApi.me();
+  return { payment, me, cancelled: false };
+}
+
+/** Преобразует ошибку RuStore-покупки в сообщение для пользователя. */
+export function rustoreCheckoutError(err: unknown): string {
+  const { isPurchaseCancelled } = require('./rustore-pay') as {
+    isPurchaseCancelled: (e: unknown) => boolean;
+  };
+  if (isPurchaseCancelled(err)) {
+    return 'Покупка отменена';
+  }
+  const message = (err as { message?: string } | null)?.message;
+  return message ? `Оплата RuStore: ${message}` : 'Не удалось оплатить через RuStore';
 }

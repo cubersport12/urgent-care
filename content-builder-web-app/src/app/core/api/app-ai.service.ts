@@ -47,9 +47,20 @@ export class AppAIService {
     );
   }
 
-  public generateRescue(prompt: string): Observable<GeneratedRescueResponse> {
+  public generateRescue(
+    prompt: string,
+    sceneCount?: number | null,
+    difficulty?: string | null
+  ): Observable<GeneratedRescueResponse> {
     const url = `${API_BASE}/api/v1/ai/generate-rescue`;
-    return this._http.post<unknown>(url, { prompt }, { headers: this._getHeaders() }).pipe(
+    const body: Record<string, unknown> = { prompt };
+    if (sceneCount != null) {
+      body['sceneCount'] = sceneCount;
+    }
+    if (difficulty) {
+      body['difficulty'] = difficulty;
+    }
+    return this._http.post<unknown>(url, body, { headers: this._getHeaders() }).pipe(
       map((response) => {
         const parsed = rescueItemDataSchema.safeParse(response);
         if (!parsed.success) {

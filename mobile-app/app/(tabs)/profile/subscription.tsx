@@ -17,6 +17,8 @@ import {
   billingReturnUrl,
   openYookassaCheckout,
   pollPaymentUntilSettled,
+  rustoreCheckout,
+  rustoreCheckoutError,
 } from '@/lib/billing-checkout';
 import { useAppTheme, useGlass, useGlow } from '@/hooks/use-theme-color';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -201,6 +203,20 @@ export default function SubscriptionScreen() {
         return;
       }
 
+      // Форму чекаута подсказывает бекенд: rustoreProductId → SDK RuStore,
+      // confirmationUrl → браузер ЮKassa
+      if (result.rustoreProductId && result.paymentId) {
+        try {
+          await rustoreCheckout(result.paymentId, result.rustoreProductId);
+          await refresh();
+          Alert.alert('Успешно', 'Подписка оформлена');
+        } catch (e) {
+          await refresh();
+          Alert.alert('Оплата RuStore', rustoreCheckoutError(e));
+        }
+        return;
+      }
+
       if (result.confirmationUrl && result.paymentId) {
         const { payment } = await openYookassaCheckout(
           result.confirmationUrl,
@@ -224,9 +240,9 @@ export default function SubscriptionScreen() {
       await refresh();
       if (result.mock) {
         Alert.alert(
-          'Тест без YooKassa',
+          'Тест без платежной системы',
           result.message ??
-            'Тариф активирован без оплаты (в API не заданы YOOKASSA_SHOP_ID / YOOKASSA_SECRET_KEY).',
+            'Тариф активирован без оплаты (в API не заданы ключи провайдера).',
         );
       } else {
         Alert.alert('Готово', result.message ?? 'Тариф активирован');

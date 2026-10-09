@@ -105,15 +105,32 @@ class AIGeneratorService:
         return cls._mock_test(prompt)
 
     @classmethod
-    async def generate_rescue(cls, prompt: str) -> GeneratedRescueResponse:
+    async def generate_rescue(
+        cls,
+        prompt: str,
+        scene_count: int | None = None,
+        difficulty: str | None = None,
+    ) -> GeneratedRescueResponse:
         """Generate structured rescue scenario from prompt using DeepSeek."""
         client = cls._create_client()
         if client:
             try:
+                scene_rule = (
+                    f"Количество сцен: ровно {scene_count}."
+                    if scene_count
+                    else "Количество сцен выбери самостоятельно, исходя из сюжета (обычно 6–10 для полноценного квеста)."
+                )
+                difficulty_rule = (
+                    f"\nЦелевая сложность прохождения для пользователя: {difficulty}."
+                    if difficulty
+                    else ""
+                )
                 system_instruction = (
                     "Ты сценарист медицинских интерактивных квестов и визуальных новелл по первой помощи.\n"
                     "Создай многошаговый сценарий спасения с параметрами (таймер, пульс, сознание и т.д.), "
                     "сценами выбора и условиями завершения.\n"
+                    f"{scene_rule} Жёсткий максимум — 15 сцен. Сюжет не обрезай: выдай все задуманные сцены целиком."
+                    f"{difficulty_rule}\n"
                     "ПРАВИЛА ДЛЯ ЗНАЧЕНИЙ ПОЛЕЙ:\n"
                     "- severity в implications ДОЛЖЕН быть строго одним из: \"normal\", \"low\", \"medium\", \"high\". Использовать warning или critical ЗАПРЕЩЕНО.\n"
                     "- operator в completion ДОЛЖЕН быть строго одним из: \"gte\", \"gt\", \"lte\", \"lt\", \"eq\", \"neq\".\n"
@@ -148,6 +165,8 @@ class AIGeneratorService:
                     ],
                     response_format={"type": "json_object"},
                     temperature=0.3,
+                    # Длинный сценарий (до 15 сцен) не влезает в дефолтный лимит вывода — JSON обрезался
+                    max_tokens=8192,
                 )
                 raw = completion.choices[0].message.content or ""
                 return GeneratedRescueResponse.model_validate_json(_clean_json(raw))

@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import HTTPException
 
 from app.schemas.billing import RefundOut
-from app.billing.yookassa_client import YooKassaClient
+from app.billing.yookassa import YooKassaProvider
 from app.services.billing import BillingService
 from app.models.billing import Payment, UserSubscription, Tariff
 from app.models.user import User
@@ -29,7 +29,7 @@ def test_refund_out_schema():
 
 @pytest.mark.asyncio
 async def test_yookassa_client_create_refund():
-    client = YooKassaClient()
+    client = YooKassaProvider()
     client.shop_id = "test_shop"
     client.secret_key = "test_key"
 
@@ -77,7 +77,8 @@ async def test_billing_service_refund_without_cancellation():
 
     mock_payment = MagicMock(spec=Payment)
     mock_payment.status = "succeeded"
-    mock_payment.yookassa_payment_id = "yk_123"
+    mock_payment.provider = "yookassa"
+    mock_payment.external_id = "yk_123"
     mock_payment.amount_rub = 500.0
     mock_payment.created_at = 1
     mock_payment.id = uuid.uuid4()

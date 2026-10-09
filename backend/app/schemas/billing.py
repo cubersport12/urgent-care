@@ -26,6 +26,7 @@ class TariffOut(CamelModel):
     is_default: bool = Field(alias="isDefault")
     is_active: bool = Field(alias="isActive")
     sort_order: int = Field(alias="sortOrder")
+    rustore_product_id: str | None = Field(None, alias="rustoreProductId")
 
 
 class TariffCreate(CamelModel):
@@ -38,6 +39,7 @@ class TariffCreate(CamelModel):
     is_default: bool = Field(False, alias="isDefault")
     is_active: bool = Field(True, alias="isActive")
     sort_order: int = Field(0, alias="sortOrder")
+    rustore_product_id: str | None = Field(None, alias="rustoreProductId", max_length=128)
 
 
 class TariffUpdate(CamelModel):
@@ -50,6 +52,7 @@ class TariffUpdate(CamelModel):
     is_default: bool | None = Field(None, alias="isDefault")
     is_active: bool | None = Field(None, alias="isActive")
     sort_order: int | None = Field(None, alias="sortOrder")
+    rustore_product_id: str | None = Field(None, alias="rustoreProductId", max_length=128)
 
 
 class ActivePromoOut(CamelModel):
@@ -82,10 +85,16 @@ class BillingMeOut(CamelModel):
 class SubscribeRequest(CamelModel):
     tariff_id: UUID = Field(alias="tariffId")
     return_url: str | None = Field(None, alias="returnUrl", max_length=512)
+    # Метка сборки клиента (НЕ выбор платёжной системы): rustore-APK → "rustore",
+    # веб и остальные сборки — "web"/нет поля. Провайдера резолвит бекенд.
+    channel: str | None = Field(None, max_length=32)
 
 
 class SubscribeOut(CamelModel):
+    provider: str | None = Field(None, alias="provider")
     confirmation_url: str | None = Field(None, alias="confirmationUrl")
+    # productId подписки в RuStore: получен → покупка через мобильный SDK
+    rustore_product_id: str | None = Field(None, alias="rustoreProductId")
     payment_id: UUID | None = Field(None, alias="paymentId")
     mock: bool = False
     message: str | None = None
@@ -94,14 +103,19 @@ class SubscribeOut(CamelModel):
     scheduled_tariff_id: UUID | None = Field(None, alias="scheduledTariffId")
 
 
+class ConfirmRustoreRequest(CamelModel):
+    purchase_id: str = Field(alias="purchaseId", min_length=1, max_length=128)
+
+
 class PaymentOut(CamelModel):
     id: UUID
     tariff_id: UUID = Field(alias="tariffId")
     amount_rub: float = Field(alias="amountRub")
     status: str
+    provider: str = "yookassa"
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")
-    yookassa_payment_id: str | None = Field(None, alias="yookassaPaymentId")
+    external_id: str | None = Field(None, alias="externalId")
 
 
 class PromoCodeCreate(CamelModel):

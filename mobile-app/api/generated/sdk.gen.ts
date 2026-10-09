@@ -3,7 +3,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AchievementsCreateAchievementData, AchievementsCreateAchievementErrors, AchievementsCreateAchievementResponses, AchievementsCreateRewardData, AchievementsCreateRewardErrors, AchievementsCreateRewardResponses, AchievementsDeleteAchievementData, AchievementsDeleteAchievementErrors, AchievementsDeleteAchievementResponses, AchievementsDeleteRewardData, AchievementsDeleteRewardErrors, AchievementsDeleteRewardResponses, AchievementsGrantAchievementData, AchievementsGrantAchievementErrors, AchievementsGrantAchievementResponses, AchievementsListAchievementsAdminData, AchievementsListAchievementsAdminErrors, AchievementsListAchievementsAdminResponses, AchievementsListAchievementsMeData, AchievementsListAchievementsMeErrors, AchievementsListAchievementsMeResponses, AchievementsListRewardsAdminData, AchievementsListRewardsAdminErrors, AchievementsListRewardsAdminResponses, AchievementsListRewardsMeData, AchievementsListRewardsMeErrors, AchievementsListRewardsMeResponses, AchievementsUpdateAchievementData, AchievementsUpdateAchievementErrors, AchievementsUpdateAchievementResponses, AchievementsUpdateRewardData, AchievementsUpdateRewardErrors, AchievementsUpdateRewardResponses, ArticlesCreateArticleData, ArticlesCreateArticleErrors, ArticlesCreateArticleResponses, ArticlesDeleteArticleData, ArticlesDeleteArticleErrors, ArticlesDeleteArticleResponses, ArticlesGetArticleData, ArticlesGetArticleErrors, ArticlesGetArticleResponses, ArticlesListArticlesData, ArticlesListArticlesErrors, ArticlesListArticlesResponses, ArticlesUpdateArticleData, ArticlesUpdateArticleErrors, ArticlesUpdateArticleResponses, AuthDeleteAvatarData, AuthDeleteAvatarErrors, AuthDeleteAvatarResponses, AuthDeleteMeData, AuthDeleteMeErrors, AuthDeleteMeResponses, AuthForgotPasswordData, AuthForgotPasswordErrors, AuthForgotPasswordResponses, AuthListSessionsData, AuthListSessionsErrors, AuthListSessionsResponses, AuthLoginConstructorData, AuthLoginConstructorErrors, AuthLoginConstructorResponses, AuthLoginJsonData, AuthLoginJsonErrors, AuthLoginJsonResponses, AuthLogoutData, AuthLogoutErrors, AuthLogoutResponses, AuthMeData, AuthMeErrors, AuthMeResponses, AuthRegisterData, AuthRegisterErrors, AuthRegisterResponses, AuthRequestLoginCodeData, AuthRequestLoginCodeErrors, AuthRequestLoginCodeResponses, AuthResendVerificationData, AuthResendVerificationErrors, AuthResendVerificationResponses, AuthResetPasswordData, AuthResetPasswordErrors, AuthResetPasswordResponses, AuthUpdateMeData, AuthUpdateMeErrors, AuthUpdateMeResponses, AuthUploadAvatarData, AuthUploadAvatarErrors, AuthUploadAvatarResponses, AuthVerifyEmailData, AuthVerifyEmailErrors, AuthVerifyEmailResponses, AuthVerifyLoginCodeData, AuthVerifyLoginCodeErrors, AuthVerifyLoginCodeResponses, BillingActivatePromoCodeData, BillingActivatePromoCodeErrors, BillingActivatePromoCodeResponses, BillingBillingMeData, BillingBillingMeErrors, BillingBillingMeResponses, BillingCancelSubscriptionData, BillingCancelSubscriptionErrors, BillingCancelSubscriptionResponses, BillingCreatePromoCodeData, BillingCreatePromoCodeErrors, BillingCreatePromoCodeResponses, BillingCreateTariffData, BillingCreateTariffErrors, BillingCreateTariffResponses, BillingDeletePromoCodeData, BillingDeletePromoCodeErrors, BillingDeletePromoCodeResponses, BillingDeleteTariffData, BillingDeleteTariffErrors, BillingDeleteTariffResponses, BillingListPaymentsData, BillingListPaymentsErrors, BillingListPaymentsResponses, BillingListPromoCodesData, BillingListPromoCodesErrors, BillingListPromoCodesResponses, BillingListTariffsAdminData, BillingListTariffsAdminErrors, BillingListTariffsAdminResponses, BillingListTariffsData, BillingListTariffsResponses, BillingSubscribeData, BillingSubscribeErrors, BillingSubscribeResponses, BillingSyncPaymentData, BillingSyncPaymentErrors, BillingSyncPaymentResponses, BillingUpdatePromoCodeData, BillingUpdatePromoCodeErrors, BillingUpdatePromoCodeResponses, BillingUpdateTariffData, BillingUpdateTariffErrors, BillingUpdateTariffResponses, CertificatesIssueData, CertificatesIssueErrors, CertificatesIssueResponses, CertificatesListCertificatesData, CertificatesListCertificatesErrors, CertificatesListCertificatesResponses, CertificatesListMyCertificatesData, CertificatesListMyCertificatesErrors, CertificatesListMyCertificatesResponses, CertificatesVerifyCertificateData, CertificatesVerifyCertificateErrors, CertificatesVerifyCertificateResponses, CitiesListCitiesData, CitiesListCitiesErrors, CitiesListCitiesResponses, FoldersCreateFolderData, FoldersCreateFolderErrors, FoldersCreateFolderResponses, FoldersDeleteFolderData, FoldersDeleteFolderErrors, FoldersDeleteFolderResponses, FoldersFoldersMaterialCountsData, FoldersFoldersMaterialCountsErrors, FoldersFoldersMaterialCountsResponses, FoldersGetFolderData, FoldersGetFolderErrors, FoldersGetFolderResponses, FoldersListFoldersData, FoldersListFoldersErrors, FoldersListFoldersResponses, FoldersUpdateFolderData, FoldersUpdateFolderErrors, FoldersUpdateFolderResponses, LearningEventsCreateLearningEventData, LearningEventsCreateLearningEventErrors, LearningEventsCreateLearningEventResponses, LegalGetLegalDocumentFileData, LegalGetLegalDocumentFileErrors, LegalGetLegalDocumentFileResponses, LegalListLegalDocumentsData, LegalListLegalDocumentsResponses, MediaDeleteMediaData, MediaDeleteMediaErrors, MediaDeleteMediaResponses, MediaDownloadMediaData, MediaDownloadMediaErrors, MediaDownloadMediaResponses, MediaUploadMediaData, MediaUploadMediaErrors, MediaUploadMediaResponses, MetaHealthData, MetaHealthResponses, MetaReadyData, MetaReadyResponses, NotificationsBroadcastNotificationData, NotificationsBroadcastNotificationErrors, NotificationsBroadcastNotificationResponses, NotificationsCreateNotificationData, NotificationsCreateNotificationErrors, NotificationsCreateNotificationResponses, NotificationsListNotificationsData, NotificationsListNotificationsErrors, NotificationsListNotificationsResponses, NotificationsMarkAllReadData, NotificationsMarkAllReadErrors, NotificationsMarkAllReadResponses, NotificationsMarkReadData, NotificationsMarkReadErrors, NotificationsMarkReadResponses, NotificationsUnreadCountData, NotificationsUnreadCountErrors, NotificationsUnreadCountResponses, PushDeletePushTokenData, PushDeletePushTokenErrors, PushDeletePushTokenResponses, PushUpsertPushTokenData, PushUpsertPushTokenErrors, PushUpsertPushTokenResponses, RescueCreateRescueData, RescueCreateRescueErrors, RescueCreateRescueResponses, RescueDeleteRescueData, RescueDeleteRescueErrors, RescueDeleteRescueResponses, RescueGetRescueData, RescueGetRescueErrors, RescueGetRescueResponses, RescueListRescueData, RescueListRescueErrors, RescueListRescueResponses, RescueUpdateRescueData, RescueUpdateRescueErrors, RescueUpdateRescueResponses, StatsCreateTestResultData, StatsCreateTestResultErrors, StatsCreateTestResultResponses, StatsCreateTestStatsData, StatsCreateTestStatsErrors, StatsCreateTestStatsResponses, StatsListArticleStatsData, StatsListArticleStatsErrors, StatsListArticleStatsResponses, StatsListRescueStatsData, StatsListRescueStatsErrors, StatsListRescueStatsResponses, StatsListTestResultsData, StatsListTestResultsErrors, StatsListTestResultsResponses, StatsListTestStatsData, StatsListTestStatsErrors, StatsListTestStatsResponses, StatsResetAllStatsData, StatsResetAllStatsErrors, StatsResetAllStatsResponses, StatsUpdateTestStatsData, StatsUpdateTestStatsErrors, StatsUpdateTestStatsResponses, StatsUpsertArticleStatsData, StatsUpsertArticleStatsErrors, StatsUpsertArticleStatsResponses, StatsUpsertRescueStatsData, StatsUpsertRescueStatsErrors, StatsUpsertRescueStatsResponses, StatsUpsertTestStatsData, StatsUpsertTestStatsErrors, StatsUpsertTestStatsResponses, SupportGetMyThreadData, SupportGetMyThreadErrors, SupportGetMyThreadResponses, SupportGetThreadData, SupportGetThreadErrors, SupportGetThreadResponses, SupportListThreadsData, SupportListThreadsErrors, SupportListThreadsResponses, SupportPostAdminMessageData, SupportPostAdminMessageErrors, SupportPostAdminMessageResponses, SupportPostMyMessageData, SupportPostMyMessageErrors, SupportPostMyMessageResponses, TestsCreateTestData, TestsCreateTestErrors, TestsCreateTestResponses, TestsDeleteTestData, TestsDeleteTestErrors, TestsDeleteTestResponses, TestsGetTestData, TestsGetTestErrors, TestsGetTestResponses, TestsListTestsData, TestsListTestsErrors, TestsListTestsResponses, TestsUpdateTestData, TestsUpdateTestErrors, TestsUpdateTestResponses, TrainingTestRecommendationsData, TrainingTestRecommendationsErrors, TrainingTestRecommendationsResponses, TrainingTrainingMeData, TrainingTrainingMeErrors, TrainingTrainingMeResponses, UsersGetUserQrProfileData, UsersGetUserQrProfileErrors, UsersGetUserQrProfileResponses, UsersListUsersData, UsersListUsersErrors, UsersListUsersResponses, UsersResetUsersStatsData, UsersResetUsersStatsErrors, UsersResetUsersStatsResponses } from './types.gen';
+import type { AchievementsCreateAchievementData, AchievementsCreateAchievementErrors, AchievementsCreateAchievementResponses, AchievementsCreateRewardData, AchievementsCreateRewardErrors, AchievementsCreateRewardResponses, AchievementsDeleteAchievementData, AchievementsDeleteAchievementErrors, AchievementsDeleteAchievementResponses, AchievementsDeleteRewardData, AchievementsDeleteRewardErrors, AchievementsDeleteRewardResponses, AchievementsGrantAchievementData, AchievementsGrantAchievementErrors, AchievementsGrantAchievementResponses, AchievementsListAchievementsAdminData, AchievementsListAchievementsAdminErrors, AchievementsListAchievementsAdminResponses, AchievementsListAchievementsMeData, AchievementsListAchievementsMeErrors, AchievementsListAchievementsMeResponses, AchievementsListRewardsAdminData, AchievementsListRewardsAdminErrors, AchievementsListRewardsAdminResponses, AchievementsListRewardsMeData, AchievementsListRewardsMeErrors, AchievementsListRewardsMeResponses, AchievementsUpdateAchievementData, AchievementsUpdateAchievementErrors, AchievementsUpdateAchievementResponses, AchievementsUpdateRewardData, AchievementsUpdateRewardErrors, AchievementsUpdateRewardResponses, AiGenerateRescueData, AiGenerateRescueErrors, AiGenerateRescueResponses, AiGenerateTestData, AiGenerateTestErrors, AiGenerateTestResponses, AnalyticsAnalyticsRecentEventsData, AnalyticsAnalyticsRecentEventsErrors, AnalyticsAnalyticsRecentEventsResponses, AnalyticsAnalyticsSummaryData, AnalyticsAnalyticsSummaryErrors, AnalyticsAnalyticsSummaryResponses, ArticlesCreateArticleData, ArticlesCreateArticleErrors, ArticlesCreateArticleResponses, ArticlesDeleteArticleData, ArticlesDeleteArticleErrors, ArticlesDeleteArticleResponses, ArticlesGetArticleData, ArticlesGetArticleErrors, ArticlesGetArticleResponses, ArticlesListArticlesData, ArticlesListArticlesErrors, ArticlesListArticlesResponses, ArticlesUpdateArticleData, ArticlesUpdateArticleErrors, ArticlesUpdateArticleResponses, AuthDeleteAvatarData, AuthDeleteAvatarErrors, AuthDeleteAvatarResponses, AuthDeleteMeData, AuthDeleteMeErrors, AuthDeleteMeResponses, AuthForgotPasswordData, AuthForgotPasswordErrors, AuthForgotPasswordResponses, AuthListSessionsData, AuthListSessionsErrors, AuthListSessionsResponses, AuthLoginConstructorData, AuthLoginConstructorErrors, AuthLoginConstructorResponses, AuthLoginJsonData, AuthLoginJsonErrors, AuthLoginJsonResponses, AuthLogoutData, AuthLogoutErrors, AuthLogoutResponses, AuthMeData, AuthMeErrors, AuthMeResponses, AuthRegisterData, AuthRegisterErrors, AuthRegisterResponses, AuthRequestLoginCodeData, AuthRequestLoginCodeErrors, AuthRequestLoginCodeResponses, AuthResendVerificationData, AuthResendVerificationErrors, AuthResendVerificationResponses, AuthResetPasswordData, AuthResetPasswordErrors, AuthResetPasswordResponses, AuthSendResetLinkAdminData, AuthSendResetLinkAdminErrors, AuthSendResetLinkAdminResponses, AuthUpdateMeData, AuthUpdateMeErrors, AuthUpdateMeResponses, AuthUploadAvatarData, AuthUploadAvatarErrors, AuthUploadAvatarResponses, AuthVerifyEmailData, AuthVerifyEmailErrors, AuthVerifyEmailResponses, AuthVerifyLoginCodeData, AuthVerifyLoginCodeErrors, AuthVerifyLoginCodeResponses, BillingActivatePromoCodeData, BillingActivatePromoCodeErrors, BillingActivatePromoCodeResponses, BillingBillingMeData, BillingBillingMeErrors, BillingBillingMeResponses, BillingCancelSubscriptionData, BillingCancelSubscriptionErrors, BillingCancelSubscriptionResponses, BillingConfirmPaymentData, BillingConfirmPaymentErrors, BillingConfirmPaymentResponses, BillingCreatePromoCodeData, BillingCreatePromoCodeErrors, BillingCreatePromoCodeResponses, BillingCreateTariffData, BillingCreateTariffErrors, BillingCreateTariffResponses, BillingDeletePromoCodeData, BillingDeletePromoCodeErrors, BillingDeletePromoCodeResponses, BillingDeleteTariffData, BillingDeleteTariffErrors, BillingDeleteTariffResponses, BillingListPaymentsData, BillingListPaymentsErrors, BillingListPaymentsResponses, BillingListPromoCodesData, BillingListPromoCodesErrors, BillingListPromoCodesResponses, BillingListRefundJournalData, BillingListRefundJournalErrors, BillingListRefundJournalResponses, BillingListTariffsAdminData, BillingListTariffsAdminErrors, BillingListTariffsAdminResponses, BillingListTariffsData, BillingListTariffsResponses, BillingRefundUserSubscriptionData, BillingRefundUserSubscriptionErrors, BillingRefundUserSubscriptionResponses, BillingSubscribeData, BillingSubscribeErrors, BillingSubscribeResponses, BillingSyncPaymentData, BillingSyncPaymentErrors, BillingSyncPaymentResponses, BillingUpdatePromoCodeData, BillingUpdatePromoCodeErrors, BillingUpdatePromoCodeResponses, BillingUpdateTariffData, BillingUpdateTariffErrors, BillingUpdateTariffResponses, CertificatesIssueData, CertificatesIssueErrors, CertificatesIssueResponses, CertificatesListCertificatesData, CertificatesListCertificatesErrors, CertificatesListCertificatesResponses, CertificatesListMyCertificatesData, CertificatesListMyCertificatesErrors, CertificatesListMyCertificatesResponses, CertificatesVerifyCertificateData, CertificatesVerifyCertificateErrors, CertificatesVerifyCertificateResponses, CitiesListCitiesData, CitiesListCitiesErrors, CitiesListCitiesResponses, FoldersBulkDeleteContentData, FoldersBulkDeleteContentErrors, FoldersBulkDeleteContentResponses, FoldersBulkMoveContentData, FoldersBulkMoveContentErrors, FoldersBulkMoveContentResponses, FoldersBulkTariffContentData, FoldersBulkTariffContentErrors, FoldersBulkTariffContentResponses, FoldersCreateFolderData, FoldersCreateFolderErrors, FoldersCreateFolderResponses, FoldersDeleteFolderData, FoldersDeleteFolderErrors, FoldersDeleteFolderResponses, FoldersFoldersMaterialCountsData, FoldersFoldersMaterialCountsErrors, FoldersFoldersMaterialCountsResponses, FoldersGetFolderData, FoldersGetFolderErrors, FoldersGetFolderResponses, FoldersListFoldersData, FoldersListFoldersErrors, FoldersListFoldersResponses, FoldersUpdateFolderData, FoldersUpdateFolderErrors, FoldersUpdateFolderResponses, LearningEventsCreateLearningEventData, LearningEventsCreateLearningEventErrors, LearningEventsCreateLearningEventResponses, LegalGetLegalDocumentFileData, LegalGetLegalDocumentFileErrors, LegalGetLegalDocumentFileResponses, LegalListLegalDocumentsData, LegalListLegalDocumentsResponses, MediaDeleteMediaData, MediaDeleteMediaErrors, MediaDeleteMediaResponses, MediaDownloadMediaData, MediaDownloadMediaErrors, MediaDownloadMediaResponses, MediaUploadMediaData, MediaUploadMediaErrors, MediaUploadMediaResponses, MetaHealthData, MetaHealthResponses, MetaReadyData, MetaReadyResponses, NotificationsBroadcastNotificationData, NotificationsBroadcastNotificationErrors, NotificationsBroadcastNotificationResponses, NotificationsCreateNotificationData, NotificationsCreateNotificationErrors, NotificationsCreateNotificationResponses, NotificationsListNotificationsData, NotificationsListNotificationsErrors, NotificationsListNotificationsResponses, NotificationsMarkAllReadData, NotificationsMarkAllReadErrors, NotificationsMarkAllReadResponses, NotificationsMarkReadData, NotificationsMarkReadErrors, NotificationsMarkReadResponses, NotificationsUnreadCountData, NotificationsUnreadCountErrors, NotificationsUnreadCountResponses, PushDeletePushTokenData, PushDeletePushTokenErrors, PushDeletePushTokenResponses, PushUpsertPushTokenData, PushUpsertPushTokenErrors, PushUpsertPushTokenResponses, RescueCreateRescueData, RescueCreateRescueErrors, RescueCreateRescueResponses, RescueDeleteRescueData, RescueDeleteRescueErrors, RescueDeleteRescueResponses, RescueGetRescueData, RescueGetRescueErrors, RescueGetRescueResponses, RescueListRescueData, RescueListRescueErrors, RescueListRescueResponses, RescueUpdateRescueData, RescueUpdateRescueErrors, RescueUpdateRescueResponses, StatsCreateTestResultData, StatsCreateTestResultErrors, StatsCreateTestResultResponses, StatsCreateTestStatsData, StatsCreateTestStatsErrors, StatsCreateTestStatsResponses, StatsListArticleStatsData, StatsListArticleStatsErrors, StatsListArticleStatsResponses, StatsListRescueStatsData, StatsListRescueStatsErrors, StatsListRescueStatsResponses, StatsListTestResultsData, StatsListTestResultsErrors, StatsListTestResultsResponses, StatsListTestStatsData, StatsListTestStatsErrors, StatsListTestStatsResponses, StatsResetAllStatsData, StatsResetAllStatsErrors, StatsResetAllStatsResponses, StatsUpdateTestStatsData, StatsUpdateTestStatsErrors, StatsUpdateTestStatsResponses, StatsUpsertArticleStatsData, StatsUpsertArticleStatsErrors, StatsUpsertArticleStatsResponses, StatsUpsertRescueStatsData, StatsUpsertRescueStatsErrors, StatsUpsertRescueStatsResponses, StatsUpsertTestStatsData, StatsUpsertTestStatsErrors, StatsUpsertTestStatsResponses, SupportCreateThreadForUserData, SupportCreateThreadForUserErrors, SupportCreateThreadForUserResponses, SupportGetMyThreadData, SupportGetMyThreadErrors, SupportGetMyThreadResponses, SupportGetThreadData, SupportGetThreadErrors, SupportGetThreadResponses, SupportListThreadsData, SupportListThreadsErrors, SupportListThreadsResponses, SupportMarkThreadReadData, SupportMarkThreadReadErrors, SupportMarkThreadReadResponses, SupportPostAdminMessageData, SupportPostAdminMessageErrors, SupportPostAdminMessageResponses, SupportPostMyMessageData, SupportPostMyMessageErrors, SupportPostMyMessageResponses, SupportSupportUnreadCountData, SupportSupportUnreadCountErrors, SupportSupportUnreadCountResponses, SystemSettingsGetSystemSettingsData, SystemSettingsGetSystemSettingsErrors, SystemSettingsGetSystemSettingsResponses, SystemSettingsUpdateSystemSettingsData, SystemSettingsUpdateSystemSettingsErrors, SystemSettingsUpdateSystemSettingsResponses, TestsCreateTestData, TestsCreateTestErrors, TestsCreateTestResponses, TestsDeleteTestData, TestsDeleteTestErrors, TestsDeleteTestResponses, TestsGetTestData, TestsGetTestErrors, TestsGetTestResponses, TestsListTestsData, TestsListTestsErrors, TestsListTestsResponses, TestsUpdateTestData, TestsUpdateTestErrors, TestsUpdateTestResponses, TrainingTestRecommendationsData, TrainingTestRecommendationsErrors, TrainingTestRecommendationsResponses, TrainingTrainingMeData, TrainingTrainingMeErrors, TrainingTrainingMeResponses, UsersAdminCreateUserData, UsersAdminCreateUserErrors, UsersAdminCreateUserResponses, UsersAdminDeleteUserData, UsersAdminDeleteUserErrors, UsersAdminDeleteUserResponses, UsersAdminUpdateUserData, UsersAdminUpdateUserErrors, UsersAdminUpdateUserResponses, UsersGetUserQrProfileData, UsersGetUserQrProfileErrors, UsersGetUserQrProfileResponses, UsersGrantUserBonusData, UsersGrantUserBonusErrors, UsersGrantUserBonusResponses, UsersListUsersData, UsersListUsersErrors, UsersListUsersResponses, UsersResetUsersStatsData, UsersResetUsersStatsErrors, UsersResetUsersStatsResponses, UsersUpdateUserStatusData, UsersUpdateUserStatusErrors, UsersUpdateUserStatusResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -206,6 +206,18 @@ export const authResetPassword = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
+ * Send Reset Link Admin
+ */
+export const authSendResetLinkAdmin = <ThrowOnError extends boolean = false>(options: Options<AuthSendResetLinkAdminData, ThrowOnError>): RequestResult<AuthSendResetLinkAdminResponses, AuthSendResetLinkAdminErrors, ThrowOnError> => (options.client ?? client).post<AuthSendResetLinkAdminResponses, AuthSendResetLinkAdminErrors, ThrowOnError>({
+    url: '/api/v1/auth/send-reset-link',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * List Cities
  */
 export const citiesListCities = <ThrowOnError extends boolean = false>(options?: Options<CitiesListCitiesData, ThrowOnError>): RequestResult<CitiesListCitiesResponses, CitiesListCitiesErrors, ThrowOnError> => (options?.client ?? client).get<CitiesListCitiesResponses, CitiesListCitiesErrors, ThrowOnError>({ url: '/api/v1/cities', ...options });
@@ -326,6 +338,37 @@ export const billingListPayments = <ThrowOnError extends boolean = false>(option
  * Sync Payment
  */
 export const billingSyncPayment = <ThrowOnError extends boolean = false>(options: Options<BillingSyncPaymentData, ThrowOnError>): RequestResult<BillingSyncPaymentResponses, BillingSyncPaymentErrors, ThrowOnError> => (options.client ?? client).post<BillingSyncPaymentResponses, BillingSyncPaymentErrors, ThrowOnError>({ url: '/api/v1/billing/payments/{payment_id}/sync', ...options });
+
+/**
+ * Confirm Payment
+ *
+ * Подтверждение покупки через RuStore Pay SDK.
+ */
+export const billingConfirmPayment = <ThrowOnError extends boolean = false>(options: Options<BillingConfirmPaymentData, ThrowOnError>): RequestResult<BillingConfirmPaymentResponses, BillingConfirmPaymentErrors, ThrowOnError> => (options.client ?? client).post<BillingConfirmPaymentResponses, BillingConfirmPaymentErrors, ThrowOnError>({
+    url: '/api/v1/billing/payments/{payment_id}/confirm',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Refund User Subscription
+ */
+export const billingRefundUserSubscription = <ThrowOnError extends boolean = false>(options: Options<BillingRefundUserSubscriptionData, ThrowOnError>): RequestResult<BillingRefundUserSubscriptionResponses, BillingRefundUserSubscriptionErrors, ThrowOnError> => (options.client ?? client).post<BillingRefundUserSubscriptionResponses, BillingRefundUserSubscriptionErrors, ThrowOnError>({
+    url: '/api/v1/billing/users/{user_id}/refund',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Refund Journal
+ */
+export const billingListRefundJournal = <ThrowOnError extends boolean = false>(options?: Options<BillingListRefundJournalData, ThrowOnError>): RequestResult<BillingListRefundJournalResponses, BillingListRefundJournalErrors, ThrowOnError> => (options?.client ?? client).get<BillingListRefundJournalResponses, BillingListRefundJournalErrors, ThrowOnError>({ url: '/api/v1/billing/refunds', ...options });
 
 /**
  * List Notifications
@@ -503,6 +546,30 @@ export const supportPostMyMessage = <ThrowOnError extends boolean = false>(optio
 export const supportListThreads = <ThrowOnError extends boolean = false>(options?: Options<SupportListThreadsData, ThrowOnError>): RequestResult<SupportListThreadsResponses, SupportListThreadsErrors, ThrowOnError> => (options?.client ?? client).get<SupportListThreadsResponses, SupportListThreadsErrors, ThrowOnError>({ url: '/api/v1/support/threads', ...options });
 
 /**
+ * Create Thread For User
+ *
+ * Открыть (или получить существующий) диалог с пользователем — карандаш в инбоксе.
+ */
+export const supportCreateThreadForUser = <ThrowOnError extends boolean = false>(options: Options<SupportCreateThreadForUserData, ThrowOnError>): RequestResult<SupportCreateThreadForUserResponses, SupportCreateThreadForUserErrors, ThrowOnError> => (options.client ?? client).post<SupportCreateThreadForUserResponses, SupportCreateThreadForUserErrors, ThrowOnError>({
+    url: '/api/v1/support/threads',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Support Unread Count
+ */
+export const supportSupportUnreadCount = <ThrowOnError extends boolean = false>(options?: Options<SupportSupportUnreadCountData, ThrowOnError>): RequestResult<SupportSupportUnreadCountResponses, SupportSupportUnreadCountErrors, ThrowOnError> => (options?.client ?? client).get<SupportSupportUnreadCountResponses, SupportSupportUnreadCountErrors, ThrowOnError>({ url: '/api/v1/support/threads/unread-count', ...options });
+
+/**
+ * Mark Thread Read
+ */
+export const supportMarkThreadRead = <ThrowOnError extends boolean = false>(options: Options<SupportMarkThreadReadData, ThrowOnError>): RequestResult<SupportMarkThreadReadResponses, SupportMarkThreadReadErrors, ThrowOnError> => (options.client ?? client).post<SupportMarkThreadReadResponses, SupportMarkThreadReadErrors, ThrowOnError>({ url: '/api/v1/support/threads/{thread_id}/read', ...options });
+
+/**
  * Get Thread
  */
 export const supportGetThread = <ThrowOnError extends boolean = false>(options: Options<SupportGetThreadData, ThrowOnError>): RequestResult<SupportGetThreadResponses, SupportGetThreadErrors, ThrowOnError> => (options.client ?? client).get<SupportGetThreadResponses, SupportGetThreadErrors, ThrowOnError>({ url: '/api/v1/support/threads/{thread_id}', ...options });
@@ -556,6 +623,42 @@ export const foldersCreateFolder = <ThrowOnError extends boolean = false>(option
  * завершено текущим пользователем (документ прочитан, тест/режим пройден успешно).
  */
 export const foldersFoldersMaterialCounts = <ThrowOnError extends boolean = false>(options?: Options<FoldersFoldersMaterialCountsData, ThrowOnError>): RequestResult<FoldersFoldersMaterialCountsResponses, FoldersFoldersMaterialCountsErrors, ThrowOnError> => (options?.client ?? client).get<FoldersFoldersMaterialCountsResponses, FoldersFoldersMaterialCountsErrors, ThrowOnError>({ url: '/api/v1/folders/material-counts', ...options });
+
+/**
+ * Bulk Delete Content
+ */
+export const foldersBulkDeleteContent = <ThrowOnError extends boolean = false>(options: Options<FoldersBulkDeleteContentData, ThrowOnError>): RequestResult<FoldersBulkDeleteContentResponses, FoldersBulkDeleteContentErrors, ThrowOnError> => (options.client ?? client).post<FoldersBulkDeleteContentResponses, FoldersBulkDeleteContentErrors, ThrowOnError>({
+    url: '/api/v1/folders/bulk-delete',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Bulk Move Content
+ */
+export const foldersBulkMoveContent = <ThrowOnError extends boolean = false>(options: Options<FoldersBulkMoveContentData, ThrowOnError>): RequestResult<FoldersBulkMoveContentResponses, FoldersBulkMoveContentErrors, ThrowOnError> => (options.client ?? client).post<FoldersBulkMoveContentResponses, FoldersBulkMoveContentErrors, ThrowOnError>({
+    url: '/api/v1/folders/bulk-move',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Bulk Tariff Content
+ */
+export const foldersBulkTariffContent = <ThrowOnError extends boolean = false>(options: Options<FoldersBulkTariffContentData, ThrowOnError>): RequestResult<FoldersBulkTariffContentResponses, FoldersBulkTariffContentErrors, ThrowOnError> => (options.client ?? client).post<FoldersBulkTariffContentResponses, FoldersBulkTariffContentErrors, ThrowOnError>({
+    url: '/api/v1/folders/bulk-tariff',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Delete Folder
@@ -819,6 +922,63 @@ export const trainingTestRecommendations = <ThrowOnError extends boolean = false
 export const usersListUsers = <ThrowOnError extends boolean = false>(options?: Options<UsersListUsersData, ThrowOnError>): RequestResult<UsersListUsersResponses, UsersListUsersErrors, ThrowOnError> => (options?.client ?? client).get<UsersListUsersResponses, UsersListUsersErrors, ThrowOnError>({ url: '/api/v1/users', ...options });
 
 /**
+ * Admin Create User
+ *
+ * Создание пользователя администратором. Без пароля — уйдёт письмо со ссылкой установки.
+ */
+export const usersAdminCreateUser = <ThrowOnError extends boolean = false>(options: Options<UsersAdminCreateUserData, ThrowOnError>): RequestResult<UsersAdminCreateUserResponses, UsersAdminCreateUserErrors, ThrowOnError> => (options.client ?? client).post<UsersAdminCreateUserResponses, UsersAdminCreateUserErrors, ThrowOnError>({
+    url: '/api/v1/users',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Admin Delete User
+ *
+ * Полное удаление аккаунта и всех связанных данных (каскад по FK, как DELETE /auth/me).
+ */
+export const usersAdminDeleteUser = <ThrowOnError extends boolean = false>(options: Options<UsersAdminDeleteUserData, ThrowOnError>): RequestResult<UsersAdminDeleteUserResponses, UsersAdminDeleteUserErrors, ThrowOnError> => (options.client ?? client).delete<UsersAdminDeleteUserResponses, UsersAdminDeleteUserErrors, ThrowOnError>({ url: '/api/v1/users/{user_id}', ...options });
+
+/**
+ * Admin Update User
+ */
+export const usersAdminUpdateUser = <ThrowOnError extends boolean = false>(options: Options<UsersAdminUpdateUserData, ThrowOnError>): RequestResult<UsersAdminUpdateUserResponses, UsersAdminUpdateUserErrors, ThrowOnError> => (options.client ?? client).patch<UsersAdminUpdateUserResponses, UsersAdminUpdateUserErrors, ThrowOnError>({
+    url: '/api/v1/users/{user_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Grant User Bonus
+ */
+export const usersGrantUserBonus = <ThrowOnError extends boolean = false>(options: Options<UsersGrantUserBonusData, ThrowOnError>): RequestResult<UsersGrantUserBonusResponses, UsersGrantUserBonusErrors, ThrowOnError> => (options.client ?? client).post<UsersGrantUserBonusResponses, UsersGrantUserBonusErrors, ThrowOnError>({
+    url: '/api/v1/users/{user_id}/bonus',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Update User Status
+ */
+export const usersUpdateUserStatus = <ThrowOnError extends boolean = false>(options: Options<UsersUpdateUserStatusData, ThrowOnError>): RequestResult<UsersUpdateUserStatusResponses, UsersUpdateUserStatusErrors, ThrowOnError> => (options.client ?? client).patch<UsersUpdateUserStatusResponses, UsersUpdateUserStatusErrors, ThrowOnError>({
+    url: '/api/v1/users/{user_id}/status',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Reset Users Stats
  *
  * Полный сброс статистики и прогресса: события обучения (аналитика,
@@ -899,6 +1059,57 @@ export const certificatesListMyCertificates = <ThrowOnError extends boolean = fa
  * Публичная проверка подлинности — цель QR-кода на сертификате.
  */
 export const certificatesVerifyCertificate = <ThrowOnError extends boolean = false>(options: Options<CertificatesVerifyCertificateData, ThrowOnError>): RequestResult<CertificatesVerifyCertificateResponses, CertificatesVerifyCertificateErrors, ThrowOnError> => (options.client ?? client).get<CertificatesVerifyCertificateResponses, CertificatesVerifyCertificateErrors, ThrowOnError>({ url: '/api/v1/certificates/{number}', ...options });
+
+/**
+ * Generate Test
+ */
+export const aiGenerateTest = <ThrowOnError extends boolean = false>(options: Options<AiGenerateTestData, ThrowOnError>): RequestResult<AiGenerateTestResponses, AiGenerateTestErrors, ThrowOnError> => (options.client ?? client).post<AiGenerateTestResponses, AiGenerateTestErrors, ThrowOnError>({
+    url: '/api/v1/ai/generate-test',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Generate Rescue
+ */
+export const aiGenerateRescue = <ThrowOnError extends boolean = false>(options: Options<AiGenerateRescueData, ThrowOnError>): RequestResult<AiGenerateRescueResponses, AiGenerateRescueErrors, ThrowOnError> => (options.client ?? client).post<AiGenerateRescueResponses, AiGenerateRescueErrors, ThrowOnError>({
+    url: '/api/v1/ai/generate-rescue',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get System Settings
+ */
+export const systemSettingsGetSystemSettings = <ThrowOnError extends boolean = false>(options?: Options<SystemSettingsGetSystemSettingsData, ThrowOnError>): RequestResult<SystemSettingsGetSystemSettingsResponses, SystemSettingsGetSystemSettingsErrors, ThrowOnError> => (options?.client ?? client).get<SystemSettingsGetSystemSettingsResponses, SystemSettingsGetSystemSettingsErrors, ThrowOnError>({ url: '/api/v1/system-settings', ...options });
+
+/**
+ * Update System Settings
+ */
+export const systemSettingsUpdateSystemSettings = <ThrowOnError extends boolean = false>(options: Options<SystemSettingsUpdateSystemSettingsData, ThrowOnError>): RequestResult<SystemSettingsUpdateSystemSettingsResponses, SystemSettingsUpdateSystemSettingsErrors, ThrowOnError> => (options.client ?? client).patch<SystemSettingsUpdateSystemSettingsResponses, SystemSettingsUpdateSystemSettingsErrors, ThrowOnError>({
+    url: '/api/v1/system-settings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Analytics Summary
+ */
+export const analyticsAnalyticsSummary = <ThrowOnError extends boolean = false>(options?: Options<AnalyticsAnalyticsSummaryData, ThrowOnError>): RequestResult<AnalyticsAnalyticsSummaryResponses, AnalyticsAnalyticsSummaryErrors, ThrowOnError> => (options?.client ?? client).get<AnalyticsAnalyticsSummaryResponses, AnalyticsAnalyticsSummaryErrors, ThrowOnError>({ url: '/api/v1/analytics/summary', ...options });
+
+/**
+ * Analytics Recent Events
+ */
+export const analyticsAnalyticsRecentEvents = <ThrowOnError extends boolean = false>(options?: Options<AnalyticsAnalyticsRecentEventsData, ThrowOnError>): RequestResult<AnalyticsAnalyticsRecentEventsResponses, AnalyticsAnalyticsRecentEventsErrors, ThrowOnError> => (options?.client ?? client).get<AnalyticsAnalyticsRecentEventsResponses, AnalyticsAnalyticsRecentEventsErrors, ThrowOnError>({ url: '/api/v1/analytics/recent-events', ...options });
 
 /**
  * Health

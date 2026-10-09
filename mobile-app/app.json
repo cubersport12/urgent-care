@@ -22,7 +22,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.troubledent"
+      "package": "ru.troubledent.app"
     },
     "web": {
       "output": "static",

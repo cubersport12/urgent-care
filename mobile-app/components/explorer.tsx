@@ -436,12 +436,13 @@ export function Explorer() {
   }, [items, readArticlesMap, testsStatsMap]);
 
   const handleItemPress = (item: ExplorerItem) => {
-    // Заблокировано тарифом/наградой: вместо открытия — ведём к покупке/достижениям
+    // Заблокировано тарифом/наградой: вместо открытия — ведём к покупке/достижениям.
+    // Корневые маршруты (не /(tabs)/profile/...), чтобы «назад» вернул на этот же таб.
     if (item.data.isLocked) {
       router.push(
         item.data.lockedBy === 'reward'
-          ? '/(tabs)/profile/achievements'
-          : '/(tabs)/profile/subscription',
+          ? '/achievements'
+          : '/subscription',
       );
       return;
     }

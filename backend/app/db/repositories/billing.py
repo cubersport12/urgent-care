@@ -108,9 +108,13 @@ class BillingRepository:
     async def get_payment(self, payment_id: UUID) -> Payment | None:
         return await self.db.get(Payment, payment_id)
 
-    async def get_payment_by_yookassa_id(self, yookassa_id: str) -> Payment | None:
+    async def get_payment_by_external_id(
+        self, provider: str, external_id: str
+    ) -> Payment | None:
         result = await self.db.execute(
-            select(Payment).where(Payment.yookassa_payment_id == yookassa_id)
+            select(Payment).where(
+                Payment.provider == provider, Payment.external_id == external_id
+            )
         )
         return result.scalar_one_or_none()
 
@@ -189,6 +193,15 @@ class BillingRepository:
                 UserSubscription.current_period_end <= now,
                 UserSubscription.cancel_at_period_end.is_(False),
                 UserSubscription.yookassa_payment_method_id.is_not(None),
+            )
+        )
+        return result.scalars().all()
+
+    async def list_rustore_subscriptions(self) -> Sequence[UserSubscription]:
+        result = await self.db.execute(
+            select(UserSubscription).where(
+                UserSubscription.rustore_purchase_id.is_not(None),
+                UserSubscription.status.in_(("active", "past_due")),
             )
         )
         return result.scalars().all()

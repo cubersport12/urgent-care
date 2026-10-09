@@ -41,3 +41,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# release keystore (never commit)
+keystores/

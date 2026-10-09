@@ -13,3 +13,55 @@
   --color-night: #050505; /* Colors.dark.page */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
+
+/* Фоновая «аврора»: медленный дрейф размытых пятен (только transform — композитинг GPU).
+   Пятна сами по себе почти прозрачные, анимация лишь чуть меняет их положение. */
+.aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(72px);
+  will-change: transform;
+}
+
+.aurora-blob-a {
+  animation: aurora-drift-a 7s ease-in-out infinite alternate;
+}
+.aurora-blob-b {
+  animation: aurora-drift-b 11s ease-in-out infinite alternate;
+}
+.aurora-blob-c {
+  animation: aurora-drift-c 15s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift-a {
+  from {
+    transform: translate3d(-12%, -8%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(14%, 16%, 0) scale(1.28);
+  }
+}
+
+@keyframes aurora-drift-b {
+  from {
+    transform: translate3d(10%, 12%, 0) scale(1.14);
+  }
+  to {
+    transform: translate3d(-16%, -12%, 0) scale(0.86);
+  }
+}
+
+@keyframes aurora-drift-c {
+  from {
+    transform: translate3d(-8%, 14%, 0) scale(0.92);
+  }
+  to {
+    transform: translate3d(12%, -14%, 0) scale(1.22);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob {
+    animation: none;
+  }
+}

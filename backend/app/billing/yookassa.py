@@ -1,4 +1,4 @@
-"""Minimal YooKassa HTTP client."""
+"""YooKassa payment provider (redirect checkout + saved-card rebill)."""
 from __future__ import annotations
 
 from typing import Any
@@ -6,12 +6,15 @@ from uuid import uuid4
 
 import httpx
 
+from app.billing.base import PaymentProvider
 from app.core.config import settings
 
 BASE = "https://api.yookassa.ru/v3"
 
 
-class YooKassaClient:
+class YooKassaProvider(PaymentProvider):
+    name = "yookassa"
+
     def __init__(self) -> None:
         self.shop_id = settings.yookassa_shop_id
         self.secret_key = settings.yookassa_secret_key
@@ -123,3 +126,34 @@ class YooKassaClient:
                     response=response,
                 )
             return response.json()
+
+    async def start_checkout(
+        self,
+        *,
+        payment,
+        tariff,
+        amount_rub: float,
+        description: str,
+        return_url: str,
+        user_email: str,
+    ) -> dict[str, Any]:
+        return await self.create_payment(
+            amount_rub=amount_rub,
+            description=description,
+            return_url=return_url,
+            metadata={
+                "user_id": str(payment.user_id),
+                "tariff_id": str(tariff.id),
+                "payment_id": str(payment.id),
+            },
+            customer_email=user_email,
+            save_payment_method=True,
+            idempotency_key=str(payment.idempotency_key),
+        )
+
+    async def refund(self, payment, amount_rub: float) -> dict[str, Any] | None:
+        if not payment.external_id:
+            return None
+        return await self.create_refund(
+            payment_id=payment.external_id, amount_rub=amount_rub
+        )

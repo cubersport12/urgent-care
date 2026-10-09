@@ -59,19 +59,19 @@ async def main() -> None:
         assert paid, "нет платного тарифа в dev-базе"
         paid_id, default_id = paid.id, default.id
 
-        # ── A: покупка (payment.succeeded через _apply_yookassa_object) → WS purchase
+        # ── A: покупка (payment.succeeded через _apply_provider_object) → WS purchase
         sub = await _reset_to_free(s, user, default_id)
         payment = Payment(
             id=uuid4(), user_id=uid, subscription_id=sub.id, tariff_id=paid_id,
             amount_rub=float(paid.price_rub), status="pending",
-            yookassa_payment_id=f"e2e-{uuid4().hex}", idempotency_key=f"e2e-{uuid4().hex}", raw_json=None,
+            provider="yookassa", external_id=f"e2e-{uuid4().hex}", idempotency_key=f"e2e-{uuid4().hex}", raw_json=None,
         )
         s.add(payment)
         await s.commit()
         ws_a = FakeWS()
         await notification_hub.connect(uid, ws_a)
-        await BillingService(s)._apply_yookassa_object(
-            payment, {"status": "succeeded", "id": payment.yookassa_payment_id, "metadata": {}}
+        await BillingService(s)._apply_provider_object(
+            payment, {"status": "succeeded", "id": payment.external_id, "metadata": {}}
         )
         await s.commit()
         granted_a = [m for m in ws_a.sent if m["type"] == "subscription_granted"]
@@ -86,12 +86,12 @@ async def main() -> None:
         payment2 = Payment(
             id=uuid4(), user_id=uid, subscription_id=sub.id, tariff_id=paid_id,
             amount_rub=float(paid.price_rub), status="pending",
-            yookassa_payment_id=f"e2e-{uuid4().hex}", idempotency_key=f"e2e-{uuid4().hex}", raw_json=None,
+            provider="yookassa", external_id=f"e2e-{uuid4().hex}", idempotency_key=f"e2e-{uuid4().hex}", raw_json=None,
         )
         s.add(payment2)
         await s.commit()
         before_end = sub.current_period_end
-        await BillingService(s)._apply_yookassa_object(
+        await BillingService(s)._apply_provider_object(
             payment2, {"status": "succeeded", "id": payment2.yookassa_payment_id, "metadata": {"renewal": "1"}}
         )
         await s.commit()

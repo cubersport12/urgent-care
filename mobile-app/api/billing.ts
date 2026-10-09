@@ -2,6 +2,7 @@
 import {
   billingBillingMe,
   billingCancelSubscription,
+  billingConfirmPayment,
   billingListPayments,
   billingListTariffs,
   billingSubscribe,
@@ -14,6 +15,7 @@ import type {
   TariffOut,
 } from '@/api/generated/types.gen';
 import { apiCall } from '@/api/utils';
+import { buildChannel } from '@/lib/build-channel';
 
 export type BillingMe = BillingMeOut;
 export type BillingTariff = TariffOut;
@@ -42,6 +44,8 @@ export const billingApi = {
       billingSubscribe({
         body: {
           tariffId,
+          // Метка сборки: платёжную систему выбирает бекенд
+          channel: buildChannel,
           ...(options?.returnUrl ? { returnUrl: options.returnUrl } : {}),
         },
       }),
@@ -56,6 +60,15 @@ export const billingApi = {
   syncPayment: (paymentId: string): Promise<BillingPayment> =>
     apiCall(() =>
       billingSyncPayment({
+        path: { payment_id: paymentId },
+      }),
+    ),
+
+  /** Подтверждение покупки через RuStore Pay SDK. */
+  confirmRustore: (paymentId: string, purchaseId: string): Promise<BillingPayment> =>
+    apiCall(() =>
+      billingConfirmPayment({
+        body: { purchaseId },
         path: { payment_id: paymentId },
       }),
     ),

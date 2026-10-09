@@ -14,10 +14,11 @@ import {
   subscribeSupport,
 } from '@/lib/support-ws';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -81,8 +82,21 @@ export default function SupportChatScreen() {
   const glass = useGlass();
   const { isWide } = useNavRail();
   const insets = useSafeAreaInsets();
+  // На edge-to-edge Android adjustResize не ресайзит окно — клавиатуру поднимает
+  // KeyboardAvoidingView behavior="padding", поэтому трекаем её видимость сами.
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const subs = [
+      Keyboard.addListener(showEvt, () => setKeyboardVisible(true)),
+      Keyboard.addListener(hideEvt, () => setKeyboardVisible(false)),
+    ];
+    return () => subs.forEach((s) => s.remove());
+  }, []);
   // Tab bar is ~60–64 absolute; keep a tight gap above it (not contentPaddingBottom=96).
-  const composerPad = isWide ? Math.max(insets.bottom, 8) : 64;
+  // Пока клавиатура открыта, она закрывает и таб-бар — оставляем только минимальный зазор.
+  const composerPad = keyboardVisible ? 8 : isWide ? Math.max(insets.bottom, 8) : 64;
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -160,7 +174,7 @@ export default function SupportChatScreen() {
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
       >
         {loading ? (
@@ -194,6 +208,7 @@ export default function SupportChatScreen() {
               ref={listRef}
               data={messages}
               keyExtractor={(m) => m.id}
+              keyboardShouldPersistTaps="handled"
               contentContainerStyle={[styles.list, { paddingBottom: 16 }]}
               onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
               ListEmptyComponent={
