@@ -183,18 +183,6 @@ jobs:
             fs.writeFileSync('./app.json', JSON.stringify(app, null, 2) + '\n');
           "
 
-      - name: Decode release keystore
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        working-directory: mobile-app
-        run: |
-          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
-            mkdir -p android/app
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
-          else
-            echo "ANDROID_KEYSTORE_BASE64 not set — release APK will be debug-signed"
-          fi
-
       - name: Generate Android project (Expo prebuild)
         working-directory: mobile-app
         env:
@@ -206,6 +194,20 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: npx expo prebuild --platform android --non-interactive --no-install
+
+      # После prebuild, не до: prebuild считает существующую папку android/ «malformed»
+      # и в non-interactive режиме rm -rf её целиком — кейстор, записанный раньше, стирается.
+      - name: Decode release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        working-directory: mobile-app
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            mkdir -p android/app
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          else
+            echo "ANDROID_KEYSTORE_BASE64 not set — release APK will be debug-signed"
+          fi
 
       - name: Setup Java
         uses: actions/setup-java@v4
