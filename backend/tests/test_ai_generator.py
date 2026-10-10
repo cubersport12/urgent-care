@@ -1,5 +1,8 @@
 """Tests for AI generation service and schemas."""
 import pytest
+from pydantic import ValidationError
+
+from app.schemas.ai import GenerateRescueRequest
 from app.services.ai_generator import AIGeneratorService
 
 
@@ -21,3 +24,21 @@ async def test_ai_generate_rescue_schema():
     assert res.default_background is not None
     assert res.completion is not None
     assert res.completion.success is not None
+
+
+def test_generate_rescue_request_scene_count_bounds():
+    req = GenerateRescueRequest.model_validate({"prompt": "случай", "sceneCount": 15, "difficulty": "средняя"})
+    assert req.scene_count == 15
+    assert req.difficulty == "средняя"
+
+    req = GenerateRescueRequest.model_validate({"prompt": "случай"})
+    assert req.scene_count is None
+    assert req.difficulty is None
+
+    for bad in (0, 16, 99):
+        with pytest.raises(ValidationError):
+            GenerateRescueRequest.model_validate({"prompt": "случай", "sceneCount": bad})
+
+    # неизвестная сложность отбрасывается, а не валит запрос
+    req = GenerateRescueRequest.model_validate({"prompt": "случай", "difficulty": "хаос"})
+    assert req.difficulty is None

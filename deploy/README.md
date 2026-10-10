@@ -92,6 +92,20 @@ Webhook URL (nginx already proxies `/api/`):
 
 Empty shop/secret in non-prod activates subscriptions without payment (mock).
 
+## Billing (RuStore)
+
+RuStore Pay работает только в отдельной rustore-сборке APK (CI matrix); сервер
+по метке сборки сам выбирает провайдера. Для серверной валидации покупок и
+отмены автопродления задать:
+
+- `RUSTORE_PUBLIC_TOKEN` — JWE-токен Public API из RuStore Консоли (API-ключи)
+- `RUSTORE_APP_ID` — числовой id приложения из URL консоли (`apps/<id>/versions`)
+- `RUSTORE_PACKAGE_NAME=ru.troubledent.app`
+- `RUSTORE_SANDBOX=false` (true — только для тестовых покупок)
+
+Вебхуков у RuStore нет: продления подтягиваются ревалидацией (клиентский
+sync + ежедневный `renew_subscriptions.py`).
+
 Daily renewals (scheduled plan changes, charge retries, grace → free):
 
 ```bash

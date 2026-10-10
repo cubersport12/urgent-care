@@ -9,6 +9,7 @@ from app.api.deps import get_current_admin, get_current_user, get_db
 from app.models.user import User
 from app.schemas.billing import (
     BillingMeOut,
+    ConfirmRustoreRequest,
     PaymentOut,
     PromoActivateOut,
     PromoActivateRequest,
@@ -131,7 +132,9 @@ async def subscribe(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ) -> SubscribeOut:
-    return await BillingService(db).subscribe(user, payload.tariff_id, payload.return_url)
+    return await BillingService(db).subscribe(
+        user, payload.tariff_id, payload.return_url, channel=payload.channel
+    )
 
 
 @router.post("/subscription/cancel", response_model=BillingMeOut)
@@ -157,6 +160,17 @@ async def sync_payment(
     user: Annotated[User, Depends(get_current_user)],
 ) -> PaymentOut:
     return await BillingService(db).sync_payment(user, payment_id)
+
+
+@router.post("/payments/{payment_id}/confirm", response_model=PaymentOut)
+async def confirm_payment(
+    payment_id: UUID,
+    payload: ConfirmRustoreRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> PaymentOut:
+    """Подтверждение покупки через RuStore Pay SDK."""
+    return await BillingService(db).confirm_rustore(user, payment_id, payload.purchase_id)
 
 
 @router.post("/users/{user_id}/refund", response_model=RefundOut)

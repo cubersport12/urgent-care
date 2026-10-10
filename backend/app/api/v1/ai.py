@@ -28,4 +28,6 @@ async def generate_rescue(
     payload: GenerateRescueRequest,
     _: Annotated[User, Depends(get_current_admin)],
 ) -> GeneratedRescueResponse:
-    return await AIGeneratorService.generate_rescue(payload.prompt)
+    return await AIGeneratorService.generate_rescue(
+        payload.prompt, scene_count=payload.scene_count, difficulty=payload.difficulty
+    )

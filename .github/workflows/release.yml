@@ -106,7 +106,7 @@ jobs:
             --generate-notes
 
   build-android:
-    name: Build & publish APK
+    name: Build & publish APK (${{ matrix.target }})
     needs: [create-release]
     if: |
       always() &&
@@ -118,6 +118,16 @@ jobs:
       )
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: default
+            apk_name: TroubleDent.apk
+          # RuStore-сборка: APP_TARGET=rustore подключает RuStore Pay SDK,
+          # EXPO_PUBLIC_BUILD_CHANNEL=rustore метит бандл (бекенд выберет провайдера)
+          - target: rustore
+            apk_name: TroubleDent-RuStore.apk
 
     steps:
       - name: Checkout
@@ -173,8 +183,25 @@ jobs:
             fs.writeFileSync('./app.json', JSON.stringify(app, null, 2) + '\n');
           "
 
+      - name: Decode release keystore
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        working-directory: mobile-app
+        run: |
+          mkdir -p android/app
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+
       - name: Generate Android project (Expo prebuild)
         working-directory: mobile-app
+        env:
+          APP_TARGET: ${{ matrix.target == 'rustore' && 'rustore' || '' }}
+          EXPO_PUBLIC_BUILD_CHANNEL: ${{ matrix.target == 'rustore' && 'rustore' || '' }}
+          RUSTORE_CONSOLE_APP_ID: ${{ vars.RUSTORE_CONSOLE_APP_ID }}
+          ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: npx expo prebuild --platform android --non-interactive --no-install
 
       - name: Setup Java
@@ -204,13 +231,13 @@ jobs:
       - name: Prepare named APK
         run: |
           cp mobile-app/android/app/build/outputs/apk/release/app-release.apk \
-             mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
+             mobile-app/android/app/build/outputs/apk/release/${{ matrix.apk_name }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-release-apk
-          path: mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
+          name: android-release-apk-${{ matrix.target }}
+          path: mobile-app/android/app/build/outputs/apk/release/${{ matrix.apk_name }}
           retention-days: 30
           if-no-files-found: error
 
@@ -219,7 +246,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name || needs.create-release.outputs.tag_name }}
-          files: mobile-app/android/app/build/outputs/apk/release/TroubleDent.apk
+          files: mobile-app/android/app/build/outputs/apk/release/${{ matrix.apk_name }}
           overwrite_files: true
 
   deploy:

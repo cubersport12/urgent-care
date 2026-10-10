@@ -74,6 +74,10 @@ function RootStack() {
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          {/* Корневые маршруты поверх табов — «назад» возвращает на исходный таб */}
+          <Stack.Screen name="achievements" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="subscription" options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="notifications" options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="billing/return" options={{ presentation: 'transparentModal', headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>

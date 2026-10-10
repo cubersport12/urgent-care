@@ -6,7 +6,7 @@ import { MatIcon } from '@angular/material/icon';
 import { AppAIService } from '@/core/api';
 import { AppRescueItemDataVm, AppRescueItemVm, NullableValue } from '@/core/utils';
 import { take } from 'rxjs';
-import { AppButtonComponent, AppTextareaComponent } from '@/core/components/ui';
+import { AppButtonComponent, AppInputComponent, AppSelectComponent, AppTextareaComponent, AppSelectOption } from '@/core/components/ui';
 import { AppDialogWrapperComponent } from '../../dialog-wrapper/dialog-wrapper.component';
 
 export type RescueAiGenerateDialogData = {
@@ -19,6 +19,8 @@ export type RescueAiGenerateDialogResult = Partial<AppRescueItemVm>;
   selector: 'app-rescue-ai-generate-dialog',
   imports: [
     AppButtonComponent,
+    AppInputComponent,
+    AppSelectComponent,
     AppTextareaComponent,
     MatProgressSpinnerModule,
     MatIcon,
@@ -49,6 +51,15 @@ export class RescueAiGenerateDialogComponent {
     nonNullable: true,
     validators: [Validators.required, Validators.minLength(10)]
   });
+  protected readonly _sceneCount = new FormControl<number | null>(null, {
+    validators: [Validators.min(1), Validators.max(15)]
+  });
+  protected readonly _difficulty = new FormControl<string>('', { nonNullable: true });
+  protected readonly _difficultyOptions: AppSelectOption[] = [
+    { value: 'лёгкая', label: 'Лёгкая' },
+    { value: 'средняя', label: 'Средняя' },
+    { value: 'высокая', label: 'Высокая' }
+  ];
   protected readonly _generating = signal(false);
   protected readonly _error = signal<string | null>(null);
 
@@ -57,7 +68,7 @@ export class RescueAiGenerateDialogComponent {
   }
 
   protected _generate(): void {
-    if (this._prompt.invalid || this._generating()) {
+    if (this._prompt.invalid || this._sceneCount.invalid || this._generating()) {
       return;
     }
     this._error.set(null);
@@ -65,7 +76,10 @@ export class RescueAiGenerateDialogComponent {
     this._ref.disableClose = true;
 
     const promptText = this._prompt.value.trim();
-    this._ai.generateRescue(promptText).pipe(take(1)).subscribe({
+    const rawCount = Number(this._sceneCount.value);
+    const sceneCount = Number.isFinite(rawCount) && rawCount > 0 ? Math.round(rawCount) : null;
+    const difficulty = this._difficulty.value || null;
+    this._ai.generateRescue(promptText, sceneCount, difficulty).pipe(take(1)).subscribe({
       next: (data) => {
         this._generating.set(false);
         this._ref.disableClose = false;

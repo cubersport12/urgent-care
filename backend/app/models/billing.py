@@ -27,6 +27,8 @@ class Tariff(Base):
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # productId подписки в консоли RuStore (для покупок через RuStore Pay SDK)
+    rustore_product_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -55,6 +57,8 @@ class UserSubscription(Base):
     current_period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     current_period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     yookassa_payment_method_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Активная покупка RuStore-подписки (для ревалидации продлений и отмены)
+    rustore_purchase_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -69,6 +73,9 @@ class UserSubscription(Base):
 
 class Payment(Base):
     __tablename__ = "payments"
+    __table_args__ = (
+        UniqueConstraint("provider", "external_id", name="uq_payments_provider_external_id"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -84,7 +91,10 @@ class Payment(Base):
     )
     amount_rub: Mapped[float] = mapped_column(Float, nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
-    yookassa_payment_id: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    # Платёжная система: yookassa | rustore (см. app.billing)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False, default="yookassa")
+    # Внешний id у провайдера: YooKassa — id платежа, RuStore — purchaseId подписки
+    external_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     idempotency_key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     raw_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

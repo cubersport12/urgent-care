@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { AuroraBackground } from "./components/AuroraBackground";
 import { PhoneMockup } from "./components/PhoneMockup";
 import { StoreBadges } from "./components/StoreBadges";
 import { ThemeToggle } from "./components/ThemeToggle";
@@ -6,7 +7,8 @@ import { LINKS } from "./links";
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-page font-sans text-gray-900 antialiased dark:bg-night dark:text-gray-100">
+    <div className="relative isolate min-h-screen bg-page font-sans text-gray-900 antialiased dark:bg-night dark:text-gray-100">
+      <AuroraBackground />
       <Header />
       <main>
         <Hero />
@@ -16,6 +18,7 @@ export default function App() {
         <Steps />
         <Audience />
         <Certificate />
+        <Pricing />
         <Download />
       </main>
       <Footer />
@@ -59,6 +62,7 @@ const nav = [
   { href: "#rescue", label: "Режим спасения" },
   { href: "#audience", label: "Для кого" },
   { href: "#certificate", label: "Сертификат" },
+  { href: "#pricing", label: "Тарифы" },
 ];
 
 function Header() {
@@ -498,6 +502,120 @@ function Certificate() {
             className="w-full rounded-xl"
           />
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Тарифы ---------- */
+
+type Tariff = {
+  id: string;
+  title: string;
+  description: string | null;
+  priceRub: number;
+  periodDays: number;
+  isDefault: boolean;
+};
+
+function plural(n: number, one: string, few: string, many: string): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+  return many;
+}
+
+function formatPeriod(days: number): string {
+  if (days > 0 && days % 30 === 0) {
+    const months = days / 30;
+    return `${months} ${plural(months, "месяц", "месяца", "месяцев")}`;
+  }
+  return `${days} ${plural(days, "день", "дня", "дней")}`;
+}
+
+function Pricing() {
+  // Тарифы настраиваются в админке — берём живой список из публичного эндпоинта.
+  const [tariffs, setTariffs] = useState<Tariff[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/v1/billing/tariffs")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((data: Tariff[]) => {
+        if (!cancelled) setTariffs(Array.isArray(data) ? data.filter((t) => t.priceRub > 0) : []);
+      })
+      .catch(() => {
+        if (!cancelled) setTariffs([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <section id="pricing" className="scroll-mt-20">
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:py-24">
+        <SectionHead eyebrow="Тарифы" title="Одна подписка — весь контент">
+          Выберите удобный срок — тарифы отличаются только им. Часть материалов доступна
+          бесплатно, расширенные темы и «Режим спасения» — по подписке.
+        </SectionHead>
+
+        {tariffs === null ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
+            <div className="h-64 animate-pulse rounded-2xl bg-gray-200/70 dark:bg-white/[0.06]" />
+            <div className="h-64 animate-pulse rounded-2xl bg-gray-200/70 dark:bg-white/[0.06]" />
+            <div className="h-64 animate-pulse rounded-2xl bg-gray-200/70 dark:bg-white/[0.06]" />
+          </div>
+        ) : tariffs.length === 0 ? (
+          <div className="text-center">
+            <p className="text-gray-600 dark:text-gray-400">Актуальные тарифы смотрите в приложении.</p>
+            <a
+              href={LINKS.webApp}
+              className="mt-6 inline-block rounded-lg bg-brand px-6 py-2.5 text-sm font-medium text-white transition hover:bg-brand/90 dark:bg-brand-bright dark:hover:bg-brand-bright/90"
+            >
+              Открыть приложение
+            </a>
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {tariffs.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-brand/40 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-brand-bright/40"
+                >
+                  <h3 className="text-lg font-semibold">{t.title}</h3>
+                  {t.description && (
+                    <p className="mt-1.5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                      {t.description}
+                    </p>
+                  )}
+                  <p className="mt-5">
+                    <span className="text-4xl font-bold tracking-tight">
+                      {t.priceRub.toLocaleString("ru-RU")} ₽
+                    </span>
+                    <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+                      за {formatPeriod(t.periodDays)}
+                    </span>
+                  </p>
+                  <div className="mt-auto pt-6">
+                    <a
+                      href={LINKS.webApp}
+                      className="block rounded-xl bg-brand px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-brand/90 dark:bg-brand-bright dark:hover:bg-brand-bright/90"
+                    >
+                      Подписаться
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+          Оплата проходит на защищённой странице платёжного сервиса.
+        </p>
       </div>
     </section>
   );

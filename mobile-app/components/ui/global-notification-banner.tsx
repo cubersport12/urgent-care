@@ -49,7 +49,8 @@ export function GlobalNotificationBanner() {
             <Pressable
               onPress={() => {
                 dismissBanner();
-                router.push('/(tabs)/profile/notifications');
+                // Корневой маршрут (не /(tabs)/profile/...), чтобы «назад» вернул на текущий таб
+                router.push('/notifications');
               }}
               style={({ pressed }) => [
                 styles.card,

@@ -3,7 +3,7 @@
   subtitle="Создание сценария неотложной помощи с развилками и параметрами"
   saveText="Сгенерировать сценарий"
   saveIcon="bolt"
-  [saveDisabled]="_generating() || _prompt.invalid"
+  [saveDisabled]="_generating() || _prompt.invalid || _sceneCount.invalid"
   [loading]="_generating()"
   (save)="_generate()"
   (close)="_cancel()"
@@ -33,6 +33,26 @@
       [formControl]="_prompt"
       placeholder="Например: ожог кипятком на кухне, параметры — боль и время до приезда скорой, развилки действий..."
     />
+
+    <div class="grid grid-cols-2 gap-4">
+      <app-input
+        label="Количество сцен"
+        type="number"
+        [min]="1"
+        [max]="15"
+        badge="1–15"
+        hint="Пусто — ИИ решит сам"
+        [error]="_sceneCount.invalid ? 'Допустимо от 1 до 15' : null"
+        [formControl]="_sceneCount"
+      />
+      <app-select
+        label="Сложность сценария"
+        [options]="_difficultyOptions"
+        allowEmpty
+        emptyLabel="Не указана"
+        [formControl]="_difficulty"
+      />
+    </div>
 
     @if (_error(); as err) {
       <div class="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 text-xs border border-red-500/20">

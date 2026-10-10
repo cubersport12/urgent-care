@@ -1,7 +1,7 @@
 """AI Generation schemas."""
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -69,8 +69,21 @@ class GeneratedTestResponse(CamelModel):
     questions: list[GeneratedQuestion]
 
 
+_DIFFICULTY_LEVELS = ("лёгкая", "легкая", "средняя", "высокая")
+
+
 class GenerateRescueRequest(CamelModel):
     prompt: str
+    # Annotated целиком: pydantic v2 молча игнорирует Field(alias=...) на union-типе
+    scene_count: Annotated[int | None, Field(None, alias="sceneCount", ge=1, le=15)] = None
+    difficulty: Annotated[str | None, Field(None, alias="difficulty")] = None
+
+    @field_validator("difficulty", mode="before")
+    @classmethod
+    def validate_difficulty(cls, v: Any) -> str | None:
+        if isinstance(v, str) and v.strip().lower() in _DIFFICULTY_LEVELS:
+            return v.strip().lower()
+        return None
 
 
 class RescueParameterSeverity(CamelModel):
