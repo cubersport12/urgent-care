@@ -48,7 +48,7 @@
       <app-select
         label="Сложность сценария"
         [options]="_difficultyOptions"
-        allowEmpty
+        [allowEmpty]="true"
         emptyLabel="Не указана"
         [formControl]="_difficulty"
       />
