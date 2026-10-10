@@ -1645,6 +1645,77 @@
         }
       }
     },
+    "/api/v1/billing/payments/{payment_id}/confirm": {
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Confirm Payment",
+        "description": "Подтверждение покупки через RuStore Pay SDK.",
+        "operationId": "billing_confirm_payment",
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Payment Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmRustoreRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/billing/users/{user_id}/refund": {
       "post": {
         "tags": [
@@ -8661,6 +8732,21 @@
         ],
         "title": "CityOut"
       },
+      "ConfirmRustoreRequest": {
+        "properties": {
+          "purchaseId": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Purchaseid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "purchaseId"
+        ],
+        "title": "ConfirmRustoreRequest"
+      },
       "DeleteAccount": {
         "properties": {
           "password": {
@@ -9467,6 +9553,11 @@
             "type": "string",
             "title": "Status"
           },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "default": "yookassa"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -9477,7 +9568,7 @@
             "format": "date-time",
             "title": "Updatedat"
           },
-          "yookassaPaymentId": {
+          "externalId": {
             "anyOf": [
               {
                 "type": "string"
@@ -9486,7 +9577,7 @@
                 "type": "null"
               }
             ],
-            "title": "Yookassapaymentid"
+            "title": "Externalid"
           }
         },
         "type": "object",
@@ -11503,6 +11594,17 @@
       },
       "SubscribeOut": {
         "properties": {
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
           "confirmationUrl": {
             "anyOf": [
               {
@@ -11513,6 +11615,17 @@
               }
             ],
             "title": "Confirmationurl"
+          },
+          "rustoreProductId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rustoreproductid"
           },
           "paymentId": {
             "anyOf": [
@@ -11593,6 +11706,18 @@
               }
             ],
             "title": "Returnurl"
+          },
+          "channel": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel"
           }
         },
         "type": "object",
@@ -11890,6 +12015,18 @@
             "type": "integer",
             "title": "Sortorder",
             "default": 0
+          },
+          "rustoreProductId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rustoreproductid"
           }
         },
         "type": "object",
@@ -11948,6 +12085,17 @@
           "sortOrder": {
             "type": "integer",
             "title": "Sortorder"
+          },
+          "rustoreProductId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rustoreproductid"
           }
         },
         "type": "object",
@@ -12064,6 +12212,18 @@
               }
             ],
             "title": "Sortorder"
+          },
+          "rustoreProductId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rustoreproductid"
           }
         },
         "type": "object",

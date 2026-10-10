@@ -72,6 +72,10 @@ export class TariffsEditorService {
           <app-input label="Ранг тарифа" type="number" formControlName="rank" class="grow" [required]="true" />
           <app-input label="Порядок сортировки" type="number" formControlName="sortOrder" class="grow" />
         </div>
+        <app-input
+          label="RuStore: код продукта-подписки (productId из консоли RuStore)"
+          formControlName="rustoreProductId"
+        />
         <app-checkbox formControlName="isActive" label="Активен на витрине" />
         <app-checkbox formControlName="isDefault" label="Тариф по умолчанию (бесплатный)" />
       </form>
@@ -91,6 +95,7 @@ export class TariffEditDialogComponent {
     periodDays: new FormControl(30, { nonNullable: true, validators: [Validators.required, Validators.min(1)] }),
     rank: new FormControl(0, { nonNullable: true, validators: [Validators.required] }),
     sortOrder: new FormControl(0, { nonNullable: true }),
+    rustoreProductId: new FormControl<string | null>(null),
     isActive: new FormControl(true, { nonNullable: true }),
     isDefault: new FormControl(false, { nonNullable: true })
   });
@@ -105,6 +110,7 @@ export class TariffEditDialogComponent {
         periodDays: this._data.periodDays,
         rank: this._data.rank,
         sortOrder: this._data.sortOrder,
+        rustoreProductId: this._data.rustoreProductId ?? null,
         isActive: this._data.isActive,
         isDefault: this._data.isDefault
       });
@@ -122,6 +128,7 @@ export class TariffEditDialogComponent {
       periodDays: Number(v.periodDays),
       rank: Number(v.rank),
       sortOrder: Number(v.sortOrder),
+      rustoreProductId: v.rustoreProductId?.trim() || null,
       isActive: v.isActive,
       isDefault: v.isDefault
     });

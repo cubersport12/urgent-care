@@ -543,7 +543,7 @@ function Pricing() {
     fetch("/api/v1/billing/tariffs")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((data: Tariff[]) => {
-        if (!cancelled) setTariffs(Array.isArray(data) ? data.filter((t) => t.priceRub > 0) : []);
+        if (!cancelled) setTariffs(Array.isArray(data) ? data : []);
       })
       .catch(() => {
         if (!cancelled) setTariffs([]);

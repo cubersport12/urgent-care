@@ -884,6 +884,16 @@ export type CityOut = {
 };
 
 /**
+ * ConfirmRustoreRequest
+ */
+export type ConfirmRustoreRequest = {
+    /**
+     * Purchaseid
+     */
+    purchaseId: string;
+};
+
+/**
  * DeleteAccount
  */
 export type DeleteAccount = {
@@ -1363,6 +1373,10 @@ export type PaymentOut = {
      */
     status: string;
     /**
+     * Provider
+     */
+    provider?: string;
+    /**
      * Createdat
      */
     createdAt: string;
@@ -1371,9 +1385,9 @@ export type PaymentOut = {
      */
     updatedAt: string;
     /**
-     * Yookassapaymentid
+     * Externalid
      */
-    yookassaPaymentId?: string | null;
+    externalId?: string | null;
 };
 
 /**
@@ -2409,9 +2423,17 @@ export type SessionOut = {
  */
 export type SubscribeOut = {
     /**
+     * Provider
+     */
+    provider?: string | null;
+    /**
      * Confirmationurl
      */
     confirmationUrl?: string | null;
+    /**
+     * Rustoreproductid
+     */
+    rustoreProductId?: string | null;
     /**
      * Paymentid
      */
@@ -2450,6 +2472,10 @@ export type SubscribeRequest = {
      * Returnurl
      */
     returnUrl?: string | null;
+    /**
+     * Channel
+     */
+    channel?: string | null;
 };
 
 /**
@@ -2626,6 +2652,10 @@ export type TariffCreate = {
      * Sortorder
      */
     sortOrder?: number;
+    /**
+     * Rustoreproductid
+     */
+    rustoreProductId?: string | null;
 };
 
 /**
@@ -2672,6 +2702,10 @@ export type TariffOut = {
      * Sortorder
      */
     sortOrder: number;
+    /**
+     * Rustoreproductid
+     */
+    rustoreProductId?: string | null;
 };
 
 /**
@@ -2714,6 +2748,10 @@ export type TariffUpdate = {
      * Sortorder
      */
     sortOrder?: number | null;
+    /**
+     * Rustoreproductid
+     */
+    rustoreProductId?: string | null;
 };
 
 /**
@@ -4508,6 +4546,42 @@ export type BillingSyncPaymentResponses = {
 };
 
 export type BillingSyncPaymentResponse = BillingSyncPaymentResponses[keyof BillingSyncPaymentResponses];
+
+export type BillingConfirmPaymentData = {
+    body: ConfirmRustoreRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Payment Id
+         */
+        payment_id: string;
+    };
+    query?: never;
+    url: '/api/v1/billing/payments/{payment_id}/confirm';
+};
+
+export type BillingConfirmPaymentErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingConfirmPaymentError = BillingConfirmPaymentErrors[keyof BillingConfirmPaymentErrors];
+
+export type BillingConfirmPaymentResponses = {
+    /**
+     * Successful Response
+     */
+    200: PaymentOut;
+};
+
+export type BillingConfirmPaymentResponse = BillingConfirmPaymentResponses[keyof BillingConfirmPaymentResponses];
 
 export type BillingRefundUserSubscriptionData = {
     body: RefundRequest;
