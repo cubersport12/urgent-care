@@ -1674,6 +1674,22 @@ export const CityOutSchema = {
     title: 'CityOut'
 } as const;
 
+export const ConfirmRustoreRequestSchema = {
+    properties: {
+        purchaseId: {
+            type: 'string',
+            maxLength: 128,
+            minLength: 1,
+            title: 'Purchaseid'
+        }
+    },
+    type: 'object',
+    required: [
+        'purchaseId'
+    ],
+    title: 'ConfirmRustoreRequest'
+} as const;
+
 export const DeleteAccountSchema = {
     properties: {
         password: {
@@ -2506,6 +2522,11 @@ export const PaymentOutSchema = {
             type: 'string',
             title: 'Status'
         },
+        provider: {
+            type: 'string',
+            title: 'Provider',
+            default: 'yookassa'
+        },
         createdAt: {
             type: 'string',
             format: 'date-time',
@@ -2516,7 +2537,7 @@ export const PaymentOutSchema = {
             format: 'date-time',
             title: 'Updatedat'
         },
-        yookassaPaymentId: {
+        externalId: {
             anyOf: [
                 {
                     type: 'string'
@@ -2525,7 +2546,7 @@ export const PaymentOutSchema = {
                     type: 'null'
                 }
             ],
-            title: 'Yookassapaymentid'
+            title: 'Externalid'
         }
     },
     type: 'object',
@@ -4584,6 +4605,17 @@ export const SessionOutSchema = {
 
 export const SubscribeOutSchema = {
     properties: {
+        provider: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Provider'
+        },
         confirmationUrl: {
             anyOf: [
                 {
@@ -4594,6 +4626,17 @@ export const SubscribeOutSchema = {
                 }
             ],
             title: 'Confirmationurl'
+        },
+        rustoreProductId: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rustoreproductid'
         },
         paymentId: {
             anyOf: [
@@ -4675,6 +4718,18 @@ export const SubscribeRequestSchema = {
                 }
             ],
             title: 'Returnurl'
+        },
+        channel: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 32
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Channel'
         }
     },
     type: 'object',
@@ -4980,6 +5035,18 @@ export const TariffCreateSchema = {
             type: 'integer',
             title: 'Sortorder',
             default: 0
+        },
+        rustoreProductId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 128
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rustoreproductid'
         }
     },
     type: 'object',
@@ -5039,6 +5106,17 @@ export const TariffOutSchema = {
         sortOrder: {
             type: 'integer',
             title: 'Sortorder'
+        },
+        rustoreProductId: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rustoreproductid'
         }
     },
     type: 'object',
@@ -5156,6 +5234,18 @@ export const TariffUpdateSchema = {
                 }
             ],
             title: 'Sortorder'
+        },
+        rustoreProductId: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 128
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rustoreproductid'
         }
     },
     type: 'object',
