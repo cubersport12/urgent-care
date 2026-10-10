@@ -1,21 +1,18 @@
 /**
  * Expo config plugin: release-подпись Android через env (CI).
  *
- * Если заданы ANDROID_KEYSTORE_FILE (путь относительно android/app/),
- * ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS и ANDROID_KEY_PASSWORD —
- * release-сборка подписывается release-keystore; иначе остаётся debug
- * (локальная разработка не меняется).
+ * Если заданы ANDROID_KEYSTORE_FILE (путь относительно android/app/) и
+ * ANDROID_KEYSTORE_PASSWORD — release-сборка подписывается release-keystore;
+ * иначе остаётся debug (локальная разработка не меняется).
+ *
+ * Кейстор — PKCS12: в нём отдельного key-пароля нет, ключ зашифрован
+ * store-паролем (keytool игнорирует -keypass), поэтому keyPassword = storePassword.
  */
 const { withAppBuildGradle, createRunOncePlugin } = require('expo/config-plugins');
 
 const withAndroidSigning = (config) => {
   return withAppBuildGradle(config, (config) => {
-    const {
-      ANDROID_KEYSTORE_FILE,
-      ANDROID_KEYSTORE_PASSWORD,
-      ANDROID_KEY_ALIAS,
-      ANDROID_KEY_PASSWORD,
-    } = process.env;
+    const { ANDROID_KEYSTORE_FILE, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS } = process.env;
     if (!ANDROID_KEYSTORE_FILE) {
       return config; // локальная сборка — debug-подпись как раньше
     }
@@ -31,7 +28,7 @@ const withAndroidSigning = (config) => {
             storeFile file('${ANDROID_KEYSTORE_FILE}')
             storePassword '${ANDROID_KEYSTORE_PASSWORD}'
             keyAlias '${ANDROID_KEY_ALIAS}'
-            keyPassword '${ANDROID_KEY_PASSWORD}'
+            keyPassword '${ANDROID_KEYSTORE_PASSWORD}'
         }`,
       )
       .replace(
