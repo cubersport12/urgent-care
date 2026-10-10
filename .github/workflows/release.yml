@@ -184,13 +184,16 @@ jobs:
           "
 
       - name: Decode release keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         working-directory: mobile-app
         run: |
-          mkdir -p android/app
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            mkdir -p android/app
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          else
+            echo "ANDROID_KEYSTORE_BASE64 not set — release APK will be debug-signed"
+          fi
 
       - name: Generate Android project (Expo prebuild)
         working-directory: mobile-app
