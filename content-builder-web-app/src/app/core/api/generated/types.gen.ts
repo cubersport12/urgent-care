@@ -1035,6 +1035,14 @@ export type GenerateRescueRequest = {
      * Prompt
      */
     prompt: string;
+    /**
+     * Scenecount
+     */
+    sceneCount?: number | null;
+    /**
+     * Difficulty
+     */
+    difficulty?: string | null;
 };
 
 /**

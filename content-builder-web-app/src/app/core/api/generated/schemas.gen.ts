@@ -1975,6 +1975,30 @@ export const GenerateRescueRequestSchema = {
         prompt: {
             type: 'string',
             title: 'Prompt'
+        },
+        sceneCount: {
+            anyOf: [
+                {
+                    type: 'integer',
+                    maximum: 15,
+                    minimum: 1
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Scenecount'
+        },
+        difficulty: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Difficulty'
         }
     },
     type: 'object',

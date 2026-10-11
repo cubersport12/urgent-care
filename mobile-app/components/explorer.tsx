@@ -28,6 +28,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
+import { LockedTariffSheet, type LockedTariffItem } from './billing/locked-tariff-sheet';
 import { BackButton } from './explorer/back-button';
 import { ExplorerItemComponent, rescueDisplayName } from './explorer/explorer-item';
 import { StudyFolderCard } from './explorer/study-folder-card';
@@ -65,6 +66,8 @@ export function Explorer() {
   >([]);
   const [isNavigating, setIsNavigating] = useState(false);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
+  // Заблокированный тарифом материал — открытый диалог «какая подписка нужна»
+  const [lockedTariffItem, setLockedTariffItem] = useState<LockedTariffItem | null>(null);
   // История навигации по статьям для определения hasPrevious
   const [articleNavigationHistory, setArticleNavigationHistory] = useState<string[]>([]);
   // Состояния для toggle-кнопок фильтрации
@@ -436,14 +439,17 @@ export function Explorer() {
   }, [items, readArticlesMap, testsStatsMap]);
 
   const handleItemPress = (item: ExplorerItem) => {
-    // Заблокировано тарифом/наградой: вместо открытия — ведём к покупке/достижениям.
-    // Корневые маршруты (не /(tabs)/profile/...), чтобы «назад» вернул на этот же таб.
+    // Заблокировано тарифом/наградой: вместо открытия — диалог с нужным тарифом
+    // (или достижения). Награда — корневой маршрут, чтобы «назад» вернул на этот же таб.
     if (item.data.isLocked) {
-      router.push(
-        item.data.lockedBy === 'reward'
-          ? '/achievements'
-          : '/subscription',
-      );
+      if (item.data.lockedBy === 'reward') {
+        router.push('/achievements');
+      } else if (item.data.requiredTariffId) {
+        setLockedTariffItem({ name: item.data.name, requiredTariffId: item.data.requiredTariffId });
+      } else {
+        // ponytail: не бывает — тариф-замок всегда несёт requiredTariffId; страховка ведёт на полный список
+        router.push('/subscription');
+      }
       return;
     }
 
@@ -1023,6 +1029,18 @@ export function Explorer() {
           })()}
         </ScrollView>
       </Animated.View>
+      <LockedTariffSheet
+        item={lockedTariffItem}
+        onClose={() => setLockedTariffItem(null)}
+        onUnlocked={() => {
+          // Перезагружаем списки — замки на карточках исчезают без перезахода
+          void foldersResponse.fetchData();
+          void articlesResponse.fetchData();
+          void testsResponse.fetchData();
+          void rescueItemsResponse.fetchData();
+          void folderMaterialCountsResponse.fetchData();
+        }}
+      />
     </ScreenBackground>
   );
 }

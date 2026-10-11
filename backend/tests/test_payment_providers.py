@@ -302,3 +302,114 @@ async def test_cancel_propagates_rustore_error():
         await service.cancel(user)
     assert exc.value.status_code == 502
     assert sub.cancel_at_period_end is False
+
+
+# --- RuStore Public API auth (keyId + RSA-подпись → JWE-токен) ---
+
+def _rustore_provider():
+    from app.billing import rustore as r
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    provider = r.RuStoreProvider.__new__(r.RuStoreProvider)
+    provider.api_key_id = "kid-1"
+    provider.api_private_key_b64 = ""
+    provider._private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    provider.app_id = "1"
+    provider.package_name = "ru.test.app"
+    provider.sandbox = False
+    return provider
+
+
+def test_rustore_signature_verifies():
+    """Подпись = RSA-SHA512(keyId + timestamp), проверяется публичным ключом."""
+    import base64
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import padding
+
+    provider = _rustore_provider()
+    ts = "2026-10-11T10:00:00.000Z"
+    sig = base64.b64decode(provider._sign(ts))
+    # verify() бросит исключение при несовпадении
+    provider._private_key.public_key().verify(
+        sig, ("kid-1" + ts).encode(), padding.PKCS1v15(), hashes.SHA512()
+    )
+
+
+@pytest.mark.asyncio
+async def test_rustore_token_cached_and_sent(monkeypatch):
+    """JWE-токен получается один раз, кешируется и уходит в Public-Token."""
+    import httpx
+    from unittest.mock import MagicMock
+    import app.billing.rustore as r
+
+    r._token_cache.clear()
+    provider = _rustore_provider()
+    calls = {"auth": 0, "req": 0}
+
+    auth_resp = MagicMock()
+    auth_resp.is_error = False
+    auth_resp.json.return_value = {"code": "OK", "body": {"jwe": "TOK-1"}}
+
+    def make_get_resp():
+        resp = MagicMock()
+        resp.is_error = False
+        resp.json.return_value = {"code": "OK", "body": {"paymentState": 1}}
+        return resp
+
+    async def fake_post(self, url, **kwargs):
+        calls["auth"] += 1
+        assert url.endswith("/public/auth/")
+        return auth_resp
+
+    async def fake_request(self, method, url, **kwargs):
+        calls["req"] += 1
+        assert kwargs["headers"]["Public-Token"] == "TOK-1"
+        return make_get_resp()
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", fake_post)
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    body = await provider.get_subscription("prod-1", "pur-1")
+    assert body == {"paymentState": 1}
+    await provider.get_subscription("prod-1", "pur-1")
+    assert calls == {"auth": 1, "req": 2}
+    r._token_cache.clear()
+
+
+@pytest.mark.asyncio
+async def test_rustore_expired_token_reauths_once(monkeypatch):
+    """Ответ 'Jwe token is expired' → токен сбрасывается и запрос повторяется."""
+    import httpx
+    from unittest.mock import MagicMock
+    import app.billing.rustore as r
+
+    r._token_cache.clear()
+    provider = _rustore_provider()
+    calls = {"auth": 0, "req": 0}
+
+    auth_resp = MagicMock()
+    auth_resp.is_error = False
+    auth_resp.json.return_value = {"code": "OK", "body": {"jwe": "TOK-1"}}
+
+    ok_resp = MagicMock()
+    ok_resp.is_error = False
+    ok_resp.json.return_value = {"code": "OK", "body": {"paymentState": 1}}
+    expired_resp = MagicMock()
+    expired_resp.is_error = False
+    expired_resp.json.return_value = {"code": "ERROR", "message": "Jwe token is expired"}
+
+    async def fake_post(self, url, **kwargs):
+        calls["auth"] += 1
+        return auth_resp
+
+    async def fake_request(self, method, url, **kwargs):
+        calls["req"] += 1
+        return expired_resp if calls["req"] == 1 else ok_resp
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", fake_post)
+    monkeypatch.setattr(httpx.AsyncClient, "request", fake_request)
+
+    body = await provider.get_subscription("prod-1", "pur-1")
+    assert body == {"paymentState": 1}
+    assert calls == {"auth": 2, "req": 2}
+    r._token_cache.clear()

@@ -9026,6 +9026,30 @@
           "prompt": {
             "type": "string",
             "title": "Prompt"
+          },
+          "sceneCount": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 15.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenecount"
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Difficulty"
           }
         },
         "type": "object",
