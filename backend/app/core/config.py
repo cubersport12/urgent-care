@@ -74,8 +74,11 @@ class Settings(BaseSettings):
     yookassa_return_url: str = "https://trouble-dent.ru/mobile-app/"
     billing_enforcement: bool = True
 
-    # RuStore Public API (валидация покупок Pay SDK, отмена автопродления)
-    rustore_public_token: str = ""
+    # RuStore Public API (валидация покупок Pay SDK, отмена автопродления).
+    # API-ключ из консоли RuStore: keyId + приватный RSA-ключ (Base64 PKCS8);
+    # JWE-токен для запросов бекенд получает сам (живёт 900 c).
+    rustore_api_key_id: str = ""
+    rustore_api_private_key: str = ""
     rustore_app_id: str = ""
     rustore_package_name: str = "ru.troubledent.app"
     rustore_sandbox: bool = False
@@ -99,7 +102,11 @@ class Settings(BaseSettings):
 
     @property
     def rustore_configured(self) -> bool:
-        return bool(self.rustore_public_token and self.rustore_package_name)
+        return bool(
+            self.rustore_api_key_id
+            and self.rustore_api_private_key
+            and self.rustore_package_name
+        )
 
     @field_validator("cors_origins", mode="before")
     @classmethod

@@ -98,7 +98,9 @@ RuStore Pay работает только в отдельной rustore-сбор
 по метке сборки сам выбирает провайдера. Для серверной валидации покупок и
 отмены автопродления задать:
 
-- `RUSTORE_PUBLIC_TOKEN` — JWE-токен Public API из RuStore Консоли (API-ключи)
+- `RUSTORE_API_KEY_ID` / `RUSTORE_API_PRIVATE_KEY` — API-ключ из консоли RuStore
+  (Компания → API RuStore → Создать ключ; приватный ключ в Base64 PKCS8, показывается
+  один раз). JWE-токен для запросов бекенд получает сам — он живёт 900 секунд.
 - `RUSTORE_APP_ID` — числовой id приложения из URL консоли (`apps/<id>/versions`)
 - `RUSTORE_PACKAGE_NAME=ru.troubledent.app`
 - `RUSTORE_SANDBOX=false` (true — только для тестовых покупок)
