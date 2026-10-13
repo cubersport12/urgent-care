@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import time
 from datetime import datetime, timezone
 from typing import Any
@@ -60,8 +61,25 @@ class RuStoreProvider(PaymentProvider):
 
     def _load_private_key(self) -> rsa.RSAPrivateKey:
         if self._private_key is None:
-            der = base64.b64decode(self.api_private_key_b64)
-            self._private_key = serialization.load_der_private_key(der, password=None)
+            raw = self.api_private_key_b64.strip()
+            candidates: list[bytes] = []
+            try:
+                candidates.append(base64.b64decode(raw, validate=True))
+            except (ValueError, binascii.Error):
+                pass  # это не base64 — ниже попробуем как PEM
+            if "-----BEGIN" in raw:
+                candidates.append(raw.encode("ascii"))
+            for data in candidates:
+                for loader in (
+                    serialization.load_der_private_key,
+                    serialization.load_pem_private_key,
+                ):
+                    try:
+                        self._private_key = loader(data, password=None)
+                        return self._private_key
+                    except ValueError:
+                        continue
+            raise ValueError("RUSTORE_API_PRIVATE_KEY: не удалось разобрать ключ")
         return self._private_key
 
     def _sign(self, timestamp: str) -> str:
