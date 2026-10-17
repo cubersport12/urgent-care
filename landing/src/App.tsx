@@ -591,7 +591,7 @@ function Pricing() {
                       {t.description}
                     </p>
                   )}
-                  <p className="mt-5">
+                  <p className="mt-auto pt-5">
                     <span className="text-4xl font-bold tracking-tight">
                       {t.priceRub.toLocaleString("ru-RU")} ₽
                     </span>
@@ -599,7 +599,7 @@ function Pricing() {
                       за {formatPeriod(t.periodDays)}
                     </span>
                   </p>
-                  <div className="mt-auto pt-6">
+                  <div className="pt-6">
                     <a
                       href={LINKS.webApp}
                       className="block rounded-xl bg-brand px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-brand/90 dark:bg-brand-bright dark:hover:bg-brand-bright/90"

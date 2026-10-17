@@ -83,7 +83,8 @@ export default function SubscriptionScreen() {
       billingApi.me(),
       billingApi.listPayments(),
     ]);
-    setTariffs([...list].sort((a, b) => a.sortOrder - b.sortOrder || a.rank - b.rank));
+    // Порядок тарифов задаёт бекенд (сортировка по рангу)
+    setTariffs(list);
     setMe(billingMe);
     setPayments(paymentList);
   }, []);
