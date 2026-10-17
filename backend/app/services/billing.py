@@ -77,6 +77,9 @@ class BillingService:
 
     async def list_tariffs_public(self) -> list[TariffOut]:
         items = await self.repo.list_tariffs(active_only=True)
+        # Публичные страницы (мобилка, лендинг) показывают по рангу; sort_order —
+        # порядок в конструкторе, админский список не трогаем
+        items = sorted(items, key=lambda t: (t.rank, t.title))
         return [TariffOut.model_validate(t) for t in items]
 
     async def list_tariffs_admin(self) -> list[TariffOut]:
