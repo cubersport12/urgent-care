@@ -187,7 +187,6 @@ jobs:
         working-directory: mobile-app
         env:
           APP_TARGET: ${{ matrix.target == 'rustore' && 'rustore' || '' }}
-          EXPO_PUBLIC_BUILD_CHANNEL: ${{ matrix.target == 'rustore' && 'rustore' || '' }}
           RUSTORE_CONSOLE_APP_ID: ${{ vars.RUSTORE_CONSOLE_APP_ID }}
           ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -230,6 +229,11 @@ jobs:
 
       - name: Build Release APK
         working-directory: mobile-app
+        # EXPO_PUBLIC_* инлайнятся в JS-бандл именно на этом шаге (gradle-таск
+        # createBundleReleaseJsAndAssets), prebuild их не сохраняет: без переменной
+        # бандл уйдёт с channel=web и бекенд выберет YooKassa вместо RuStore Pay
+        env:
+          EXPO_PUBLIC_BUILD_CHANNEL: ${{ matrix.target == 'rustore' && 'rustore' || '' }}
         run: cd android && ./gradlew assembleRelease
 
       - name: Prepare named APK
