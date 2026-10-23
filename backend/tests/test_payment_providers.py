@@ -155,8 +155,10 @@ async def test_confirm_rustore_happy_path():
     assert payment.external_id == purchase_id
     assert payment.amount_rub == 990.0
     assert sub.rustore_purchase_id == purchase_id
-    # Период выровнен по RuStore (expiry дальше локального периода)
-    assert abs((sub.current_period_end - expiry).total_seconds()) < 0.01
+    # Период выровнен по RuStore (expiry дальше локального периода).
+    # Допуск в секунды: expiry и период считаются из двух разных now(),
+    # под нагрузкой прогона между ними проходит десятки мс.
+    assert abs((sub.current_period_end - expiry).total_seconds()) < 1
     assert sub.status == "active"
 
 

@@ -80,8 +80,12 @@ async def upload_media(
     data = await file.read()
     content_type = file.content_type or mimetypes.guess_type(key)[0] or "application/octet-stream"
     s3 = get_s3_client()
-    await s3.ensure_bucket()
-    await s3.upload_bytes(data=data, key=key, content_type=content_type)
+    try:
+        await s3.ensure_bucket()
+        await s3.upload_bytes(data=data, key=key, content_type=content_type)
+    except Exception as exc:
+        # Недоступность/креды MinIO — конфигурация окружения; клиенту нужна понятная ошибка, а не сырой 500
+        raise HTTPException(status_code=503, detail="Хранилище файлов недоступно") from exc
     relative = key.removeprefix("public/")
     return MediaUploadOut(path=f"public/{relative}", file_name=relative)
 

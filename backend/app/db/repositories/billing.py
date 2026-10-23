@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Sequence
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.billing import (
@@ -13,6 +13,8 @@ from app.models.billing import (
     PaymentMethod,
     SubscriptionChange,
     Tariff,
+    TariffFeature,
+    TariffFeatureLink,
     UserSubscription,
 )
 from app.models.promo import PromoActivation, PromoCode
@@ -61,6 +63,57 @@ class BillingRepository:
 
     async def delete_tariff(self, tariff: Tariff) -> None:
         await self.db.delete(tariff)
+        await self.db.commit()
+
+    # --- Особенности тарифов ---
+
+    async def list_features(self) -> Sequence[TariffFeature]:
+        result = await self.db.execute(
+            select(TariffFeature).order_by(TariffFeature.sort_order, TariffFeature.code)
+        )
+        return result.scalars().all()
+
+    async def get_feature(self, feature_id: UUID) -> TariffFeature | None:
+        return await self.db.get(TariffFeature, feature_id)
+
+    async def get_feature_by_code(self, code: str) -> TariffFeature | None:
+        result = await self.db.execute(
+            select(TariffFeature).where(TariffFeature.code == code)
+        )
+        return result.scalar_one_or_none()
+
+    async def create_feature(self, **fields) -> TariffFeature:
+        feature = TariffFeature(id=uuid4(), **fields)
+        self.db.add(feature)
+        await self.db.commit()
+        await self.db.refresh(feature)
+        return feature
+
+    async def update_feature(self, feature: TariffFeature, **fields) -> TariffFeature:
+        for key, value in fields.items():
+            setattr(feature, key, value)
+        await self.db.commit()
+        await self.db.refresh(feature)
+        return feature
+
+    async def delete_feature(self, feature: TariffFeature) -> None:
+        await self.db.delete(feature)
+        await self.db.commit()
+
+    async def list_feature_links(self) -> Sequence[TariffFeatureLink]:
+        result = await self.db.execute(select(TariffFeatureLink))
+        return result.scalars().all()
+
+    async def replace_tariff_features(self, tariff_id: UUID, feature_ids: list[UUID]) -> None:
+        await self.db.execute(
+            delete(TariffFeatureLink).where(TariffFeatureLink.tariff_id == tariff_id)
+        )
+        unique_ids = list(dict.fromkeys(feature_ids))
+        if unique_ids:
+            await self.db.execute(
+                insert(TariffFeatureLink),
+                [{"tariff_id": tariff_id, "feature_id": fid} for fid in unique_ids],
+            )
         await self.db.commit()
 
     async def get_subscription(self, user_id: UUID) -> UserSubscription | None:

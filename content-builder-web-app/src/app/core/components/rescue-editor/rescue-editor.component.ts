@@ -14,7 +14,7 @@ import {
   RescueScheneChoiceImplicationVm,
   RescueTimerParameterVm
 } from '@/core/utils';
-import { Component, computed, effect, inject, Injectable, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, effect, inject, Injectable, ChangeDetectionStrategy, TemplateRef, viewChild } from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -23,8 +23,8 @@ import {
   Validators
 } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIcon } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTableModule } from '@angular/material/table';
 import {
   AppButtonComponent,
@@ -164,6 +164,7 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
   selector: 'app-rescue-editor',
   imports: [
     MatIcon,
+    MatTooltipModule,
     ReactiveFormsModule,
     MatTableModule,
     CdkDropList,
@@ -183,6 +184,12 @@ function sceneGroup(s: NullableValue<RescueSceneVm> = null): FormGroup {
     .cdk-drop-list-dragging tr:not(.cdk-drag-placeholder) {
       transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
     }
+    tr.scene-row-invalid > td {
+      background-color: rgba(244, 63, 94, 0.08);
+    }
+    tr.scene-row-invalid > td:first-child {
+      box-shadow: inset 3px 0 0 0 #f43f5e;
+    }
   `
 })
 export class RescueEditorComponent {
@@ -193,7 +200,6 @@ export class RescueEditorComponent {
   private readonly _store = inject(Store);
   private readonly _dispatched = inject(AppLoading);
   private readonly _dialog = inject(MatDialog);
-  private readonly _snack = inject(MatSnackBar);
   private readonly _filesStorage = inject(AppFilesStorageService);
 
   /** Файлы фонов сцен и фона по умолчанию для загрузки при сохранении */
@@ -205,6 +211,18 @@ export class RescueEditorComponent {
   /** Копия списка контролов для mat-table (обновляется при добавлении/удалении/редактировании) */
   protected readonly _parametersList = signal<FormGroup[]>([]);
   protected readonly _scenesList = signal<FormGroup[]>([]);
+
+  /** Ошибки валидации графа по id сцены — красная подсветка строк и тултип с текстом */
+  protected readonly _sceneErrors = signal<Map<string, string>>(new Map());
+
+  /** Сообщения для диалога валидации (глобальные + по сценам) */
+  protected readonly _validationMessages = signal<string[]>([]);
+
+  private readonly _validationErrorsTpl = viewChild.required<TemplateRef<unknown>>('validationErrorsDialog');
+  private _validationDialogRef: MatDialogRef<unknown, void> | null = null;
+
+  /** Сценарий, ожидающий решения в диалоге ошибок валидации */
+  private _pendingVm: AppRescueItemVm | null = null;
 
   protected readonly _parametersDisplayedColumns: string[] = ['index', 'name', 'delta', 'startValue', 'actions'];
   protected readonly _scenesDisplayedColumns: string[] = ['index', 'background', 'text', 'isReviewed', 'actions'];
@@ -560,16 +578,38 @@ export class RescueEditorComponent {
 
   protected _handleSubmit(): void {
     const vm = this._getRescueVm();
-    const graphErrors = this._validateRescueGraph(vm.data);
-    if (graphErrors.length > 0) {
-      this._snack.open(`Ошибки в сценарии: ${graphErrors.join('; ')}`, 'Закрыть', { duration: 6000 });
+    const { global, sceneErrors } = this._validateRescueGraph(vm.data);
+    if (global.length > 0 || sceneErrors.size > 0) {
+      const messages = [
+        ...global,
+        ...[...sceneErrors.entries()].map(([sceneId, msg]) => {
+          const scene = (vm.data?.scenes ?? []).find(s => s.id === sceneId);
+          return `Сцена «${(scene?.text || sceneId).slice(0, 40)}»: ${msg}`;
+        }),
+      ];
+      this._pendingVm = vm;
+      this._showValidationErrors(messages, sceneErrors);
       return;
     }
+    this._sceneErrors.set(new Map());
+    this._doSave(vm);
+  }
+
+  /** «Сохранить все равно»: сохранить сценарий несмотря на ошибки валидации */
+  protected _saveAnyway(): void {
+    const vm = this._pendingVm;
+    this._pendingVm = null;
+    this._closeValidationDialog();
+    if (vm) this._doSave(vm, true);
+  }
+
+  private _doSave(vm: AppRescueItemVm, force = false): void {
+    this._sceneErrors.set(new Map());
 
     const isNew = this._dialogData?.id == null;
     const action = isNew
-      ? this._store.dispatch(new RescueActions.CreateRescueItem(vm))
-      : this._store.dispatch(new RescueActions.UpdateRescueItem(vm.id, vm));
+      ? this._store.dispatch(new RescueActions.CreateRescueItem(vm, force))
+      : this._store.dispatch(new RescueActions.UpdateRescueItem(vm.id, vm, force));
     const uploads = Array.from(this._sceneBackgroundFiles.entries()).map(([id, file]) =>
       this._filesStorage.uploadFile(id, file)
     );
@@ -581,10 +621,35 @@ export class RescueEditorComponent {
     }
   }
 
-  private _validateRescueGraph(data: AppRescueItemVm['data']): string[] {
+  /** Немодально-исчезающий диалог ошибок валидации: висит, пока не закрыт */
+  private _showValidationErrors(messages: string[], sceneErrors: Map<string, string>): void {
+    this._validationMessages.set(messages);
+    this._sceneErrors.set(sceneErrors);
+    this._validationDialogRef?.close();
+    this._validationDialogRef = this._dialog.open(this._validationErrorsTpl(), {
+      width: '640px',
+      maxWidth: '95vw',
+      hasBackdrop: true,
+      backdropClass: 'app-dialog-backdrop',
+      panelClass: ['app-custom-dialog-panel'],
+      autoFocus: 'first-tabbable'
+    });
+  }
+
+  protected _closeValidationDialog(): void {
+    this._validationDialogRef?.close();
+    this._validationDialogRef = null;
+  }
+
+  /**
+   * Валидация графа сцен: глобальные ошибки + ошибки по id сцены
+   * (для подсветки конкретных строк в таблице сцен).
+   */
+  private _validateRescueGraph(data: AppRescueItemVm['data']): { global: string[]; sceneErrors: Map<string, string> } {
     const scenes = data?.scenes ?? [];
-    if (scenes.length === 0) return [];
-    const errors: string[] = [];
+    const global: string[] = [];
+    const sceneErrors = new Map<string, string>();
+    if (scenes.length === 0) return { global, sceneErrors };
     const sceneIds = new Set(scenes.map(s => s.id));
 
     let hasTerminal = false;
@@ -598,19 +663,20 @@ export class RescueEditorComponent {
         if (!choice.nextSceneId) {
           hasTerminal = true;
         } else if (!sceneIds.has(choice.nextSceneId)) {
-          errors.push(`Сцена "${(scene.text || '').slice(0, 20)}...": переход на неизвестную сцену`);
+          sceneErrors.set(scene.id, 'в одном из выборов переход на несуществующую сцену');
         }
       }
     }
 
     if (!hasTerminal) {
-      errors.push('Граф не содержит терминального исхода (сцены без выбора или выхода)');
+      global.push('Граф не содержит терминального исхода (сцены без выбора или выхода)');
     }
 
     if (scenes.length > 1) {
-      const rootId = scenes[0].id;
-      const reachable = new Set<string>([rootId]);
-      const queue = [rootId];
+      // Стартовая сцена — как в бэкенд-валидаторе: с наименьшим order
+      const startScene = [...scenes].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))[0];
+      const reachable = new Set<string>([startScene.id]);
+      const queue = [startScene.id];
       while (queue.length > 0) {
         const currId = queue.shift()!;
         const curr = scenes.find(s => s.id === currId);
@@ -622,12 +688,13 @@ export class RescueEditorComponent {
           }
         }
       }
-      const unreachableCount = scenes.length - reachable.size;
-      if (unreachableCount > 0) {
-        errors.push(`Обнаружено недостижимых сцен («висячие» вершины): ${unreachableCount}`);
+      for (const s of scenes) {
+        if (!reachable.has(s.id)) {
+          sceneErrors.set(s.id, 'к сцене нет пути от стартовой — ни один выбор не ведёт к ней');
+        }
       }
     }
-    return errors;
+    return { global, sceneErrors };
   }
 
   protected _handleClose(): void {

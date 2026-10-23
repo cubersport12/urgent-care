@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -13,6 +14,20 @@ class CamelModel(BaseModel):
         populate_by_name=True,
         ser_json_by_alias=True,
     )
+
+
+class TariffFeatureOut(CamelModel):
+    id: UUID
+    code: str
+    description: str
+    is_active: bool = Field(alias="isActive")
+    sort_order: int = Field(alias="sortOrder")
+
+
+class TariffFeatureStateOut(TariffFeatureOut):
+    """Особенность в составе тарифа: входит ли в этот конкретный тариф."""
+
+    included: bool
 
 
 class TariffOut(CamelModel):
@@ -27,6 +42,7 @@ class TariffOut(CamelModel):
     is_active: bool = Field(alias="isActive")
     sort_order: int = Field(alias="sortOrder")
     rustore_product_id: str | None = Field(None, alias="rustoreProductId")
+    features: list[TariffFeatureStateOut] = []
 
 
 class TariffCreate(CamelModel):
@@ -40,6 +56,7 @@ class TariffCreate(CamelModel):
     is_active: bool = Field(True, alias="isActive")
     sort_order: int = Field(0, alias="sortOrder")
     rustore_product_id: str | None = Field(None, alias="rustoreProductId", max_length=128)
+    feature_ids: list[UUID] = Field(default_factory=list, alias="featureIds")
 
 
 class TariffUpdate(CamelModel):
@@ -53,6 +70,22 @@ class TariffUpdate(CamelModel):
     is_active: bool | None = Field(None, alias="isActive")
     sort_order: int | None = Field(None, alias="sortOrder")
     rustore_product_id: str | None = Field(None, alias="rustoreProductId", max_length=128)
+    # None = не трогать связи, [] = очистить (алиас на union — только через Annotated целиком)
+    feature_ids: Annotated[list[UUID] | None, Field(alias="featureIds")] = None
+
+
+class TariffFeatureCreate(CamelModel):
+    code: str = Field(max_length=64)
+    description: str = Field(max_length=500)
+    is_active: bool = Field(True, alias="isActive")
+    sort_order: int = Field(0, alias="sortOrder")
+
+
+class TariffFeatureUpdate(CamelModel):
+    code: Annotated[str | None, Field(max_length=64)] = None
+    description: Annotated[str | None, Field(max_length=500)] = None
+    is_active: bool | None = Field(None, alias="isActive")
+    sort_order: int | None = Field(None, alias="sortOrder")
 
 
 class ActivePromoOut(CamelModel):

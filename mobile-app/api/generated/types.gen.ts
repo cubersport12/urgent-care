@@ -1035,6 +1035,14 @@ export type GenerateRescueRequest = {
      * Prompt
      */
     prompt: string;
+    /**
+     * Scenecount
+     */
+    sceneCount?: number | null;
+    /**
+     * Difficulty
+     */
+    difficulty?: string | null;
 };
 
 /**
@@ -2656,6 +2664,112 @@ export type TariffCreate = {
      * Rustoreproductid
      */
     rustoreProductId?: string | null;
+    /**
+     * Featureids
+     */
+    featureIds?: Array<string>;
+};
+
+/**
+ * TariffFeatureCreate
+ */
+export type TariffFeatureCreate = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Isactive
+     */
+    isActive?: boolean;
+    /**
+     * Sortorder
+     */
+    sortOrder?: number;
+};
+
+/**
+ * TariffFeatureOut
+ */
+export type TariffFeatureOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Isactive
+     */
+    isActive: boolean;
+    /**
+     * Sortorder
+     */
+    sortOrder: number;
+};
+
+/**
+ * TariffFeatureStateOut
+ *
+ * Особенность в составе тарифа: входит ли в этот конкретный тариф.
+ */
+export type TariffFeatureStateOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Description
+     */
+    description: string;
+    /**
+     * Isactive
+     */
+    isActive: boolean;
+    /**
+     * Sortorder
+     */
+    sortOrder: number;
+    /**
+     * Included
+     */
+    included: boolean;
+};
+
+/**
+ * TariffFeatureUpdate
+ */
+export type TariffFeatureUpdate = {
+    /**
+     * Code
+     */
+    code?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Isactive
+     */
+    isActive?: boolean | null;
+    /**
+     * Sortorder
+     */
+    sortOrder?: number | null;
 };
 
 /**
@@ -2706,6 +2820,10 @@ export type TariffOut = {
      * Rustoreproductid
      */
     rustoreProductId?: string | null;
+    /**
+     * Features
+     */
+    features?: Array<TariffFeatureStateOut>;
 };
 
 /**
@@ -2752,6 +2870,10 @@ export type TariffUpdate = {
      * Rustoreproductid
      */
     rustoreProductId?: string | null;
+    /**
+     * Featureids
+     */
+    featureIds?: Array<string> | null;
 };
 
 /**
@@ -4217,6 +4339,142 @@ export type BillingUpdateTariffResponses = {
 };
 
 export type BillingUpdateTariffResponse = BillingUpdateTariffResponses[keyof BillingUpdateTariffResponses];
+
+export type BillingListTariffFeaturesData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/tariff-features';
+};
+
+export type BillingListTariffFeaturesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingListTariffFeaturesError = BillingListTariffFeaturesErrors[keyof BillingListTariffFeaturesErrors];
+
+export type BillingListTariffFeaturesResponses = {
+    /**
+     * Response Billing List Tariff Features
+     *
+     * Successful Response
+     */
+    200: Array<TariffFeatureOut>;
+};
+
+export type BillingListTariffFeaturesResponse = BillingListTariffFeaturesResponses[keyof BillingListTariffFeaturesResponses];
+
+export type BillingCreateTariffFeatureData = {
+    body: TariffFeatureCreate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/billing/tariff-features';
+};
+
+export type BillingCreateTariffFeatureErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingCreateTariffFeatureError = BillingCreateTariffFeatureErrors[keyof BillingCreateTariffFeatureErrors];
+
+export type BillingCreateTariffFeatureResponses = {
+    /**
+     * Successful Response
+     */
+    201: TariffFeatureOut;
+};
+
+export type BillingCreateTariffFeatureResponse = BillingCreateTariffFeatureResponses[keyof BillingCreateTariffFeatureResponses];
+
+export type BillingDeleteTariffFeatureData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Feature Id
+         */
+        feature_id: string;
+    };
+    query?: never;
+    url: '/api/v1/billing/tariff-features/{feature_id}';
+};
+
+export type BillingDeleteTariffFeatureErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingDeleteTariffFeatureError = BillingDeleteTariffFeatureErrors[keyof BillingDeleteTariffFeatureErrors];
+
+export type BillingDeleteTariffFeatureResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type BillingDeleteTariffFeatureResponse = BillingDeleteTariffFeatureResponses[keyof BillingDeleteTariffFeatureResponses];
+
+export type BillingUpdateTariffFeatureData = {
+    body: TariffFeatureUpdate;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Feature Id
+         */
+        feature_id: string;
+    };
+    query?: never;
+    url: '/api/v1/billing/tariff-features/{feature_id}';
+};
+
+export type BillingUpdateTariffFeatureErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingUpdateTariffFeatureError = BillingUpdateTariffFeatureErrors[keyof BillingUpdateTariffFeatureErrors];
+
+export type BillingUpdateTariffFeatureResponses = {
+    /**
+     * Successful Response
+     */
+    200: TariffFeatureOut;
+};
+
+export type BillingUpdateTariffFeatureResponse = BillingUpdateTariffFeatureResponses[keyof BillingUpdateTariffFeatureResponses];
 
 export type BillingListPromoCodesData = {
     body?: never;
@@ -6305,7 +6563,14 @@ export type RescueCreateRescueData = {
         'X-Session-Id'?: string | null;
     };
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Force
+         *
+         * Сохранить несмотря на ошибки графа сцен
+         */
+        force?: boolean;
+    };
     url: '/api/v1/rescue';
 };
 
@@ -6413,7 +6678,14 @@ export type RescueUpdateRescueData = {
          */
         item_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Force
+         *
+         * Сохранить несмотря на ошибки графа сцен
+         */
+        force?: boolean;
+    };
     url: '/api/v1/rescue/{item_id}';
 };
 

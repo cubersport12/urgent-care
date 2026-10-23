@@ -80,14 +80,8 @@
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Требуемый тариф</label>
-          <app-tariff-select [control]="_form.controls.requiredTariffId" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Награда за изучение</label>
-          <app-reward-select [control]="_form.controls.requiredRewardId" />
-        </div>
+        <app-tariff-select [control]="_form.controls.requiredTariffId" />
+        <app-reward-select [control]="_form.controls.requiredRewardId" />
       </div>
     </div>
 

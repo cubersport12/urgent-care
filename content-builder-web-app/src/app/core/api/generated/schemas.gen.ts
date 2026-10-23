@@ -2223,7 +2223,6 @@ export const LearningEventCreateSchema = {
         payload: {
             anyOf: [
                 {
-                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -2264,7 +2263,6 @@ export const LearningEventOutSchema = {
         payload: {
             anyOf: [
                 {
-                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -3400,7 +3398,6 @@ export const RescueCreateSchema = {
         data: {
             anyOf: [
                 {
-                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -3486,7 +3483,6 @@ export const RescueOutSchema = {
         data: {
             anyOf: [
                 {
-                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -3961,7 +3957,6 @@ export const RescueUpdateSchema = {
         data: {
             anyOf: [
                 {
-                    additionalProperties: true,
                     type: 'object'
                 },
                 {
@@ -5071,6 +5066,14 @@ export const TariffCreateSchema = {
                 }
             ],
             title: 'Rustoreproductid'
+        },
+        featureIds: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Featureids'
         }
     },
     type: 'object',
@@ -5079,6 +5082,166 @@ export const TariffCreateSchema = {
         'title'
     ],
     title: 'TariffCreate'
+} as const;
+
+export const TariffFeatureCreateSchema = {
+    properties: {
+        code: {
+            type: 'string',
+            maxLength: 64,
+            title: 'Code'
+        },
+        description: {
+            type: 'string',
+            maxLength: 500,
+            title: 'Description'
+        },
+        isActive: {
+            type: 'boolean',
+            title: 'Isactive',
+            default: true
+        },
+        sortOrder: {
+            type: 'integer',
+            title: 'Sortorder',
+            default: 0
+        }
+    },
+    type: 'object',
+    required: [
+        'code',
+        'description'
+    ],
+    title: 'TariffFeatureCreate'
+} as const;
+
+export const TariffFeatureOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        code: {
+            type: 'string',
+            title: 'Code'
+        },
+        description: {
+            type: 'string',
+            title: 'Description'
+        },
+        isActive: {
+            type: 'boolean',
+            title: 'Isactive'
+        },
+        sortOrder: {
+            type: 'integer',
+            title: 'Sortorder'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'code',
+        'description',
+        'isActive',
+        'sortOrder'
+    ],
+    title: 'TariffFeatureOut'
+} as const;
+
+export const TariffFeatureStateOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        code: {
+            type: 'string',
+            title: 'Code'
+        },
+        description: {
+            type: 'string',
+            title: 'Description'
+        },
+        isActive: {
+            type: 'boolean',
+            title: 'Isactive'
+        },
+        sortOrder: {
+            type: 'integer',
+            title: 'Sortorder'
+        },
+        included: {
+            type: 'boolean',
+            title: 'Included'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'code',
+        'description',
+        'isActive',
+        'sortOrder',
+        'included'
+    ],
+    title: 'TariffFeatureStateOut',
+    description: 'Особенность в составе тарифа: входит ли в этот конкретный тариф.'
+} as const;
+
+export const TariffFeatureUpdateSchema = {
+    properties: {
+        code: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 64
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Code'
+        },
+        description: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Description'
+        },
+        isActive: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Isactive'
+        },
+        sortOrder: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Sortorder'
+        }
+    },
+    type: 'object',
+    title: 'TariffFeatureUpdate'
 } as const;
 
 export const TariffOutSchema = {
@@ -5141,6 +5304,14 @@ export const TariffOutSchema = {
                 }
             ],
             title: 'Rustoreproductid'
+        },
+        features: {
+            items: {
+                $ref: '#/components/schemas/TariffFeatureStateOut'
+            },
+            type: 'array',
+            title: 'Features',
+            default: []
         }
     },
     type: 'object',
@@ -5270,6 +5441,21 @@ export const TariffUpdateSchema = {
                 }
             ],
             title: 'Rustoreproductid'
+        },
+        featureIds: {
+            anyOf: [
+                {
+                    items: {
+                        type: 'string',
+                        format: 'uuid'
+                    },
+                    type: 'array'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Featureids'
         }
     },
     type: 'object',

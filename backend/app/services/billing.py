@@ -35,6 +35,10 @@ from app.schemas.billing import (
     RefundJournalOut,
     SubscribeOut,
     TariffCreate,
+    TariffFeatureCreate,
+    TariffFeatureOut,
+    TariffFeatureStateOut,
+    TariffFeatureUpdate,
     TariffOut,
     TariffUpdate,
 )
@@ -80,26 +84,66 @@ class BillingService:
         # Публичные страницы (мобилка, лендинг) показывают по рангу; sort_order —
         # порядок в конструкторе, админский список не трогаем
         items = sorted(items, key=lambda t: (t.rank, t.title))
-        return [TariffOut.model_validate(t) for t in items]
+        # Витрина показывает весь активный каталог особенностей: входящие — обычным
+        # цветом, не входящие — серыми с замком
+        states = await self._feature_states([t.id for t in items], include_inactive=False)
+        return [self._tariff_out(t, fs) for t, fs in zip(items, states)]
 
     async def list_tariffs_admin(self) -> list[TariffOut]:
         items = await self.repo.list_tariffs(active_only=False)
-        return [TariffOut.model_validate(t) for t in items]
+        # Админу весь каталог (включая неактивные): чекбоксы диалога не должны
+        # терять связи с неактивными особенностями при сохранении
+        states = await self._feature_states([t.id for t in items], include_inactive=True)
+        return [self._tariff_out(t, fs) for t, fs in zip(items, states)]
+
+    async def _feature_states(
+        self, tariff_ids: list[UUID], *, include_inactive: bool
+    ) -> list[list[TariffFeatureStateOut]]:
+        catalog = await self.repo.list_features()
+        if not include_inactive:
+            catalog = [f for f in catalog if f.is_active]
+        linked: dict[UUID, set[UUID]] = {}
+        for link in await self.repo.list_feature_links():
+            linked.setdefault(link.tariff_id, set()).add(link.feature_id)
+        return [
+            [
+                TariffFeatureStateOut(
+                    id=f.id,
+                    code=f.code,
+                    description=f.description,
+                    is_active=f.is_active,
+                    sort_order=f.sort_order,
+                    included=f.id in linked.get(tariff_id, set()),
+                )
+                for f in catalog
+            ]
+            for tariff_id in tariff_ids
+        ]
+
+    @staticmethod
+    def _tariff_out(tariff: Tariff, features: list[TariffFeatureStateOut]) -> TariffOut:
+        out = TariffOut.model_validate(tariff)
+        out.features = features
+        return out
 
     async def create_tariff(self, payload: TariffCreate) -> TariffOut:
         data = payload.model_dump(by_alias=False)
+        feature_ids = data.pop("feature_ids")
         if await self.repo.get_tariff_by_code(data["code"]):
             raise HTTPException(status.HTTP_409_CONFLICT, detail="Tariff code already exists")
         if data.get("is_default"):
             await self.repo.clear_default_flags()
         tariff = await self.repo.create_tariff(**data)
-        return TariffOut.model_validate(tariff)
+        await self._apply_tariff_features(tariff.id, feature_ids)
+        states = (await self._feature_states([tariff.id], include_inactive=True))[0]
+        return self._tariff_out(tariff, states)
 
     async def update_tariff(self, tariff_id: UUID, payload: TariffUpdate) -> TariffOut:
         tariff = await self.repo.get_tariff(tariff_id)
         if not tariff:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Tariff not found")
         data = payload.model_dump(by_alias=False, exclude_unset=True)
+        feature_ids = data.pop("feature_ids", None)
         if "code" in data and data["code"] != tariff.code:
             other = await self.repo.get_tariff_by_code(data["code"])
             if other:
@@ -112,7 +156,76 @@ class BillingService:
                 detail="Cannot unset default tariff; mark another tariff as default first",
             )
         tariff = await self.repo.update_tariff(tariff, **data)
-        return TariffOut.model_validate(tariff)
+        if feature_ids is not None:
+            await self._apply_tariff_features(tariff.id, feature_ids)
+        states = (await self._feature_states([tariff.id], include_inactive=True))[0]
+        return self._tariff_out(tariff, states)
+
+    async def _apply_tariff_features(self, tariff_id: UUID, feature_ids: list[UUID]) -> None:
+        for feature_id in set(feature_ids):
+            if not await self.repo.get_feature(feature_id):
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST, detail="Unknown tariff feature"
+                )
+        await self.repo.replace_tariff_features(tariff_id, feature_ids)
+
+    # --- Особенности тарифов (админ) ---
+
+    async def list_features(self) -> list[TariffFeatureOut]:
+        items = await self.repo.list_features()
+        return [TariffFeatureOut.model_validate(f) for f in items]
+
+    async def create_feature(self, payload: TariffFeatureCreate) -> TariffFeatureOut:
+        data = payload.model_dump(by_alias=False)
+        data["code"] = code = data["code"].strip()
+        data["description"] = description = data["description"].strip()
+        if not code:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Код не может быть пустым")
+        if not description:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST, detail="Описание не может быть пустым"
+            )
+        if await self.repo.get_feature_by_code(code):
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, detail="Особенность с таким кодом уже существует"
+            )
+        return TariffFeatureOut.model_validate(await self.repo.create_feature(**data))
+
+    async def update_feature(
+        self, feature_id: UUID, payload: TariffFeatureUpdate
+    ) -> TariffFeatureOut:
+        feature = await self.repo.get_feature(feature_id)
+        if not feature:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Tariff feature not found")
+        data = payload.model_dump(by_alias=False, exclude_unset=True)
+        if "code" in data:
+            code = (data["code"] or "").strip()
+            if not code:
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST, detail="Код не может быть пустым"
+                )
+            if code != feature.code:
+                other = await self.repo.get_feature_by_code(code)
+                if other:
+                    raise HTTPException(
+                        status.HTTP_409_CONFLICT,
+                        detail="Особенность с таким кодом уже существует",
+                    )
+            data["code"] = code
+        if "description" in data:
+            description = (data["description"] or "").strip()
+            if not description:
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST, detail="Описание не может быть пустым"
+                )
+            data["description"] = description
+        return TariffFeatureOut.model_validate(await self.repo.update_feature(feature, **data))
+
+    async def delete_feature(self, feature_id: UUID) -> None:
+        feature = await self.repo.get_feature(feature_id)
+        if not feature:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Tariff feature not found")
+        await self.repo.delete_feature(feature)
 
     async def delete_tariff(self, tariff_id: UUID) -> None:
         tariff = await self.repo.get_tariff(tariff_id)

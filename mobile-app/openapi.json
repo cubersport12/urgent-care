@@ -1078,6 +1078,239 @@
         }
       }
     },
+    "/api/v1/billing/tariff-features": {
+      "get": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "List Tariff Features",
+        "operationId": "billing_list_tariff_features",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TariffFeatureOut"
+                  },
+                  "title": "Response Billing List Tariff Features"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Create Tariff Feature",
+        "operationId": "billing_create_tariff_feature",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TariffFeatureCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TariffFeatureOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/tariff-features/{feature_id}": {
+      "patch": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Update Tariff Feature",
+        "operationId": "billing_update_tariff_feature",
+        "parameters": [
+          {
+            "name": "feature_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Feature Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TariffFeatureUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TariffFeatureOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "billing"
+        ],
+        "summary": "Delete Tariff Feature",
+        "operationId": "billing_delete_tariff_feature",
+        "parameters": [
+          {
+            "name": "feature_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Feature Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/billing/promo-codes": {
       "get": {
         "tags": [
@@ -4715,6 +4948,18 @@
         "operationId": "rescue_create_rescue",
         "parameters": [
           {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Сохранить несмотря на ошибки графа сцен",
+              "default": false,
+              "title": "Force"
+            },
+            "description": "Сохранить несмотря на ошибки графа сцен"
+          },
+          {
             "name": "X-Session-Id",
             "in": "header",
             "required": false,
@@ -4839,6 +5084,18 @@
               "type": "string",
               "title": "Item Id"
             }
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Сохранить несмотря на ошибки графа сцен",
+              "default": false,
+              "title": "Force"
+            },
+            "description": "Сохранить несмотря на ошибки графа сцен"
           },
           {
             "name": "X-Session-Id",
@@ -7051,7 +7308,6 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
                   "title": "Response Meta Health"
                 }
@@ -7074,7 +7330,6 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
                   "title": "Response Meta Ready"
                 }
@@ -9265,7 +9520,6 @@
           "payload": {
             "anyOf": [
               {
-                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -9305,7 +9559,6 @@
           "payload": {
             "anyOf": [
               {
-                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10412,7 +10665,6 @@
           "data": {
             "anyOf": [
               {
-                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10497,7 +10749,6 @@
           "data": {
             "anyOf": [
               {
-                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -10964,7 +11215,6 @@
           "data": {
             "anyOf": [
               {
-                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -12051,6 +12301,14 @@
               }
             ],
             "title": "Rustoreproductid"
+          },
+          "featureIds": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Featureids"
           }
         },
         "type": "object",
@@ -12059,6 +12317,162 @@
           "title"
         ],
         "title": "TariffCreate"
+      },
+      "TariffFeatureCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Code"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Description"
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Isactive",
+            "default": true
+          },
+          "sortOrder": {
+            "type": "integer",
+            "title": "Sortorder",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "description"
+        ],
+        "title": "TariffFeatureCreate"
+      },
+      "TariffFeatureOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Isactive"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "title": "Sortorder"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "description",
+          "isActive",
+          "sortOrder"
+        ],
+        "title": "TariffFeatureOut"
+      },
+      "TariffFeatureStateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Isactive"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "title": "Sortorder"
+          },
+          "included": {
+            "type": "boolean",
+            "title": "Included"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "description",
+          "isActive",
+          "sortOrder",
+          "included"
+        ],
+        "title": "TariffFeatureStateOut",
+        "description": "Особенность в составе тарифа: входит ли в этот конкретный тариф."
+      },
+      "TariffFeatureUpdate": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "isActive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isactive"
+          },
+          "sortOrder": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sortorder"
+          }
+        },
+        "type": "object",
+        "title": "TariffFeatureUpdate"
       },
       "TariffOut": {
         "properties": {
@@ -12120,6 +12534,14 @@
               }
             ],
             "title": "Rustoreproductid"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/TariffFeatureStateOut"
+            },
+            "type": "array",
+            "title": "Features",
+            "default": []
           }
         },
         "type": "object",
@@ -12248,6 +12670,21 @@
               }
             ],
             "title": "Rustoreproductid"
+          },
+          "featureIds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Featureids"
           }
         },
         "type": "object",

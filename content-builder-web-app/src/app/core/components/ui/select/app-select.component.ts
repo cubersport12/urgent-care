@@ -74,7 +74,7 @@ export type SelectOption<T = any> = AppSelectOption<T>;
           @for (opt of options(); track opt.value) {
             <option
               [value]="opt.value"
-              [selected]="multiple() ? isSelected(opt.value) : undefined"
+              [selected]="isSelected(opt.value)"
               [disabled]="opt.disabled"
               class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 py-1"
             >
@@ -149,7 +149,12 @@ export class AppSelectComponent implements ControlValueAccessor {
 
   protected isSelected(optVal: any): boolean {
     const val = this._innerValue();
-    return Array.isArray(val) && val.includes(optVal);
+    if (Array.isArray(val)) return val.includes(optVal);
+    // Опции приходят асинхронно после writeValue — без [selected] нативный
+    // селект остаётся на первой опции, а не на сохранённом значении.
+    // Сравнение через String — как разметка самой опции в DOM.
+    if (val == null || val === '') return optVal == null || optVal === '';
+    return String(val) === String(optVal);
   }
 
   protected readonly _computedSelectClasses = computed(() => {

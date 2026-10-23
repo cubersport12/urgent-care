@@ -10,12 +10,16 @@ export namespace RescueActions {
 
   export class UpdateRescueItem {
     public static readonly type = '[Rescue] UpdateRescueItem';
-    constructor(public readonly rescueItemId: string, public readonly payload: Partial<AppRescueItemVm>) {}
+    constructor(
+      public readonly rescueItemId: string,
+      public readonly payload: Partial<AppRescueItemVm>,
+      public readonly force = false
+    ) {}
   }
 
   export class CreateRescueItem {
     public static readonly type = '[Rescue] CreateRescueItem';
-    constructor(public readonly payload: AppRescueItemVm) {}
+    constructor(public readonly payload: AppRescueItemVm, public readonly force = false) {}
   }
 
   export class FetchAllRescueItems {

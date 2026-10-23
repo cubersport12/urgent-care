@@ -14,9 +14,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltip } from '@angular/material/tooltip';
-import { AppTariffsStorageService } from '@/core/api';
+import { AppTariffFeaturesStorageService, AppTariffsStorageService } from '@/core/api';
 import { ApiError } from '@/core/api/api-utils';
-import type { TariffCreate, TariffOut } from '@/core/api/generated/types.gen';
+import type {
+  TariffCreate,
+  TariffFeatureStateOut,
+  TariffOut
+} from '@/core/api/generated/types.gen';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
 import {
@@ -64,6 +68,27 @@ export class TariffsEditorService {
         <app-input label="Код тарифа" formControlName="code" [required]="true" />
         <app-input label="Название тарифа" formControlName="title" [required]="true" />
         <app-textarea label="Описание" formControlName="description" [rows]="2" />
+        <div class="flex flex-col gap-1.5">
+          <span class="text-xs font-medium text-slate-500 dark:text-slate-400">Что входит в тариф</span>
+          <div class="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
+            @for (f of _featureStates(); track f.id) {
+              <label class="flex items-center gap-2 text-sm cursor-pointer select-none" [class.opacity-50]="!f.isActive">
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 accent-blue-600"
+                  [checked]="_form.controls.featureIds.value.includes(f.id)"
+                  (change)="_toggleFeature(f.id, $event)"
+                />
+                <span class="text-slate-700 dark:text-slate-200">{{ f.description }}</span>
+                @if (!f.isActive) {
+                  <span class="text-xs text-slate-400">(неактивна)</span>
+                }
+              </label>
+            } @empty {
+              <span class="text-xs text-slate-400">Особенности не заведены — добавьте их в разделе «Особенности тарифов»</span>
+            }
+          </div>
+        </div>
         <div class="flex gap-2">
           <app-input label="Цена, ₽" type="number" formControlName="priceRub" class="grow" [required]="true" />
           <app-input label="Период, дней" type="number" formControlName="periodDays" class="grow" [required]="true" />
@@ -84,8 +109,12 @@ export class TariffsEditorService {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TariffEditDialogComponent {
+  private readonly _featuresStorage = inject(AppTariffFeaturesStorageService);
   protected readonly _data = inject<TariffOut | null>(MAT_DIALOG_DATA);
   protected readonly _ref = inject(MatDialogRef<TariffEditDialogComponent, TariffCreate | null>);
+
+  /** Каталог особенностей для чекбоксов: у существующего тарифа — из TariffOut, у нового — из справочника. */
+  protected readonly _featureStates = signal<TariffFeatureStateOut[]>([]);
 
   protected readonly _form = new FormGroup({
     code: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -97,11 +126,13 @@ export class TariffEditDialogComponent {
     sortOrder: new FormControl(0, { nonNullable: true }),
     rustoreProductId: new FormControl<string | null>(null),
     isActive: new FormControl(true, { nonNullable: true }),
-    isDefault: new FormControl(false, { nonNullable: true })
+    isDefault: new FormControl(false, { nonNullable: true }),
+    featureIds: new FormControl<string[]>([], { nonNullable: true })
   });
 
   constructor() {
     if (this._data) {
+      this._featureStates.set(this._data.features ?? []);
       this._form.reset({
         code: this._data.code,
         title: this._data.title,
@@ -112,9 +143,22 @@ export class TariffEditDialogComponent {
         sortOrder: this._data.sortOrder,
         rustoreProductId: this._data.rustoreProductId ?? null,
         isActive: this._data.isActive,
-        isDefault: this._data.isDefault
+        isDefault: this._data.isDefault,
+        featureIds: (this._data.features ?? []).filter((f) => f.included).map((f) => f.id)
       });
+    } else {
+      this._featuresStorage.listAll().subscribe((list) =>
+        this._featureStates.set(list.map((f) => ({ ...f, included: false })))
+      );
     }
+  }
+
+  protected _toggleFeature(id: string, ev: Event): void {
+    const checked = (ev.target as HTMLInputElement).checked;
+    const selected = new Set(this._form.controls.featureIds.value);
+    if (checked) selected.add(id);
+    else selected.delete(id);
+    this._form.controls.featureIds.setValue([...selected]);
   }
 
   protected _save(): void {
@@ -130,7 +174,8 @@ export class TariffEditDialogComponent {
       sortOrder: Number(v.sortOrder),
       rustoreProductId: v.rustoreProductId?.trim() || null,
       isActive: v.isActive,
-      isDefault: v.isDefault
+      isDefault: v.isDefault,
+      featureIds: v.featureIds
     });
   }
 }

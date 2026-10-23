@@ -8,6 +8,7 @@ export * from './app-folders-storage.service';
 export * from './app-promo-codes-storage.service';
 export * from './app-rescue-storage.service';
 export * from './app-rewards-storage.service';
+export * from './app-tariff-features-storage.service';
 export * from './app-tariffs-storage.service';
 export * from './app-tests-storage.service';
 export * from './base-storage';

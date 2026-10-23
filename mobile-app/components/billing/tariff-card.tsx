@@ -46,6 +46,8 @@ export function TariffCard({ tariff, me, busyId, onSubscribe }: TariffCardProps)
   const discounted = activePromo
     ? discountedPrice(tariff.priceRub, activePromo.discountPercent)
     : null;
+  const features = tariff.features ?? [];
+  const hasDetails = Boolean(tariff.description) || features.length > 0;
 
   return (
     <GlassCard
@@ -93,21 +95,45 @@ export function TariffCard({ tariff, me, busyId, onSubscribe }: TariffCardProps)
       </View>
 
       {tariff.description ? (
-        <ThemedText style={[styles.tariffDesc, { color: neutralSoft }]}>
+        <ThemedText
+          style={[styles.tariffDesc, { color: neutralSoft, marginBottom: features.length > 0 ? 0 : 16 }]}
+        >
           {tariff.description}
         </ThemedText>
       ) : null}
 
+      {/* Особенности: входящие в тариф — с зелёной галочкой, остальные — серым с замком */}
+      {features.length > 0 ? (
+        <View style={styles.featureList}>
+          {features.map((f) => (
+            <View key={f.id} style={styles.featureRow}>
+              <IconSymbol
+                name={f.included ? 'checkmark' : 'lock.fill'}
+                size={12}
+                color={f.included ? success : neutralSoft}
+                style={styles.featureIcon}
+              />
+              <ThemedText
+                type="caption"
+                style={[styles.featureText, !f.included && { color: neutralSoft }]}
+              >
+                {f.description}
+              </ThemedText>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
       {/* Tariff Button */}
       {isCurrent ? (
-        <View style={[styles.tariffStatusBox, { backgroundColor: glass.primaryTint, marginTop: tariff.description ? 0 : 16 }]}>
+        <View style={[styles.tariffStatusBox, { backgroundColor: glass.primaryTint, marginTop: hasDetails ? 0 : 16 }]}>
           <IconSymbol name="checkmark" size={14} color={primary} />
           <ThemedText style={[styles.tariffStatusText, { color: primary }]}>
             Ваш текущий тариф
           </ThemedText>
         </View>
       ) : isScheduled ? (
-        <View style={[styles.tariffStatusBox, { backgroundColor: elevated1, marginTop: tariff.description ? 0 : 16 }]}>
+        <View style={[styles.tariffStatusBox, { backgroundColor: elevated1, marginTop: hasDetails ? 0 : 16 }]}>
           <IconSymbol name="clock.fill" size={14} color={neutralSoft} />
           <ThemedText style={[styles.tariffStatusText, { color: neutralSoft }]}>
             Запланирован к переходу
@@ -122,7 +148,7 @@ export function TariffCard({ tariff, me, busyId, onSubscribe }: TariffCardProps)
             {
               backgroundColor: isPremium ? warning : primary,
               opacity: busyId === tariff.id ? 0.6 : pressed ? 0.85 : 1,
-              marginTop: tariff.description ? 0 : 16,
+              marginTop: hasDetails ? 0 : 16,
             },
           ]}
         >
@@ -135,7 +161,7 @@ export function TariffCard({ tariff, me, busyId, onSubscribe }: TariffCardProps)
           )}
         </Pressable>
       ) : canSelect && tariff.priceRub <= 0 && me && me.priceRub > 0 ? (
-        <View style={[styles.tariffStatusBox, { backgroundColor: elevated1, marginTop: tariff.description ? 0 : 16 }]}>
+        <View style={[styles.tariffStatusBox, { backgroundColor: elevated1, marginTop: hasDetails ? 0 : 16 }]}>
           <ThemedText style={[styles.tariffStatusText, { color: neutralSoft, fontSize: 12, textAlign: 'center' }]}>
             Станет доступен после окончания текущего периода
           </ThemedText>
@@ -197,6 +223,25 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginBottom: 16,
     lineHeight: 18,
+  },
+  featureList: {
+    marginTop: 6,
+    marginBottom: 16,
+    gap: 6,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  // Иконка 12px в строке текста с lineHeight 16: marginTop = (16 − 12) / 2 — центр
+  // иконки совпадает с центром первой строки (при переносе строк — с первой строкой)
+  featureIcon: {
+    marginTop: 2,
+  },
+  featureText: {
+    flex: 1,
+    lineHeight: 16,
   },
   subscribeBtn: {
     alignItems: 'center',

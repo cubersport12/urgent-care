@@ -18,6 +18,7 @@ import { useAddOrUpdateRescueStats, useRescuesStats } from '@/hooks/api/useRescu
 import { useTests } from '@/hooks/api/useTests';
 import { useAddOrUpdateTestStats, useTestsStats } from '@/hooks/api/useTestStats';
 import { areTestActivationConditionsMet } from '@/lib/test-activation';
+import { isSequenceBlocked, type SequenceContext, type SequenceItem } from '@/lib/sequence-gating';
 import { apiFetchRelation } from '@/hooks/api/useApiFetch';
 import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-completion';
 import { useDeviceId } from '@/hooks/use-device-id';
@@ -342,101 +343,69 @@ export function Explorer() {
     });
   }, [foldersResponse.data, articlesResponse.data, testsResponse.data, rescueItemsResponse.data]);
 
+  // Контекст последовательности папки: прочитана статья / сдан тест.
+  const sequenceContext = useCallback((): SequenceContext => ({
+    isArticleRead: (id) => readArticlesMap.get(id) === true,
+    isTestPassed: (id) => testsStatsMap.get(id)?.passed === true,
+  }), [readArticlesMap, testsStatsMap]);
+
+  // Элементы папки в модели последовательности (см. lib/sequence-gating).
+  const sequenceItems = useMemo((): SequenceItem[] =>
+    items.map((it) => {
+      if (it.type === 'article') {
+        const a = it.data as AppArticleVm;
+        return { type: 'article', id: a.id, includeToStatistics: a.includeToStatistics };
+      }
+      if (it.type === 'test') {
+        const t = it.data as AppTestVm;
+        return {
+          type: 'test',
+          id: t.id,
+          hasActivationConditions: (t.accessabilityConditions ?? []).length > 0,
+        };
+      }
+      return { type: it.type, id: it.data.id };
+    }), [items]);
+
   // Функция для проверки, должен ли элемент быть скрыт
   const isItemHidden = useCallback((item: ExplorerItem, itemIndex: number): boolean => {
-    // Проверяем только статьи и тесты
-    if (item.type === 'folder') return false;
-
-    // Проверяем флаг hideWhileNotPrevComplete
-    const hideFlag = item.type === 'article' 
-      ? (item.data as AppArticleVm).hideWhileNotPrevComplete 
-      : false; // Для тестов пока не поддерживаем
-
-    if (!hideFlag) return false;
-
-    // Ищем предыдущий текстовый документ (статью)
-    for (let i = itemIndex - 1; i >= 0; i--) {
-      const prevItem = items[i];
-      
-      // Пропускаем папки
-      if (prevItem.type === 'folder') continue;
-
-      // Если нашли статью
-      if (prevItem.type === 'article') {
-        const prevArticle = prevItem.data as AppArticleVm;
-        
-        // Проверяем, включена ли статистика для предыдущей статьи
-        if (prevArticle.includeToStatistics) {
-          // Проверяем, прочитана ли предыдущая статья
-          const isPrevRead = readArticlesMap.get(prevArticle.id) || false;
-          // Если не прочитана, текущий элемент должен быть скрыт
-          return !isPrevRead;
-        }
-      }
-    }
-
-    // Если предыдущего текстового документа нет или он не включен в статистику, не скрываем
-    return false;
-  }, [items, readArticlesMap]);
+    if (item.type !== 'article') return false;
+    // Флаг «Скрывать до завершения предыдущего»
+    if (!(item.data as AppArticleVm).hideWhileNotPrevComplete) return false;
+    return isSequenceBlocked(sequenceItems, itemIndex, sequenceContext());
+  }, [sequenceItems, sequenceContext]);
 
   // Функция для проверки, должен ли элемент быть disabled
   const isItemDisabled = useCallback((item: ExplorerItem, itemIndex: number): boolean => {
-    // Проверяем только статьи и тесты
-    if (item.type === 'folder') return false;
-
     // Правила активации теста (accessabilityConditions из конструктора):
-    // тест неактивен, пока условия не выполнены (например, документ не прочитан)
+    // тест без своих правил — участник последовательности и ждёт предыдущий шаг
+    // (документ прочитан / зачёт сдан) наравне с текстовыми документами.
     if (item.type === 'test') {
-      const test = item.data as AppTestVm;
-      const conditions = test.accessabilityConditions ?? [];
-      if (conditions.length === 0) return false;
-      return !areTestActivationConditionsMet(conditions, {
-        isArticleRead: (articleId) => readArticlesMap.get(articleId) === true,
-        getTestOutcome: (testId) => {
-          const stat = testsStatsMap.get(testId);
-          if (!stat) return null;
-          const answers = Array.isArray((stat.data as { answers?: { score?: number }[] } | null)?.answers)
-            ? ((stat.data as { answers: { score?: number }[] }).answers)
-            : [];
-          return {
-            passed: stat.passed,
-            totalScore: answers.reduce((sum, a) => sum + (a.score ?? 0), 0),
-          };
-        },
-      });
-    }
-
-    // Проверяем флаг disableWhileNotPrevComplete
-    const disableFlag = item.type === 'article'
-      ? (item.data as AppArticleVm).disableWhileNotPrevComplete
-      : false;
-
-    if (!disableFlag) return false;
-
-    // Ищем предыдущий текстовый документ (статью)
-    for (let i = itemIndex - 1; i >= 0; i--) {
-      const prevItem = items[i];
-
-      // Пропускаем папки
-      if (prevItem.type === 'folder') continue;
-
-      // Если нашли статью
-      if (prevItem.type === 'article') {
-        const prevArticle = prevItem.data as AppArticleVm;
-
-        // Проверяем, включена ли статистика для предыдущей статьи
-        if (prevArticle.includeToStatistics) {
-          // Проверяем, прочитана ли предыдущая статья
-          const isPrevRead = readArticlesMap.get(prevArticle.id) || false;
-          // Если не прочитана, текущий элемент должен быть disabled
-          return !isPrevRead;
-        }
+      const conditions = (item.data as AppTestVm).accessabilityConditions ?? [];
+      if (conditions.length > 0) {
+        return !areTestActivationConditionsMet(conditions, {
+          isArticleRead: (articleId) => readArticlesMap.get(articleId) === true,
+          getTestOutcome: (testId) => {
+            const stat = testsStatsMap.get(testId);
+            if (!stat) return null;
+            const answers = Array.isArray((stat.data as { answers?: { score?: number }[] } | null)?.answers)
+              ? ((stat.data as { answers: { score?: number }[] }).answers)
+              : [];
+            return {
+              passed: stat.passed,
+              totalScore: answers.reduce((sum, a) => sum + (a.score ?? 0), 0),
+            };
+          },
+        });
       }
+      return isSequenceBlocked(sequenceItems, itemIndex, sequenceContext());
     }
 
-    // Если предыдущего текстового документа нет или он не включен в статистику, не блокируем
-    return false;
-  }, [items, readArticlesMap, testsStatsMap]);
+    if (item.type !== 'article') return false;
+    // Флаг «Блокировать до завершения предыдущего»
+    if (!(item.data as AppArticleVm).disableWhileNotPrevComplete) return false;
+    return isSequenceBlocked(sequenceItems, itemIndex, sequenceContext());
+  }, [sequenceItems, readArticlesMap, testsStatsMap, sequenceContext]);
 
   const handleItemPress = (item: ExplorerItem) => {
     // Заблокировано тарифом/наградой: вместо открытия — диалог с нужным тарифом

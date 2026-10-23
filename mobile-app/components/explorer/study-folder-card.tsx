@@ -13,7 +13,7 @@ type StudyFolderCardProps = {
   name: string;
   materialCount: number;
   progressPercent: number;
-  /** Причина блокировки: золотая рамка + корона (тариф) / трофей (награда); клик обрабатывает родитель */
+  /** Причина блокировки: 'tariff' — золотой замок + золотая полоса слева; иначе серый замок без полосы */
   locked?: LockReason | null;
   onPress: () => void;
   index: number;
@@ -27,9 +27,11 @@ export function StudyFolderCard({
   onPress,
   index,
 }: StudyFolderCardProps) {
-  const { primary, neutralSoft, warning, warningContainer } = useAppTheme();
+  const { primary, neutral, neutralSoft, warning, warningContainer, elevated2 } = useAppTheme();
   const glass = useGlass();
   const glow = useGlow();
+  // Золото с полосой — только тарифный замок; остальные причины помечаем серым замком без полосы
+  const isTariffLock = locked === 'tariff';
   const completed = Math.round((progressPercent / 100) * materialCount);
   const countLabel =
     materialCount === 1
@@ -50,21 +52,23 @@ export function StudyFolderCard({
         ]}
       >
         <GlassCard padding={20} borderRadius={16}>
-          {locked ? (
+          {isTariffLock ? (
             <View pointerEvents="none" style={[styles.lockStrip, { backgroundColor: warning }]} />
           ) : null}
           <View
             style={[
               styles.iconCircle,
               locked
-                ? { backgroundColor: warningContainer }
+                ? isTariffLock
+                  ? { backgroundColor: warningContainer }
+                  : { backgroundColor: elevated2 }
                 : { backgroundColor: glass.primaryTint, shadowColor: glow.title },
             ]}
           >
             <IconSymbol
               name={locked ? 'lock.fill' : 'folder.fill'}
               size={32}
-              color={locked ? warning : primary}
+              color={locked ? (isTariffLock ? warning : neutral) : primary}
             />
           </View>
           <ThemedText style={styles.name}>{name}</ThemedText>

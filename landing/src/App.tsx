@@ -516,6 +516,7 @@ type Tariff = {
   priceRub: number;
   periodDays: number;
   isDefault: boolean;
+  features?: { id: string; description: string; included: boolean }[];
 };
 
 function plural(n: number, one: string, few: string, many: string): string {
@@ -590,6 +591,50 @@ function Pricing() {
                     <p className="mt-1.5 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                       {t.description}
                     </p>
+                  )}
+                  {t.features && t.features.length > 0 && (
+                    <ul className="mt-4 space-y-2">
+                      {t.features.map((f) => (
+                        <li
+                          key={f.id}
+                          className={`flex items-start gap-2 text-sm ${
+                            f.included
+                              ? "text-gray-700 dark:text-gray-300"
+                              : "text-gray-400 dark:text-gray-500"
+                          }`}
+                        >
+                          {f.included ? (
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                          ) : (
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="mt-0.5 h-4 w-4 shrink-0"
+                              aria-hidden="true"
+                            >
+                              <rect x="3" y="11" width="18" height="11" rx="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          )}
+                          <span>{f.description}</span>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                   <p className="mt-auto pt-5">
                     <span className="text-4xl font-bold tracking-tight">

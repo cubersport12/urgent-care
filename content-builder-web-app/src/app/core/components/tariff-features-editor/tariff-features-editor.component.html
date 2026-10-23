@@ -1,0 +1,127 @@
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Особенности тарифов</h1>
+        <app-badge variant="info" size="sm">{{ _features().length }}</app-badge>
+      </div>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Справочник элементов «Что входит»: отмечайте их в карточке тарифа — витрина показывает входящие обычным цветом, остальные серым с замком
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <app-button
+        (click)="_create()"
+        icon="plus"
+        size="md"
+      >
+        Добавить особенность
+      </app-button>
+      <app-icon-button
+        icon="rotate-right"
+        variant="outline"
+        size="md"
+        (click)="_reload()"
+        tooltip="Обновить список"
+      />
+      @if (_ref) {
+        <app-icon-button
+          icon="times"
+          variant="ghost"
+          size="md"
+          (click)="_close()"
+          tooltip="Закрыть"
+        />
+      }
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="flex items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+    <div class="flex-1 max-w-md">
+      <app-input
+        [(ngModel)]="_searchQuery"
+        placeholder="Поиск по коду или описанию..."
+        icon="magnifying-glass"
+        size="sm"
+      />
+    </div>
+  </div>
+
+  <!-- Features Table Card -->
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+    @if (_loading()) {
+      <div class="p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
+        <mat-icon svgIcon="spinner" class="!w-8 !h-8 animate-spin mx-auto text-blue-600" />
+        <p class="text-sm">Загрузка особенностей…</p>
+      </div>
+    } @else if (_filteredFeatures().length === 0) {
+      <div class="p-12 text-center text-slate-500 dark:text-slate-400 space-y-2">
+        <mat-icon svgIcon="list-check" class="!w-10 !h-10 mx-auto text-slate-300 dark:text-slate-600" />
+        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Особенности не найдены</p>
+        <p class="text-xs">Измените поисковый запрос или добавьте первую особенность</p>
+      </div>
+    } @else {
+      <div class="app-table-container overflow-auto max-h-[calc(100vh-280px)]">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-medium">
+              <th class="py-3.5 px-4">Код</th>
+              <th class="py-3.5 px-4">Описание</th>
+              <th class="py-3.5 px-4">Статус</th>
+              <th class="py-3.5 px-4">Порядок</th>
+              <th class="py-3.5 px-4 text-right">Действия</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+            @for (f of _filteredFeatures(); track f.id) {
+              <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                <td class="py-3.5 px-4">
+                  <code class="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 font-mono text-[11px] text-blue-600 dark:text-blue-400 font-semibold">
+                    {{ f.code }}
+                  </code>
+                </td>
+
+                <td class="py-3.5 px-4">
+                  <div class="text-slate-900 dark:text-white text-sm">{{ f.description }}</div>
+                </td>
+
+                <td class="py-3.5 px-4">
+                  <app-badge [variant]="f.isActive ? 'success' : 'neutral'" size="sm" [dot]="true">
+                    {{ f.isActive ? 'Активна' : 'Неактивна' }}
+                  </app-badge>
+                </td>
+
+                <td class="py-3.5 px-4">
+                  <span class="text-slate-600 dark:text-slate-300">{{ f.sortOrder }}</span>
+                </td>
+
+                <td class="py-3.5 px-4 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <app-icon-button
+                      icon="pen-to-square"
+                      variant="ghost"
+                      size="sm"
+                      (click)="_edit(f)"
+                      tooltip="Редактировать особенность"
+                    />
+                    <app-icon-button
+                      icon="trash"
+                      variant="ghost"
+                      size="sm"
+                      (click)="_delete(f)"
+                      tooltip="Удалить особенность"
+                      class="text-rose-500 hover:text-rose-700"
+                    />
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

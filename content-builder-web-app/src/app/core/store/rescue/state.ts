@@ -44,13 +44,13 @@ export class RescueState {
   }
 
   @Action(RescueActions.CreateRescueItem, { cancelUncompleted: true })
-  private _createRescueItem(ctx: StateContext<RescueStateModel>, { payload }: RescueActions.CreateRescueItem) {
+  private _createRescueItem(ctx: StateContext<RescueStateModel>, { payload, force }: RescueActions.CreateRescueItem) {
     const id = payload.id ?? generateGUID();
     const newRescueItem = {
       ...payload,
       id
     } as AppRescueItemVm;
-    return this._rescueStorage.createRescueItem(newRescueItem)
+    return this._rescueStorage.createRescueItem(newRescueItem, force)
       .pipe(tap(() => {
         ctx.setState(patch({
           rescueItems: append([newRescueItem])
@@ -59,8 +59,8 @@ export class RescueState {
   }
 
   @Action(RescueActions.UpdateRescueItem)
-  private _updateRescueItem(ctx: StateContext<RescueStateModel>, { rescueItemId, payload }: RescueActions.UpdateRescueItem) {
-    return this._rescueStorage.updateRescueItem({ id: rescueItemId, ...payload } as AppRescueItemVm)
+  private _updateRescueItem(ctx: StateContext<RescueStateModel>, { rescueItemId, payload, force }: RescueActions.UpdateRescueItem) {
+    return this._rescueStorage.updateRescueItem({ id: rescueItemId, ...payload } as AppRescueItemVm, force)
       .pipe(tap(() => {
         ctx.setState(patch({
           rescueItems: updateItem(x => x.id === rescueItemId, x => ({ ...x, ...payload }))
