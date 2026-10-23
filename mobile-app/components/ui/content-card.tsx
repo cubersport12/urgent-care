@@ -16,7 +16,7 @@ type ContentCardProps = {
   kind: MaterialKind;
   status?: StatusType;
   disabled?: boolean;
-  /** Причина блокировки: золотая рамка + корона (тариф) / трофей (награда); клик обрабатывает родитель */
+  /** Причина блокировки: 'tariff' — золотой замок + золотая полоса слева; иначе серый замок без полосы */
   locked?: LockReason | null;
   onPress?: () => void;
   index?: number;
@@ -33,6 +33,8 @@ export function ContentCard({
   index = 0,
 }: ContentCardProps) {
   const { neutralSoft, warning } = useAppTheme();
+  // Золото с полосой — только тарифный замок; остальные причины помечаем серым замком без полосы
+  const isTariffLock = locked === 'tariff';
 
   return (
     <Animated.View entering={staggerEnter(index)}>
@@ -47,11 +49,11 @@ export function ContentCard({
         ]}
       >
         <GlassCard padding={16} borderRadius={12} style={styles.card}>
-          {locked ? (
+          {isTariffLock ? (
             <View pointerEvents="none" style={[styles.lockStrip, { backgroundColor: warning }]} />
           ) : null}
           <View style={styles.row}>
-            <TypeIcon kind={kind} size={20} locked={!!locked} />
+            <TypeIcon kind={kind} size={20} locked={locked ?? undefined} />
             <View style={styles.body}>
               <ThemedText style={styles.title} numberOfLines={1}>
                 {title}

@@ -40,6 +40,46 @@ class Tariff(Base):
     )
 
 
+class TariffFeature(Base):
+    """Особенность тарифа: элемент витрины «Что входит»; code — ключ будущего гейтинга контента."""
+
+    __tablename__ = "tariff_features"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    description: Mapped[str] = mapped_column(String(500), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
+class TariffFeatureLink(Base):
+    """Связь тарифа с особенностью (сколько тарифов входит — столько строк)."""
+
+    __tablename__ = "tariff_feature_links"
+
+    tariff_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("tariffs.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    feature_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("tariff_features.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+
 class UserSubscription(Base):
     __tablename__ = "user_subscriptions"
     __table_args__ = (UniqueConstraint("user_id", name="uq_user_subscriptions_user_id"),)

@@ -21,12 +21,26 @@ export class AppRescueStorageService extends BaseStorage {
     );
   }
 
-  public createRescueItem(rescueItem: AppRescueItemVm): Observable<void> {
-    return this._add(rescueItem);
+  public createRescueItem(rescueItem: AppRescueItemVm, force = false): Observable<void> {
+    if (!force) return this._add(rescueItem);
+    return this._forceCall(() => this._api.create('rescue', rescueItem, { force: true }));
   }
 
-  public updateRescueItem(rescueItem: AppRescueItemVm): Observable<void> {
-    return this._update(rescueItem);
+  public updateRescueItem(rescueItem: AppRescueItemVm, force = false): Observable<void> {
+    if (!force) return this._update(rescueItem);
+    return this._forceCall(() => this._api.update('rescue', rescueItem.id, rescueItem, { force: true }));
+  }
+
+  /** Сохранение с force: тот же контракт, что у _add/_update, но с query-параметром */
+  private _forceCall(op: () => Promise<unknown>): Observable<void> {
+    return new Observable((obs) => {
+      void op()
+        .then(() => {
+          obs.next();
+          obs.complete();
+        })
+        .catch((err: unknown) => obs.error(err));
+    });
   }
 
   public deleteRescueItem(rescueItemId: string): Observable<void> {

@@ -16,6 +16,7 @@ import { AppSelectComponent, AppSelectOption } from '../ui';
       [emptyValue]="null"
       [options]="_options()"
       [formControl]="control()"
+      hint="Элемент будет закрыт, пока награда не получена"
     />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush

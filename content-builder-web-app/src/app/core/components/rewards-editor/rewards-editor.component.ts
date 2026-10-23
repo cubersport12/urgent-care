@@ -64,6 +64,7 @@ export class RewardsEditorService {
   imports: [
     ReactiveFormsModule,
     MatDialogModule,
+    MatSnackBarModule,
     AppDialogWrapperComponent,
     AppButtonComponent,
     AppIconButtonComponent,
@@ -82,20 +83,31 @@ export class RewardsEditorService {
       (close)="_ref.close()"
     >
       <form class="flex flex-col gap-3 min-w-[320px] max-w-full" [formGroup]="_form">
-        <app-select
-          label="Достижения (все нужны)"
-          formControlName="achievementIds"
-          [multiple]="true"
-          [options]="_achievementOptions()"
-          hint="Удерживайте Ctrl / Cmd для выбора нескольких достижений"
-          [required]="true"
-        />
-        <app-input label="Название награды" formControlName="title" [required]="true" />
+        <div class="flex flex-col gap-2 p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-800">
+          <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Достижения для получения награды (нужны все)</span>
+          @if (_form.controls.achievementIds.value.length === 0) {
+            <span class="text-xs text-rose-500">Добавьте хотя бы одно достижение — без него награду не сохранить</span>
+          }
+          @for (id of _form.controls.achievementIds.value; track id) {
+            <div class="flex items-center gap-2 p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+              <span class="text-xs text-slate-600 dark:text-slate-300 grow truncate">{{ _achievementTitle(id) }}</span>
+              <app-icon-button icon="trash" variant="ghost" size="sm" (click)="_removeAchievement(id)" tooltip="Убрать" class="text-slate-400 hover:text-rose-600" />
+            </div>
+          }
+          <app-select
+            [formControl]="_addAchievementControl"
+            [options]="_addableAchievementOptions()"
+            [allowEmpty]="true"
+            emptyLabel="— Выберите достижение, чтобы добавить —"
+            (valueChange)="_onAchievementPick($event)"
+          />
+        </div>
+        <app-input label="Название награды" formControlName="title" [required]="true" [error]="_form.controls.title.invalid ? 'Укажите название награды' : null" />
         <app-textarea label="Описание награды" formControlName="description" [rows]="2" />
-        <div class="flex gap-2 items-center">
+        <div class="flex gap-2 items-end">
           <app-input label="Иконка награды (путь к файлу)" formControlName="iconPath" class="grow" />
-          <app-button variant="outline" (click)="_file.click()" icon="upload">
-            Загрузить
+          <app-button variant="outline" (click)="_file.click()" icon="upload" [disabled]="_uploading()" class="mb-px">
+            {{ _uploading() ? 'Загрузка…' : 'Загрузить' }}
           </app-button>
           <input #_file type="file" accept="image/*" class="hidden" (change)="_onFile($event)" />
         </div>
@@ -154,6 +166,7 @@ export class RewardEditDialogComponent {
   protected readonly _ref = inject(MatDialogRef<RewardEditDialogComponent, RewardCreate | null>);
   private readonly _files = inject(AppFilesStorageService);
   private readonly _tariffsStorage = inject(AppTariffsStorageService);
+  private readonly _snack = inject(MatSnackBar);
   private readonly _destroyRef = inject(DestroyRef);
 
   protected readonly _uploading = signal(false);
@@ -161,9 +174,39 @@ export class RewardEditDialogComponent {
   protected readonly _attached = signal<string[]>(this._data.reward?.files ?? []);
   protected readonly _thumbs = signal<Record<string, string>>({});
   protected readonly _tariffs = signal<TariffOut[]>([]);
-  protected readonly _achievementOptions = computed(() =>
-    this._data.achievements.map((a) => ({ value: a.id, label: `${a.title} (${a.code})` }))
-  );
+
+  /** Достижения, ещё не добавленные в награду (для селекта «Добавить») */
+  protected _addableAchievementOptions() {
+    const selected = new Set(this._form.controls.achievementIds.value);
+    return this._data.achievements
+      .filter((a) => !selected.has(a.id))
+      .map((a) => ({ value: a.id, label: `${a.title} (${a.code})` }));
+  }
+
+  protected readonly _addAchievementControl = new FormControl<string | null>(null);
+
+  /** Выбор в селекте сразу добавляет достижение в награду */
+  protected _onAchievementPick(value: unknown): void {
+    if (value == null || value === '') return;
+    const id = String(value);
+    const current = this._form.controls.achievementIds.value;
+    if (!current.includes(id)) {
+      this._form.controls.achievementIds.setValue([...current, id]);
+    }
+    this._addAchievementControl.reset(null);
+  }
+
+  protected _achievementTitle(id: string): string {
+    const a = this._data.achievements.find((x) => x.id === id);
+    return a ? `${a.title} (${a.code})` : id;
+  }
+
+  protected _removeAchievement(id: string): void {
+    this._form.controls.achievementIds.setValue(
+      this._form.controls.achievementIds.value.filter((x) => x !== id)
+    );
+  }
+
   protected readonly _tariffOptions = computed(() => [
     { value: null, label: '— Без подписки —' },
     ...this._tariffs().map((t) => ({ value: t.id, label: `${t.title} (${t.periodDays} дн.)` }))
@@ -201,8 +244,6 @@ export class RewardEditDialogComponent {
         sortOrder: r.sortOrder,
         isActive: r.isActive
       });
-    } else if (this._data.achievements[0]) {
-      this._form.controls.achievementIds.setValue([this._data.achievements[0].id]);
     }
 
     this._tariffsStorage.listAll().subscribe((list) => {
@@ -238,7 +279,10 @@ export class RewardEditDialogComponent {
         this._form.controls.iconPath.setValue(path);
         this._uploading.set(false);
       },
-      error: () => this._uploading.set(false)
+      error: (err: unknown) => {
+        this._uploading.set(false);
+        this._toast(err);
+      }
     });
   }
 
@@ -266,8 +310,16 @@ export class RewardEditDialogComponent {
         this._attached.update((list) => [...list, ...paths]);
         this._uploadingFiles.set(false);
       },
-      error: () => this._uploadingFiles.set(false)
+      error: (err: unknown) => {
+        this._uploadingFiles.set(false);
+        this._toast(err);
+      }
     });
+  }
+
+  private _toast(err: unknown): void {
+    const msg = err instanceof ApiError ? err.detail : 'Ошибка загрузки файла';
+    this._snack.open(msg, 'Закрыть', { duration: 6000 });
   }
 
   /** Имя файла для показа: часть после '{guid}--' в ключе. */

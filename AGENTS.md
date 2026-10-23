@@ -40,3 +40,23 @@ All `mobile-app/` UI is built exclusively through the design system. Reference: 
 - Motion: only the established durations/easings (see the Анимации section of design-system.html; shared helper `use-enter-animation`); mount animations via Reanimated `entering={FadeIn…}`, never hand-rolled shared-value fades.
 - If a token or component is genuinely missing, add it to `constants/theme.ts` / `components/ui/` first, then use it — don't inline a one-off style.
 - Legacy hardcoded colors inside existing components (StatusBadge, FilterPills, …) are known debt listed in design-system.html: don't copy the pattern, don't refactor it unprompted.
+
+# Правила работы с кодом
+Поиск по коду — ТОЛЬКО через codebase-memory MCP
+Поиск символов, навигация по коду и анализ связей выполняются исключительно через codebase-memory MCP (проект urgent-care):
+
+search_graph — найти символы (BM25-запрос, name_pattern/qn_pattern, file_pattern).
+get_code_snippet — прочитать класс/метод по qualified name.
+query_graph (Cypher) — маршруты, связи, мульти-хоп анализ, агрегации.
+trace_path — callers/callees, data flow.
+get_file_outline — структура конкретного файла.
+Запрещено искать по репозиторию вручную: инструменты Grep/Glob, а также grep/rg/find/findstr через Bash. Хук в .zcode/config.json блокирует такие вызовы.
+
+Если граф устарел (код правился после индексации, watch выключен) — переиндексируй: index_repository (для большого репо: async: true, затем опрос status: true). Переходить на grep из-за устаревшего графа нельзя.
+
+Чтение конкретного файла по уже известному пути (Read) разрешено — например, для Edit или когда get_code_snippet вернул метод без тела (известная проблема для длинных build-методов).
+
+Известные ограничения индекса (не повод для fallback в grep):
+
+search_code не находит строковые литералы (например, '0.1.0+1' даёт 0 хитов).
+get_code_snippet для длинных методов может отдать сигнатуру без тела — читай файл целиком по найденному пути.

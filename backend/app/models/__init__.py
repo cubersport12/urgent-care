@@ -7,6 +7,8 @@ from app.models.billing import (
     PaymentMethod,
     SubscriptionChange,
     Tariff,
+    TariffFeature,
+    TariffFeatureLink,
     UserSubscription,
 )
 from app.models.certificate import Certificate
@@ -37,6 +39,8 @@ __all__ = [
     "Test",
     "Rescue",
     "Tariff",
+    "TariffFeature",
+    "TariffFeatureLink",
     "UserSubscription",
     "Payment",
     "PaymentMethod",

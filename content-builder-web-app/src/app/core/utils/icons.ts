@@ -5,7 +5,7 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faSun, faMoon, faPlusCircle, faPlus, faExclamationCircle, faWindowMaximize, faTrash,
   faFolder, faFolderOpen, faSpinner, faCheck, faTimes, faFileContract, faSlidersH, faFileCircleCheck, faEdit, faVideo, faBars, faKitMedical, faChevronRight, faChevronDown, faBolt, faUpload, faCopy, faScissors, faPaste, faArrowUp, faRotateRight, faEllipsisVertical, faTag, faBell, faTrophy, faGift, faComments, faCertificate, faCreditCard, faUsers, faChartLine, faGear, faShieldHalved, faHouse, faCoins, faGamepad, faBan, faMagnifyingGlass, faFilter,
   faEnvelope, faLock, faEye, faEyeSlash, faArrowRight, faChevronLeft,
-  faKey, faUser, faCalculator, faMessage, faArrowUpRightFromSquare, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+  faKey, faUser, faCalculator, faMessage, faArrowUpRightFromSquare, faPaperPlane, faListCheck } from '@fortawesome/free-solid-svg-icons';
 import { icon, library } from '@fortawesome/fontawesome-svg-core';
 
 @Injectable({ providedIn: 'root' })
@@ -72,7 +72,8 @@ export class AppIconsRegistry {
       faCalculator,
       faMessage,
       faArrowUpRightFromSquare,
-      faPaperPlane
+      faPaperPlane,
+      faListCheck
     ];
 
     icons.forEach((iconDefinition) => {

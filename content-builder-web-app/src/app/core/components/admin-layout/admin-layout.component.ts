@@ -217,6 +217,7 @@ export class AdminLayoutComponent {
         title: 'Монетизация',
         items: [
           { label: 'Тарифные планы', route: '/tariffs', icon: 'sliders' },
+          { label: 'Особенности тарифов', route: '/tariff-features', icon: 'list-check' },
           { label: 'Промокоды', route: '/promo-codes', icon: 'tag' },
           { label: 'Возврат подписок', route: '/refunds', icon: 'credit-card' }
         ]

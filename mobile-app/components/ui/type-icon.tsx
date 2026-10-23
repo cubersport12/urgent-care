@@ -1,5 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAppTheme, useGlow } from '@/hooks/use-theme-color';
+import type { LockReason } from '@/components/explorer/types';
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -8,12 +9,12 @@ export type MaterialKind = 'folder' | 'article' | 'test' | 'rescue';
 export function TypeIcon({
   kind,
   size = 20,
-  locked = false,
+  locked,
 }: {
   kind: MaterialKind;
   size?: number;
-  /** Заблокирован (тариф/награда): золотой замок вместо иконки типа */
-  locked?: boolean;
+  /** Заблокирован: 'tariff' — золотой замок (подписка), иначе — серый (награда и пр.) */
+  locked?: LockReason;
 }) {
   const theme = useAppTheme();
   const glow = useGlow();
@@ -52,8 +53,11 @@ export function TypeIcon({
   }, [theme, glow]);
 
   const c = locked
-    ? // Платный/наградный контент помечаем золотым замком — как во всех приложениях
-      { icon: 'lock.fill', bg: theme.warningContainer, color: theme.warning, shadowColor: 'transparent' }
+    ? locked === 'tariff'
+      ? // Платный контент помечаем золотым замком — как во всех приложениях
+        { icon: 'lock.fill', bg: theme.warningContainer, color: theme.warning, shadowColor: 'transparent' }
+      : // Наградный/прочий замок — нейтральный серый, чтобы не путать с подпиской
+        { icon: 'lock.fill', bg: theme.elevated2, color: theme.neutral, shadowColor: 'transparent' }
     : variant[kind];
 
   return (

@@ -22,6 +22,9 @@ from app.schemas.billing import (
     SubscribeOut,
     SubscribeRequest,
     TariffCreate,
+    TariffFeatureCreate,
+    TariffFeatureOut,
+    TariffFeatureUpdate,
     TariffOut,
     TariffUpdate,
 )
@@ -71,6 +74,42 @@ async def delete_tariff(
     _: Annotated[User, Depends(get_current_admin)],
 ) -> None:
     await BillingService(db).delete_tariff(tariff_id)
+
+
+@router.get("/tariff-features", response_model=list[TariffFeatureOut])
+async def list_tariff_features(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> list[TariffFeatureOut]:
+    return await BillingService(db).list_features()
+
+
+@router.post("/tariff-features", response_model=TariffFeatureOut, status_code=201)
+async def create_tariff_feature(
+    payload: TariffFeatureCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> TariffFeatureOut:
+    return await BillingService(db).create_feature(payload)
+
+
+@router.patch("/tariff-features/{feature_id}", response_model=TariffFeatureOut)
+async def update_tariff_feature(
+    feature_id: UUID,
+    payload: TariffFeatureUpdate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> TariffFeatureOut:
+    return await BillingService(db).update_feature(feature_id, payload)
+
+
+@router.delete("/tariff-features/{feature_id}", status_code=204)
+async def delete_tariff_feature(
+    feature_id: UUID,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> None:
+    await BillingService(db).delete_feature(feature_id)
 
 
 @router.get("/promo-codes", response_model=list[PromoCodeOut])

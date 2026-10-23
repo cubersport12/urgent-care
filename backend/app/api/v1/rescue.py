@@ -55,8 +55,9 @@ async def create_rescue(
     payload: RescueCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
     _: Annotated[User, Depends(get_current_admin)],
+    force: bool = Query(False, description="Сохранить несмотря на ошибки графа сцен"),
 ):
-    if payload.data:
+    if payload.data and not force:
         errs = validate_rescue_graph(payload.data)
         if errs:
             raise AppError(detail="; ".join(errs), status_code=400)
@@ -74,8 +75,9 @@ async def update_rescue(
     payload: RescueUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
     _: Annotated[User, Depends(get_current_admin)],
+    force: bool = Query(False, description="Сохранить несмотря на ошибки графа сцен"),
 ):
-    if payload.data:
+    if payload.data and not force:
         errs = validate_rescue_graph(payload.data)
         if errs:
             raise AppError(detail="; ".join(errs), status_code=400)

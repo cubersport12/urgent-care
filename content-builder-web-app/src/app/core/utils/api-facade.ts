@@ -131,7 +131,7 @@ export class AppApi {
     }
   }
 
-  create<T>(resource: string, body: unknown): Promise<T> {
+  create<T>(resource: string, body: unknown, opts?: { force?: boolean }): Promise<T> {
     switch (resource) {
       case 'folders':
         return apiCall(() => foldersCreateFolder({ body: body as never })) as Promise<T>;
@@ -140,13 +140,16 @@ export class AppApi {
       case 'tests':
         return apiCall(() => testsCreateTest({ body: body as never })) as Promise<T>;
       case 'rescue':
-        return apiCall(() => rescueCreateRescue({ body: body as never })) as Promise<T>;
+        // force: сохранить сценарий с ошибками графа — бэкенд-параметр не входит в сгенерированные типы
+        return apiCall(() => rescueCreateRescue(
+          opts?.force ? ({ body, query: { force: true } } as never) : { body: body as never }
+        )) as Promise<T>;
       default:
         return Promise.reject(new Error(`Unknown resource: ${resource}`));
     }
   }
 
-  update<T>(resource: string, id: string, body: unknown): Promise<T> {
+  update<T>(resource: string, id: string, body: unknown, opts?: { force?: boolean }): Promise<T> {
     switch (resource) {
       case 'folders':
         return apiCall(() => foldersUpdateFolder({ path: { item_id: id }, body: body as never })) as Promise<T>;
@@ -155,7 +158,11 @@ export class AppApi {
       case 'tests':
         return apiCall(() => testsUpdateTest({ path: { item_id: id }, body: body as never })) as Promise<T>;
       case 'rescue':
-        return apiCall(() => rescueUpdateRescue({ path: { item_id: id }, body: body as never })) as Promise<T>;
+        return apiCall(() => rescueUpdateRescue(
+          opts?.force
+            ? ({ path: { item_id: id }, body, query: { force: true } } as never)
+            : { path: { item_id: id }, body: body as never }
+        )) as Promise<T>;
       default:
         return Promise.reject(new Error(`Unknown resource: ${resource}`));
     }

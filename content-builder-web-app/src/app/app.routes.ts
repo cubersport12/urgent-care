@@ -56,6 +56,14 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'tariff-features',
+        title: 'Особенности тарифов — Trouble Dent',
+        loadComponent: () =>
+          import(
+            './core/components/tariff-features-editor/tariff-features-editor.component'
+          ).then((x) => x.TariffFeaturesEditorComponent)
+      },
+      {
         path: 'promo-codes',
         title: 'Промокоды — Trouble Dent',
         loadComponent: () =>
