@@ -3,6 +3,7 @@ import { LEGAL_DOCUMENTS, legalDocTitle, type LegalDocId } from '@/lib/legal-doc
 import { ThemedText } from '@/components/themed-text';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { ScreenAppBar } from '@/components/ui/screen-app-bar';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { PdfView } from '@/components/pdf-view/pdf-view';
@@ -10,7 +11,7 @@ import { Spacing } from '@/constants/theme';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 /** Нормативные документы: список + просмотр PDF. */
 export default function LegalDocsScreen() {
@@ -71,9 +72,7 @@ function LegalDocViewer({ id, onBack }: { id: LegalDocId; onBack: () => void }) 
         </ThemedText>
       </View>
       {isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={primary} />
-        </View>
+        <LoadingOverlay />
       ) : pdfUri ? (
         <PdfView source={pdfUri} style={styles.preview} />
       ) : (

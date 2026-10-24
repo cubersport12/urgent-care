@@ -761,6 +761,16 @@ function Footer() {
                 </a>
               </li>
               <li>
+                <a
+                  href={LINKS.legalCookies}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition hover:text-gray-900 dark:hover:text-white"
+                >
+                  Правила использования cookie
+                </a>
+              </li>
+              <li>
                 <a href={LINKS.webApp} className="transition hover:text-gray-900 dark:hover:text-white">
                   Веб-версия приложения
                 </a>
