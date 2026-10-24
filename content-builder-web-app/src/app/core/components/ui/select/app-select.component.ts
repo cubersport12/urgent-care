@@ -201,7 +201,17 @@ export class AppSelectComponent implements ControlValueAccessor {
       this.valueChange.emit(values);
       return;
     }
-    const val = (event.target as HTMLSelectElement).value;
+    const select = event.target as HTMLSelectElement;
+    // Нативный селект всегда отдаёт строку: у пустой опции [value]="null"
+    // превращается в DOM-строку "null", а не в объявленный emptyValue.
+    if (this.allowEmpty() && select.selectedIndex === 0) {
+      const empty = this.emptyValue();
+      this._innerValue.set(empty);
+      this._onChange(empty);
+      this.valueChange.emit(empty);
+      return;
+    }
+    const val = select.value;
     this._innerValue.set(val);
     this._onChange(val);
     this.valueChange.emit(val);

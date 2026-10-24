@@ -26,7 +26,7 @@ import { useAppTheme } from '@/hooks/use-theme-color';
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
 import { LockedTariffSheet, type LockedTariffItem } from './billing/locked-tariff-sheet';
@@ -40,8 +40,8 @@ import { RescueView } from './rescue/rescue-view';
 import { TestTakingView } from './test-taking-view';
 import { TestView } from './test-view';
 import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
 import { FilterPills, type FilterKey } from './ui/filter-pills';
+import { LoadingOverlay } from './ui/loading-overlay';
 import { ProgressBar } from './ui/progress-bar';
 import { ScreenBackground } from './ui/screen-background';
 import { GlassCard } from './ui/glass-card';
@@ -882,12 +882,7 @@ export function Explorer() {
             </View>
           )}
 
-          {isLoading ? (
-            <ThemedView style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={tintColor} />
-              <ThemedText style={styles.loadingText}>Загрузка...</ThemedText>
-            </ThemedView>
-          ) : (() => {
+          {(() => {
             const filteredItems = items
               .map((item, index) => ({ item, index }))
               .filter(({ item, index }) => {
@@ -998,6 +993,8 @@ export function Explorer() {
           })()}
         </ScrollView>
       </Animated.View>
+      {/* Спиннер страницы — снаружи Animated.View, иначе гаснет вместе со списком (opacity → 0) */}
+      {isLoading && <LoadingOverlay />}
       <LockedTariffSheet
         item={lockedTariffItem}
         onClose={() => setLockedTariffItem(null)}
@@ -1111,17 +1108,6 @@ const styles = StyleSheet.create({
   filterRow: {
     marginTop: 8,
     marginBottom: 8,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    opacity: 0.7,
   },
   emptyCard: {
     alignItems: 'center',

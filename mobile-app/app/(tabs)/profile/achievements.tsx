@@ -4,6 +4,7 @@ import { friendlyFileName, RewardFileViewer } from '@/components/reward-file-vie
 import { ThemedText } from '@/components/themed-text';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { ScreenAppBar } from '@/components/ui/screen-app-bar';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { Spacing } from '@/constants/theme';
@@ -126,9 +127,7 @@ export default function AchievementsScreen() {
       <ScreenAppBar title="Достижения и награды" backFallbackHref="/(tabs)/profile" />
 
       {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={primary} />
-        </View>
+        <LoadingOverlay />
       ) : error ? (
         <View style={styles.centered}>
           <ThemedText style={{ color: dangerColor }}>{error}</ThemedText>

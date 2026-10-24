@@ -3,7 +3,7 @@ import { staggerEnter } from '@/hooks/use-enter-animation';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { useIsFocused } from '@react-navigation/native';
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { ThemedText } from '../themed-text';
 import { GlassCard } from '../ui/glass-card';
@@ -12,10 +12,12 @@ import { ProgressBar } from '../ui/progress-bar';
 import { StatusBadge } from '../ui/status-badge';
 
 type AccountOverallStatsProps = {
+  /** Хук поднят на уровень экрана — страница показывает поверх себя спиннер. */
+  stats: ReturnType<typeof useAccountOverallStats>;
   refreshKey?: number;
 };
 
-export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps) {
+export function AccountOverallStats({ stats, refreshKey = 0 }: AccountOverallStatsProps) {
   const {
     primary,
     warning,
@@ -29,7 +31,7 @@ export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps
     successContainer,
   } = useAppTheme();
   const glass = useGlass();
-  const { data, isLoading, error: statsError, fetchData } = useAccountOverallStats();
+  const { data, isLoading, error: statsError, fetchData } = stats;
   const isFocused = useIsFocused();
 
   const METRIC_COLORS = {
@@ -81,12 +83,7 @@ export function AccountOverallStats({ refreshKey = 0 }: AccountOverallStatsProps
   ];
 
   if (isLoading) {
-    return (
-      <View style={styles.loadingWrap}>
-        <ActivityIndicator size="small" color={primary} />
-        <ThemedText style={{ color: neutralSoft }}>Загрузка статистики...</ThemedText>
-      </View>
-    );
+    return null;
   }
 
   if (statsError) {
@@ -224,12 +221,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     marginTop: 4,
-  },
-  loadingWrap: {
-    marginTop: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
   errorText: {
     marginTop: 24,
