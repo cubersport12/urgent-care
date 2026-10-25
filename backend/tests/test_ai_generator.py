@@ -26,15 +26,18 @@ async def test_ai_generate_rescue_without_key_raises(monkeypatch):
 
 
 def test_generate_rescue_request_scene_count_bounds():
-    req = GenerateRescueRequest.model_validate({"prompt": "случай", "sceneCount": 15, "difficulty": "средняя"})
-    assert req.scene_count == 15
+    req = GenerateRescueRequest.model_validate({"prompt": "случай", "sceneCount": 100, "difficulty": "средняя"})
+    assert req.scene_count == 100
     assert req.difficulty == "средняя"
+
+    req = GenerateRescueRequest.model_validate({"prompt": "случай", "sceneCount": 16})
+    assert req.scene_count == 16
 
     req = GenerateRescueRequest.model_validate({"prompt": "случай"})
     assert req.scene_count is None
     assert req.difficulty is None
 
-    for bad in (0, 16, 99):
+    for bad in (0, 101):
         with pytest.raises(ValidationError):
             GenerateRescueRequest.model_validate({"prompt": "случай", "sceneCount": bad})
 

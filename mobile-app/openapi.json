@@ -9536,7 +9536,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 15.0,
+                "maximum": 100.0,
                 "minimum": 1.0
               },
               {
@@ -9652,6 +9652,7 @@
               "$ref": "#/components/schemas/RescueScene"
             },
             "type": "array",
+            "maxItems": 100,
             "title": "Scenes"
           },
           "defaultBackground": {
