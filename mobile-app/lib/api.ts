@@ -58,6 +58,7 @@ export async function apiFetchRelation<T = unknown>(
   relation: string,
   options: FetchOptions = {},
 ): Promise<ApiListResponse<T>> {
+  const tariffQuery = { enforceTariff: true };
   const parentQuery =
     options.all
       ? { all: true }
@@ -71,45 +72,61 @@ export async function apiFetchRelation<T = unknown>(
     case 'folders':
       if (options.id) {
         return asListResponse(async () => [
-          (await apiCall(() => foldersGetFolder({ path: { item_id: options.id! } }))) as T,
+          (await apiCall(() =>
+            foldersGetFolder({ path: { item_id: options.id! }, query: tariffQuery }),
+          )) as T,
         ]);
       }
       return asListResponse(async () =>
         (await apiCall(() =>
-          foldersListFolders({ query: { ...parentQuery, all: options.all || undefined } }),
+          foldersListFolders({
+            query: { ...parentQuery, all: options.all || undefined, ...tariffQuery },
+          }),
         )) as T[],
       );
     case 'articles':
       if (options.id) {
         return asListResponse(async () => [
-          (await apiCall(() => articlesGetArticle({ path: { item_id: options.id! } }))) as T,
+          (await apiCall(() =>
+            articlesGetArticle({ path: { item_id: options.id! }, query: tariffQuery }),
+          )) as T,
         ]);
       }
       return asListResponse(async () =>
         (await apiCall(() =>
-          articlesListArticles({ query: { ...parentQuery, all: options.all || undefined } }),
+          articlesListArticles({
+            query: { ...parentQuery, all: options.all || undefined, ...tariffQuery },
+          }),
         )) as T[],
       );
     case 'tests':
       if (options.id) {
         return asListResponse(async () => [
-          (await apiCall(() => testsGetTest({ path: { item_id: options.id! } }))) as T,
+          (await apiCall(() =>
+            testsGetTest({ path: { item_id: options.id! }, query: tariffQuery }),
+          )) as T,
         ]);
       }
       return asListResponse(async () =>
         (await apiCall(() =>
-          testsListTests({ query: { ...parentQuery, all: options.all || undefined } }),
+          testsListTests({
+            query: { ...parentQuery, all: options.all || undefined, ...tariffQuery },
+          }),
         )) as T[],
       );
     case 'rescue':
       if (options.id) {
         return asListResponse(async () => [
-          (await apiCall(() => rescueGetRescue({ path: { item_id: options.id! } }))) as T,
+          (await apiCall(() =>
+            rescueGetRescue({ path: { item_id: options.id! }, query: tariffQuery }),
+          )) as T,
         ]);
       }
       return asListResponse(async () =>
         (await apiCall(() =>
-          rescueListRescue({ query: { ...parentQuery, all: options.all || undefined } }),
+          rescueListRescue({
+            query: { ...parentQuery, all: options.all || undefined, ...tariffQuery },
+          }),
         )) as T[],
       );
     case 'articles_stats':
@@ -185,7 +202,7 @@ export async function apiGetList<T>(path: string): Promise<ApiListResponse<T>> {
 
 export async function downloadMediaBlob(fileName: string): Promise<Blob> {
   const path = fileName.startsWith('public/') ? fileName : `public/${fileName}`;
-  const res = await authFetch(`${API_BASE_URL}/api/v1/media/${path}`);
+  const res = await authFetch(`${API_BASE_URL}/api/v1/media/${path}?enforceTariff=true`);
   if (!res.ok) throw new Error(`File not found: ${fileName}`);
   return res.blob();
 }

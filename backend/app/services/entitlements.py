@@ -18,8 +18,10 @@ from app.services.reward_unlock import is_reward_unlocked
 T = TypeVar("T")
 
 
-async def user_content_rank(db: AsyncSession, user: User) -> int:
-    return await BillingService(db).user_rank(user)
+async def user_content_rank(
+    db: AsyncSession, user: User, *, enforce_for_admin: bool = False
+) -> int:
+    return await BillingService(db).user_rank(user, enforce_for_admin=enforce_for_admin)
 
 
 async def tariff_rank_map(db: AsyncSession) -> dict[UUID, int]:

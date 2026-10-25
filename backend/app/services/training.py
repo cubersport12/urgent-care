@@ -102,12 +102,13 @@ async def load_user_wrong_stats(
 
 
 async def group_wrong_by_test(
-    session: AsyncSession, wrong: list[WrongQuestionStat]
+    session: AsyncSession, wrong: list[WrongQuestionStat], *, tests: list[Any] | None = None
 ) -> list[dict[str, Any]]:
     """Attach test names + question texts; shape ready for TrainingMeOut."""
     if not wrong:
         return []
-    tests = {t.id: t for t in await TestRepository(session).list_all()}
+    test_rows = tests if tests is not None else await TestRepository(session).list_all()
+    tests_by_id = {t.id: t for t in test_rows}
     folders = {f.id: f for f in await FolderRepository(session).list_all()}
 
     by_test: dict[str, list[WrongQuestionStat]] = {}
@@ -116,7 +117,7 @@ async def group_wrong_by_test(
 
     out: list[dict[str, Any]] = []
     for test_id, items in by_test.items():
-        test = tests.get(test_id)
+        test = tests_by_id.get(test_id)
         test_name = test.name if test else test_id
         if test and test.parent_id and test.parent_id in folders:
             test_name = f"{folders[test.parent_id].name} / {test_name}"

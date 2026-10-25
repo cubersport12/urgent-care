@@ -25,12 +25,14 @@ async def annotate_content_list(
     db: AsyncSession,
     user: User,
     items: Sequence[T],
+    *,
+    enforce_for_admin: bool = False,
 ) -> list[tuple[T, str | None]]:
     """Для каждого элемента — (item, locked_by): None доступен, 'tariff'/'reward' закрыт.
     Закрытые элементы не удаляются из списка: клиент показывает их с замком (стаб)."""
-    if user.role == "admin":
+    if user.role == "admin" and not enforce_for_admin:
         return [(item, None) for item in items]
-    rank = await user_content_rank(db, user)
+    rank = await user_content_rank(db, user, enforce_for_admin=enforce_for_admin)
     ranks = await tariff_rank_map(db)
     unlocked = await unlocked_reward_ids(db, user.id)
     out: list[tuple[T, str | None]] = []
@@ -71,10 +73,16 @@ def content_out(item: Any, schema: type[CamelModel], locked_by: str | None) -> C
     return schema.model_validate(fields)
 
 
-async def assert_content_visible(db: AsyncSession, user: User, item: Any) -> None:
-    if user.role == "admin":
+async def assert_content_visible(
+    db: AsyncSession,
+    user: User,
+    item: Any,
+    *,
+    enforce_for_admin: bool = False,
+) -> None:
+    if user.role == "admin" and not enforce_for_admin:
         return
-    rank = await user_content_rank(db, user)
+    rank = await user_content_rank(db, user, enforce_for_admin=enforce_for_admin)
     ranks = await tariff_rank_map(db)
     tid: UUID | None = getattr(item, "required_tariff_id", None)
     if not is_visible(required_tariff_id=tid, user_rank=rank, ranks=ranks):

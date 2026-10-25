@@ -4,11 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.embedding_client import embeddings_configured
 from app.api.deps import get_current_user, get_db
+from app.api.v1._content_access import annotate_content_list, assert_content_visible
 from app.db.repositories.content import FolderRepository, TestRepository
 from app.models.user import User
 from app.schemas.training import (
@@ -40,9 +41,21 @@ router = APIRouter(prefix="/training", tags=["training"])
 async def training_me(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
+    enforce_tariff: Annotated[bool, Query(alias="enforceTariff")] = False,
 ) -> list[TrainingTopicOut]:
     wrong = await load_user_wrong_stats(db, user.id)
-    topics = await group_wrong_by_test(db, wrong)
+    tests = await TestRepository(db).list_all() if enforce_tariff and wrong else None
+    visible_test_ids: set[str] | None = None
+    if tests is not None:
+        annotated_tests = await annotate_content_list(
+            db, user, tests, enforce_for_admin=True
+        )
+        visible_test_ids = {
+            str(test.id) for test, locked_by in annotated_tests if locked_by is None
+        }
+    topics = await group_wrong_by_test(db, wrong, tests=tests)
+    if visible_test_ids is not None:
+        topics = [topic for topic in topics if topic["test_id"] in visible_test_ids]
 
     recs_by_q: dict[tuple[str, str], list[RecommendedArticleOut]] = {}
     if embeddings_configured() and topics:
@@ -54,7 +67,7 @@ async def training_me(
                 keys.append((topic["test_id"], q["question_id"]))
         by_text = await vectors_for_texts(db, texts)
         if by_text:
-            rank = await user_content_rank(db, user)
+            rank = await user_content_rank(db, user, enforce_for_admin=enforce_tariff)
             ranks = await tariff_rank_map(db)
             unlocked = await unlocked_reward_ids(db, user.id)
             for key, text in zip(keys, texts):
@@ -63,14 +76,17 @@ async def training_me(
                     continue
                 try:
                     candidates = await search_similar_articles(db, vec, limit=10)
-                    visible = (
-                        list(candidates)
-                        if user.role == "admin"
-                        else filter_by_reward(
+                    if user.role == "admin":
+                        visible = (
+                            filter_by_rank(candidates, user_rank=rank, ranks=ranks)
+                            if enforce_tariff
+                            else list(candidates)
+                        )
+                    else:
+                        visible = filter_by_reward(
                             filter_by_rank(candidates, user_rank=rank, ranks=ranks),
                             unlocked=unlocked,
                         )
-                    )
                     recs_by_q[key] = [
                         RecommendedArticleOut(id=a.id, name=a.name) for a in visible[:3]
                     ]
@@ -106,6 +122,7 @@ async def test_recommendations(
     payload: TestRecommendationsCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
+    enforce_tariff: Annotated[bool, Query(alias="enforceTariff")] = False,
 ) -> list[RecommendedArticleOut]:
     """Articles to read after finishing a test, picked by embedding similarity
     to the test name and wrongly answered questions."""
@@ -113,6 +130,8 @@ async def test_recommendations(
         return []
 
     test = await TestRepository(db).get(payload.test_id)
+    if test is not None:
+        await assert_content_visible(db, user, test, enforce_for_admin=enforce_tariff)
     test_name = test.name if test else payload.test_id
     if test and test.parent_id:
         folders = {f.id: f for f in await FolderRepository(db).list_all()}
@@ -132,7 +151,7 @@ async def test_recommendations(
     if not by_text:
         return []
 
-    rank = await user_content_rank(db, user)
+    rank = await user_content_rank(db, user, enforce_for_admin=enforce_tariff)
     ranks = await tariff_rank_map(db)
     unlocked = await unlocked_reward_ids(db, user.id)
     # Дедупликация и по id, и по имени: разные статьи с одинаковым названием
@@ -148,14 +167,17 @@ async def test_recommendations(
         except Exception as e:  # noqa: BLE001
             log.warning("test-recs search failed: %s", e)
             continue
-        visible = (
-            list(candidates)
-            if user.role == "admin"
-            else filter_by_reward(
+        if user.role == "admin":
+            visible = (
+                filter_by_rank(candidates, user_rank=rank, ranks=ranks)
+                if enforce_tariff
+                else list(candidates)
+            )
+        else:
+            visible = filter_by_reward(
                 filter_by_rank(candidates, user_rank=rank, ranks=ranks),
                 unlocked=unlocked,
             )
-        )
         for article in visible:
             if article.id in seen or article.name in seen:
                 continue

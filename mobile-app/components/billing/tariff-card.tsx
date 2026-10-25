@@ -46,7 +46,9 @@ export function TariffCard({ tariff, me, busyId, onSubscribe }: TariffCardProps)
   const discounted = activePromo
     ? discountedPrice(tariff.priceRub, activePromo.discountPercent)
     : null;
-  const features = tariff.features ?? [];
+  const features = [...(tariff.features ?? [])].sort(
+    (a, b) => Number(b.included) - Number(a.included),
+  );
   const hasDetails = Boolean(tariff.description) || features.length > 0;
 
   return (

@@ -40,7 +40,6 @@ import { RescueView } from './rescue/rescue-view';
 import { TestTakingView } from './test-taking-view';
 import { TestView } from './test-view';
 import { ThemedText } from './themed-text';
-import { FilterPills, type FilterKey } from './ui/filter-pills';
 import { LoadingOverlay } from './ui/loading-overlay';
 import { ProgressBar } from './ui/progress-bar';
 import { ScreenBackground } from './ui/screen-background';
@@ -71,12 +70,6 @@ export function Explorer() {
   const [lockedTariffItem, setLockedTariffItem] = useState<LockedTariffItem | null>(null);
   // История навигации по статьям для определения hasPrevious
   const [articleNavigationHistory, setArticleNavigationHistory] = useState<string[]>([]);
-  // Состояния для toggle-кнопок фильтрации
-  const [showFolders, setShowFolders] = useState(true);
-  const [showArticles, setShowArticles] = useState(true);
-  const [showTests, setShowTests] = useState(true);
-  const [showRescue, setShowRescue] = useState(true);
-  const [materialFilter, setMaterialFilter] = useState<FilterKey>('all');
   const previousFolderIdRef = useRef<string | undefined>(undefined);
   const opacity = useSharedValue(1);
   const { isTestStarted, startTest, resetTest } = useTest();
@@ -104,7 +97,7 @@ export function Explorer() {
     void fetchAllData();
   }, []);
 
-  const { primary: tintColor, border: borderColor, neutralSoft: descriptionColor, layout1 } = useAppTheme();
+  const { neutralSoft: descriptionColor, layout1 } = useAppTheme();
   const { theme } = useTheme();
   const glass = useGlass();
   const glow = useGlow();
@@ -185,18 +178,40 @@ export function Explorer() {
     return map;
   }, [rescueStatsList.data]);
 
-  // Возврат в список из теста/статьи/режима — обновляем всю статистику,
-  // чтобы бейджи статуса отражали последнюю попытку, а не устаревший снимок.
+  // После завершения материала перечитываем прогресс и списки: статья/награда,
+  // открывшаяся после завершения, должна появиться без повторного входа в папку.
   const wasInListRef = useRef(true);
   useEffect(() => {
     const inList = !selectedArticle && !selectedTest && !selectedRescueItem && !isRescueStarted;
     if (inList && !wasInListRef.current) {
-      void articlesStatsResponse.fetchData?.();
-      void testsStatsResponse.fetchData?.();
-      void rescueStatsList.fetchData();
+      void Promise.all([
+        overallStats.fetchData(),
+        folderMaterialCountsResponse.fetchData(),
+        foldersResponse.fetchData(),
+        articlesResponse.fetchData(),
+        testsResponse.fetchData(),
+        rescueItemsResponse.fetchData(),
+        articlesStatsResponse.fetchData?.(),
+        testsStatsResponse.fetchData?.(),
+        rescueStatsList.fetchData(),
+      ]).catch((error) => console.error('Failed to refresh progress:', error));
     }
     wasInListRef.current = inList;
-  }, [selectedArticle, selectedTest, selectedRescueItem, isRescueStarted, articlesStatsResponse, testsStatsResponse, rescueStatsList]);
+  }, [
+    selectedArticle,
+    selectedTest,
+    selectedRescueItem,
+    isRescueStarted,
+    overallStats.fetchData,
+    folderMaterialCountsResponse.fetchData,
+    foldersResponse.fetchData,
+    articlesResponse.fetchData,
+    testsResponse.fetchData,
+    rescueItemsResponse.fetchData,
+    articlesStatsResponse.fetchData,
+    testsStatsResponse.fetchData,
+    rescueStatsList.fetchData,
+  ]);
 
   // Отслеживаем изменение currentFolderId для показа спиннера и анимации
   useEffect(() => {
@@ -255,54 +270,6 @@ export function Explorer() {
     }
     return '';
   }, [displayBreadcrumb, currentFolderId]);
-
-  // Статистика по текущей папке
-  const folderStats = useMemo(() => {
-    const foldersCount = foldersResponse.data?.length || 0;
-    const articlesCount = articlesResponse.data?.length || 0;
-    const testsCount = testsResponse.data?.length || 0;
-    const rescueCount = rescueItemsResponse.data?.length || 0;
-    return { foldersCount, articlesCount, testsCount, rescueCount };
-  }, [foldersResponse.data, articlesResponse.data, testsResponse.data, rescueItemsResponse.data]);
-
-  // Вычисляем количество скрытых элементов
-  const hiddenStats = useMemo(() => {
-    const hiddenFolders = !showFolders ? folderStats.foldersCount : 0;
-    const hiddenArticles = !showArticles ? folderStats.articlesCount : 0;
-    const hiddenTests = !showTests ? folderStats.testsCount : 0;
-    const hiddenRescue = !showRescue ? folderStats.rescueCount : 0;
-    const totalHidden = hiddenFolders + hiddenArticles + hiddenTests + hiddenRescue;
-    return { hiddenFolders, hiddenArticles, hiddenTests, hiddenRescue, totalHidden };
-  }, [showFolders, showArticles, showTests, showRescue, folderStats]);
-
-  // Формируем текст о скрытых элементах
-  const hiddenText = useMemo(() => {
-    const parts: string[] = [];
-    if (hiddenStats.hiddenFolders > 0) {
-      parts.push(`Папки: ${hiddenStats.hiddenFolders}`);
-    }
-    if (hiddenStats.hiddenArticles > 0) {
-      parts.push(`Статьи: ${hiddenStats.hiddenArticles}`);
-    }
-    if (hiddenStats.hiddenTests > 0) {
-      parts.push(`Тесты: ${hiddenStats.hiddenTests}`);
-    }
-    if (hiddenStats.hiddenRescue > 0) {
-      parts.push(`Спасение: ${hiddenStats.hiddenRescue}`);
-    }
-    if (parts.length > 0) {
-      return `Скрыто: ${parts.join(', ')}`;
-    }
-    return '';
-  }, [hiddenStats]);
-
-  // Функция для сброса всех фильтров
-  const handleResetFilters = () => {
-    setShowFolders(true);
-    setShowArticles(true);
-    setShowTests(true);
-    setShowRescue(true);
-  };
 
   const items = useMemo(() => {
     const explorerItems: ExplorerItem[] = [];
@@ -587,7 +554,6 @@ export function Explorer() {
     setIsNavigating(false);
     setBreadcrumb([]);
     setArticleNavigationHistory([]);
-    setMaterialFilter('all');
     previousFolderIdRef.current = undefined;
     resetTest();
     opacity.value = withTiming(1, { duration: 300 });
@@ -867,31 +833,10 @@ export function Explorer() {
             </Animated.View>
           )}
 
-          {currentFolderId !== undefined && (
-            <View style={styles.filterRow}>
-              <FilterPills
-                value={materialFilter}
-                onChange={(key) => {
-                  setMaterialFilter(key);
-                  setShowFolders(key === 'all');
-                  setShowArticles(key === 'all' || key === 'article');
-                  setShowTests(key === 'all' || key === 'test');
-                  setShowRescue(key === 'all' || key === 'rescue');
-                }}
-              />
-            </View>
-          )}
-
           {(() => {
             const filteredItems = items
               .map((item, index) => ({ item, index }))
-              .filter(({ item, index }) => {
-                if (item.type === 'folder' && !showFolders) return false;
-                if (item.type === 'article' && !showArticles) return false;
-                if (item.type === 'test' && !showTests) return false;
-                if (item.type === 'rescue' && !showRescue) return false;
-                return !isItemHidden(item, index);
-              });
+              .filter(({ item, index }) => !isItemHidden(item, index));
 
             if (isRootView && folderOnlyItems.length > 0) {
               return (
@@ -963,26 +908,12 @@ export function Explorer() {
                 <GlassCard padding={32} borderRadius={16} style={styles.emptyCard}>
                   <IconSymbol name="info.circle.fill" size={48} color={descriptionColor} style={styles.emptyIcon} />
                   <ThemedText style={styles.emptyText}>В этом разделе пока нет материалов</ThemedText>
-                  {hiddenText && (
-                    <Pressable onPress={handleResetFilters} style={styles.hiddenItemsContainer}>
-                      <ThemedText style={[styles.hiddenItemsText, { color: tintColor }]}>
-                        Показать скрытые ({hiddenText})
-                      </ThemedText>
-                    </Pressable>
-                  )}
                 </GlassCard>
               );
             }
 
             return (
               <>
-                {hiddenText && (
-                  <Pressable onPress={handleResetFilters} style={styles.hiddenItemsContainer}>
-                    <ThemedText style={[styles.hiddenItemsText, { color: descriptionColor }]}>
-                      {hiddenText}
-                    </ThemedText>
-                  </Pressable>
-                )}
                 {filteredItems.map(({ item, index }, listIndex) => (
                   <Fragment key={`${item.type}-${item.data.id}`}>
                     {renderMaterialItem({ item, index }, listIndex)}
@@ -1046,27 +977,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flexShrink: 1,
   },
-  filterButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginLeft: 'auto',
-  },
-  filterButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    minHeight: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterButtonActive: {
-    opacity: 1,
-  },
-  filterButtonText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
   scrollViewContainer: {
     flex: 1,
   },
@@ -1105,10 +1015,6 @@ const styles = StyleSheet.create({
     gap: 16,
     marginTop: 12,
   },
-  filterRow: {
-    marginTop: 8,
-    marginBottom: 8,
-  },
   emptyCard: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1122,16 +1028,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     opacity: 0.7,
     textAlign: 'center',
-  },
-  hiddenItemsContainer: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  hiddenItemsText: {
-    fontSize: 14,
-    fontStyle: 'italic',
-    textDecorationLine: 'underline',
-    textAlign: 'right'
   },
 });
 

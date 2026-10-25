@@ -1,12 +1,35 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
-import { usersListUsers, usersUpdateUserStatus, usersGrantUserBonus, authSendResetLinkAdmin, usersAdminCreateUser, usersAdminUpdateUser, usersAdminDeleteUser } from '@/core/api/generated/sdk.gen';
+import {
+  achievementsGrantAchievement,
+  achievementsGrantReward,
+  achievementsListAchievementsAdmin,
+  achievementsListRewardsAdmin,
+  authSendResetLinkAdmin,
+  billingActivatePromoCodeForUser,
+  billingListPromoCodes,
+  usersAdminCreateUser,
+  usersAdminDeleteUser,
+  usersAdminUpdateUser,
+  usersGrantUserBonus,
+  usersListUsers,
+  usersUpdateUserStatus
+} from '@/core/api/generated/sdk.gen';
 import { apiCall, ApiError } from '@/core/api/api-utils';
-import type { UserAdminCreate, UserAdminUpdate, UserListItemOut } from '@/core/api/generated/types.gen';
+import type {
+  AchievementOut,
+  PromoCodeOut,
+  RewardOut,
+  UserAdminCreate,
+  UserAdminUpdate,
+  UserListItemOut
+} from '@/core/api/generated/types.gen';
 import { AppTariffsStorageService } from '@/core/api';
 import { RouterLink } from '@angular/router';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
@@ -75,6 +98,57 @@ export class UserBonusDialogComponent {
   protected _save(): void {
     if (this._form.invalid) return;
     this._ref.close(this._form.getRawValue().points);
+  }
+}
+
+type UserGrantDialogData = {
+  title: string;
+  subtitle: string;
+  label: string;
+  options: AppSelectOption<string>[];
+  saveText: string;
+  saveIcon: string;
+  helpText?: string;
+};
+
+@Component({
+  selector: 'app-user-grant-dialog',
+  imports: [ReactiveFormsModule, AppSelectComponent, AppDialogWrapperComponent],
+  template: `
+    <app-dialog-wrapper
+      [title]="_data.title"
+      [subtitle]="_data.subtitle"
+      [saveText]="_data.saveText"
+      [saveIcon]="_data.saveIcon"
+      [saveDisabled]="_form.invalid"
+      (save)="_save()"
+      (close)="_ref.close()"
+    >
+      <form class="flex flex-col gap-3 min-w-[320px] max-w-full" [formGroup]="_form">
+        <app-select
+          [label]="_data.label"
+          formControlName="itemId"
+          [options]="_data.options"
+          [required]="true"
+        />
+        @if (_data.helpText) {
+          <p class="text-xs text-slate-500 dark:text-slate-400">{{ _data.helpText }}</p>
+        }
+      </form>
+    </app-dialog-wrapper>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class UserGrantDialogComponent {
+  protected readonly _data = inject<UserGrantDialogData>(MAT_DIALOG_DATA);
+  protected readonly _ref = inject(MatDialogRef<UserGrantDialogComponent, string | null>);
+  protected readonly _form = new FormGroup({
+    itemId: new FormControl('', { nonNullable: true, validators: [Validators.required] })
+  });
+
+  protected _save(): void {
+    if (this._form.invalid) return;
+    this._ref.close(this._form.getRawValue().itemId);
   }
 }
 
@@ -243,7 +317,9 @@ export class UserEditDialogComponent {
   selector: 'app-users-list',
   imports: [
     FormsModule,
+    MatButtonModule,
     MatIcon,
+    MatMenuModule,
     MatSnackBarModule,
     RouterLink,
     AppButtonComponent,
@@ -366,14 +442,6 @@ export class UserEditDialogComponent {
                             {{ u.fullName || 'Без имени' }}
                           </p>
                         </div>
-                      
-                        <app-icon-button
-                          icon="key"
-                          size="sm"
-                          variant="ghost"
-                          tooltip="Отправить ссылку для сброса пароля"
-                          (clicked)="_sendResetLink(u)"
-                        />
                       </div>
                     </td>
 
@@ -410,42 +478,28 @@ export class UserEditDialogComponent {
                     <!-- Actions -->
                     <td class="py-3 px-4 text-right">
                       <div class="flex items-center justify-end gap-1">
-                        <app-icon-button
-                          icon="edit"
-                          size="sm"
-                          variant="ghost"
-                          tooltip="Редактировать пользователя"
-                          (clicked)="_editUser(u)"
-                        />
-                        <app-icon-button
-                          [icon]="u.status === 'active' ? 'ban' : 'check'"
-                          size="sm"
-                          [variant]="u.status === 'active' ? 'danger' : 'ghost'"
-                          [tooltip]="u.status === 'active' ? 'Заблокировать пользователя' : 'Разблокировать'"
-                          (clicked)="_toggleBlock(u)"
-                        />
-                        <app-icon-button
-                          icon="gift"
-                          size="sm"
-                          variant="ghost"
-                          tooltip="Начислить бонусные баллы"
-                          (clicked)="_grantReward(u)"
-                        />
-
-                        <app-icon-button
-                          icon="key"
-                          size="sm"
-                          variant="ghost"
-                          tooltip="Отправить ссылку для сброса пароля"
-                          (clicked)="_sendResetLink(u)"
-                        />
-                        <app-icon-button
-                          icon="trash"
-                          size="sm"
-                          variant="danger"
-                          tooltip="Удалить пользователя"
-                          (clicked)="_deleteUser(u)"
-                        />
+                        <button
+                          type="button"
+                          mat-icon-button
+                          [matMenuTriggerFor]="userActionsMenu"
+                          aria-label="Действия пользователя"
+                          title="Действия пользователя"
+                          class="!h-9 !w-9 !rounded-xl !text-slate-600 dark:!text-slate-300"
+                        >
+                          <mat-icon svgIcon="ellipsis-vertical" class="!w-4 !h-4" />
+                        </button>
+                        <mat-menu #userActionsMenu="matMenu">
+                          <button mat-menu-item (click)="_editUser(u)">Редактировать</button>
+                          <button mat-menu-item (click)="_toggleBlock(u)">
+                            {{ u.status === 'active' ? 'Заблокировать пользователя' : 'Разблокировать пользователя' }}
+                          </button>
+                          <button mat-menu-item (click)="_grantPoints(u)">Начислить баллы</button>
+                          <button mat-menu-item (click)="_grantAchievement(u)">Выдать достижение</button>
+                          <button mat-menu-item (click)="_grantReward(u)">Выдать награду</button>
+                          <button mat-menu-item (click)="_grantPromoCode(u)">Выдать промокод</button>
+                          <button mat-menu-item (click)="_sendResetLink(u)">Отправить ссылку для сброса пароля</button>
+                          <button mat-menu-item (click)="_deleteUser(u)">Удалить пользователя</button>
+                        </mat-menu>
                       </div>
                     </td>
                     </tr>
@@ -594,7 +648,7 @@ export class UsersListComponent {
       this._snack.open('Ошибка смены статуса', 'Закрыть', { duration: 3000 });
     }
   }
-  protected _grantReward(u: EnhancedUser): void {
+  protected _grantPoints(u: EnhancedUser): void {
     this._dialogsService
       .open(UserBonusDialogComponent, {
         data: { fullName: u.fullName, email: u.email },
@@ -613,6 +667,113 @@ export class UsersListComponent {
           this._snack.open('Ошибка начисления баллов', 'Закрыть', { duration: 3000 });
         }
       });
+  }
+
+  private _selectGrantOption(data: UserGrantDialogData): Promise<string | null | undefined> {
+    return firstValueFrom(
+      this._dialogsService
+        .open<UserGrantDialogComponent, UserGrantDialogData, string | null>(UserGrantDialogComponent, {
+          data,
+          width: '480px'
+        })
+        .afterClosed()
+    );
+  }
+
+  protected async _grantAchievement(u: EnhancedUser): Promise<void> {
+    try {
+      const items = (await apiCall(() => achievementsListAchievementsAdmin())).filter((item) => item.isActive);
+      if (items.length === 0) {
+        this._snack.open('Нет активных достижений для выдачи', 'Закрыть', { duration: 3000 });
+        return;
+      }
+      const achievementId = await this._selectGrantOption({
+        title: 'Выдать достижение',
+        subtitle: `${u.fullName || u.email} (${u.email})`,
+        label: 'Достижение',
+        options: items.map((item: AchievementOut) => ({
+          value: item.id,
+          label: item.title,
+          description: item.description ?? undefined
+        })),
+        saveText: 'Выдать достижение',
+        saveIcon: 'trophy'
+      });
+      if (!achievementId) return;
+      await apiCall(() =>
+        achievementsGrantAchievement({ path: { achievement_id: achievementId }, body: { userId: u.id } })
+      );
+      this._snack.open(`Достижение выдано пользователю «${u.fullName || u.email}»`, 'Закрыть', { duration: 3000 });
+    } catch (err) {
+      this._toast(err, 'Не удалось выдать достижение');
+    }
+  }
+
+  protected async _grantReward(u: EnhancedUser): Promise<void> {
+    try {
+      const items = (await apiCall(() => achievementsListRewardsAdmin())).filter(
+        (item) => item.isActive && item.achievementIds.length > 0
+      );
+      if (items.length === 0) {
+        this._snack.open('Нет активных наград с привязанными достижениями', 'Закрыть', { duration: 3000 });
+        return;
+      }
+      const rewardId = await this._selectGrantOption({
+        title: 'Выдать награду',
+        subtitle: `${u.fullName || u.email} (${u.email})`,
+        label: 'Награда',
+        options: items.map((item: RewardOut) => ({
+          value: item.id,
+          label: item.title,
+          description: item.description ?? undefined
+        })),
+        saveText: 'Выдать награду',
+        saveIcon: 'gift',
+        helpText: 'Вместе с наградой пользователю будут выданы связанные с ней достижения.'
+      });
+      if (!rewardId) return;
+      await apiCall(() => achievementsGrantReward({ path: { reward_id: rewardId }, body: { userId: u.id } }));
+      this._snack.open(`Награда выдана пользователю «${u.fullName || u.email}»`, 'Закрыть', { duration: 3000 });
+    } catch (err) {
+      this._toast(err, 'Не удалось выдать награду');
+    }
+  }
+
+  protected async _grantPromoCode(u: EnhancedUser): Promise<void> {
+    try {
+      const now = Date.now();
+      const items = (await apiCall(() => billingListPromoCodes())).filter(
+        (item: PromoCodeOut) =>
+          item.isActive &&
+          (!item.validFrom || Date.parse(item.validFrom) <= now) &&
+          (!item.validUntil || Date.parse(item.validUntil) > now) &&
+          (item.maxActivations == null || (item.activationsCount ?? 0) < item.maxActivations)
+      );
+      if (items.length === 0) {
+        this._snack.open('Нет доступных промокодов для выдачи', 'Закрыть', { duration: 3000 });
+        return;
+      }
+      const code = await this._selectGrantOption({
+        title: 'Выдать промокод',
+        subtitle: `${u.fullName || u.email} (${u.email})`,
+        label: 'Промокод',
+        options: items.map((item: PromoCodeOut) => ({
+          value: item.code,
+          label: item.code,
+          description: [item.title, `Скидка ${item.discountPercent}%`].filter(Boolean).join(' · ')
+        })),
+        saveText: 'Активировать промокод',
+        saveIcon: 'tag',
+        helpText: 'Активация заменит текущий активный промокод пользователя.'
+      });
+      if (!code) return;
+      const result = await apiCall(() =>
+        billingActivatePromoCodeForUser({ path: { user_id: u.id }, body: { code } })
+      );
+      this._snack.open(result.message, 'Закрыть', { duration: 4000 });
+    } catch (err) {
+      this._toast(err, 'Не удалось активировать промокод');
+    }
   }
 
   protected async _sendResetLink(u: EnhancedUser): Promise<void> {

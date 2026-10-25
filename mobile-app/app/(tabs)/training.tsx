@@ -27,6 +27,7 @@ export default function TrainingScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>({});
   const [article, setArticle] = useState<AppArticleVm | null>(null);
   const [openingId, setOpeningId] = useState<string | null>(null);
 
@@ -133,11 +134,32 @@ export default function TrainingScreen() {
                             idx === 0 && { borderTopWidth: StyleSheet.hairlineWidth },
                           ]}
                         >
-                          <ThemedText style={{ color: text, flex: 1 }} numberOfLines={3}>
-                            {q.questionText}
-                          </ThemedText>
+                          <View style={{ flex: 1 }}>
+                            <ThemedText
+                              style={{ color: text }}
+                              numberOfLines={expandedQuestions[q.questionId] ? undefined : 3}
+                            >
+                              {q.questionText}
+                            </ThemedText>
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={expandedQuestions[q.questionId] ? 'Свернуть вопрос' : 'Показать вопрос полностью'}
+                              accessibilityState={{ expanded: !!expandedQuestions[q.questionId] }}
+                              onPress={() =>
+                                setExpandedQuestions((prev) => ({
+                                  ...prev,
+                                  [q.questionId]: !prev[q.questionId],
+                                }))
+                              }
+                              style={styles.questionToggle}
+                            >
+                              <ThemedText type="caption" style={{ color: primary }}>
+                                {expandedQuestions[q.questionId] ? 'Свернуть' : 'Показать полностью'}
+                              </ThemedText>
+                            </Pressable>
+                          </View>
                           <ThemedText type="caption" style={{ color: neutralSoft, marginLeft: 8 }}>
-                            ×{q.wrongCount}
+                            Ошибок: {q.wrongCount}
                           </ThemedText>
                         </View>
                         {(q.recommendedArticles?.length ?? 0) > 0 ? (
@@ -195,6 +217,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  questionToggle: {
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    minHeight: Spacing.minTouchTarget,
+    paddingVertical: Spacing.card / 2,
   },
   recs: {
     paddingHorizontal: 16,

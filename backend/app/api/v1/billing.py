@@ -2,7 +2,7 @@
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_current_user, get_db
@@ -154,6 +154,19 @@ async def activate_promo_code(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ) -> PromoActivateOut:
+    return await BillingService(db).activate_promo(user, payload.code)
+
+
+@router.post("/users/{user_id}/promo-codes/activate", response_model=PromoActivateOut)
+async def activate_promo_code_for_user(
+    user_id: UUID,
+    payload: PromoActivateRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_admin)],
+) -> PromoActivateOut:
+    user = await db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return await BillingService(db).activate_promo(user, payload.code)
 
 
