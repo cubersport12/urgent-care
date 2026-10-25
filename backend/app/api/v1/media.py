@@ -4,7 +4,7 @@ from __future__ import annotations
 import mimetypes
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.responses import Response as StarletteResponse
@@ -51,6 +51,7 @@ async def download_media(
     file_path: str,
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
+    enforce_tariff: bool = Query(False, alias="enforceTariff"),
 ) -> Response:
     key = _normalize_key(file_path)
     # Article PDFs are stored as public/{articleId}.pdf
@@ -59,7 +60,7 @@ async def download_media(
         article_id = name[:-4]
         article = await ArticleRepository(db).get(article_id)
         if article:
-            await assert_content_visible(db, user, article)
+            await assert_content_visible(db, user, article, enforce_for_admin=enforce_tariff)
     s3 = get_s3_client()
     try:
         body, content_type = await s3.get_object(key=key)

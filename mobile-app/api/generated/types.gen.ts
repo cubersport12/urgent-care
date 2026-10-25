@@ -4643,6 +4643,42 @@ export type BillingActivatePromoCodeResponses = {
 
 export type BillingActivatePromoCodeResponse = BillingActivatePromoCodeResponses[keyof BillingActivatePromoCodeResponses];
 
+export type BillingActivatePromoCodeForUserData = {
+    body: PromoActivateRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * User Id
+         */
+        user_id: string;
+    };
+    query?: never;
+    url: '/api/v1/billing/users/{user_id}/promo-codes/activate';
+};
+
+export type BillingActivatePromoCodeForUserErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type BillingActivatePromoCodeForUserError = BillingActivatePromoCodeForUserErrors[keyof BillingActivatePromoCodeForUserErrors];
+
+export type BillingActivatePromoCodeForUserResponses = {
+    /**
+     * Successful Response
+     */
+    200: PromoActivateOut;
+};
+
+export type BillingActivatePromoCodeForUserResponse = BillingActivatePromoCodeForUserResponses[keyof BillingActivatePromoCodeForUserResponses];
+
 export type BillingBillingMeData = {
     body?: never;
     headers?: {
@@ -5411,6 +5447,42 @@ export type AchievementsGrantAchievementResponses = {
 
 export type AchievementsGrantAchievementResponse = AchievementsGrantAchievementResponses[keyof AchievementsGrantAchievementResponses];
 
+export type AchievementsGrantRewardData = {
+    body: GrantAchievementRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Reward Id
+         */
+        reward_id: string;
+    };
+    query?: never;
+    url: '/api/v1/rewards/{reward_id}/grant';
+};
+
+export type AchievementsGrantRewardErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AchievementsGrantRewardError = AchievementsGrantRewardErrors[keyof AchievementsGrantRewardErrors];
+
+export type AchievementsGrantRewardResponses = {
+    /**
+     * Successful Response
+     */
+    200: RewardOut;
+};
+
+export type AchievementsGrantRewardResponse = AchievementsGrantRewardResponses[keyof AchievementsGrantRewardResponses];
+
 export type AchievementsListRewardsAdminData = {
     body?: never;
     headers?: {
@@ -5861,6 +5933,10 @@ export type FoldersListFoldersData = {
          * All
          */
         all?: boolean;
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
     };
     url: '/api/v1/folders';
 };
@@ -6092,7 +6168,12 @@ export type FoldersGetFolderData = {
          */
         item_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
+    };
     url: '/api/v1/folders/{item_id}';
 };
 
@@ -6168,6 +6249,10 @@ export type ArticlesListArticlesData = {
          * All
          */
         all?: boolean;
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
     };
     url: '/api/v1/articles';
 };
@@ -6273,7 +6358,12 @@ export type ArticlesGetArticleData = {
          */
         item_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
+    };
     url: '/api/v1/articles/{item_id}';
 };
 
@@ -6349,6 +6439,10 @@ export type TestsListTestsData = {
          * All
          */
         all?: boolean;
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
     };
     url: '/api/v1/tests';
 };
@@ -6454,7 +6548,12 @@ export type TestsGetTestData = {
          */
         item_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
+    };
     url: '/api/v1/tests/{item_id}';
 };
 
@@ -6530,6 +6629,10 @@ export type RescueListRescueData = {
          * All
          */
         all?: boolean;
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
     };
     url: '/api/v1/rescue';
 };
@@ -6642,7 +6745,12 @@ export type RescueGetRescueData = {
          */
         item_id: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
+    };
     url: '/api/v1/rescue/{item_id}';
 };
 
@@ -7090,7 +7198,12 @@ export type TrainingTrainingMeData = {
         'X-Session-Id'?: string | null;
     };
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
+    };
     url: '/api/v1/training/me';
 };
 
@@ -7123,7 +7236,12 @@ export type TrainingTestRecommendationsData = {
         'X-Session-Id'?: string | null;
     };
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
+    };
     url: '/api/v1/training/test-recommendations';
 };
 
@@ -7514,7 +7632,12 @@ export type MediaDownloadMediaData = {
          */
         file_path: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
+    };
     url: '/api/v1/media/{file_path}';
 };
 

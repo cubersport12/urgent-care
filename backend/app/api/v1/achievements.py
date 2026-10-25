@@ -286,6 +286,35 @@ async def grant_achievement(
     )
 
 
+@router.post("/rewards/{reward_id}/grant", response_model=RewardOut)
+async def grant_reward(
+    reward_id: UUID,
+    payload: GrantAchievementRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(get_current_admin)],
+) -> RewardOut:
+    from app.services.achievement_notify import notify_unlocks
+
+    repo = AchievementRepository(db)
+    reward = await repo.get_reward(reward_id)
+    if not reward or not reward.is_active:
+        raise HTTPException(status_code=404, detail="Reward not found")
+    user = await db.get(User, payload.user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    achievement_ids = reward_achievement_ids(reward)
+    if not achievement_ids:
+        raise HTTPException(status_code=400, detail="Reward has no linked achievements")
+
+    for achievement_id in achievement_ids:
+        existing = await repo.get_user_unlock(payload.user_id, achievement_id)
+        unlock = await repo.grant(payload.user_id, achievement_id)
+        if existing is None:
+            await notify_unlocks(db, payload.user_id, [unlock])
+    return _reward_out(reward)
+
+
 # ── Rewards admin ───────────────────────────────────────────────────
 
 

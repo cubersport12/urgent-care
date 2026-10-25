@@ -5,7 +5,8 @@ import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
 import type { AchievementUnlockPayload } from '@/lib/notifications-ws';
 import { NoScreenCapture } from '@/components/ui/no-screen-capture';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Platform } from 'react-native';
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { TestQuestionView } from './test-taking/test-question-view';
 import { TestResultsView } from './test-taking/test-results-view';
@@ -55,26 +56,38 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(1);
   const [resetTests, setResetTests] = useState<{ id: string; name: string }[] | null>(null);
+  const completionPromiseRef = useRef<ReturnType<typeof persistTestCompletion> | null>(null);
+
+  const saveCompletion = useCallback(() => {
+    if (!test) return Promise.resolve(null);
+    if (!completionPromiseRef.current) {
+      completionPromiseRef.current = persistTestCompletion({
+        testId: test.id,
+        minScore: test.minScore,
+        maxErrors: test.maxErrors,
+        answers: processSkippedQuestions(),
+        finishReason,
+        onStats:
+          deviceId && startedAt
+            ? (patch) => testStatsHook.addOrUpdate(patch)
+            : undefined,
+      }).catch((error) => {
+        completionPromiseRef.current = null;
+        throw error;
+      });
+    }
+    return completionPromiseRef.current;
+  }, [test, processSkippedQuestions, finishReason, deviceId, startedAt, testStatsHook.addOrUpdate]);
 
   useEffect(() => {
     resetTestCompletionGuard();
+    completionPromiseRef.current = null;
   }, [test?.id, startedAt]);
 
   // «Далее» на последнем вопросе ставит isTestCompleted без POST /test-results.
   useEffect(() => {
     if (!isTestCompleted || !test) return;
-    const finalAnswers = processSkippedQuestions();
-    void persistTestCompletion({
-      testId: test.id,
-      minScore: test.minScore,
-      maxErrors: test.maxErrors,
-      answers: finalAnswers,
-      finishReason,
-      onStats:
-        deviceId && startedAt
-          ? (patch) => testStatsHook.addOrUpdate(patch)
-          : undefined,
-    })
+    void saveCompletion()
       .then((saved) => {
         // Провал «экзамена»: бэкенд вернул зачёты, переведённые в «не сданы»
         if (saved?.resetTests?.length) setResetTests(saved.resetTests);
@@ -83,7 +96,22 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
         showUnlocks(saved?.unlocked as AchievementUnlockPayload[] | null | undefined);
       })
       .catch((err) => console.error('Error persisting test completion:', err));
-  }, [isTestCompleted, test, deviceId, startedAt, finishReason, processSkippedQuestions, testStatsHook, showUnlocks]);
+  }, [isTestCompleted, test, saveCompletion, showUnlocks]);
+
+  const finishAfterSaving = useCallback(async () => {
+    try {
+      await saveCompletion();
+      onFinish();
+    } catch (error) {
+      console.error('Error persisting test completion:', error);
+      const message = 'Не удалось сохранить результаты теста. Попробуйте ещё раз.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(message);
+      } else {
+        Alert.alert('Ошибка', message);
+      }
+    }
+  }, [saveCompletion, onFinish]);
 
   // Автозавершение теста при превышении лимита ошибок (ошибок стало больше maxErrors)
   useEffect(() => {
@@ -236,8 +264,8 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
       <>
         <NoScreenCapture />
         <TestResultsView
-          onBack={onBack}
-          onFinish={onFinish}
+          onBack={finishAfterSaving}
+          onFinish={finishAfterSaving}
           animatedStyle={animatedStyle}
           resetTests={resetTests}
         />

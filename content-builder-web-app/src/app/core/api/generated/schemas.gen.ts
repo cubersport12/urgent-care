@@ -1980,7 +1980,7 @@ export const GenerateRescueRequestSchema = {
             anyOf: [
                 {
                     type: 'integer',
-                    maximum: 15,
+                    maximum: 100,
                     minimum: 1
                 },
                 {
@@ -2100,6 +2100,7 @@ export const GeneratedRescueResponseSchema = {
                 $ref: '#/components/schemas/RescueScene'
             },
             type: 'array',
+            maxItems: 100,
             title: 'Scenes'
         },
         defaultBackground: {

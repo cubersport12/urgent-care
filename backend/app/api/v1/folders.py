@@ -40,10 +40,11 @@ async def list_folders(
     user: Annotated[User, Depends(get_current_user)],
     parent_id: str | None = Query(None, alias="parentId"),
     all_items: bool = Query(False, alias="all"),
+    enforce_tariff: bool = Query(False, alias="enforceTariff"),
 ) -> list[FolderOut]:
     repo = FolderRepository(db)
     items = await repo.list_all() if all_items else await repo.list_by_parent(parent_id)
-    annotated = await annotate_content_list(db, user, items)
+    annotated = await annotate_content_list(db, user, items, enforce_for_admin=enforce_tariff)
     return [content_out(item, FolderOut, locked) for item, locked in annotated]
 
 
@@ -202,11 +203,12 @@ async def get_folder(
     item_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
+    enforce_tariff: bool = Query(False, alias="enforceTariff"),
 ):
     item = await FolderRepository(db).get(item_id)
     if not item:
         raise not_found("Folder")
-    await assert_content_visible(db, user, item)
+    await assert_content_visible(db, user, item, enforce_for_admin=enforce_tariff)
     return item
 
 

@@ -75,7 +75,7 @@ _DIFFICULTY_LEVELS = ("лёгкая", "легкая", "средняя", "выс�
 class GenerateRescueRequest(CamelModel):
     prompt: str
     # Annotated целиком: pydantic v2 молча игнорирует Field(alias=...) на union-типе
-    scene_count: Annotated[int | None, Field(None, alias="sceneCount", ge=1, le=15)] = None
+    scene_count: Annotated[int | None, Field(None, alias="sceneCount", ge=1, le=100)] = None
     difficulty: Annotated[str | None, Field(None, alias="difficulty")] = None
 
     @field_validator("difficulty", mode="before")
@@ -169,6 +169,6 @@ class RescueCompletion(CamelModel):
 
 class GeneratedRescueResponse(CamelModel):
     parameters: list[RescueTimerParameter] = Field(default_factory=list)
-    scenes: list[RescueScene] = Field(default_factory=list)
+    scenes: list[RescueScene] = Field(default_factory=list, max_length=100)
     default_background: str | None = Field("bg-hospital", alias="defaultBackground")
     completion: RescueCompletion | None = None

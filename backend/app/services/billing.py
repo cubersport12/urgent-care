@@ -436,8 +436,8 @@ class BillingService:
             valid_until=promo.valid_until,
         )
 
-    async def user_rank(self, user: User) -> int:
-        if user.role == "admin" or not settings.billing_enforcement:
+    async def user_rank(self, user: User, *, enforce_for_admin: bool = False) -> int:
+        if (user.role == "admin" and not enforce_for_admin) or not settings.billing_enforcement:
             return 10_000
         sub = await self.ensure_subscription(user)
         tariff = await self.repo.get_tariff(sub.tariff_id)

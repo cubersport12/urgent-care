@@ -39,10 +39,10 @@
         label="Количество сцен"
         type="number"
         [min]="1"
-        [max]="15"
-        badge="1–15"
+        [max]="100"
+        badge="1–100"
         hint="Пусто — ИИ решит сам"
-        [error]="_sceneCount.invalid ? 'Допустимо от 1 до 15' : null"
+        [error]="_sceneCount.invalid ? 'Допустимо от 1 до 100' : null"
         [formControl]="_sceneCount"
       />
       <app-select

@@ -69,6 +69,7 @@ export const Spacing = {
   header: 56,
   nav: 64,
   card: 16,
+  minTouchTarget: 44,
 } as const;
 
 /** Tablet left navigation rail widths */

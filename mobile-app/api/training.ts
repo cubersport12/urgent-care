@@ -7,7 +7,8 @@ export type TrainingTopic = TrainingTopicOut;
 export type RecommendedArticle = RecommendedArticleOut;
 
 export const trainingApi = {
-  listMine: (): Promise<TrainingTopic[]> => apiCall(() => trainingTrainingMe()),
+  listMine: (): Promise<TrainingTopic[]> =>
+    apiCall(() => trainingTrainingMe({ query: { enforceTariff: true } })),
 
   /** Документы для прочтения после теста — подбор по смыслу (embeddings). */
   testRecommendations: (
@@ -16,6 +17,7 @@ export const trainingApi = {
   ): Promise<RecommendedArticle[]> =>
     apiCall(() =>
       trainingTestRecommendations({
+        query: { enforceTariff: true },
         body: { testId, wrongQuestionIds: wrongQuestionIds?.length ? wrongQuestionIds : undefined },
       }),
     ),

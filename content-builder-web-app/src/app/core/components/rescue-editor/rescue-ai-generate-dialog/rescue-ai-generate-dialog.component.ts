@@ -52,7 +52,7 @@ export class RescueAiGenerateDialogComponent {
     validators: [Validators.required, Validators.minLength(10)]
   });
   protected readonly _sceneCount = new FormControl<number | null>(null, {
-    validators: [Validators.min(1), Validators.max(15)]
+    validators: [Validators.min(1), Validators.max(100)]
   });
   protected readonly _difficulty = new FormControl<string>('', { nonNullable: true });
   protected readonly _difficultyOptions: AppSelectOption[] = [
