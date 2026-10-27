@@ -29,6 +29,7 @@ const MAPPING = {
   'exclamationmark.circle.fill': 'error',
   'plus.app.fill': '1k-plus',
   'cross.fill': 'local-hospital',
+  'cross.case.fill': 'medical-services',
   'plus.circle.fill': 'local-hospital',
   'folder.fill': 'folder',
   'doc.fill': 'description',

@@ -7,7 +7,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { ScreenAppBar } from '@/components/ui/screen-app-bar';
 import { ScreenBackground } from '@/components/ui/screen-background';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme } from '@/hooks/use-theme-color';
@@ -25,12 +25,14 @@ import {
 function MediaIcon({ path, locked }: { path?: string | null; locked?: boolean }) {
   const { primary, neutralSoft, warning, elevated2, warningContainer } = useAppTheme();
   const { response, isLoading } = useFileImage(path ?? '');
+  const useFallback = !path || (!isLoading && !response);
 
   if (!path) {
     return (
       <View
         style={[
           styles.iconBox,
+          styles.fallbackIconBox,
           { backgroundColor: locked ? elevated2 : warningContainer },
         ]}
       >
@@ -47,6 +49,7 @@ function MediaIcon({ path, locked }: { path?: string | null; locked?: boolean })
     <View
       style={[
         styles.iconBox,
+        useFallback && styles.fallbackIconBox,
         { backgroundColor: locked ? elevated2 : warningContainer },
         locked && { opacity: 0.45 },
       ]}
@@ -322,6 +325,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
+  fallbackIconBox: { borderRadius: Radius.pill },
   iconImg: {
     width: 44,
     height: 44,

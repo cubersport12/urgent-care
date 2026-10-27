@@ -20,6 +20,7 @@ type GlassCardProps = ViewProps & {
   intensity?: number;
   disabled?: boolean;
   backgroundImage?: string;
+  backgroundImageScrim?: string;
 };
 
 export function GlassCard({
@@ -31,6 +32,7 @@ export function GlassCard({
   intensity,
   disabled,
   backgroundImage,
+  backgroundImageScrim,
   ...rest
 }: GlassCardProps) {
   const { theme } = useTheme();
@@ -58,9 +60,14 @@ export function GlassCard({
       {...rest}
     >
       {backgroundImage && failedImage !== backgroundImage ? (
-        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-          <Image source={{ uri: backgroundImage }} resizeMode="cover" style={StyleSheet.absoluteFill} onError={() => setFailedImage(backgroundImage)} />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: glass.folderImageScrim }]} />
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.imageBackground, { borderRadius }]}>
+          <Image source={{ uri: backgroundImage }} resizeMode="cover" style={[StyleSheet.absoluteFill, { borderRadius }]} onError={() => setFailedImage(backgroundImage)} />
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              { borderRadius, backgroundColor: backgroundImageScrim ?? glass.folderImageScrim },
+            ]}
+          />
         </View>
       ) : null}
       {showBlur && (!backgroundImage || failedImage === backgroundImage) ? (
@@ -98,6 +105,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     position: 'relative',
+  },
+  imageBackground: {
+    overflow: 'hidden',
   },
   insetHighlightDark: {
     position: 'absolute',

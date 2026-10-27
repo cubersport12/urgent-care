@@ -21,6 +21,7 @@ type ExplorerItemComponentProps = {
   };
   description?: string;
   index?: number;
+  isHome?: boolean;
 };
 
 function getStatus(
@@ -68,8 +69,10 @@ export function ExplorerItemComponent({
   rescueStats,
   description,
   index = 0,
+  isHome = false,
 }: ExplorerItemComponentProps) {
-  const status = item.type === 'folder' ? undefined : getStatus(item, isRead, testStats, rescueStats);
+  const isHomeRescue = isHome && item.type === 'rescue';
+  const status = item.type === 'folder' || isHomeRescue ? undefined : getStatus(item, isRead, testStats, rescueStats);
 
   const descriptionPrefix =
     item.type === 'test' && testStats
@@ -105,7 +108,7 @@ export function ExplorerItemComponent({
           ? rescueDisplayName(item.data.name, showRealName, index)
           : item.data.name
       }
-      description={`${descriptionPrefix}${description ?? defaultDescription}`}
+      description={isHomeRescue ? undefined : `${descriptionPrefix}${description ?? defaultDescription}`}
       kind={getKind(item)}
       iconPath={item.type === 'folder' ? (item.data as AppFolderVm).iconPath : null}
       backgroundPath={item.type === 'folder' ? (item.data as AppFolderVm).backgroundPath : null}

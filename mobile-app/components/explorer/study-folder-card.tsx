@@ -42,12 +42,7 @@ export function StudyFolderCard({
   // Золото с полосой — только тарифный замок; остальные причины помечаем серым замком без полосы
   const isTariffLock = locked === 'tariff';
   const completed = Math.round((progressPercent / 100) * materialCount);
-  const countLabel =
-    materialCount === 1
-      ? '1 материал'
-      : materialCount < 5
-        ? `${materialCount} материала`
-        : `${materialCount} материалов`;
+  const countUnit = materialCount === 1 ? 'материал' : materialCount < 5 ? 'материала' : 'материалов';
 
   return (
     <Animated.View entering={staggerEnter(index)} style={styles.wrapper}>
@@ -60,7 +55,12 @@ export function StudyFolderCard({
           },
         ]}
       >
-        <GlassCard padding={20} borderRadius={16} backgroundImage={background}>
+          <GlassCard
+            padding={20}
+            borderRadius={16}
+            backgroundImage={background}
+            backgroundImageScrim={glass.folderTileImageScrim}
+          >
           {isTariffLock ? (
             <View pointerEvents="none" style={[styles.lockStrip, { backgroundColor: warning }]} />
           ) : null}
@@ -85,8 +85,11 @@ export function StudyFolderCard({
               <IconSymbol name="lock.fill" size={16} color={isTariffLock ? warning : neutral} />
             </View>
           ) : null}
-          <ThemedText style={styles.name}>{name}</ThemedText>
-          <ThemedText style={[styles.count, { color: neutralSoft }]}>{countLabel}</ThemedText>
+          <ThemedText type="defaultSemiBold" style={styles.name} numberOfLines={2}>{name}</ThemedText>
+          <View style={styles.countRow}>
+            <ThemedText type="title">{materialCount}</ThemedText>
+            <ThemedText type="caption" style={[styles.countUnit, { color: neutralSoft }]}>{countUnit}</ThemedText>
+          </View>
           <View style={styles.progress}>
             <ProgressBar current={completed} total={materialCount || 1} height={4} />
           </View>
@@ -115,13 +118,16 @@ const styles = StyleSheet.create({
   iconImage: { width: Spacing.minTouchTarget, height: Spacing.minTouchTarget },
   lockBadge: { position: 'absolute', top: 0, right: 0, borderRadius: Radius.pill, padding: Spacing.card / 4 },
   name: {
-    fontSize: 16,
-    fontWeight: '500',
     marginTop: 12,
   },
-  count: {
-    fontSize: 13,
-    marginTop: 4,
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: Spacing.card / 2,
+    marginTop: Spacing.card / 4,
+  },
+  countUnit: {
+    flexShrink: 1,
   },
   progress: {
     marginTop: 12,

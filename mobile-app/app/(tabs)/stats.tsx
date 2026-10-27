@@ -11,8 +11,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 export default function StatsScreen() {
-  const glow = useGlow();
   const { contentPaddingBottom } = useNavRail();
+  const glow = useGlow();
   const stats = useAccountOverallStats();
 
   return (
@@ -29,6 +29,7 @@ export default function StatsScreen() {
                 textShadowColor: glow.title,
                 textShadowRadius: 20,
                 textShadowOffset: { width: 0, height: 0 },
+                marginBottom: Spacing.card,
               }}
             >
               Статистика

@@ -14,7 +14,7 @@ import Animated from 'react-native-reanimated';
 
 type ContentCardProps = {
   title: string;
-  description: string;
+  description?: string;
   kind: MaterialKind;
   iconPath?: string | null;
   backgroundPath?: string | null;
@@ -69,9 +69,11 @@ export function ContentCard({
               <ThemedText style={styles.title} numberOfLines={1}>
                 {title}
               </ThemedText>
-              <ThemedText style={[styles.description, { color: neutralSoft }]} numberOfLines={1}>
-                {description}
-              </ThemedText>
+              {description ? (
+                <ThemedText style={[styles.description, { color: neutralSoft }]} numberOfLines={1}>
+                  {description}
+                </ThemedText>
+              ) : null}
             </View>
             {locked && icon && failedIcon !== icon ? <IconSymbol name="lock.fill" size={16} color={locked === 'tariff' ? warning : neutralSoft} /> : null}
             {locked ? null : status ? <StatusBadge status={status} /> : null}
