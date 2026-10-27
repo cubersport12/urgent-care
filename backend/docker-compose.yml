@@ -32,12 +32,24 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lfu", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   api:
     build: .
     env_file: .env
     environment:
       DATABASE_URL: postgresql+asyncpg://urgent:urgent_pass@postgres:5432/urgent_care
       S3_ENDPOINT: http://minio:9000
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
     depends_on:

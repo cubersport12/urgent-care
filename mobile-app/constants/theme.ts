@@ -28,6 +28,8 @@ export const Glass = {
     insetHighlight: 'rgba(255, 255, 255, 0.1)',
     imageScrim: 'rgba(0, 0, 0, 0.35)',
     imageScrimSoft: 'rgba(0, 0, 0, 0.25)',
+    folderImageScrim: 'rgba(5, 5, 5, 0.82)',
+    folderTileImageScrim: 'rgba(5, 5, 5, 0.3)',
   },
   light: {
     background: '#FFFFFF',
@@ -51,6 +53,8 @@ export const Glass = {
     insetHighlight: 'transparent',
     imageScrim: 'rgba(0, 0, 0, 0.35)',
     imageScrimSoft: 'rgba(0, 0, 0, 0.25)',
+    folderImageScrim: 'rgba(255, 255, 255, 0.86)',
+    folderTileImageScrim: 'rgba(255, 255, 255, 0.3)',
   },
 } as const;
 
@@ -72,6 +76,15 @@ export const Spacing = {
   minTouchTarget: 44,
 } as const;
 
+export const IconSize = {
+  metric: 28,
+} as const;
+
+export const PageArt = {
+  primaryOrbSize: 420,
+  accentOrbSize: 300,
+} as const;
+
 /** Tablet left navigation rail widths */
 export const NavRail = {
   collapsedWidth: 72,
@@ -85,6 +98,7 @@ export const Glow = {
     primaryStrong: 'rgba(0, 132, 255, 0.6)',
     success: 'rgba(77, 139, 49, 0.4)',
     danger: 'rgba(255, 107, 107, 0.4)',
+    warning: 'rgba(245, 158, 11, 0.4)',
     title: 'rgba(0, 132, 255, 0.2)',
   },
   light: {
@@ -92,6 +106,7 @@ export const Glow = {
     primaryStrong: 'rgba(0, 112, 224, 0.45)',
     success: 'rgba(61, 122, 40, 0.35)',
     danger: 'rgba(224, 85, 85, 0.35)',
+    warning: 'rgba(217, 119, 6, 0.35)',
     title: 'rgba(0, 112, 224, 0.15)',
   },
 } as const;

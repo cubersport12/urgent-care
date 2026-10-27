@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
+import { Radius } from '@/constants/theme';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import {
   subscribeNotifications,
@@ -42,12 +43,13 @@ type UnlockPopup =
 
 function PopupIcon({ path, kind }: { path?: string | null; kind: UnlockPopup['kind'] }) {
   const { response, isLoading } = useFileImage(path ?? '');
+  const useFallback = !path || (!isLoading && !response);
   const { warning, warningContainer } = useAppTheme();
   const color = warning;
   const name = kind === 'reward' ? 'gift.fill' : 'trophy.fill';
 
   return (
-    <View style={[styles.iconBox, { backgroundColor: warningContainer }]}>
+    <View style={[styles.iconBox, useFallback && styles.fallbackIconBox, { backgroundColor: warningContainer }]}>
       {path && isLoading ? (
         <ActivityIndicator size="small" color={color} />
       ) : path && response ? (
@@ -198,6 +200,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 4,
   },
+  fallbackIconBox: { borderRadius: Radius.pill },
   iconImg: {
     width: 72,
     height: 72,

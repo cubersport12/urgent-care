@@ -41,7 +41,7 @@ export function TypeIcon({
         shadowColor: glow.primary,
       },
       rescue: {
-        icon: 'cross.fill',
+        icon: 'cross.case.fill',
         bg: theme.errorContainer,
         color: theme.error,
         shadowColor: glow.danger,

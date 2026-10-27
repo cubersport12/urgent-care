@@ -5,6 +5,7 @@ import { useTest } from '@/contexts/test-context';
 import {
   AppArticleVm,
   AppFolderMaterialCountVm,
+  AppFolderVm,
   AppRescueItemVm,
   AppRescueStatsVm,
   type RescueScheneChoiceImplicationVm,
@@ -22,7 +23,7 @@ import { isSequenceBlocked, type SequenceContext, type SequenceItem } from '@/li
 import { apiFetchRelation } from '@/hooks/api/useApiFetch';
 import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-completion';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -46,7 +47,6 @@ import { ScreenBackground } from './ui/screen-background';
 import { GlassCard } from './ui/glass-card';
 import { IconSymbol } from './ui/icon-symbol';
 import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
-import { useGlow, useGlass } from '@/hooks/use-theme-color';
 import { useTheme } from '@/contexts/theme-context';
 import { BlurView } from 'expo-blur';
 import { Spacing } from '@/constants/theme';
@@ -97,10 +97,9 @@ export function Explorer() {
     void fetchAllData();
   }, []);
 
-  const { neutralSoft: descriptionColor, layout1 } = useAppTheme();
+  const { neutralSoft: descriptionColor, layout1, primary } = useAppTheme();
   const { theme } = useTheme();
   const glass = useGlass();
-  const glow = useGlow();
   const overallStats = useAccountOverallStats();
   const { deviceId } = useDeviceId();
   const foldersResponse = useFolders(currentFolderId);
@@ -727,6 +726,7 @@ export function Explorer() {
     (overallStats.data?.counts.documentsRead ?? 0) +
     (overallStats.data?.counts.testsPassed ?? 0) +
     (overallStats.data?.counts.rescuesPassed ?? 0);
+    const showOverallProgress = isRootView && folderOnlyItems.length > 0;
 
   // Единый рендер элемента списка: бейджи статуса (прочитано / пройден / не пройден)
   // строятся из статистики тестов и режимов спасения.
@@ -782,6 +782,7 @@ export function Explorer() {
             : undefined
         }
         description={description}
+        isHome={isRootView}
       />
     );
   };
@@ -816,19 +817,17 @@ export function Explorer() {
           style={styles.scrollView}
           contentContainerStyle={[
             styles.scrollViewContent,
-            { paddingBottom: contentPaddingBottom },
+            { paddingBottom: showOverallProgress ? Spacing.card : contentPaddingBottom },
           ]}
         >
           {isRootView && (
             <Animated.View entering={staggerEnter(0)}>
-              <ThemedText
-                type="h1"
-                style={[styles.pageTitle, { textShadowColor: glow.title, textShadowRadius: 20, textShadowOffset: { width: 0, height: 0 } }]}
-              >
-                Обучение
-              </ThemedText>
-              <ThemedText style={[styles.pageSubtitle, { color: descriptionColor }]}>
-                Выберите раздел для изучения
+              <View style={styles.brandName}>
+                <ThemedText type="title">Trouble</ThemedText>
+                <ThemedText type="title" lightColor={primary} darkColor={primary}>Dent</ThemedText>
+              </View>
+              <ThemedText type="caption" style={[styles.pageSubtitle, { color: descriptionColor }]}>
+                Неотложная помощь в стоматологии
               </ThemedText>
             </Animated.View>
           )}
@@ -855,6 +854,8 @@ export function Explorer() {
                         <StudyFolderCard
                           key={folderId}
                           name={folderItem.data.name}
+                          iconPath={(folderItem.data as AppFolderVm).iconPath}
+                          backgroundPath={(folderItem.data as AppFolderVm).backgroundPath}
                           materialCount={counts?.total ?? 0}
                           progressPercent={progressPercent}
                           locked={(folderItem.data.lockedBy as LockReason | null) ?? undefined}
@@ -875,30 +876,6 @@ export function Explorer() {
                         ))}
                     </View>
                   )}
-                  <Animated.View entering={staggerEnter(4)} style={styles.overallProgress}>
-                    <GlassCard padding={20} borderRadius={16}>
-                      <ThemedText type="h2">Общий прогресс</ThemedText>
-                      <View style={styles.overallBar}>
-                        <ProgressBar
-                          current={overallCompleted}
-                          total={overallTotal || 1}
-                          height={8}
-                          shimmer
-                        />
-                      </View>
-                      <View style={styles.statRow}>
-                        <ThemedText type="caption" style={{ color: descriptionColor }}>
-                          Статьи: {overallStats.data?.counts.documentsRead ?? 0}/{overallStats.data?.totals.documents ?? 0}
-                        </ThemedText>
-                        <ThemedText type="caption" style={{ color: descriptionColor }}>
-                          Тесты: {overallStats.data?.counts.testsPassed ?? 0}/{overallStats.data?.totals.tests ?? 0}
-                        </ThemedText>
-                        <ThemedText type="caption" style={{ color: descriptionColor }}>
-                          Режимы: {overallStats.data?.counts.rescuesPassed ?? 0}/{overallStats.data?.totals.rescues ?? 0}
-                        </ThemedText>
-                      </View>
-                    </GlassCard>
-                  </Animated.View>
                 </>
               );
             }
@@ -924,6 +901,29 @@ export function Explorer() {
           })()}
         </ScrollView>
       </Animated.View>
+      {showOverallProgress ? (
+        <View style={[styles.overallProgressFooter, { paddingBottom: contentPaddingBottom }]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Открыть статистику общего прогресса"
+            onPress={() => router.navigate('/(tabs)/stats')}
+          >
+            <Animated.View entering={staggerEnter(4)}>
+              <GlassCard padding={20} borderRadius={16}>
+                <ThemedText type="subtitle">Общий прогресс</ThemedText>
+                <View style={styles.overallBar}>
+                  <ProgressBar
+                    current={overallCompleted}
+                    total={overallTotal || 1}
+                    height={8}
+                    shimmer
+                  />
+                </View>
+              </GlassCard>
+            </Animated.View>
+          </Pressable>
+        </View>
+      ) : null}
       {/* Спиннер страницы — снаружи Animated.View, иначе гаснет вместе со списком (opacity → 0) */}
       {isLoading && <LoadingOverlay />}
       <LockedTariffSheet
@@ -987,33 +987,29 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingHorizontal: Spacing.pageX,
   },
-  pageTitle: {
-    marginTop: 8,
+  brandName: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.card / 2,
   },
   pageSubtitle: {
-    fontSize: 16,
-    marginTop: 8,
+    marginTop: Spacing.card / 8,
   },
   folderGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    marginTop: 24,
+    marginTop: Spacing.card,
   },
   rootMaterials: {
     marginTop: 16,
   },
-  overallProgress: {
-    marginTop: 32,
+  overallProgressFooter: {
+    paddingHorizontal: Spacing.pageX,
+    paddingTop: Spacing.card,
   },
   overallBar: {
     marginTop: 16,
-  },
-  statRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    marginTop: 12,
   },
   emptyCard: {
     alignItems: 'center',

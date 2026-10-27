@@ -79,7 +79,7 @@ function TabsInner() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Обучение',
+          title: 'Главная',
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="house.fill" color={color} />
           ),

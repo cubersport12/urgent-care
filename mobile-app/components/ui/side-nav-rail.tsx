@@ -24,7 +24,7 @@ const TAB_ICONS: Partial<Record<string, IconSymbolName>> = {
 };
 
 const TAB_LABELS: Record<string, string> = {
-  index: 'Обучение',
+  index: 'Главная',
   stats: 'Статистика',
   training: 'Тренировка',
   profile: 'Профиль',

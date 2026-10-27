@@ -1723,6 +1723,30 @@ export const FolderCreateSchema = {
             type: 'string',
             title: 'Name'
         },
+        iconPath: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpath'
+        },
+        backgroundPath: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Backgroundpath'
+        },
         order: {
             anyOf: [
                 {
@@ -1814,6 +1838,30 @@ export const FolderOutSchema = {
             type: 'string',
             title: 'Name'
         },
+        iconPath: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpath'
+        },
+        backgroundPath: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Backgroundpath'
+        },
         order: {
             anyOf: [
                 {
@@ -1881,6 +1929,8 @@ export const FolderOutSchema = {
     required: [
         'id',
         'name',
+        'iconPath',
+        'backgroundPath',
         'order',
         'parentId',
         'requiredTariffId',
@@ -1903,6 +1953,30 @@ export const FolderUpdateSchema = {
                 }
             ],
             title: 'Name'
+        },
+        iconPath: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpath'
+        },
+        backgroundPath: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Backgroundpath'
         },
         order: {
             anyOf: [

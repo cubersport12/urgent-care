@@ -4,14 +4,24 @@
  * RuStore-покупки (rustore-сборка) идут через rustoreCheckout ниже.
  */
 import { billingApi, type BillingMe, type BillingPayment } from '@/api/billing';
+import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession();
 
-/** Expo Go → exp://…/--/billing/return; standalone → troubledent://billing/return */
+/**
+ * Web → app base path; Expo Go → exp://…/--/billing/return;
+ * standalone → troubledent://billing/return.
+ */
 export function billingReturnUrl(): string {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const baseUrl = Constants.expoConfig?.experiments?.baseUrl;
+    const basePath = `/${baseUrl?.split('/').filter(Boolean).join('/') ?? ''}/`;
+    return new URL(basePath, window.location.origin).toString();
+  }
+
   return Linking.createURL('billing/return');
 }
 
