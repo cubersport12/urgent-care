@@ -2,7 +2,8 @@ import { Radius } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme-context';
 import { useAppTheme, useGlass, useThemeShadow } from '@/hooks/use-theme-color';
 import { BlurView } from 'expo-blur';
-import { Platform, Pressable, StyleSheet, View, type ViewProps } from 'react-native';
+import { useState } from 'react';
+import { Image, Platform, Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 
 const NO_SHADOW = {
   shadowColor: 'transparent',
@@ -18,6 +19,7 @@ type GlassCardProps = ViewProps & {
   padding?: number;
   intensity?: number;
   disabled?: boolean;
+  backgroundImage?: string;
 };
 
 export function GlassCard({
@@ -28,9 +30,11 @@ export function GlassCard({
   padding = 16,
   intensity,
   disabled,
+  backgroundImage,
   ...rest
 }: GlassCardProps) {
   const { theme } = useTheme();
+  const [failedImage, setFailedImage] = useState<string>();
   const glass = useGlass();
   const { layout1 } = useAppTheme();
   const shadow = useThemeShadow('glass');
@@ -53,7 +57,13 @@ export function GlassCard({
       ]}
       {...rest}
     >
-      {showBlur ? (
+      {backgroundImage && failedImage !== backgroundImage ? (
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <Image source={{ uri: backgroundImage }} resizeMode="cover" style={StyleSheet.absoluteFill} onError={() => setFailedImage(backgroundImage)} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: glass.folderImageScrim }]} />
+        </View>
+      ) : null}
+      {showBlur && (!backgroundImage || failedImage === backgroundImage) ? (
         <BlurView
           intensity={blurIntensity}
           tint="dark"

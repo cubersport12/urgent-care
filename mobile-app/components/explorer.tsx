@@ -5,6 +5,7 @@ import { useTest } from '@/contexts/test-context';
 import {
   AppArticleVm,
   AppFolderMaterialCountVm,
+  AppFolderVm,
   AppRescueItemVm,
   AppRescueStatsVm,
   type RescueScheneChoiceImplicationVm,
@@ -12,7 +13,7 @@ import {
   AppTestVm,
 } from '@/hooks/api/types';
 import { fetchArticle, useArticles, useArticlesStats } from '@/hooks/api/useArticles';
-import { useFolders, useFoldersMaterialCounts } from '@/hooks/api/useFolders';
+import { useFolder, useFolders, useFoldersMaterialCounts } from '@/hooks/api/useFolders';
 import { useRescueItems } from '@/hooks/api/useRescueItems';
 import { useAddOrUpdateRescueStats, useRescuesStats } from '@/hooks/api/useRescueStats';
 import { useTests } from '@/hooks/api/useTests';
@@ -21,6 +22,7 @@ import { areTestActivationConditionsMet } from '@/lib/test-activation';
 import { isSequenceBlocked, type SequenceContext, type SequenceItem } from '@/lib/sequence-gating';
 import { apiFetchRelation } from '@/hooks/api/useApiFetch';
 import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-completion';
+import { useFileImage } from '@/hooks/api/useFileImage';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useNavigation } from '@react-navigation/native';
@@ -104,6 +106,8 @@ export function Explorer() {
   const overallStats = useAccountOverallStats();
   const { deviceId } = useDeviceId();
   const foldersResponse = useFolders(currentFolderId);
+  const currentFolder = useFolder(currentFolderId ?? '');
+  const { response: folderBackground } = useFileImage(currentFolder.data?.backgroundPath ?? '');
   const articlesResponse = useArticles(currentFolderId);
   const testsResponse = useTests(currentFolderId);
   const rescueItemsResponse = useRescueItems(currentFolderId);
@@ -787,7 +791,7 @@ export function Explorer() {
   };
 
   return (
-    <ScreenBackground variant={isRootView ? 'study' : 'default'} style={styles.container}>
+    <ScreenBackground variant={isRootView ? 'study' : 'default'} backgroundImage={folderBackground} style={styles.container}>
       {currentFolderId !== undefined && (
         <View
           style={[
@@ -855,6 +859,8 @@ export function Explorer() {
                         <StudyFolderCard
                           key={folderId}
                           name={folderItem.data.name}
+                          iconPath={(folderItem.data as AppFolderVm).iconPath}
+                          backgroundPath={(folderItem.data as AppFolderVm).backgroundPath}
                           materialCount={counts?.total ?? 0}
                           progressPercent={progressPercent}
                           locked={(folderItem.data.lockedBy as LockReason | null) ?? undefined}

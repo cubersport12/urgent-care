@@ -1,14 +1,15 @@
 """Shared content access + default tariff assignment."""
 from __future__ import annotations
 
-from typing import Any, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Any, TypeVar
 from uuid import UUID
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
-from app.schemas.content import CamelModel, RescueOut
+from app.schemas.content import CamelModel, FolderOut, RescueOut
 from app.services.entitlements import (
     default_tariff_id,
     is_reward_visible,
@@ -68,6 +69,9 @@ def content_out(item: Any, schema: type[CamelModel], locked_by: str | None) -> C
         "is_locked": True,
         "locked_by": locked_by,
     }
+    if schema is FolderOut:
+        fields["icon_path"] = item.icon_path
+        fields["background_path"] = item.background_path
     if schema is RescueOut:
         fields["created_at"] = item.created_at
     return schema.model_validate(fields)

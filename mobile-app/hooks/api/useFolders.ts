@@ -61,19 +61,17 @@ export const useFoldersMaterialCounts = () => {
 };
 
 export const useFolder = (folderId: string) => {
-  const [response, setResponse] = useState<Partial<ApiListResponse<AppFolderVm>>>({});
+  const [response, setResponse] = useState<{ id: string; data?: AppFolderVm; error: Error | null }>({ id: '', error: null });
 
   useEffect(() => {
-    const fetchFolder = async () => {
-      const result = await apiFetchRelation<AppFolderVm>('folders', { id: folderId });
-      setResponse(result);
-    };
-    void fetchFolder();
+    let active = true;
+    if (!folderId) return () => { active = false; };
+    void apiFetchRelation<AppFolderVm>('folders', { id: folderId }).then((result) => {
+      if (active) setResponse({ id: folderId, data: result.data?.[0], error: result.error });
+    });
+    return () => { active = false; };
   }, [folderId]);
-  return {
-    ...response,
-    data: response.data?.[0],
-  };
+  return response.id === folderId ? response : { data: undefined, error: null };
 };
 
 export const useFolderPath = (folderId: string) => {

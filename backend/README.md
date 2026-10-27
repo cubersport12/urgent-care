@@ -15,7 +15,7 @@ FastAPI backend for `mobile-app` and `content-builder-web-app`.
 cp .env.example .env
 # edit JWT_SECRET
 
-docker compose up -d postgres minio
+docker compose up -d postgres minio redis
 pip install -e ".[dev]"
 alembic upgrade head
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -24,6 +24,12 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Or full stack: `docker compose up --build`.
 
 Production (VPS): see [`../deploy/README.md`](../deploy/README.md) and `docker compose -f docker-compose.prod.yml up -d --build`.
+
+## Redis file cache
+
+The API optionally caches MinIO object bytes and `Content-Type` in Redis. Cache keys use the `urgent-care:file:v1` namespace and a digest of the bucket and object key. Files larger than `FILE_CACHE_MAX_BYTES` bypass the cache; entries expire within `FILE_CACHE_TTL_SECONDS` (maximum 300 seconds). Successful writes and deletes through `S3Client` invalidate the cached object. Direct MinIO changes are picked up when the entry expires. If Redis is unavailable, reads continue from MinIO. Set `REDIS_URL` when running the API outside Compose; it is empty by default.
+
+Future PostgreSQL content caches for tests, rescue scenarios, and articles must use a separate `urgent-care:content:v1:{kind}:{id}` namespace, check user access on each request, and invalidate after database commits. Those content caches are not implemented here.
 
 Daily DB backups on the VPS: `/var/backups/urgent-care/` (cron via `deploy/remote/install-backup-cron.sh`).
 

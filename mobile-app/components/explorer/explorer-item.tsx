@@ -1,3 +1,4 @@
+import type { AppFolderVm } from '@/hooks/api/types';
 import type { StatusType } from '@/components/ui/status-badge';
 import { ContentCard } from '@/components/ui/content-card';
 import type { MaterialKind } from '@/components/ui/type-icon';
@@ -106,6 +107,8 @@ export function ExplorerItemComponent({
       }
       description={`${descriptionPrefix}${description ?? defaultDescription}`}
       kind={getKind(item)}
+      iconPath={item.type === 'folder' ? (item.data as AppFolderVm).iconPath : null}
+      backgroundPath={item.type === 'folder' ? (item.data as AppFolderVm).backgroundPath : null}
       status={status}
       disabled={isDisabled}
       locked={(item.data.lockedBy as LockReason | null) ?? undefined}

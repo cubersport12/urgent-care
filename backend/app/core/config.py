@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     s3_secret_key: str
     s3_bucket_media: str = "cubersport12"
     s3_region: str = "us-east-1"
+    redis_url: str = ""
+    file_cache_ttl_seconds: int = Field(default=300, ge=1, le=300)
+    file_cache_max_bytes: int = Field(default=5 * 1024 * 1024, ge=1)
 
     cors_origins: list[str] = Field(
         default_factory=lambda: [

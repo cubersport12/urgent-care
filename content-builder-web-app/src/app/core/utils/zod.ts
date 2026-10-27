@@ -10,6 +10,8 @@ import {
 } from './types';
 
 export const folderSchema = z.object({
+  iconPath: z.string().nullable().optional(),
+  backgroundPath: z.string().nullable().optional(),
   id: z.string(),
   order: z.number().nullable(),
   name: z.string(),

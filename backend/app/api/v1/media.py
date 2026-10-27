@@ -4,6 +4,7 @@ from __future__ import annotations
 import mimetypes
 from typing import Annotated
 
+import structlog
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,6 +17,8 @@ from app.api.v1._content_access import assert_content_visible
 from app.db.repositories.content import ArticleRepository
 from app.models.user import User
 from app.utils.s3 import get_s3_client
+
+log = structlog.get_logger()
 
 router = APIRouter(prefix="/media", tags=["media"])
 
@@ -54,18 +57,36 @@ async def download_media(
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
 ) -> Response:
     key = _normalize_key(file_path)
+    log.info("media_download_received", key=key, enforce_tariff=enforce_tariff)
     # Article PDFs are stored as public/{articleId}.pdf
     name = key.removeprefix(ALLOWED_PREFIX)
     if name.endswith(".pdf"):
         article_id = name[:-4]
+        log.info("media_article_access_check_started", article_id=article_id)
         article = await ArticleRepository(db).get(article_id)
+        log.info(
+            "media_article_access_check_completed",
+            article_id=article_id,
+            article_found=article is not None,
+        )
         if article:
             await assert_content_visible(db, user, article, enforce_for_admin=enforce_tariff)
     s3 = get_s3_client()
     try:
         body, content_type = await s3.get_object(key=key)
     except Exception as exc:
+        log.warning(
+            "media_download_failed",
+            key=key,
+            error=str(exc),
+        )
         raise HTTPException(status_code=404, detail="File not found") from exc
+    log.info(
+        "media_download_served",
+        key=key,
+        size_bytes=len(body),
+        content_type=content_type,
+    )
     return Response(content=body, media_type=content_type)
 
 

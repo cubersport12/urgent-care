@@ -28,6 +28,7 @@ export const Glass = {
     insetHighlight: 'rgba(255, 255, 255, 0.1)',
     imageScrim: 'rgba(0, 0, 0, 0.35)',
     imageScrimSoft: 'rgba(0, 0, 0, 0.25)',
+    folderImageScrim: 'rgba(5, 5, 5, 0.82)',
   },
   light: {
     background: '#FFFFFF',
@@ -51,6 +52,7 @@ export const Glass = {
     insetHighlight: 'transparent',
     imageScrim: 'rgba(0, 0, 0, 0.35)',
     imageScrimSoft: 'rgba(0, 0, 0, 0.25)',
+    folderImageScrim: 'rgba(255, 255, 255, 0.86)',
   },
 } as const;
 

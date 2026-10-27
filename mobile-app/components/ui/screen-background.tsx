@@ -1,11 +1,13 @@
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, View, type ViewProps } from 'react-native';
+import { useState } from 'react';
+import { Image, StyleSheet, View, type ViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type ScreenBackgroundProps = ViewProps & {
   variant?: 'default' | 'study';
+  backgroundImage?: string;
   /** Skip top safe-area padding (e.g. full-bleed media). Default: apply top inset. */
   ignoreTopInset?: boolean;
 };
@@ -15,8 +17,10 @@ export function ScreenBackground({
   style,
   variant = 'default',
   ignoreTopInset = false,
+  backgroundImage,
   ...rest
 }: ScreenBackgroundProps) {
+  const [failedImage, setFailedImage] = useState<string>();
   const { page } = useAppTheme();
   const glass = useGlass();
   const insets = useSafeAreaInsets();
@@ -36,6 +40,12 @@ export function ScreenBackground({
       ]}
       {...rest}
     >
+      {backgroundImage && failedImage !== backgroundImage ? (
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <Image source={{ uri: backgroundImage }} resizeMode="cover" style={StyleSheet.absoluteFill} onError={() => setFailedImage(backgroundImage)} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: glass.folderImageScrim }]} />
+        </View>
+      ) : null}
       {variant === 'study' && (
         <LinearGradient
           colors={[glass.primaryTint, 'transparent']}

@@ -1303,7 +1303,9 @@ export class FoldersExplorerComponent {
         return this._store.dispatch(new FoldersActions.CreateFolder(parentId, {
           id: generateGUID(),
           name: copyName,
-          order
+          order,
+          iconPath: (clip.item as AppFolderVm).iconPath,
+          backgroundPath: (clip.item as AppFolderVm).backgroundPath
         }));
       case 'article':
         return this._duplicateArticle(clip.item as AppArticleVm, parentId, order, copyName);

@@ -26,6 +26,8 @@ class LinkToArticle(CamelModel):
 class FolderOut(CamelModel):
     id: str
     name: str
+    icon_path: str | None = Field(None, alias="iconPath", max_length=1000)
+    background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
@@ -38,6 +40,8 @@ class FolderOut(CamelModel):
 class FolderCreate(CamelModel):
     id: str | None = None
     name: str
+    icon_path: str | None = Field(None, alias="iconPath", max_length=1000)
+    background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
@@ -46,6 +50,8 @@ class FolderCreate(CamelModel):
 
 class FolderUpdate(CamelModel):
     name: str | None = None
+    icon_path: str | None = Field(None, alias="iconPath", max_length=1000)
+    background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")

@@ -41,12 +41,24 @@ services:
     restart: unless-stopped
     mem_limit: 256m
 
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lfu", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    mem_limit: 192m
+
   api:
     build: .
     env_file: .env
     environment:
       DATABASE_URL: postgresql+asyncpg://urgent:urgent_pass@postgres:5432/urgent_care
       S3_ENDPOINT: http://minio:9000
+      REDIS_URL: redis://redis:6379/0
       ENVIRONMENT: staging
       DEBUG: "false"
     ports:

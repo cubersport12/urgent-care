@@ -15,6 +15,7 @@ from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.errors import AppError
 from app.db.base import engine
+from app.utils.file_cache import close_file_cache, initialize_file_cache
 
 
 def _generate_operation_id(route: APIRoute) -> str:
@@ -45,6 +46,7 @@ async def lifespan(app: FastAPI):
     configure_logging()
     log = structlog.get_logger()
     log.info("app_starting", environment=settings.environment)
+    initialize_file_cache()
     if settings.is_dev:
         from app.utils.s3 import get_s3_client
 
@@ -62,9 +64,12 @@ async def lifespan(app: FastAPI):
             await seed_cities_if_empty(session)
     except Exception as exc:
         log.warning("cities_seed_skipped", error=str(exc))
-    yield
-    await engine.dispose()
-    log.info("app_stopped")
+    try:
+        yield
+    finally:
+        await close_file_cache()
+        await engine.dispose()
+        log.info("app_stopped")
 
 
 def create_app() -> FastAPI:
@@ -106,6 +111,10 @@ def create_app() -> FastAPI:
             request_id=request_id,
             method=request.method,
             path=request.url.path,
+        )
+        structlog.get_logger().info(
+            "request_received",
+            origin=request.headers.get("origin"),
         )
         response = await call_next(request)
         duration_ms = (time.perf_counter() - start) * 1000

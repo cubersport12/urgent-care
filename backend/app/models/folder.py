@@ -15,6 +15,8 @@ class Folder(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     name: Mapped[str] = mapped_column(String(500), nullable=False)
+    icon_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    background_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     order: Mapped[int | None] = mapped_column(Integer, nullable=True)
     parent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     required_tariff_id: Mapped[uuid.UUID | None] = mapped_column(
