@@ -904,6 +904,16 @@ export type DeleteAccount = {
 };
 
 /**
+ * DeleteRequest
+ */
+export type DeleteRequest = {
+    /**
+     * Items
+     */
+    items: Array<ItemRef>;
+};
+
+/**
  * FolderCreate
  */
 export type FolderCreate = {
@@ -931,6 +941,10 @@ export type FolderCreate = {
      * Parentid
      */
     parentId?: string | null;
+    /**
+     * Showrandomopen
+     */
+    showRandomOpen?: boolean;
     /**
      * Requiredtariffid
      */
@@ -990,6 +1004,10 @@ export type FolderOut = {
      */
     parentId: string | null;
     /**
+     * Showrandomopen
+     */
+    showRandomOpen: boolean;
+    /**
      * Requiredtariffid
      */
     requiredTariffId: string | null;
@@ -1031,6 +1049,10 @@ export type FolderUpdate = {
      * Parentid
      */
     parentId?: string | null;
+    /**
+     * Showrandomopen
+     */
+    showRandomOpen?: boolean;
     /**
      * Requiredtariffid
      */
@@ -1176,6 +1198,20 @@ export type HttpValidationError = {
      * Detail
      */
     detail?: Array<ValidationError>;
+};
+
+/**
+ * ItemRef
+ */
+export type ItemRef = {
+    /**
+     * Kind
+     */
+    kind: 'article' | 'test' | 'rescue';
+    /**
+     * Id
+     */
+    id: string;
 };
 
 /**
@@ -2203,6 +2239,24 @@ export type ResetTestOut = {
      * Name
      */
     name: string;
+};
+
+/**
+ * RestoreRequest
+ */
+export type RestoreRequest = {
+    /**
+     * Kind
+     */
+    kind: 'article' | 'test' | 'rescue';
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Targetparentid
+     */
+    targetParentId?: string | null;
 };
 
 /**
@@ -4209,6 +4263,93 @@ export type CitiesListCitiesResponses = {
 };
 
 export type CitiesListCitiesResponse = CitiesListCitiesResponses[keyof CitiesListCitiesResponses];
+
+export type ContentTrashListTrashData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/content-trash';
+};
+
+export type ContentTrashListTrashErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ContentTrashListTrashError = ContentTrashListTrashErrors[keyof ContentTrashListTrashErrors];
+
+export type ContentTrashListTrashResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ContentTrashDeleteTrashData = {
+    body: DeleteRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/content-trash/delete';
+};
+
+export type ContentTrashDeleteTrashErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ContentTrashDeleteTrashError = ContentTrashDeleteTrashErrors[keyof ContentTrashDeleteTrashErrors];
+
+export type ContentTrashDeleteTrashResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type ContentTrashRestoreTrashData = {
+    body: RestoreRequest;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/content-trash/restore';
+};
+
+export type ContentTrashRestoreTrashErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ContentTrashRestoreTrashError = ContentTrashRestoreTrashErrors[keyof ContentTrashRestoreTrashErrors];
+
+export type ContentTrashRestoreTrashResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
 
 export type BillingListTariffsData = {
     body?: never;

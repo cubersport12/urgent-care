@@ -12,5 +12,6 @@ export type BreadcrumbItem = {
   id: string;
   name: string;
   type: 'folder' | 'article' | 'test' | 'rescue';
+  showRandomOpen?: boolean;
 };
 

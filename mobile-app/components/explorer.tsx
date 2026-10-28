@@ -20,6 +20,7 @@ import { useTests } from '@/hooks/api/useTests';
 import { useAddOrUpdateTestStats, useTestsStats } from '@/hooks/api/useTestStats';
 import { areTestActivationConditionsMet } from '@/lib/test-activation';
 import { isSequenceBlocked, type SequenceContext, type SequenceItem } from '@/lib/sequence-gating';
+import { pickRandomItem, randomOpenCandidates } from '@/lib/random-open';
 import { apiFetchRelation } from '@/hooks/api/useApiFetch';
 import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-completion';
 import { useDeviceId } from '@/hooks/use-device-id';
@@ -42,6 +43,7 @@ import { TestTakingView } from './test-taking-view';
 import { TestView } from './test-view';
 import { ThemedText } from './themed-text';
 import { LoadingOverlay } from './ui/loading-overlay';
+import { Button } from './ui/button';
 import { ProgressBar } from './ui/progress-bar';
 import { ScreenBackground } from './ui/screen-background';
 import { GlassCard } from './ui/glass-card';
@@ -65,12 +67,21 @@ export function Explorer() {
     RescueScheneChoiceImplicationVm[]
   >([]);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isOpeningRandom, setIsOpeningRandom] = useState(false);
   const [breadcrumb, setBreadcrumb] = useState<BreadcrumbItem[]>([]);
   // Заблокированный тарифом материал — открытый диалог «какая подписка нужна»
   const [lockedTariffItem, setLockedTariffItem] = useState<LockedTariffItem | null>(null);
   // История навигации по статьям для определения hasPrevious
   const [articleNavigationHistory, setArticleNavigationHistory] = useState<string[]>([]);
   const previousFolderIdRef = useRef<string | undefined>(undefined);
+  const randomOpenInFlight = useRef(false);
+  const navigationVersion = useRef(0);
+  const cancelRandomOpen = useCallback(() => {
+    navigationVersion.current++;
+    randomOpenInFlight.current = false;
+    setIsOpeningRandom(false);
+  }, []);
+  useEffect(() => () => { navigationVersion.current++; }, []);
   const opacity = useSharedValue(1);
   const { isTestStarted, startTest, resetTest } = useTest();
   const navigation = useNavigation();
@@ -373,7 +384,17 @@ export function Explorer() {
     return isSequenceBlocked(sequenceItems, itemIndex, sequenceContext());
   }, [sequenceItems, readArticlesMap, testsStatsMap, sequenceContext]);
 
-  const handleItemPress = (item: ExplorerItem) => {
+  const randomCandidates = useMemo(() => currentFolderId
+    ? randomOpenCandidates(items, currentFolderId, isItemHidden, isItemDisabled)
+    : [], [currentFolderId, isItemDisabled, isItemHidden, items]);
+  const randomLoadError = foldersResponse.error || articlesResponse.error || testsResponse.error ||
+    rescueItemsResponse.error || articlesStatsResponse.error || testsStatsResponse.error;
+  const randomLoading = isLoading || articlesStatsResponse.isLoading || testsStatsResponse.isLoading || isOpeningRandom;
+  const showRandomOpen = currentFolderId !== undefined && breadcrumb.some(
+    (entry) => entry.type === 'folder' && entry.id === currentFolderId && entry.showRandomOpen,
+  );
+
+  const handleItemPress = (item: ExplorerItem, startRescue = false) => {
     // Заблокировано тарифом/наградой: вместо открытия — диалог с нужным тарифом
     // (или достижения). Награда — корневой маршрут, чтобы «назад» вернул на этот же таб.
     if (item.data.isLocked) {
@@ -389,10 +410,16 @@ export function Explorer() {
     }
 
     if (item.type === 'folder') {
+      cancelRandomOpen();
       setIsNavigating(true);
       opacity.value = withTiming(0, { duration: 200 });
       setCurrentFolderId(item.data.id);
-      setBreadcrumb(prev => [...prev, { id: item.data.id, name: item.data.name, type: 'folder' }]);
+      setBreadcrumb(prev => [...prev, {
+        id: item.data.id,
+        name: item.data.name,
+        type: 'folder',
+        showRandomOpen: (item.data as AppFolderVm).showRandomOpen === true,
+      }]);
       setSelectedArticle(null);
       setSelectedTest(null);
     } else if (item.type === 'article') {
@@ -410,7 +437,7 @@ export function Explorer() {
     } else if (item.type === 'rescue') {
       opacity.value = withTiming(0, { duration: 200 });
       setSelectedRescueItem(item.data as AppRescueItemVm);
-      setIsRescueStarted(false);
+      setIsRescueStarted(startRescue);
       setIsRescueCompleted(false);
       setRescueFinalParameters({});
       setRescueCollectedImplications([]);
@@ -420,9 +447,33 @@ export function Explorer() {
     }
   };
 
+  const handleRandomOpen = async () => {
+    if (randomOpenInFlight.current || randomLoading || randomLoadError) return;
+    const item = pickRandomItem(randomCandidates);
+    if (!item) return;
+    randomOpenInFlight.current = true;
+    setIsOpeningRandom(true);
+    const version = navigationVersion.current;
+
+    if (item.type === 'rescue') {
+      try {
+        await rescueStatsMutation.addOrUpdate({ startedAt: new Date().toISOString() }, item.data.id);
+      } catch (error) {
+        console.error('rescue_stats start:', error);
+      }
+      if (navigationVersion.current !== version) return;
+      void rescueStatsList.fetchData();
+    }
+
+    if (navigationVersion.current !== version) return;
+    setIsOpeningRandom(false);
+    handleItemPress(item, item.type === 'rescue');
+  };
+
 
   // Обработчик возврата в папку (верхняя кнопка "Назад")
   const handleBackToFolder = () => {
+    cancelRandomOpen();
     // Всегда выходим в папку, независимо от истории навигации
     if (selectedArticle) {
       setArticleNavigationHistory([]);
@@ -511,6 +562,7 @@ export function Explorer() {
   const { isWide, contentPaddingBottom } = useNavRail();
 
   const handleBackFromFolder = () => {
+    cancelRandomOpen();
     // Возврат из папки - идем на уровень выше
     setIsNavigating(true);
     opacity.value = withTiming(0, { duration: 200 });
@@ -542,6 +594,7 @@ export function Explorer() {
   };
 
   const resetToRoot = useCallback(() => {
+    cancelRandomOpen();
     setCurrentFolderId(undefined);
     setSelectedArticle(null);
     setSelectedTest(null);
@@ -556,7 +609,7 @@ export function Explorer() {
     previousFolderIdRef.current = undefined;
     resetTest();
     opacity.value = withTiming(1, { duration: 300 });
-  }, [resetTest, opacity]);
+  }, [cancelRandomOpen, resetTest, opacity]);
 
   useEffect(() => {
     // @ts-expect-error tabPress is emitted by bottom tab navigator
@@ -830,6 +883,36 @@ export function Explorer() {
                 Неотложная помощь в стоматологии
               </ThemedText>
             </Animated.View>
+          )}
+
+          {showRandomOpen && (
+            <View style={{ marginBottom: Spacing.card }}>
+              <Button
+                title={isOpeningRandom ? 'Открываем…' : 'Открыть случайно'}
+                accessibilityRole="button"
+                fullWidth
+                disabled={randomLoading || !!randomLoadError || randomCandidates.length === 0}
+                onPress={() => void handleRandomOpen()}
+              />
+              {!randomLoading && randomLoadError ? (
+                <>
+                  <ThemedText type="caption">Не удалось загрузить материалы или прогресс.</ThemedText>
+                  <Button
+                    title="Повторить"
+                    accessibilityRole="button"
+                    variant="ghost"
+                    onPress={() => {
+                      void Promise.all([
+                        foldersResponse.fetchData(), articlesResponse.fetchData(), testsResponse.fetchData(),
+                        rescueItemsResponse.fetchData(), articlesStatsResponse.fetchData(), testsStatsResponse.fetchData(),
+                      ]);
+                    }}
+                  />
+                </>
+              ) : !randomLoading && randomCandidates.length === 0 ? (
+                <ThemedText type="caption">Нет доступных материалов для случайного открытия.</ThemedText>
+              ) : null}
+            </View>
           )}
 
           {(() => {

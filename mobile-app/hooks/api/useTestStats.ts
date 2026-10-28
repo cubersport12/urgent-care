@@ -1,9 +1,7 @@
 import { apiFetch } from '@/lib/api';
-import type { ApiListResponse } from '@/lib/api';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDeviceId } from '../use-device-id';
+import { useCallback, useState } from 'react';
 import { AppTestStatsVm } from './types';
-import { apiFetchRelation } from './useApiFetch';
+import { useContentStats } from './useContentStats';
 
 export const useAddOrUpdateTestStats = (stats: AppTestStatsVm) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -40,27 +38,5 @@ export const useAddOrUpdateTestStats = (stats: AppTestStatsVm) => {
 };
 
 export const useTestsStats = (testsIds: string[]) => {
-  const [response, setResponse] = useState<Partial<ApiListResponse<AppTestStatsVm>>>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const { deviceId } = useDeviceId();
-  const memoizedTestsIds = useMemo(() => [...testsIds].sort(), [testsIds]);
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const r = await apiFetchRelation<AppTestStatsVm>('tests_stats');
-      const filtered = (r.data ?? []).filter((s) => memoizedTestsIds.includes(s.testId));
-      setResponse({ data: filtered, error: r.error });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [memoizedTestsIds]);
-
-  useEffect(() => {
-    if (testsIds.length > 0 && deviceId) {
-      void fetchData();
-    }
-  }, [fetchData, testsIds.length, deviceId]);
-
-  return { ...response, isLoading, fetchData };
+  return useContentStats<AppTestStatsVm>('tests_stats', testsIds, 'testId');
 };

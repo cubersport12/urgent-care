@@ -1,38 +1,12 @@
-import { apiFetch } from '@/lib/api';
-import { downloadMediaBlob } from '@/lib/api';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDeviceId } from '../use-device-id';
+import { apiFetch, downloadMediaBlob } from '@/lib/api';
+import { useCallback, useEffect, useState } from 'react';
 import { AppArticleStatsVm, AppArticleVm, NullableValue } from './types';
-import type { ApiListResponse } from '@/lib/api';
 import { apiFetchRelation } from './useApiFetch';
+import { useFolderContent } from './useFolderContent';
+import { useContentStats } from './useContentStats';
 
 export const useArticles = (parentId?: string) => {
-  const [response, setResponse] = useState<
-    Partial<Awaited<ReturnType<typeof apiFetchRelation<AppArticleVm>>>>
-  >({});
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await apiFetchRelation<AppArticleVm>('articles', {
-        parentId: parentId?.length ? parentId : null,
-      });
-      setResponse(result);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [parentId]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
-  return {
-    ...response,
-    isLoading,
-    fetchData,
-  };
+  return useFolderContent<AppArticleVm>('articles', parentId);
 };
 
 export const fetchArticle = async (articleId: string) => {
@@ -90,30 +64,7 @@ export const useAddOrUpdateArticleStats = (stats: Omit<AppArticleStatsVm, 'creat
 };
 
 export const useArticlesStats = (articlesIds: string[]) => {
-  const [response, setResponse] = useState<Partial<ApiListResponse<AppArticleStatsVm>>>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const { deviceId } = useDeviceId();
-  const articlesIdsKey = useMemo(() => [...articlesIds].sort().join(','), [articlesIds]);
-  const memoizedArticlesIds = useMemo(() => articlesIds, [articlesIdsKey]);
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const r = await apiFetchRelation<AppArticleStatsVm>('articles_stats');
-      const filtered = (r.data ?? []).filter((s) => memoizedArticlesIds.includes(s.articleId));
-      setResponse({ data: filtered, error: r.error });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [memoizedArticlesIds]);
-
-  useEffect(() => {
-    if (articlesIds.length > 0 && deviceId) {
-      void fetchData();
-    }
-  }, [fetchData, articlesIds.length, deviceId]);
-
-  return { ...response, isLoading, fetchData };
+  return useContentStats<AppArticleStatsVm>('articles_stats', articlesIds, 'articleId');
 };
 
 export const useFileContentString = (fileName: string) => {

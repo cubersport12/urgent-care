@@ -9,6 +9,7 @@ from app.api.v1.billing import router as billing_router
 from app.api.v1.ai import router as ai_router
 from app.api.v1.certificates import router as certificates_router
 from app.api.v1.cities import router as cities_router
+from app.api.v1.content_trash import router as content_trash_router
 from app.api.v1.folders import router as folders_router
 from app.api.v1.learning_events import router as learning_events_router
 from app.api.v1.legal import router as legal_router
@@ -26,6 +27,7 @@ from app.api.v1.users import router as users_router
 api_router = APIRouter()
 api_router.include_router(auth_router)
 api_router.include_router(cities_router)
+api_router.include_router(content_trash_router)
 api_router.include_router(billing_router)
 api_router.include_router(notifications_router)
 api_router.include_router(push_router)

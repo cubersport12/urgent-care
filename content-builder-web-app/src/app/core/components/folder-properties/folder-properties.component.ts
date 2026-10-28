@@ -13,7 +13,7 @@ import { RewardSelectComponent } from '../reward-select/reward-select.component'
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
 import { AppDialogService } from '@/core/services/app-dialog.service';
-import { AppInputComponent } from '../ui';
+import { AppCheckboxComponent, AppInputComponent } from '../ui';
 
 @Injectable({ providedIn: 'root' })
 export class FolderPropertiesService {
@@ -37,7 +37,8 @@ export class FolderPropertiesService {
     TariffSelectComponent,
     RewardSelectComponent,
     AppDialogWrapperComponent,
-    AppInputComponent
+    AppInputComponent,
+    AppCheckboxComponent
   ],
   template: `
     <app-dialog-wrapper
@@ -60,6 +61,7 @@ export class FolderPropertiesService {
             placeholder="Например: Педиатрия и неотложные состояния"
             [required]="true"
           />
+          <app-checkbox formControlName="showRandomOpen" label="Добавить кнопку «Открыть случайно»" />
         </div>
 
         <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 p-4 space-y-3">
@@ -128,6 +130,7 @@ export class FolderPropertiesComponent {
     iconPath: new FormControl<string | null>(this._data.iconPath ?? null),
     backgroundPath: new FormControl<string | null>(this._data.backgroundPath ?? null),
     name: new FormControl(this._data.name, { nonNullable: true, validators: [Validators.required] }),
+    showRandomOpen: new FormControl(this._data.showRandomOpen ?? false, { nonNullable: true }),
     requiredTariffId: new FormControl<string | null>(this._data.requiredTariffId ?? null),
     requiredRewardId: new FormControl<string | null>(this._data.requiredRewardId ?? null)
   });

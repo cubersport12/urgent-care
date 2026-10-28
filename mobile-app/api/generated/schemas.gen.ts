@@ -1706,6 +1706,24 @@ export const DeleteAccountSchema = {
     title: 'DeleteAccount'
 } as const;
 
+export const DeleteRequestSchema = {
+    properties: {
+        items: {
+            items: {
+                $ref: '#/components/schemas/ItemRef'
+            },
+            type: 'array',
+            minItems: 1,
+            title: 'Items'
+        }
+    },
+    type: 'object',
+    required: [
+        'items'
+    ],
+    title: 'DeleteRequest'
+} as const;
+
 export const FolderCreateSchema = {
     properties: {
         id: {
@@ -1768,6 +1786,11 @@ export const FolderCreateSchema = {
                 }
             ],
             title: 'Parentid'
+        },
+        showRandomOpen: {
+            type: 'boolean',
+            title: 'Showrandomopen',
+            default: false
         },
         requiredTariffId: {
             anyOf: [
@@ -1884,6 +1907,11 @@ export const FolderOutSchema = {
             ],
             title: 'Parentid'
         },
+        showRandomOpen: {
+            type: 'boolean',
+            title: 'Showrandomopen',
+            default: false
+        },
         requiredTariffId: {
             anyOf: [
                 {
@@ -1933,6 +1961,7 @@ export const FolderOutSchema = {
         'backgroundPath',
         'order',
         'parentId',
+        'showRandomOpen',
         'requiredTariffId',
         'requiredRewardId',
         'isLocked',
@@ -1999,6 +2028,11 @@ export const FolderUpdateSchema = {
                 }
             ],
             title: 'Parentid'
+        },
+        showRandomOpen: {
+            type: 'boolean',
+            title: 'Showrandomopen',
+            default: false
         },
         requiredTariffId: {
             anyOf: [
@@ -2273,6 +2307,30 @@ export const HTTPValidationErrorSchema = {
     },
     type: 'object',
     title: 'HTTPValidationError'
+} as const;
+
+export const ItemRefSchema = {
+    properties: {
+        kind: {
+            type: 'string',
+            enum: [
+                'article',
+                'test',
+                'rescue'
+            ],
+            title: 'Kind'
+        },
+        id: {
+            type: 'string',
+            title: 'Id'
+        }
+    },
+    type: 'object',
+    required: [
+        'kind',
+        'id'
+    ],
+    title: 'ItemRef'
 } as const;
 
 export const LearningEventCreateSchema = {
@@ -4157,6 +4215,41 @@ export const ResetTestOutSchema = {
         'name'
     ],
     title: 'ResetTestOut'
+} as const;
+
+export const RestoreRequestSchema = {
+    properties: {
+        kind: {
+            type: 'string',
+            enum: [
+                'article',
+                'test',
+                'rescue'
+            ],
+            title: 'Kind'
+        },
+        id: {
+            type: 'string',
+            title: 'Id'
+        },
+        targetParentId: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Targetparentid'
+        }
+    },
+    type: 'object',
+    required: [
+        'kind',
+        'id'
+    ],
+    title: 'RestoreRequest'
 } as const;
 
 export const RewardCreateSchema = {

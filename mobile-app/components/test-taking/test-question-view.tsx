@@ -86,7 +86,7 @@ export function TestQuestionView({
   } = useAppTheme();
   const glass = useGlass();
   const styles = useTestTakingStyles();
-  
+
   // Create alpha colors from containers
   const successAlpha10 = successContainer + '1A'; // ~10% opacity
   const errorAlpha10 = errorContainer + '1A'; // ~10% opacity
@@ -97,47 +97,7 @@ export function TestQuestionView({
     question?.image || ''
   );
 
-  if (!test || !question) return null;
-
-  const totalQuestions = test.questions?.length || 0;
-  const currentAnswer = answers.find((a) => a.questionId === question.id);
-  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
-  const isTestCompleted = areAllQuestionsVisited();
-  const isFirstQuestion = currentQuestionIndex === 0;
-  // Кнопка "Пропустить" показывается только если:
-  // 1. showSkipButton !== false
-  // 2. Вопрос не отвечен и не был пропущен ранее
-  // 3. Если на вопрос можно перейти через навигацию (он был посещен ранее и отвечен или пропущен), то кнопку не показываем
-  const shouldShowSkipButton = test.showSkipButton !== false && !showResult && !currentAnswer && !canNavigateToQuestion;
-  
-  // Определяем, нужно ли показывать результаты (учитываем showCorrectAnswer)
-  const shouldShowResults = showResult && (test.showCorrectAnswer !== false);
-
-  // Определяем, является ли ответ частично правильным
-  const isPartiallyCorrect = (() => {
-    if (!currentAnswer || !question || !question.answers) return false;
-    
-    // Получаем выбранные ответы по индексам из currentAnswer
-    const answerIndices = currentAnswer.answerIds.map(id => parseInt(id, 10));
-    const selectedAnswers = question.answers.filter((_, index) => 
-      answerIndices.includes(index)
-    );
-    
-    // Находим правильные ответы
-    const correctAnswers = question.answers.filter(a => a.isCorrect);
-    const selectedCorrectAnswers = selectedAnswers.filter(a => a.isCorrect);
-    
-    // Частично правильный, если:
-    // 1. Выбраны некоторые правильные ответы, но не все
-    // 2. Или выбраны правильные, но также выбраны неправильные
-    const hasSomeCorrect = selectedCorrectAnswers.length > 0;
-    const notAllCorrect = selectedCorrectAnswers.length < correctAnswers.length;
-    const hasIncorrect = selectedAnswers.some(a => !a.isCorrect);
-    
-    return hasSomeCorrect && (notAllCorrect || hasIncorrect) && !currentAnswer.isCorrect;
-  })();
-
-  const handleFinish = async () => {
+  const handleFinish = async (returnToFolderAfterFinish = false) => {
     if (!test) return;
 
     const finalAnswers = processSkippedQuestions();
@@ -154,7 +114,9 @@ export function TestQuestionView({
             : undefined,
       });
       finishTest('user');
-      onFinish();
+      // Кнопка «Завершить тест» должна сначала показать сводку.
+      // Кнопка «Назад» сохраняет прежнее поведение и возвращает в папку.
+      if (returnToFolderAfterFinish) onFinish();
     } catch (error) {
       const errorMessage = 'Не удалось сохранить результаты теста. Попробуйте еще раз.';
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -166,7 +128,9 @@ export function TestQuestionView({
     }
   };
 
-  const handleFinishWithConfirmation = () => {
+  const handleFinishWithConfirmation = (returnToFolderAfterFinish = false) => {
+    if (!test || !question) return;
+
     const message = 'Вы уверены, что хотите завершить тест? Неотвеченные вопросы будут засчитаны как неправильные.';
     
     if (Platform.OS === 'web') {
@@ -177,7 +141,7 @@ export function TestQuestionView({
           submitAnswer(question.id, selectedAnswers);
         }
         // Вызываем handleFinish асинхронно
-        void handleFinish();
+        void handleFinish(returnToFolderAfterFinish);
       }
     } else {
       // Для нативных платформ используем Alert.alert
@@ -197,7 +161,7 @@ export function TestQuestionView({
               if (selectedAnswers.length > 0 && !showResult) {
                 submitAnswer(question.id, selectedAnswers);
               }
-              await handleFinish();
+              await handleFinish(returnToFolderAfterFinish);
             },
           },
         ]
@@ -207,11 +171,51 @@ export function TestQuestionView({
 
   const handleBackToFolder = () => {
     // При нажатии на кнопку "Назад" вызываем процедуру завершения теста
-    handleFinishWithConfirmation();
+    handleFinishWithConfirmation(true);
   };
 
   const { isWide } = useNavRail();
-  useChromeBack(handleBackToFolder);
+  useChromeBack(test && question ? handleBackToFolder : null);
+
+  if (!test || !question) return null;
+
+  const totalQuestions = test.questions?.length || 0;
+  const currentAnswer = answers.find((a) => a.questionId === question.id);
+  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
+  const isTestCompleted = areAllQuestionsVisited();
+  const isFirstQuestion = currentQuestionIndex === 0;
+  // Кнопка "Пропустить" показывается только если:
+  // 1. showSkipButton !== false
+  // 2. Вопрос не отвечен и не был пропущен ранее
+  // 3. Если на вопрос можно перейти через навигацию (он был посещен ранее и отвечен или пропущен), то кнопку не показываем
+  const shouldShowSkipButton = test.showSkipButton !== false && !showResult && !currentAnswer && !canNavigateToQuestion;
+
+  // Определяем, нужно ли показывать результаты (учитываем showCorrectAnswer)
+  const shouldShowResults = showResult && (test.showCorrectAnswer !== false);
+
+  // Определяем, является ли ответ частично правильным
+  const isPartiallyCorrect = (() => {
+    if (!currentAnswer || !question.answers) return false;
+
+    // Получаем выбранные ответы по индексам из currentAnswer
+    const answerIndices = currentAnswer.answerIds.map(id => parseInt(id, 10));
+    const selectedAnswers = question.answers.filter((_, index) =>
+      answerIndices.includes(index)
+    );
+
+    // Находим правильные ответы
+    const correctAnswers = question.answers.filter(a => a.isCorrect);
+    const selectedCorrectAnswers = selectedAnswers.filter(a => a.isCorrect);
+
+    // Частично правильный, если:
+    // 1. Выбраны некоторые правильные ответы, но не все
+    // 2. Или выбраны правильные, но также выбраны неправильные
+    const hasSomeCorrect = selectedCorrectAnswers.length > 0;
+    const notAllCorrect = selectedCorrectAnswers.length < correctAnswers.length;
+    const hasIncorrect = selectedAnswers.some(a => !a.isCorrect);
+
+    return hasSomeCorrect && (notAllCorrect || hasIncorrect) && !currentAnswer.isCorrect;
+  })();
 
   const progressPercent =
     totalQuestions > 0 ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0;
@@ -566,7 +570,7 @@ export function TestQuestionView({
 
             {!isTestCompleted ? (
               <Pressable
-                onPress={handleFinishWithConfirmation}
+                onPress={() => handleFinishWithConfirmation()}
                 style={({ pressed }) => [
                   styles.finishTestButtonGhost,
                   { opacity: pressed ? 0.85 : 1 },

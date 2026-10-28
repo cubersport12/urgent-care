@@ -15,8 +15,9 @@ export function getSessionId(): string | null {
 }
 
 function redirectToLogin(): void {
-  if (!window.location.pathname.startsWith('/login')) {
-    window.location.assign('/login');
+  const loginUrl = new URL('login', document.baseURI);
+  if (window.location.pathname !== loginUrl.pathname) {
+    window.location.assign(loginUrl.href);
   }
 }
 
@@ -42,10 +43,12 @@ function createAuthFetch(baseFetch: typeof fetch = fetch.bind(globalThis)): type
   };
 }
 
+export const authFetch = createAuthFetch();
+
 export function configureApiClient(): void {
   client.setConfig({
     baseUrl: API_BASE,
-    fetch: createAuthFetch()
+    fetch: authFetch
   });
 }
 

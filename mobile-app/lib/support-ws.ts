@@ -7,6 +7,7 @@ type Handler = (m: SupportMessage) => void;
 let socket: WebSocket | null = null;
 let handlers = new Set<Handler>();
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let heartbeat: ReturnType<typeof setInterval> | null = null;
 let stopped = true;
 let attempt = 0;
 
@@ -41,6 +42,8 @@ export function subscribeSupport(handler: Handler): () => void {
 export function disconnectSupportWs() {
   stopped = true;
   clearReconnect();
+  if (heartbeat) clearInterval(heartbeat);
+  heartbeat = null;
   if (socket) {
     try {
       socket.close();
@@ -65,7 +68,11 @@ export async function connectSupportWs() {
     const ws = new WebSocket(`${wsBase()}/api/v1/support/ws?session_id=${encodeURIComponent(sessionId)}`);
     socket = ws;
     ws.onopen = () => {
+      if (socket !== ws || stopped) return;
       attempt = 0;
+      heartbeat = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) ws.send('ping');
+      }, 30_000);
     };
     ws.onmessage = (ev) => {
       try {
@@ -81,6 +88,9 @@ export async function connectSupportWs() {
       }
     };
     ws.onclose = () => {
+      if (socket !== ws) return;
+      if (heartbeat) clearInterval(heartbeat);
+      heartbeat = null;
       socket = null;
       scheduleReconnect();
     };
