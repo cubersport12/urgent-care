@@ -1,6 +1,7 @@
 import type { UserOut } from '@/api/generated/types.gen';
 import {
   getCurrentUser,
+  getSessionId,
   loadStoredAuth,
   onAuthChange,
 } from '@/lib/auth-storage';
@@ -34,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      session: user ? { sessionId: 'stored' } : null,
+      session: user && getSessionId() ? { sessionId: getSessionId()! } : null,
       user: user ?? getCurrentUser(),
       initialized,
       signOut,

@@ -6,7 +6,7 @@ import { CityPicker } from '@/components/ui/city-picker';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useNotifications } from '@/contexts/notifications-context';
@@ -30,6 +30,27 @@ import {
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 
+function UnreadNotificationBadge({
+  count,
+  backgroundColor,
+  textColor,
+}: {
+  count: number;
+  backgroundColor: string;
+  textColor: string;
+}) {
+  return (
+    <View style={[styles.unreadBadge, { backgroundColor }]}>
+      <ThemedText
+        type="caption"
+        style={[styles.unreadBadgeText, { color: textColor, fontSize: count > 99 ? 9 : 12 }]}
+      >
+        {count > 99 ? '99+' : count}
+      </ThemedText>
+    </View>
+  );
+}
+
 function ProfileRow({
   icon,
   iconBg,
@@ -41,6 +62,7 @@ function ProfileRow({
   isLast = false,
   textColor,
   isLoading = false,
+  unreadCount = 0,
 }: {
   icon: IconSymbolName;
   iconBg: string;
@@ -52,13 +74,16 @@ function ProfileRow({
   isLast?: boolean;
   textColor?: string;
   isLoading?: boolean;
+  unreadCount?: number;
 }) {
-  const { text, neutralSoft, borderVariant, elevated1 } = useAppTheme();
+  const { text, neutralSoft, borderVariant, elevated1, primary, onPrimary } = useAppTheme();
 
   return (
     <View>
       <Pressable
         onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={unreadCount > 0 ? `${label}, непрочитанных: ${unreadCount}` : undefined}
         style={({ pressed }) => [
           styles.row,
           pressed && { backgroundColor: elevated1 },
@@ -70,7 +95,9 @@ function ProfileRow({
         <ThemedText style={[styles.rowLabel, textColor ? { color: textColor } : { color: text }]}>
           {label}
         </ThemedText>
-        {value ? (
+        {unreadCount > 0 ? (
+          <UnreadNotificationBadge count={unreadCount} backgroundColor={primary} textColor={onPrimary} />
+        ) : value ? (
           <ThemedText style={[styles.rowValue, { color: neutralSoft }]}>
             {value}
           </ThemedText>
@@ -456,7 +483,7 @@ export default function ProfileScreen() {
               iconBg={successContainer}
               iconColor={success}
               label="Уведомления"
-              value={unreadNotifications > 0 ? String(unreadNotifications) : undefined}
+              unreadCount={unreadNotifications}
               onPress={() => router.push('/(tabs)/profile/notifications')}
               isLast={true}
             />
@@ -568,6 +595,18 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  unreadBadge: {
+    width: 24,
+    aspectRatio: 1,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  unreadBadgeText: {
+    fontWeight: '700',
+    lineHeight: 14,
+    textAlign: 'center',
+  },
   root: { flex: 1 },
   content: {
     paddingHorizontal: Spacing.pageX,

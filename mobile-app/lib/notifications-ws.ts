@@ -43,6 +43,7 @@ type Handler = (ev: NotificationsWsEvent) => void;
 let socket: WebSocket | null = null;
 let handlers = new Set<Handler>();
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let heartbeat: ReturnType<typeof setInterval> | null = null;
 let stopped = true;
 let attempt = 0;
 
@@ -77,6 +78,8 @@ export function subscribeNotifications(handler: Handler): () => void {
 export function disconnectNotificationsWs() {
   stopped = true;
   clearReconnect();
+  if (heartbeat) clearInterval(heartbeat);
+  heartbeat = null;
   if (socket) {
     try {
       socket.close();
@@ -105,7 +108,11 @@ export async function connectNotificationsWs() {
   socket = ws;
 
   ws.onopen = () => {
+    if (socket !== ws || stopped) return;
     attempt = 0;
+    heartbeat = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) ws.send('ping');
+    }, 30_000);
   };
 
   ws.onmessage = (ev) => {
@@ -145,7 +152,10 @@ export async function connectNotificationsWs() {
   };
 
   ws.onclose = () => {
-    if (socket === ws) socket = null;
+    if (socket !== ws) return;
+    if (heartbeat) clearInterval(heartbeat);
+    heartbeat = null;
+    socket = null;
     scheduleReconnect();
   };
 

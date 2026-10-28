@@ -34,6 +34,12 @@ export const routes: Routes = [
           )
       },
       {
+        path: 'trash',
+        title: 'Корзина — Trouble Dent',
+        loadComponent: () =>
+          import('./core/components/content-trash/content-trash.component').then((x) => x.ContentTrashComponent)
+      },
+      {
         path: 'users',
         title: 'Управление пользователями — Trouble Dent',
         loadComponent: () =>

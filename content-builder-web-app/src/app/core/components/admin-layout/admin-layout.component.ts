@@ -198,7 +198,8 @@ export class AdminLayoutComponent {
       {
         title: 'Обучение и контент',
         items: [
-          { label: 'Файловый менеджер', route: '/content', icon: 'folder-open' }
+          { label: 'Файловый менеджер', route: '/content', icon: 'folder-open' },
+          { label: 'Корзина', route: '/trash', icon: 'trash' }
         ]
       },
       {

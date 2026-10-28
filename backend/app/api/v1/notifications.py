@@ -5,8 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_admin, get_current_user, get_db
-from app.api.deps import get_user_by_session
+from app.api.deps import get_current_admin, get_current_user, get_db, get_user_by_session
 from app.db.repositories.notifications import NotificationRepository
 from app.db.repositories.user import UserRepository
 from app.models.notification import Notification
@@ -121,7 +120,11 @@ async def create_notification(
 
 
 @router.websocket("/ws")
-async def notifications_ws(websocket: WebSocket, db = Depends(get_db), session_id: str = Query(...)) -> None:
+async def notifications_ws(
+    websocket: WebSocket,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    session_id: Annotated[str, Query()],
+) -> None:
     """Auth via session id query param (custom headers are not available on WS handshake)."""
     user = await get_user_by_session(db, session_id)
     if not user:
@@ -132,8 +135,8 @@ async def notifications_ws(websocket: WebSocket, db = Depends(get_db), session_i
     await notification_hub.connect(user_id, websocket)
     try:
         while True:
-            # Keepalive / ignore client pings; server pushes events.
-            await websocket.receive_text()
+            if await websocket.receive_text() == "ping":
+                await websocket.send_text("pong")
     except WebSocketDisconnect:
         pass
     finally:

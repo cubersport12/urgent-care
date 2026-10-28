@@ -3,12 +3,20 @@ import logging
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Query,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_admin, get_current_user, get_db
+from app.api.deps import get_current_admin, get_current_user, get_db, get_user_by_session
 from app.core.config import settings
-from app.api.deps import get_user_by_session
 from app.db.repositories.support import SupportRepository
 from app.db.repositories.user import UserRepository
 from app.models.support import SupportMessage
@@ -231,7 +239,11 @@ async def post_admin_message(
 
 
 @router.websocket("/ws")
-async def support_ws(websocket: WebSocket, db = Depends(get_db), session_id: str = Query(...)) -> None:
+async def support_ws(
+    websocket: WebSocket,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    session_id: Annotated[str, Query()],
+) -> None:
     user = await get_user_by_session(db, session_id)
     if not user:
         await websocket.close(code=4401)
@@ -244,7 +256,8 @@ async def support_ws(websocket: WebSocket, db = Depends(get_db), session_id: str
     await hub.connect(user_id, websocket)
     try:
         while True:
-            await websocket.receive_text()
+            if await websocket.receive_text() == "ping":
+                await websocket.send_text("pong")
     except WebSocketDisconnect:
         pass
     finally:

@@ -47,11 +47,12 @@ function subscriptionBanner(d: SubscriptionGrantedPayload): AppNotification {
 
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const { session, initialized } = useAuth();
+  const sessionId = session?.sessionId;
   const [unreadCount, setUnreadCount] = useState(0);
   const [banner, setBanner] = useState<AppNotification | null>(null);
 
   const refreshUnread = useCallback(() => {
-    if (!session) {
+    if (!sessionId) {
       setUnreadCount(0);
       return;
     }
@@ -59,13 +60,13 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       .unreadCount()
       .then(setUnreadCount)
       .catch(() => setUnreadCount(0));
-  }, [session]);
+  }, [sessionId]);
 
   const dismissBanner = useCallback(() => setBanner(null), []);
 
   useEffect(() => {
     if (!initialized) return;
-    if (!session) {
+    if (!sessionId) {
       disconnectNotificationsWs();
       setUnreadCount(0);
       setBanner(null);
@@ -85,14 +86,14 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         setBanner(subscriptionBanner(ev.data));
         return;
       }
-      // Achievement unlocks: count toward inbox, toast handled by AchievementsProvider.
-      setUnreadCount((c) => c + 1);
+      // Only achievements create inbox notifications; certificate events do not.
+      if (ev.type === 'achievement_unlocked') setUnreadCount((c) => c + 1);
     });
     return () => {
       unsub();
       disconnectNotificationsWs();
     };
-  }, [initialized, session, refreshUnread]);
+  }, [initialized, sessionId, refreshUnread]);
 
   const onLiveNotification = useCallback((handler: (ev: NotificationsWsEvent) => void) => {
     return subscribeNotifications(handler);
