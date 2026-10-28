@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Urgent Care API",
-    "description": "Urgent Care API \u2014 content CMS, learning stats, auth, media. OpenAPI: `/openapi.json` \u00b7 Swagger UI: `/docs` \u00b7 ReDoc: `/redoc`.",
+    "description": "Urgent Care API — content CMS, learning stats, auth, media. OpenAPI: `/openapi.json` · Swagger UI: `/docs` · ReDoc: `/redoc`.",
     "version": "1.0.0"
   },
   "paths": {
@@ -95,7 +95,7 @@
           "auth"
         ],
         "summary": "Login Constructor",
-        "description": "\u0412\u0445\u043e\u0434 \u0432 \u043a\u043e\u043d\u0441\u0442\u0440\u0443\u043a\u0442\u043e\u0440 \u043a\u043e\u043d\u0442\u0435\u043d\u0442\u0430 \u2014 \u0442\u043e\u043b\u044c\u043a\u043e \u0434\u043b\u044f \u0430\u0434\u043c\u0438\u043d\u0438\u0441\u0442\u0440\u0430\u0442\u043e\u0440\u043e\u0432.",
+        "description": "Вход в конструктор контента — только для администраторов.",
         "operationId": "auth_login_constructor",
         "requestBody": {
           "content": {
@@ -171,7 +171,7 @@
           "auth"
         ],
         "summary": "Resend Verification",
-        "description": "Always 204 \u2014 do not reveal whether the email exists.",
+        "description": "Always 204 — do not reveal whether the email exists.",
         "operationId": "auth_resend_verification",
         "requestBody": {
           "content": {
@@ -206,7 +206,7 @@
           "auth"
         ],
         "summary": "Request Login Code",
-        "description": "\u041e\u0434\u043d\u043e\u0440\u0430\u0437\u043e\u0432\u044b\u0439 \u043a\u043e\u0434 \u0432\u0445\u043e\u0434\u0430 \u043d\u0430 \u043f\u043e\u0447\u0442\u0443. Always 204 \u2014 do not reveal whether the email exists.",
+        "description": "Одноразовый код входа на почту. Always 204 — do not reveal whether the email exists.",
         "operationId": "auth_request_login_code",
         "requestBody": {
           "content": {
@@ -282,7 +282,7 @@
           "auth"
         ],
         "summary": "Logout",
-        "description": "\u042f\u0432\u043d\u044b\u0439 \u0440\u0430\u0437\u043b\u043e\u0433\u0438\u043d \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430: \u0437\u0430\u043a\u0440\u044b\u0432\u0430\u0435\u043c \u0441\u0435\u0441\u0441\u0438\u044e \u043f\u043e \u0435\u0451 id.",
+        "description": "Явный разлогин устройства: закрываем сессию по её id.",
         "operationId": "auth_logout",
         "requestBody": {
           "content": {
@@ -477,7 +477,7 @@
           "auth"
         ],
         "summary": "Delete Me",
-        "description": "152-\u0424\u0417: \u043f\u043e\u043b\u043d\u043e\u0435 \u0443\u0434\u0430\u043b\u0435\u043d\u0438\u0435 \u0430\u043a\u043a\u0430\u0443\u043d\u0442\u0430 \u0438 \u0432\u0441\u0435\u0445 \u0441\u0432\u044f\u0437\u0430\u043d\u043d\u044b\u0445 \u0434\u0430\u043d\u043d\u044b\u0445 (\u043a\u0430\u0441\u043a\u0430\u0434 \u043f\u043e FK).",
+        "description": "152-ФЗ: полное удаление аккаунта и всех связанных данных (каскад по FK).",
         "operationId": "auth_delete_me",
         "parameters": [
           {
@@ -639,7 +639,7 @@
           "auth"
         ],
         "summary": "Forgot Password",
-        "description": "Always 204 \u2014 do not reveal whether the email exists.",
+        "description": "Always 204 — do not reveal whether the email exists.",
         "operationId": "auth_forgot_password",
         "requestBody": {
           "content": {
@@ -804,6 +804,170 @@
                   },
                   "title": "Response Cities List Cities"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/content-trash": {
+      "get": {
+        "tags": [
+          "content-trash"
+        ],
+        "summary": "List Trash",
+        "operationId": "content-trash_list_trash",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/content-trash/delete": {
+      "post": {
+        "tags": [
+          "content-trash"
+        ],
+        "summary": "Delete Trash",
+        "operationId": "content-trash_delete_trash",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/content-trash/restore": {
+      "post": {
+        "tags": [
+          "content-trash"
+        ],
+        "summary": "Restore Trash",
+        "operationId": "content-trash_restore_trash",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestoreRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -1954,7 +2118,7 @@
           "billing"
         ],
         "summary": "Confirm Payment",
-        "description": "\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435 \u043f\u043e\u043a\u0443\u043f\u043a\u0438 \u0447\u0435\u0440\u0435\u0437 RuStore Pay SDK.",
+        "description": "Подтверждение покупки через RuStore Pay SDK.",
         "operationId": "billing_confirm_payment",
         "parameters": [
           {
@@ -3469,7 +3633,7 @@
           "support"
         ],
         "summary": "Create Thread For User",
-        "description": "\u041e\u0442\u043a\u0440\u044b\u0442\u044c (\u0438\u043b\u0438 \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0439) \u0434\u0438\u0430\u043b\u043e\u0433 \u0441 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u0435\u043c \u2014 \u043a\u0430\u0440\u0430\u043d\u0434\u0430\u0448 \u0432 \u0438\u043d\u0431\u043e\u043a\u0441\u0435.",
+        "description": "Открыть (или получить существующий) диалог с пользователем — карандаш в инбоксе.",
         "operationId": "support_create_thread_for_user",
         "parameters": [
           {
@@ -3978,7 +4142,7 @@
           "folders"
         ],
         "summary": "Folders Material Counts",
-        "description": "\u041f\u043e \u043a\u0430\u0436\u0434\u043e\u0439 \u043f\u0430\u043f\u043a\u0435: \u043a\u043e\u043b\u0438\u0447\u0435\u0441\u0442\u0432\u043e \u043c\u0430\u0442\u0435\u0440\u0438\u0430\u043b\u043e\u0432 (\u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b, \u0442\u0435\u0441\u0442\u044b, \u0440\u0435\u0436\u0438\u043c\u044b \u0441\u043f\u0430\u0441\u0435\u043d\u0438\u044f)\n\u0432\u043e \u0432\u0441\u0435\u0439 \u0432\u043b\u043e\u0436\u0435\u043d\u043d\u043e\u0441\u0442\u0438 \u2014 \u0441\u0430\u043c\u0430 \u043f\u0430\u043f\u043a\u0430 + \u0432\u0441\u0435 \u043f\u043e\u0434\u043f\u0430\u043f\u043a\u0438 (descendants), \u0438 \u0441\u043a\u043e\u043b\u044c\u043a\u043e \u0438\u0437 \u043d\u0438\u0445\n\u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u043e \u0442\u0435\u043a\u0443\u0449\u0438\u043c \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u0435\u043c (\u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442 \u043f\u0440\u043e\u0447\u0438\u0442\u0430\u043d, \u0442\u0435\u0441\u0442/\u0440\u0435\u0436\u0438\u043c \u043f\u0440\u043e\u0439\u0434\u0435\u043d \u0443\u0441\u043f\u0435\u0448\u043d\u043e).",
+        "description": "По каждой папке: количество материалов (документы, тесты, режимы спасения)\nво всей вложенности — сама папка + все подпапки (descendants), и сколько из них\nзавершено текущим пользователем (документ прочитан, тест/режим пройден успешно).",
         "operationId": "folders_folders_material_counts",
         "parameters": [
           {
@@ -5163,11 +5327,11 @@
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043d\u0435\u0441\u043c\u043e\u0442\u0440\u044f \u043d\u0430 \u043e\u0448\u0438\u0431\u043a\u0438 \u0433\u0440\u0430\u0444\u0430 \u0441\u0446\u0435\u043d",
+              "description": "Сохранить несмотря на ошибки графа сцен",
               "default": false,
               "title": "Force"
             },
-            "description": "\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043d\u0435\u0441\u043c\u043e\u0442\u0440\u044f \u043d\u0430 \u043e\u0448\u0438\u0431\u043a\u0438 \u0433\u0440\u0430\u0444\u0430 \u0441\u0446\u0435\u043d"
+            "description": "Сохранить несмотря на ошибки графа сцен"
           },
           {
             "name": "X-Session-Id",
@@ -5311,11 +5475,11 @@
             "required": false,
             "schema": {
               "type": "boolean",
-              "description": "\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043d\u0435\u0441\u043c\u043e\u0442\u0440\u044f \u043d\u0430 \u043e\u0448\u0438\u0431\u043a\u0438 \u0433\u0440\u0430\u0444\u0430 \u0441\u0446\u0435\u043d",
+              "description": "Сохранить несмотря на ошибки графа сцен",
               "default": false,
               "title": "Force"
             },
-            "description": "\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043d\u0435\u0441\u043c\u043e\u0442\u0440\u044f \u043d\u0430 \u043e\u0448\u0438\u0431\u043a\u0438 \u0433\u0440\u0430\u0444\u0430 \u0441\u0446\u0435\u043d"
+            "description": "Сохранить несмотря на ошибки графа сцен"
           },
           {
             "name": "X-Session-Id",
@@ -6299,7 +6463,7 @@
           "users"
         ],
         "summary": "Admin Create User",
-        "description": "\u0421\u043e\u0437\u0434\u0430\u043d\u0438\u0435 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044f \u0430\u0434\u043c\u0438\u043d\u0438\u0441\u0442\u0440\u0430\u0442\u043e\u0440\u043e\u043c. \u0411\u0435\u0437 \u043f\u0430\u0440\u043e\u043b\u044f \u2014 \u0443\u0439\u0434\u0451\u0442 \u043f\u0438\u0441\u044c\u043c\u043e \u0441\u043e \u0441\u0441\u044b\u043b\u043a\u043e\u0439 \u0443\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0438.",
+        "description": "Создание пользователя администратором. Без пароля — уйдёт письмо со ссылкой установки.",
         "operationId": "users_admin_create_user",
         "parameters": [
           {
@@ -6428,7 +6592,7 @@
           "users"
         ],
         "summary": "Admin Delete User",
-        "description": "\u041f\u043e\u043b\u043d\u043e\u0435 \u0443\u0434\u0430\u043b\u0435\u043d\u0438\u0435 \u0430\u043a\u043a\u0430\u0443\u043d\u0442\u0430 \u0438 \u0432\u0441\u0435\u0445 \u0441\u0432\u044f\u0437\u0430\u043d\u043d\u044b\u0445 \u0434\u0430\u043d\u043d\u044b\u0445 (\u043a\u0430\u0441\u043a\u0430\u0434 \u043f\u043e FK, \u043a\u0430\u043a DELETE /auth/me).",
+        "description": "Полное удаление аккаунта и всех связанных данных (каскад по FK, как DELETE /auth/me).",
         "operationId": "users_admin_delete_user",
         "parameters": [
           {
@@ -6618,7 +6782,7 @@
           "users"
         ],
         "summary": "Reset Users Stats",
-        "description": "\u041f\u043e\u043b\u043d\u044b\u0439 \u0441\u0431\u0440\u043e\u0441 \u0441\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043a\u0438 \u0438 \u043f\u0440\u043e\u0433\u0440\u0435\u0441\u0441\u0430: \u0441\u043e\u0431\u044b\u0442\u0438\u044f \u043e\u0431\u0443\u0447\u0435\u043d\u0438\u044f (\u0430\u043d\u0430\u043b\u0438\u0442\u0438\u043a\u0430,\n\u0441\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043a\u0430 \u0442\u0435\u0441\u0442\u043e\u0432/\u0441\u0442\u0430\u0442\u0435\u0439/\u0440\u0435\u0436\u0438\u043c\u043e\u0432) \u0438 \u0437\u0430\u043f\u0438\u0441\u0438 \u043e \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u043d\u044b\u0445 \u0434\u043e\u0441\u0442\u0438\u0436\u0435\u043d\u0438\u044f\u0445.",
+        "description": "Полный сброс статистики и прогресса: события обучения (аналитика,\nстатистика тестов/статей/режимов) и записи о полученных достижениях.",
         "operationId": "users_reset_users_stats",
         "parameters": [
           {
@@ -7147,7 +7311,7 @@
           "certificates"
         ],
         "summary": "Verify Certificate",
-        "description": "\u041f\u0443\u0431\u043b\u0438\u0447\u043d\u0430\u044f \u043f\u0440\u043e\u0432\u0435\u0440\u043a\u0430 \u043f\u043e\u0434\u043b\u0438\u043d\u043d\u043e\u0441\u0442\u0438 \u2014 \u0446\u0435\u043b\u044c QR-\u043a\u043e\u0434\u0430 \u043d\u0430 \u0441\u0435\u0440\u0442\u0438\u0444\u0438\u043a\u0430\u0442\u0435.",
+        "description": "Публичная проверка подлинности — цель QR-кода на сертификате.",
         "operationId": "certificates_verify_certificate",
         "parameters": [
           {
@@ -9267,6 +9431,23 @@
         ],
         "title": "DeleteAccount"
       },
+      "DeleteRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemRef"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DeleteRequest"
+      },
       "FolderCreate": {
         "properties": {
           "id": {
@@ -9330,6 +9511,11 @@
             ],
             "title": "Parentid"
           },
+          "showRandomOpen": {
+            "type": "boolean",
+            "title": "Showrandomopen",
+            "default": false
+          },
           "requiredTariffId": {
             "anyOf": [
               {
@@ -9385,7 +9571,7 @@
           "completed"
         ],
         "title": "FolderMaterialCountOut",
-        "description": "\u041c\u0430\u0442\u0435\u0440\u0438\u0430\u043b\u044b \u043f\u0430\u043f\u043a\u0438 \u0441 \u0443\u0447\u0451\u0442\u043e\u043c \u0432\u0441\u0435\u0445 \u0432\u043b\u043e\u0436\u0435\u043d\u043d\u044b\u0445 \u043f\u043e\u0434\u043f\u0430\u043f\u043e\u043a (descendants)."
+        "description": "Материалы папки с учётом всех вложенных подпапок (descendants)."
       },
       "FolderOut": {
         "properties": {
@@ -9443,6 +9629,11 @@
             ],
             "title": "Parentid"
           },
+          "showRandomOpen": {
+            "type": "boolean",
+            "title": "Showrandomopen",
+            "default": false
+          },
           "requiredTariffId": {
             "anyOf": [
               {
@@ -9492,6 +9683,7 @@
           "backgroundPath",
           "order",
           "parentId",
+          "showRandomOpen",
           "requiredTariffId",
           "requiredRewardId",
           "isLocked",
@@ -9557,6 +9749,11 @@
               }
             ],
             "title": "Parentid"
+          },
+          "showRandomOpen": {
+            "type": "boolean",
+            "title": "Showrandomopen",
+            "default": false
           },
           "requiredTariffId": {
             "anyOf": [
@@ -9821,6 +10018,29 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "ItemRef": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "article",
+              "test",
+              "rescue"
+            ],
+            "title": "Kind"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "ItemRef"
       },
       "LearningEventCreate": {
         "properties": {
@@ -11661,6 +11881,40 @@
         ],
         "title": "ResetTestOut"
       },
+      "RestoreRequest": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "article",
+              "test",
+              "rescue"
+            ],
+            "title": "Kind"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "targetParentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetparentid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "id"
+        ],
+        "title": "RestoreRequest"
+      },
       "RewardCreate": {
         "properties": {
           "achievementIds": {
@@ -12745,7 +12999,7 @@
           "included"
         ],
         "title": "TariffFeatureStateOut",
-        "description": "\u041e\u0441\u043e\u0431\u0435\u043d\u043d\u043e\u0441\u0442\u044c \u0432 \u0441\u043e\u0441\u0442\u0430\u0432\u0435 \u0442\u0430\u0440\u0438\u0444\u0430: \u0432\u0445\u043e\u0434\u0438\u0442 \u043b\u0438 \u0432 \u044d\u0442\u043e\u0442 \u043a\u043e\u043d\u043a\u0440\u0435\u0442\u043d\u044b\u0439 \u0442\u0430\u0440\u0438\u0444."
+        "description": "Особенность в составе тарифа: входит ли в этот конкретный тариф."
       },
       "TariffFeatureUpdate": {
         "properties": {

@@ -16,6 +16,7 @@ export const folderSchema = z.object({
   order: z.number().nullable(),
   name: z.string(),
   parentId: z.string().nullable(),
+  showRandomOpen: z.boolean().default(false),
   requiredTariffId: z.string().nullable().optional(),
   requiredRewardId: z.string().nullable().optional()
 });

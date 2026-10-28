@@ -16,8 +16,9 @@ export const useAddOrUpdateRescueStats = (keys: RescueStatsKeys) => {
   const [error, setError] = useState<Error | null>(null);
 
   const addOrUpdate = useCallback(
-    async (patch: RescueStatsPatch) => {
-      if (!keys.clientId || !keys.rescueId) {
+    async (patch: RescueStatsPatch, rescueIdOverride?: string) => {
+      const rescueId = rescueIdOverride ?? keys.rescueId;
+      if (!keys.clientId || !rescueId) {
         return null;
       }
 
@@ -26,7 +27,7 @@ export const useAddOrUpdateRescueStats = (keys: RescueStatsKeys) => {
 
       try {
         const existingList = await apiFetchRelation<AppRescueStatsVm>('rescue_stats', {
-          rescueId: keys.rescueId,
+          rescueId,
         });
         const row = existingList.data?.[0] ?? null;
 
@@ -54,7 +55,7 @@ export const useAddOrUpdateRescueStats = (keys: RescueStatsKeys) => {
         return await apiFetch<AppRescueStatsVm>('/api/v1/rescue-stats', {
           method: 'PUT',
           body: JSON.stringify({
-            rescueId: keys.rescueId,
+            rescueId,
             startedAt: finalStartedAt,
             completedAt,
             passed,

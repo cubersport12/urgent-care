@@ -30,6 +30,7 @@ class FolderOut(CamelModel):
     background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
+    show_random_open: bool = Field(False, alias="showRandomOpen")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
     # Заблокирован тарифом/наградой: в списках отдаётся стаб (без содержимого)
@@ -44,6 +45,7 @@ class FolderCreate(CamelModel):
     background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
+    show_random_open: bool = Field(False, alias="showRandomOpen")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 
@@ -54,6 +56,7 @@ class FolderUpdate(CamelModel):
     background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
+    show_random_open: bool = Field(False, alias="showRandomOpen")
     required_tariff_id: UUID | None = Field(None, alias="requiredTariffId")
     required_reward_id: UUID | None = Field(None, alias="requiredRewardId")
 

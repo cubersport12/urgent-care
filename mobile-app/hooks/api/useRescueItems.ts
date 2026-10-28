@@ -1,32 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
 import { AppRescueItemVm } from './types';
-import { apiFetchRelation } from './useApiFetch';
+import { useFolderContent } from './useFolderContent';
 
 export const useRescueItems = (parentId?: string) => {
-  const [response, setResponse] = useState<
-    Partial<Awaited<ReturnType<typeof apiFetchRelation<AppRescueItemVm>>>>
-  >({});
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await apiFetchRelation<AppRescueItemVm>('rescue', {
-        parentId: parentId?.length ? parentId : null,
-      });
-      setResponse(result);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [parentId]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
-  return {
-    ...response,
-    isLoading,
-    fetchData,
-  };
+  return useFolderContent<AppRescueItemVm>('rescue', parentId);
 };

@@ -3,34 +3,10 @@ import { apiFetch } from '@/lib/api';
 import { useCallback, useEffect, useState } from 'react';
 import { AppFolderMaterialCountVm, AppFolderVm } from './types';
 import { apiFetchRelation } from './useApiFetch';
-
-type ListResponse = Awaited<ReturnType<typeof apiFetchRelation<AppFolderVm>>>;
+import { useFolderContent } from './useFolderContent';
 
 export const useFolders = (parentId?: string) => {
-  const [response, setResponse] = useState<Partial<ListResponse>>({});
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await apiFetchRelation<AppFolderVm>('folders', {
-        parentId: parentId?.length ? parentId : null,
-      });
-      setResponse(result);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [parentId]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
-  return {
-    ...response,
-    isLoading,
-    fetchData,
-  };
+  return useFolderContent<AppFolderVm>('folders', parentId);
 };
 
 /** Счётчики материалов по папкам (вся вложенность) + завершённые, c сервера. */
