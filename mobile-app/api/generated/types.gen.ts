@@ -934,6 +934,14 @@ export type FolderCreate = {
      */
     backgroundPath?: string | null;
     /**
+     * Iconpathdark
+     */
+    iconPathDark?: string | null;
+    /**
+     * Backgroundpathdark
+     */
+    backgroundPathDark?: string | null;
+    /**
      * Order
      */
     order?: number | null;
@@ -996,6 +1004,14 @@ export type FolderOut = {
      */
     backgroundPath: string | null;
     /**
+     * Iconpathdark
+     */
+    iconPathDark: string | null;
+    /**
+     * Backgroundpathdark
+     */
+    backgroundPathDark: string | null;
+    /**
      * Order
      */
     order: number | null;
@@ -1041,6 +1057,14 @@ export type FolderUpdate = {
      * Backgroundpath
      */
     backgroundPath?: string | null;
+    /**
+     * Iconpathdark
+     */
+    iconPathDark?: string | null;
+    /**
+     * Backgroundpathdark
+     */
+    backgroundPathDark?: string | null;
     /**
      * Order
      */

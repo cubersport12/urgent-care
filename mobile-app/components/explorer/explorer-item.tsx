@@ -112,6 +112,8 @@ export function ExplorerItemComponent({
       kind={getKind(item)}
       iconPath={item.type === 'folder' ? (item.data as AppFolderVm).iconPath : null}
       backgroundPath={item.type === 'folder' ? (item.data as AppFolderVm).backgroundPath : null}
+      iconPathDark={item.type === 'folder' ? (item.data as AppFolderVm).iconPathDark : null}
+      backgroundPathDark={item.type === 'folder' ? (item.data as AppFolderVm).backgroundPathDark : null}
       status={status}
       disabled={isDisabled}
       locked={(item.data.lockedBy as LockReason | null) ?? undefined}

@@ -72,6 +72,8 @@ def content_out(item: Any, schema: type[CamelModel], locked_by: str | None) -> C
     if schema is FolderOut:
         fields["icon_path"] = item.icon_path
         fields["background_path"] = item.background_path
+        fields["icon_path_dark"] = item.icon_path_dark
+        fields["background_path_dark"] = item.background_path_dark
     if schema is RescueOut:
         fields["created_at"] = item.created_at
     return schema.model_validate(fields)

@@ -9489,6 +9489,30 @@
             ],
             "title": "Backgroundpath"
           },
+          "iconPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iconpathdark"
+          },
+          "backgroundPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backgroundpathdark"
+          },
           "order": {
             "anyOf": [
               {
@@ -9607,6 +9631,30 @@
             ],
             "title": "Backgroundpath"
           },
+          "iconPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iconpathdark"
+          },
+          "backgroundPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backgroundpathdark"
+          },
           "order": {
             "anyOf": [
               {
@@ -9681,6 +9729,8 @@
           "name",
           "iconPath",
           "backgroundPath",
+          "iconPathDark",
+          "backgroundPathDark",
           "order",
           "parentId",
           "showRandomOpen",
@@ -9727,6 +9777,30 @@
               }
             ],
             "title": "Backgroundpath"
+          },
+          "iconPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iconpathdark"
+          },
+          "backgroundPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backgroundpathdark"
           },
           "order": {
             "anyOf": [

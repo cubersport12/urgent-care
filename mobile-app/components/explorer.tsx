@@ -939,6 +939,8 @@ export function Explorer() {
                           name={folderItem.data.name}
                           iconPath={(folderItem.data as AppFolderVm).iconPath}
                           backgroundPath={(folderItem.data as AppFolderVm).backgroundPath}
+                          iconPathDark={(folderItem.data as AppFolderVm).iconPathDark}
+                          backgroundPathDark={(folderItem.data as AppFolderVm).backgroundPathDark}
                           materialCount={counts?.total ?? 0}
                           progressPercent={progressPercent}
                           locked={(folderItem.data.lockedBy as LockReason | null) ?? undefined}

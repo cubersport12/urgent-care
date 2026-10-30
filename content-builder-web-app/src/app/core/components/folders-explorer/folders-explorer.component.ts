@@ -1305,7 +1305,9 @@ export class FoldersExplorerComponent {
           name: copyName,
           order,
           iconPath: (clip.item as AppFolderVm).iconPath,
-          backgroundPath: (clip.item as AppFolderVm).backgroundPath
+            backgroundPath: (clip.item as AppFolderVm).backgroundPath,
+            iconPathDark: (clip.item as AppFolderVm).iconPathDark,
+            backgroundPathDark: (clip.item as AppFolderVm).backgroundPathDark
         }));
       case 'article':
         return this._duplicateArticle(clip.item as AppArticleVm, parentId, order, copyName);

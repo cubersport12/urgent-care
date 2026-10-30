@@ -5,6 +5,7 @@ import { ProgressBar } from '@/components/ui/progress-bar';
 import { Radius, Spacing, ThemeValues } from '@/constants/theme';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme, useGlass, useGlow } from '@/hooks/use-theme-color';
+import { useTheme } from '@/contexts/theme-context';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 import type { LockReason } from './types';
 import { useState } from 'react';
@@ -15,6 +16,8 @@ type StudyFolderCardProps = {
   name: string;
   iconPath?: string | null;
   backgroundPath?: string | null;
+  iconPathDark?: string | null;
+  backgroundPathDark?: string | null;
   materialCount: number;
   progressPercent: number;
   /** Причина блокировки: 'tariff' — золотой замок + золотая полоса слева; иначе серый замок без полосы */
@@ -27,6 +30,8 @@ export function StudyFolderCard({
   name,
   iconPath,
   backgroundPath,
+  iconPathDark,
+  backgroundPathDark,
   materialCount,
   progressPercent,
   locked,
@@ -34,9 +39,10 @@ export function StudyFolderCard({
   index,
 }: StudyFolderCardProps) {
   const { primary, neutral, neutralSoft, warning, warningContainer, elevated2 } = useAppTheme();
+  const { theme } = useTheme();
   const glass = useGlass();
-  const { response: icon } = useFileImage(iconPath ?? '');
-  const { response: background } = useFileImage(backgroundPath ?? '');
+  const { response: icon } = useFileImage((theme === 'dark' ? iconPathDark ?? iconPath : iconPath) ?? '');
+  const { response: background } = useFileImage((theme === 'dark' ? backgroundPathDark ?? backgroundPath : backgroundPath) ?? '');
   const [failedIcon, setFailedIcon] = useState<string>();
   const glow = useGlow();
   // Золото с полосой — только тарифный замок; остальные причины помечаем серым замком без полосы

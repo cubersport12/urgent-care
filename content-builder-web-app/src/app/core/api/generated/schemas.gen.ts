@@ -1765,6 +1765,30 @@ export const FolderCreateSchema = {
             ],
             title: 'Backgroundpath'
         },
+        iconPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpathdark'
+        },
+        backgroundPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Backgroundpathdark'
+        },
         order: {
             anyOf: [
                 {
@@ -1885,6 +1909,30 @@ export const FolderOutSchema = {
             ],
             title: 'Backgroundpath'
         },
+        iconPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpathdark'
+        },
+        backgroundPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Backgroundpathdark'
+        },
         order: {
             anyOf: [
                 {
@@ -1959,6 +2007,8 @@ export const FolderOutSchema = {
         'name',
         'iconPath',
         'backgroundPath',
+        'iconPathDark',
+        'backgroundPathDark',
         'order',
         'parentId',
         'showRandomOpen',
@@ -2006,6 +2056,30 @@ export const FolderUpdateSchema = {
                 }
             ],
             title: 'Backgroundpath'
+        },
+        iconPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpathdark'
+        },
+        backgroundPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Backgroundpathdark'
         },
         order: {
             anyOf: [

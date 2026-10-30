@@ -6,6 +6,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Spacing, ThemeValues } from '@/constants/theme';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme } from '@/hooks/use-theme-color';
+import { useTheme } from '@/contexts/theme-context';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 import type { LockReason } from '@/components/explorer/types';
 import { useState } from 'react';
@@ -18,6 +19,8 @@ type ContentCardProps = {
   kind: MaterialKind;
   iconPath?: string | null;
   backgroundPath?: string | null;
+  iconPathDark?: string | null;
+  backgroundPathDark?: string | null;
   status?: StatusType;
   disabled?: boolean;
   /** Причина блокировки: 'tariff' — золотой замок + золотая полоса слева; иначе серый замок без полосы */
@@ -32,6 +35,8 @@ export function ContentCard({
   kind,
   iconPath,
   backgroundPath,
+  iconPathDark,
+  backgroundPathDark,
   status,
   disabled = false,
   locked,
@@ -39,8 +44,9 @@ export function ContentCard({
   index = 0,
 }: ContentCardProps) {
   const { neutralSoft, warning } = useAppTheme();
-  const { response: icon } = useFileImage(iconPath ?? '');
-  const { response: background } = useFileImage(backgroundPath ?? '');
+  const { theme } = useTheme();
+  const { response: icon } = useFileImage((theme === 'dark' ? iconPathDark ?? iconPath : iconPath) ?? '');
+  const { response: background } = useFileImage((theme === 'dark' ? backgroundPathDark ?? backgroundPath : backgroundPath) ?? '');
   const [failedIcon, setFailedIcon] = useState<string>();
   // Золото с полосой — только тарифный замок; остальные причины помечаем серым замком без полосы
   const isTariffLock = locked === 'tariff';
