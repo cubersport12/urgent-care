@@ -81,7 +81,7 @@ export default function TrainingScreen() {
         showsVerticalScrollIndicator={false}
       >
         <ThemedText type="h1" style={{ color: text, marginBottom: 8 }}>
-          Тренировка
+          Повторение
         </ThemedText>
         <ThemedText type="caption" style={{ color: neutralSoft, marginBottom: 16 }}>
           Работа над ошибками в тестах и материалы для повторения

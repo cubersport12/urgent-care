@@ -2,15 +2,21 @@
 from __future__ import annotations
 
 import logging
+import random
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, Field
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.embedding_client import embeddings_configured
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, get_user_by_session
 from app.api.v1._content_access import annotate_content_list, assert_content_visible
 from app.db.repositories.content import FolderRepository, TestRepository
+from app.models.random_training import RandomTraining
 from app.models.user import User
 from app.schemas.training import (
     RecommendedArticleOut,
@@ -35,6 +41,138 @@ from app.services.training import (
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/training", tags=["training"])
+
+DIFFICULTIES = {"easy": 5, "medium": 10, "hard": 20}
+
+
+class RandomAnswer(BaseModel):
+    question_id: str = Field(alias="questionId")
+    answer_ids: list[int] = Field(alias="answerIds", max_length=100)
+
+
+class RandomCompletion(BaseModel):
+    answers: list[RandomAnswer] = Field(max_length=20)
+
+
+@router.websocket("/random/ws")
+async def random_training_ws(
+    websocket: WebSocket,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    session_id: str,
+    difficulty: str,
+) -> None:
+    user = await get_user_by_session(db, session_id)
+    if not user:
+        await websocket.close(code=4401)
+        return
+    await websocket.accept()
+    if difficulty not in DIFFICULTIES:
+        await websocket.send_json({"type": "error", "message": "Неизвестный уровень сложности"})
+        await websocket.close()
+        return
+    try:
+        tests = await TestRepository(db).list_all()
+        annotated = await annotate_content_list(db, user, tests, enforce_for_admin=True)
+        pools = []
+        seen = set()
+        for test, locked in annotated:
+            if locked or test.hidden:
+                continue
+            questions = []
+            for q in test.questions or []:
+                if not isinstance(q, dict) or not isinstance(q.get("id"), str) or q["id"] in seen or q.get("activationCondition"):
+                    continue
+                choices = q.get("answers")
+                if not isinstance(choices, list) or not choices or not all(isinstance(a, dict) for a in choices) or not any(a.get("isCorrect") for a in choices):
+                    continue
+                seen.add(q["id"])
+                questions.append(q)
+            if questions:
+                pools.append([test, questions])
+        available = sum(len(pool[1]) for pool in pools)
+        count = DIFFICULTIES[difficulty]
+        if available < count:
+            await websocket.send_json({"type": "insufficient", "available": available})
+            await websocket.close()
+            return
+        selected = []
+        while len(selected) < count:
+            pool = random.choice(pools)
+            test, questions = pool
+            question = dict(questions.pop(random.randrange(len(questions))))
+            question["id"] = str(uuid4())
+            selected.append({"testId": test.id, "testName": test.name, "question": question})
+            if not questions:
+                pools.remove(pool)
+            await websocket.send_json({"type": "progress", "count": len(selected), "total": count, "testName": test.name})
+        await db.execute(delete(RandomTraining).where(
+            RandomTraining.user_id == user.id, RandomTraining.completed_at.is_(None),
+            RandomTraining.created_at < datetime.now(UTC) - timedelta(days=1),
+        ))
+        attempt = RandomTraining(id=uuid4(), user_id=user.id, difficulty=difficulty, questions=selected)
+        db.add(attempt)
+        await db.commit()
+        await websocket.send_json({"type": "ready", "id": str(attempt.id), "questions": [q["question"] for q in selected]})
+        await websocket.close()
+    except WebSocketDisconnect:
+        return
+
+
+@router.post("/random/{attempt_id}/complete")
+async def complete_random_training(
+    attempt_id: UUID, payload: RandomCompletion,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> dict:
+    row = await db.scalar(select(RandomTraining).where(
+        RandomTraining.id == attempt_id, RandomTraining.user_id == user.id,
+    ).with_for_update())
+    if not row:
+        raise HTTPException(404, "Попытка не найдена")
+    if row.completed_at:
+        return {"id": str(row.id)}
+    tests = await TestRepository(db).list_all()
+    visible = {test.id for test, locked in await annotate_content_list(db, user, tests, enforce_for_admin=True) if not locked and not test.hidden}
+    if any(item["testId"] not in visible for item in row.questions):
+        raise HTTPException(403, "Доступ к вопросам изменился")
+    by_id = {a.question_id: a.answer_ids for a in payload.answers}
+    if len(by_id) != len(payload.answers) or set(by_id) - {item["question"]["id"] for item in row.questions}:
+        raise HTTPException(422, "Некорректные ответы")
+    answers = []
+    for item in row.questions:
+        question = item["question"]
+        choices = question["answers"]
+        indices = by_id.get(question["id"], [])
+        if len(set(indices)) != len(indices) or any(i < 0 or i >= len(choices) for i in indices):
+            raise HTTPException(422, "Некорректные ответы")
+        correct = {i for i, a in enumerate(choices) if a.get("isCorrect")}
+        answers.append({"questionId": question["id"], "answerIds": indices,
+                        "isCorrect": bool(indices) and set(indices) == correct})
+    row.answers = answers
+    row.completed_at = datetime.now(UTC)
+    await db.flush()
+    return {"id": str(row.id)}
+
+
+@router.get("/random/history")
+async def random_training_history(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+) -> list[dict]:
+    rows = (await db.scalars(select(RandomTraining).where(
+        RandomTraining.user_id == user.id, RandomTraining.completed_at.is_not(None),
+    ).order_by(RandomTraining.completed_at.desc()))).all()
+    tests = await TestRepository(db).list_all()
+    visible = {test.id for test, locked in await annotate_content_list(db, user, tests, enforce_for_admin=True) if not locked and not test.hidden}
+    result = []
+    for row in rows:
+        answers = {a["questionId"]: a for a in row.answers or []}
+        items = [{"testName": item["testName"], "question": item["question"], "answer": answers.get(item["question"]["id"])}
+                 if item["testId"] in visible else {"question": None} for item in row.questions]
+        result.append({"id": str(row.id), "difficulty": row.difficulty, "completedAt": row.completed_at,
+                       "correct": sum(bool(a["isCorrect"]) for a in row.answers or []),
+                       "total": len(row.questions), "items": items})
+    return result
 
 
 @router.get("/me", response_model=list[TrainingTopicOut])
@@ -70,7 +208,7 @@ async def training_me(
             rank = await user_content_rank(db, user, enforce_for_admin=enforce_tariff)
             ranks = await tariff_rank_map(db)
             unlocked = await unlocked_reward_ids(db, user.id)
-            for key, text in zip(keys, texts):
+            for key, text in zip(keys, texts, strict=True):
                 vec = by_text.get(text)
                 if not vec:
                     continue

@@ -19,14 +19,16 @@ import { ThemedText } from '@/components/themed-text';
 const TAB_ICONS: Partial<Record<string, IconSymbolName>> = {
   index: 'house.fill',
   stats: 'chart.bar.fill',
-  training: 'bolt.fill',
+  training: 'arrow.counterclockwise',
+  'random-training': 'bolt.fill',
   profile: 'person.fill',
 };
 
 const TAB_LABELS: Record<string, string> = {
   index: 'Главная',
   stats: 'Статистика',
-  training: 'Тренировка',
+  training: 'Повторение',
+  'random-training': 'Тренировка',
   profile: 'Профиль',
 };
 
@@ -91,6 +93,7 @@ export function SideNavRail({ state, descriptors, navigation }: BottomTabBarProp
 
       <View style={styles.tabs}>
         {state.routes.map((route, index) => {
+          if (route.name === 'stats') return null;
           const { options } = descriptors[route.key];
           const label =
             TAB_LABELS[route.name] ??

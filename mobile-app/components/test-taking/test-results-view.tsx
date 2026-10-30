@@ -23,9 +23,10 @@ type TestResultsViewProps = {
   onFinish: () => void;
   animatedStyle: any;
   resetTests?: { id: string; name: string }[] | null;
+  isTraining?: boolean;
 };
 
-export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests }: TestResultsViewProps) {
+export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, isTraining }: TestResultsViewProps) {
   const {
     test,
     answers,
@@ -83,7 +84,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests }:
 
   // Документы для прочтения — подбор по смыслу (embeddings) по ошибочным вопросам
   useEffect(() => {
-    if (!test) return;
+    if (!test || isTraining) return;
     let cancelled = false;
     const wrongQuestionIds = finalAnswers
       .filter((a) => !a.isCorrect)

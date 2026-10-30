@@ -92,6 +92,7 @@ function TabsInner() {
         name="stats"
         options={{
           title: 'Статистика',
+          href: null,
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="chart.bar.fill" color={color} />
           ),
@@ -103,13 +104,23 @@ function TabsInner() {
       <Tabs.Screen
         name="training"
         options={{
-          title: 'Тренировка',
+          title: 'Повторение',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="bolt.fill" color={color} />
+            <IconSymbol size={24} name="arrow.counterclockwise" color={color} />
           ),
         }}
         listeners={({ navigation }) => ({
           tabPress: (e) => handleTabPressToRoot('/(tabs)/training', navigation, 'training', e),
+        })}
+      />
+      <Tabs.Screen
+        name="random-training"
+        options={{
+          title: 'Тренировка',
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="bolt.fill" color={color} />,
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => handleTabPressToRoot('/(tabs)/random-training', navigation, 'random-training', e),
         })}
       />
       <Tabs.Screen

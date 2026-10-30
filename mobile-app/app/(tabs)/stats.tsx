@@ -1,4 +1,5 @@
 import { AccountOverallStats } from '@/components/profile/account-overall-stats';
+import { BackButton } from '@/components/explorer/back-button';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { ThemedText } from '@/components/themed-text';
@@ -9,9 +10,15 @@ import { useGlow } from '@/hooks/use-theme-color';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { router } from 'expo-router';
+import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useIsFocused } from '@react-navigation/native';
 
 export default function StatsScreen() {
-  const { contentPaddingBottom } = useNavRail();
+  const goHome = () => router.navigate('/(tabs)');
+  const isFocused = useIsFocused();
+  useChromeBack(isFocused ? goHome : null);
+  const { contentPaddingBottom, isWide } = useNavRail();
   const glow = useGlow();
   const stats = useAccountOverallStats();
 
@@ -22,6 +29,7 @@ export default function StatsScreen() {
           contentContainerStyle={[styles.content, { paddingBottom: contentPaddingBottom }]}
           showsVerticalScrollIndicator={false}
         >
+          {!isWide && <BackButton onPress={goHome} label="Назад" />}
           <Animated.View entering={staggerEnter(0)}>
             <ThemedText
               type="h1"

@@ -62,7 +62,7 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
   const scale = useSharedValue(1);
   const translateY = useSharedValue(0);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }, { scale: scale.value }] }));
-  const imageWidth = artwork && size.width && size.height ? Math.min(size.width, size.height / artwork.ratio) : 0;
+  const imageWidth = artwork && size.width && size.height ? Math.max(0, Math.min(size.width - Spacing.pageX * 2, (size.height - Spacing.pageX * 2) / artwork.ratio)) : 0;
   const bannerWidth = Math.min(size.width - Spacing.pageX * 2, Spacing.pageX * 28);
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
@@ -94,7 +94,7 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
       {finished ? <Animated.View style={styles.screen} entering={reducedMotion ? undefined : FadeIn.duration(500)}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          {artwork && bannerWidth > 0 ? <Image source={artwork.final} style={[styles.banner, { height: bannerWidth * artwork.ratio }]} resizeMode="contain" accessibilityIgnoresInvertColors accessible={false} /> : null}
+          {artwork && bannerWidth > 0 ? <View style={[styles.frame, styles.banner, { height: bannerWidth * artwork.ratio, borderColor: emblemColor }]}><Image source={artwork.final} style={styles.frameImage} resizeMode="cover" accessibilityIgnoresInvertColors accessible={false} /></View> : null}
           <View style={[styles.hero, compactMetrics && styles.heroCompact]}>
             <View style={[styles.emblem, { backgroundColor: outcome === 'failed' ? theme.errorContainer : theme.primaryContainer }]}>
               <MaterialIcons name={outcome === 'failed' ? 'error-outline' : outcome === 'passed' ? 'verified-user' : 'info-outline'} size={Spacing.card * 2} color={emblemColor} accessible={false} />
@@ -167,8 +167,8 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
         </View>
       </ScrollView>
       </Animated.View> : artwork && imageWidth > 0 ? (
-        <Animated.View style={[styles.introImage, { top: (size.height - imageWidth * artwork.ratio) / 2, width: imageWidth, height: imageWidth * artwork.ratio }, animatedStyle]}>
-          <ExpoImage source={loaded ? artwork.final : artwork.animation} style={styles.screen} contentFit="contain" onLoad={startTransition} onError={() => setFinished(true)} accessible={false} />
+        <Animated.View style={[styles.introImage, styles.frame, { top: (size.height - imageWidth * artwork.ratio) / 2, width: imageWidth, height: imageWidth * artwork.ratio, borderColor: emblemColor }, animatedStyle]}>
+          <ExpoImage source={loaded ? artwork.final : artwork.animation} style={styles.screen} contentFit="cover" onLoad={startTransition} onError={() => setFinished(true)} accessible={false} />
         </Animated.View>
       ) : null}
       </View>
@@ -179,7 +179,9 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   introImage: { position: 'absolute', alignSelf: 'center' },
-  banner: { width: '100%', borderRadius: Radius.xl, overflow: 'hidden' },
+  frame: { borderRadius: Radius.xl, borderWidth: ResultTileTokens.borderWidth, overflow: 'hidden' },
+  frameImage: { width: '100%', height: '100%' },
+  banner: { width: '100%' },
   scrollContent: { paddingBottom: Spacing.pageBottom },
   content: { width: '100%', maxWidth: Spacing.pageX * 30, alignSelf: 'center', padding: Spacing.pageX },
   hero: { flexDirection: 'row', alignItems: 'center', gap: Spacing.card, marginVertical: Spacing.card },

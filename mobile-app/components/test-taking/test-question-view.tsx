@@ -1,6 +1,6 @@
 import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
-import { useTest } from '@/contexts/test-context';
+import { useTest, type TestAnswer } from '@/contexts/test-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { persistTestCompletion } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
@@ -32,6 +32,7 @@ type TestQuestionViewProps = {
   onSkip: () => void;
   onPrevious: () => void;
   canNavigateToQuestion?: boolean;
+  onSaveTraining?: (answers: TestAnswer[]) => Promise<void>;
 };
 
 export function TestQuestionView({
@@ -46,6 +47,7 @@ export function TestQuestionView({
   onSkip,
   onPrevious,
   canNavigateToQuestion = false,
+  onSaveTraining,
 }: TestQuestionViewProps) {
   const {
     test,
@@ -102,7 +104,8 @@ export function TestQuestionView({
 
     const finalAnswers = processSkippedQuestions();
     try {
-      await persistTestCompletion({
+      if (onSaveTraining) await onSaveTraining(finalAnswers);
+      else await persistTestCompletion({
         testId: test.id,
         minScore: test.minScore,
         maxErrors: test.maxErrors,
@@ -259,7 +262,7 @@ export function TestQuestionView({
                   const isCorrect = questionAnswer?.isCorrect;
                   const isSkipped = isVisited && !questionAnswer;
 
-                  let navBorderColor = glass.borderSubtle;
+                  let navBorderColor: string = glass.borderSubtle;
                   let navBackgroundColor = 'transparent';
                   let navTextColor = neutralSoft;
                   let navBorderStyle: 'solid' | 'dashed' = 'solid';
@@ -385,10 +388,10 @@ export function TestQuestionView({
                       ? currentAnswer.answerIds.map((id) => parseInt(id, 10)).includes(index)
                       : isSelected;
 
-                  let answerBg = glass.backgroundSubtle;
-                  let answerBorder = glass.borderSubtle;
-                  let letterBg = glass.backgroundSubtle;
-                  let letterBorder = glass.borderSubtle;
+                  let answerBg: string = glass.backgroundSubtle;
+                  let answerBorder: string = glass.borderSubtle;
+                  let letterBg: string = glass.backgroundSubtle;
+                  let letterBorder: string = glass.borderSubtle;
                   let letterColor = neutralSoft;
 
                   if (shouldShowResults && currentAnswer) {
