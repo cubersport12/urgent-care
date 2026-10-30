@@ -31,6 +31,37 @@ class MediaUploadOut(BaseModel):
 
 ALLOWED_PREFIX = "public/"
 
+# Изображения отдаются без сессии с Cache-Control, чтобы <img>/нативный загрузчик
+# кэшировал их (браузер/Fresco), а не тянул авторизованный блоб каждый раз:
+# - неймспейсы с GUID-ключами (иконки/фоны папок, иконки достижений и наград);
+# - аватары: ключ = user UUID + случайный hex, непердугадываемый (capability-URL);
+# - корневые картинки без подпапки — фоны сцен спасения и картинки вопросов тестов
+#   (конструктор кладёт их под исходным именем файла прямо в public/).
+# НЕ публичные: сертификаты (порядковый номер + ФИО внутри — перебирается),
+# PDF статей (тарифный гейтинг), legal — только через авторизованный /media.
+PUBLIC_IMAGE_PREFIXES = ("public/folders/", "public/achievements/", "public/rewards/", "public/avatars/")
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".gif")
+
+
+@router.get("/public/{file_path:path}")
+async def download_public_image(file_path: str) -> Response:
+    # ВАЖНО: объявлен выше /{file_path:path} — иначе catch-all перехватит этот путь.
+    key = _normalize_key(file_path)
+    name = key.removeprefix(ALLOWED_PREFIX)
+    root_image = "/" not in name and name.lower().endswith(IMAGE_EXTENSIONS)
+    if not (root_image or (key.startswith(PUBLIC_IMAGE_PREFIXES) and key.lower().endswith(IMAGE_EXTENSIONS))):
+        raise HTTPException(status_code=404, detail="File not found")
+    s3 = get_s3_client()
+    try:
+        body, content_type = await s3.get_object(key=key)
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail="File not found") from exc
+    return Response(
+        content=body,
+        media_type=content_type,
+        headers={"Cache-Control": "public, max-age=604800"},
+    )
+
 
 def _normalize_key(file_path: str) -> str:
     key = file_path.lstrip("/")
@@ -87,7 +118,9 @@ async def download_media(
         size_bytes=len(body),
         content_type=content_type,
     )
-    return Response(content=body, media_type=content_type)
+    # private: браузерный кэш ускоряет повторные авторизованные fetch (блобы),
+    # но разделяемые прокси это не кэшируют
+    return Response(content=body, media_type=content_type, headers={"Cache-Control": "private, max-age=86400"})
 
 
 @router.post("", response_model=MediaUploadOut, status_code=status.HTTP_201_CREATED)

@@ -1,14 +1,15 @@
 <app-dialog-wrapper
   [title]="_dialogData?.id ? 'Редактировать клиническое спасение' : 'Новое клиническое спасение'"
   [subtitle]="_dialogData?.id ? (_dialogData.name || 'Настройка параметров жизнедеятельности и сцен') : 'Создание интерактивного клинического кейса'"
-  [saveDisabled]="_form.invalid || !_form.dirty || _isPending()"
-  [loading]="_isPending()"
+  [saveDisabled]="_form.invalid || !_form.dirty || _isPending() || _savingFiles()"
+  [loading]="_isPending() || _savingFiles()"
   saveText="Сохранить"
   saveIcon="check"
   (save)="_handleSubmit()"
   (close)="_handleClose()"
 >
   <form class="flex flex-col w-full gap-4 p-1 min-w-[340px]" [formGroup]="_form" (ngSubmit)="_handleSubmit()">
+    @if (_saveError()) { <p class="text-sm text-rose-600 m-0" role="alert">{{ _saveError() }}</p> }
     <div class="flex flex-wrap gap-4 items-start">
       <app-input label="Наименование" formControlName="name" class="grow min-w-[200px]" [required]="true" />
       <app-textarea label="Описание" formControlName="description" [rows]="2" class="grow min-w-[300px]" />

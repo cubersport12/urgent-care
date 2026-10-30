@@ -1358,7 +1358,10 @@ export class FoldersExplorerComponent {
   private _duplicateRescue(rescue: AppRescueItemVm, parentId: NullableValue<string>, order: number, name: string): Observable<void> {
     const id = generateGUID();
     const data = cloneDeep(rescue.data);
-    const imagePaths = this._collectRescueImagePaths(data.scenes, data.defaultBackground);
+    const imagePaths = [
+      ...this._collectRescueImagePaths(data.scenes, data.defaultBackground),
+      ...(data.parameters ?? []).map(parameter => parameter.icon).filter((icon): icon is string => !!icon && /\.png$/i.test(icon))
+    ];
     return this._copyStorageFiles(imagePaths).pipe(
       mergeMap((pathMap) => {
         const scenes = (data.scenes ?? []).map(scene => ({
@@ -1379,6 +1382,10 @@ export class FoldersExplorerComponent {
           createdAt: new Date().toISOString(),
           data: {
             ...data,
+            parameters: data.parameters?.map(parameter => ({
+              ...parameter,
+              icon: parameter.icon ? (pathMap.get(parameter.icon) ?? parameter.icon) : parameter.icon
+            })),
             scenes,
             defaultBackground
           }
@@ -1409,7 +1416,8 @@ export class FoldersExplorerComponent {
         if (blob == null) {
           return of([path, path] as const);
         }
-        const newPath = generateGUID();
+        const extension = /\.[a-z0-9]+$/i.exec(path)?.[0] ?? '';
+        const newPath = `${generateGUID()}${extension}`;
         return this._filesStorage.uploadFile(newPath, blob).pipe(map(() => [path, newPath] as const));
       })
     ))).pipe(map(entries => new Map(entries)));

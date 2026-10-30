@@ -101,6 +101,8 @@ class RescueParameterSeverity(CamelModel):
 class RescueTimerParameter(CamelModel):
     id: str
     name: str
+    icon: str | None = None
+    unit: str | None = None
     delta: float = 0.0
     start_value: float = Field(0.0, alias="startValue")
     type: str = "numeric"

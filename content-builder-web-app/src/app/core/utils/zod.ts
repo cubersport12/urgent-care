@@ -141,6 +141,8 @@ export const rescueParameterSeveritySchema = z.object({
 export const rescueTimerParameterSchema = z.object({
   id: z.string().describe('UUID параметра'),
   name: z.string().describe('Отображаемое имя параметра'),
+  icon: z.string().nullable().optional(),
+  unit: z.string().nullable().optional(),
   delta: z.number().describe('Изменение за тик таймера; для type=timer обычно 0'),
   startValue: z.number().describe('Стартовое значение: число или секунды суток для timer'),
   type: z.enum(['numeric', 'timer']).optional().describe('numeric — число; timer — время'),

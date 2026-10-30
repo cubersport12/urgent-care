@@ -80,6 +80,25 @@ export const IconSize = {
   metric: 28,
 } as const;
 
+/** Поверхности и градиентная кромка информационных плиток результата. */
+export const ResultTileTokens = {
+  borderWidth: 1,
+  metricCompactBreakpoint: 360,
+  metricCompactFontScale: 1.2,
+  light: {
+    neutral: { surface: '#FFFFFF', edge: ['#D8E6F2', '#8ABDEA', '#D8E6F2'] },
+    primary: { surface: '#EAF4FF', edge: ['#BCDDF8', '#0070E0', '#B4D5F0'] },
+    warning: { surface: '#FFF3DF', edge: ['#F3D7AC', '#D97706', '#F3D7AC'] },
+    danger: { surface: '#FFF0F0', edge: ['#F4CCCC', '#E05555', '#F4CCCC'] },
+  },
+  dark: {
+    neutral: { surface: '#07141F', edge: ['#102A3E', '#1765A0', '#102A3E'] },
+    primary: { surface: '#062448', edge: ['#084276', '#0084FF', '#06345C'] },
+    warning: { surface: '#472609', edge: ['#7C3D0B', '#F59E0B', '#71360A'] },
+    danger: { surface: '#421C22', edge: ['#79323A', '#FF6B6B', '#6B2930'] },
+  },
+} as const;
+
 export const PageArt = {
   primaryOrbSize: 420,
   accentOrbSize: 300,

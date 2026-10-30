@@ -52,6 +52,7 @@ import { MatIcon } from '@angular/material/icon';
           [disabled]="_isDisabled()"
           [readonly]="readonly()"
           [autocomplete]="autocomplete() ?? null"
+          [attr.list]="list() ?? null"
           [min]="min() ?? null"
           [max]="max() ?? null"
           [step]="step() ?? null"
@@ -115,6 +116,7 @@ export class AppInputComponent implements ControlValueAccessor {
   public readonly clearable = input<boolean>(false);
   public readonly togglePassword = input<boolean>(false);
   public readonly autocomplete = input<string | undefined>(undefined);
+  public readonly list = input<string | undefined>(undefined);
   public readonly hint = input<string | null | undefined>(undefined);
   public readonly error = input<string | null | undefined>(undefined);
   public readonly badge = input<string | undefined>(undefined);
