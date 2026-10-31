@@ -35,7 +35,7 @@ import {
 } from '../ui';
 import { Store } from '@ngxs/store';
 import { AppLoading, RescueActions } from '@/core/store';
-import { RescueParameterDialogComponent, RescueParameterDialogData } from './rescue-parameter-dialog/rescue-parameter-dialog.component';
+import { RescueParameterDialogComponent, RescueParameterDialogData, RescueParameterDialogResult } from './rescue-parameter-dialog/rescue-parameter-dialog.component';
 import {
   RescueSceneDialogComponent,
   RescueSceneDialogData,
@@ -49,7 +49,7 @@ import {
 import { AppFilesStorageService } from '@/core/api';
 import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { signal } from '@angular/core';
-import { forkJoin, take } from 'rxjs';
+import { forkJoin, of, switchMap, take } from 'rxjs';
 import { RewardSelectComponent } from '../reward-select/reward-select.component';
 import { TariffSelectComponent } from '../tariff-select/tariff-select.component';
 import { AppDialogWrapperComponent } from '../dialog-wrapper/dialog-wrapper.component';
@@ -117,6 +117,8 @@ function parameterGroup(p: NullableValue<RescueTimerParameterVm> = null): FormGr
   return new FormGroup({
     id: new FormControl<string>(p?.id ?? generateGUID(), Validators.required),
     name: new FormControl<string>(p?.name ?? '', Validators.required),
+    icon: new FormControl<string>(p?.icon ?? ''),
+    unit: new FormControl<string>(p?.unit ?? ''),
     description: new FormControl<string>(p?.description ?? ''),
     isHidden: new FormControl<boolean>(p?.isHidden ?? false, { nonNullable: true }),
     type: new FormControl<'numeric' | 'timer'>(typ, { nonNullable: true }),
@@ -204,6 +206,9 @@ export class RescueEditorComponent {
 
   /** Файлы фонов сцен и фона по умолчанию для загрузки при сохранении */
   private readonly _sceneBackgroundFiles = new Map<string, Blob>();
+  private readonly _parameterIconFiles = new Map<string, File>();
+  protected readonly _savingFiles = signal(false);
+  protected readonly _saveError = signal('');
 
   /** Условия завершения (успех / неуспех), вне reactive form */
   protected readonly _completion = signal<AppRescueItemCompletionVm | null>(null);
@@ -384,24 +389,26 @@ export class RescueEditorComponent {
   protected _openParameterDialog(parameter: RescueTimerParameterVm | null): void {
     this._dialog
       .open(RescueParameterDialogComponent, {
-        data: { parameter } satisfies RescueParameterDialogData,
+        data: { parameter, iconFile: parameter?.icon ? this._parameterIconFiles.get(parameter.icon) : undefined } satisfies RescueParameterDialogData,
         width: '520px',
         maxWidth: '95vw',
         disableClose: false
       })
       .afterClosed()
       .pipe(take(1))
-      .subscribe((result: RescueTimerParameterVm | undefined) => {
+      .subscribe((result: RescueParameterDialogResult | undefined) => {
         if (result == null) {
           return;
         }
+        const updated = result.parameter;
+        if (updated.icon && result.iconFile) this._parameterIconFiles.set(updated.icon, result.iconFile);
         if (parameter == null) {
-          this._parameters.push(parameterGroup(result));
+          this._parameters.push(parameterGroup(updated));
         }
         else {
           const idx = this._parameters.controls.findIndex(c => (c.value as RescueTimerParameterVm).id === parameter.id);
           if (idx !== -1) {
-            this._parameters.at(idx).patchValue(result);
+            this._parameters.at(idx).patchValue(updated);
           }
         }
         this._parametersList.set([...this._parameters.controls]);
@@ -514,6 +521,8 @@ export class RescueEditorComponent {
       const base: RescueTimerParameterVm = {
         id: p['id'] as string,
         name: p['name'] as string,
+        icon: (p['icon'] as string | undefined)?.trim() || undefined,
+        unit: (p['unit'] as string | undefined)?.trim() || undefined,
         isHidden: (p['isHidden'] as boolean) ?? false,
         type,
         delta: type === 'timer' ? 0 : (p['delta'] as number) ?? 0,
@@ -577,6 +586,7 @@ export class RescueEditorComponent {
   }
 
   protected _handleSubmit(): void {
+    if (this._savingFiles()) return;
     const vm = this._getRescueVm();
     const { global, sceneErrors } = this._validateRescueGraph(vm.data);
     if (global.length > 0 || sceneErrors.size > 0) {
@@ -604,21 +614,25 @@ export class RescueEditorComponent {
   }
 
   private _doSave(vm: AppRescueItemVm, force = false): void {
+    if (this._savingFiles()) return;
     this._sceneErrors.set(new Map());
-
-    const isNew = this._dialogData?.id == null;
-    const action = isNew
-      ? this._store.dispatch(new RescueActions.CreateRescueItem(vm, force))
-      : this._store.dispatch(new RescueActions.UpdateRescueItem(vm.id, vm, force));
+    this._savingFiles.set(true);
+    this._saveError.set('');
     const uploads = Array.from(this._sceneBackgroundFiles.entries()).map(([id, file]) =>
       this._filesStorage.uploadFile(id, file)
     );
-    if (uploads.length > 0) {
-      forkJoin([action, ...uploads]).subscribe(() => this._ref.close());
+    for (const parameter of vm.data.parameters ?? []) {
+      const file = parameter.icon && this._parameterIconFiles.get(parameter.icon);
+      if (file && parameter.icon) uploads.push(this._filesStorage.uploadFile(parameter.icon, file));
     }
-    else {
-      action.subscribe(() => this._ref.close());
-    }
+    (uploads.length ? forkJoin(uploads) : of([])).pipe(
+      switchMap(() => this._dialogData?.id == null
+        ? this._store.dispatch(new RescueActions.CreateRescueItem(vm, force))
+        : this._store.dispatch(new RescueActions.UpdateRescueItem(vm.id, vm, force)))
+    ).subscribe({
+      next: () => this._ref.close(),
+      error: () => { this._savingFiles.set(false); this._saveError.set('Не удалось сохранить сценарий или загрузить изображения. Попробуйте ещё раз.'); }
+    });
   }
 
   /** Немодально-исчезающий диалог ошибок валидации: висит, пока не закрыт */

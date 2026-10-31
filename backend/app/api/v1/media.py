@@ -5,12 +5,11 @@ import mimetypes
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field
-from starlette.responses import Response as StarletteResponse
-
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import Response as StarletteResponse
 
 from app.api.deps import get_current_admin, get_current_user, get_db
 from app.api.v1._content_access import assert_content_visible
@@ -30,6 +29,46 @@ class MediaUploadOut(BaseModel):
     file_name: str = Field(alias="fileName")
 
 ALLOWED_PREFIX = "public/"
+
+# Изображения отдаются без сессии с Cache-Control, чтобы <img>/нативный загрузчик
+# кэшировал их (браузер/Fresco), а не тянул авторизованный блоб каждый раз:
+# - неймспейсы с GUID-ключами (иконки/фоны папок, иконки достижений и наград);
+# - аватары: ключ = user UUID + случайный hex, непердугадываемый (capability-URL);
+# - корневые картинки без подпапки — фоны сцен спасения и картинки вопросов тестов
+#   (конструктор кладёт их под исходным именем файла прямо в public/).
+# НЕ публичные: сертификаты (порядковый номер + ФИО внутри — перебирается),
+# PDF статей (тарифный гейтинг), legal — только через авторизованный /media.
+PUBLIC_IMAGE_PREFIXES = ("public/folders/", "public/achievements/", "public/rewards/", "public/avatars/")
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".gif")
+
+
+@router.get("/public/{file_path:path}")
+async def download_public_image(
+    file_path: str,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    x_session_id: Annotated[str | None, Header(alias="X-Session-Id")] = None,
+    enforce_tariff: bool = Query(False, alias="enforceTariff"),
+) -> Response:
+    # ВАЖНО: объявлен выше /{file_path:path} — иначе catch-all перехватит этот путь.
+    key = _normalize_key(file_path)
+    name = key.removeprefix(ALLOWED_PREFIX)
+    root_image = "/" not in name and name.lower().endswith(IMAGE_EXTENSIONS)
+    if not (root_image or (key.startswith(PUBLIC_IMAGE_PREFIXES) and key.lower().endswith(IMAGE_EXTENSIONS))):
+        # /media/public/<key> is also the legacy authenticated download URL.
+        if file_path.startswith("public/"):
+            raise HTTPException(status_code=404, detail="File not found")
+        user = await get_current_user(db, x_session_id)
+        return await download_media(key, db, user, enforce_tariff)
+    s3 = get_s3_client()
+    try:
+        body, content_type = await s3.get_object(key=key)
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail="File not found") from exc
+    return Response(
+        content=body,
+        media_type=content_type,
+        headers={"Cache-Control": "public, max-age=604800"},
+    )
 
 
 def _normalize_key(file_path: str) -> str:
@@ -87,7 +126,9 @@ async def download_media(
         size_bytes=len(body),
         content_type=content_type,
     )
-    return Response(content=body, media_type=content_type)
+    # private: браузерный кэш ускоряет повторные авторизованные fetch (блобы),
+    # но разделяемые прокси это не кэшируют
+    return Response(content=body, media_type=content_type, headers={"Cache-Control": "private, max-age=86400"})
 
 
 @router.post("", response_model=MediaUploadOut, status_code=status.HTTP_201_CREATED)

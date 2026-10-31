@@ -1,343 +1,226 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { IconSize, Radius, ResultTileTokens, Spacing } from '@/constants/theme';
 import {
   type AppRescueItemVm,
   RescueParameterSeverityEnum,
   type RescueScheneChoiceImplicationVm,
 } from '@/hooks/api/types';
-import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { useAppTheme } from '@/hooks/use-theme-color';
+import { useTheme } from '@/contexts/theme-context';
+import { useFileImage } from '@/hooks/api/useFileImage';
 import {
   buildRescueCompletionDescription,
   parseRescueItemDataVm,
   resolveRescueOutcome,
 } from '@/lib/rescue-completion';
-import { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
+import { colorForSeverity, findSeverityForValue } from '@/lib/rescue-parameter-severity';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Image, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
+import Animated, { FadeIn, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { ThemedText } from '../themed-text';
-import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
-import { GlassCard } from '../ui/glass-card';
-import { IconSymbol } from '../ui/icon-symbol';
 import { NoScreenCapture } from '../ui/no-screen-capture';
 import { ScreenBackground } from '../ui/screen-background';
+import { ResultTile } from '../ui/result-tile';
 
 type RescueCompleteProps = {
   rescueItem: AppRescueItemVm;
-  /** Финальные значения параметров после прохождения сцен */
   parameterValues: Record<string, number>;
-  /** Implications всех выбранных вариантов ответа по порядку прохождения */
   selectedImplications?: RescueScheneChoiceImplicationVm[];
   onBack: () => void;
 };
 
-function normalizeImplicationSeverity(raw: unknown): RescueParameterSeverityEnum | undefined {
-  if (typeof raw !== 'string') {
-    for (const s of Object.values(RescueParameterSeverityEnum)) {
-      if (s === raw) return s;
-    }
-    return undefined;
+const outcomeImages = {
+  passed: {
+    light: { animation: require('@/assets/images/rescue/success.gif'), final: require('@/assets/images/rescue/success-final.png'), ratio: 485 / 800 },
+    dark: { animation: require('@/assets/images/rescue/success-dark.gif'), final: require('@/assets/images/rescue/success-dark-final.png'), ratio: 485 / 800 },
+  },
+  failed: {
+    light: { animation: require('@/assets/images/rescue/failure.gif'), final: require('@/assets/images/rescue/failure-final.png'), ratio: 525 / 800 },
+    dark: { animation: require('@/assets/images/rescue/failure-dark.gif'), final: require('@/assets/images/rescue/failure-dark-final.png'), ratio: 525 / 800 },
+  },
+} as const;
+
+function ParameterIcon({ icon, color }: { icon?: string; color: string }) {
+  const isImage = !!icon && /\.png$/i.test(icon);
+  const { response } = useFileImage(isImage ? icon : '');
+  if (isImage) {
+    return response ? <Image source={{ uri: response }} style={styles.parameterIcon} resizeMode="contain" /> : null;
   }
-  const v = raw.toLowerCase().trim();
-  for (const s of Object.values(RescueParameterSeverityEnum)) {
-    if (s === v) return s;
-  }
-  return undefined;
+  return icon && Object.prototype.hasOwnProperty.call(MaterialIcons.glyphMap, icon)
+    ? <MaterialIcons name={icon as keyof typeof MaterialIcons.glyphMap} size={IconSize.resultMetric} color={color} accessible={false} />
+    : null;
 }
 
-export function RescueComplete({
-  rescueItem,
-  parameterValues,
-  selectedImplications = [],
-  onBack,
-}: RescueCompleteProps) {
-  const {
-    success,
-    error,
-    primary,
-    successContainer,
-    errorContainer,
-    primaryContainer,
-    white,
-    border,
-    severityNormal,
-    severityLow,
-    severityMedium,
-    severityHigh,
-    neutral,
-  } = useAppTheme();
-
-  const implicationTagBackground = (severity?: RescueParameterSeverityEnum): string => {
-    switch (severity) {
-      case RescueParameterSeverityEnum.Normal:
-        return severityNormal;
-      case RescueParameterSeverityEnum.Low:
-        return severityLow;
-      case RescueParameterSeverityEnum.Medium:
-        return severityMedium;
-      case RescueParameterSeverityEnum.High:
-        return severityHigh;
-      default:
-        return neutral;
-    }
-  };
-
+export function RescueComplete({ rescueItem, parameterValues, selectedImplications = [], onBack }: RescueCompleteProps) {
+  const theme = useAppTheme();
+  const { theme: themeName } = useTheme();
+  const { width, fontScale } = useWindowDimensions();
+  const compactMetrics = width < ResultTileTokens.metricCompactBreakpoint || fontScale > ResultTileTokens.metricCompactFontScale;
   const data = useMemo(() => parseRescueItemDataVm(rescueItem.data), [rescueItem.data]);
+  const parameters = data.parameters ?? [];
+  const outcome = resolveRescueOutcome(data.completion, parameterValues, parameters);
+  const artwork = outcome === 'undetermined' ? undefined : outcomeImages[outcome][themeName];
+  const reducedMotion = useReducedMotion();
+  const [finished, setFinished] = useState(!artwork || reducedMotion);
+  const [loaded, setLoaded] = useState(false);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scale = useSharedValue(1);
+  const translateY = useSharedValue(0);
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }, { scale: scale.value }] }));
+  const imageWidth = artwork && size.width && size.height ? Math.max(0, Math.min(size.width - Spacing.pageX * 2, (size.height - Spacing.pageX * 2) / artwork.ratio)) : 0;
+  const bannerWidth = Math.min(size.width - Spacing.pageX * 2, Spacing.pageX * 28);
 
-  const outcome = useMemo(
-    () => resolveRescueOutcome(data.completion, parameterValues, data.parameters ?? []),
-    [data.completion, parameterValues, data.parameters],
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  function startTransition() {
+    if (!artwork || timer.current || !imageWidth) return;
+    timer.current = setTimeout(() => {
+      setLoaded(true);
+      const targetScale = bannerWidth / imageWidth;
+      scale.value = withSequence(withTiming(0.9, { duration: 300 }), withTiming(targetScale, { duration: 600 }));
+      translateY.value = withSequence(withTiming(0, { duration: 300 }), withTiming(Spacing.pageX + bannerWidth * artwork.ratio / 2 - size.height / 2, { duration: 600 }, (done) => {
+        if (done) runOnJS(setFinished)(true);
+      }));
+    }, 2500);
+  }
+  const names = Object.fromEntries(parameters.map((p) => [String(p.id), p.name]));
+  const types = Object.fromEntries(parameters.map((p) => [String(p.id), p.type]));
+  const { body } = buildRescueCompletionDescription(
+    outcome, data.completion, parameterValues, names, types, rescueItem.name, parameters,
   );
-
-  const parameterNamesById = useMemo(() => {
-    const m: Record<string, string> = {};
-    (data.parameters ?? []).forEach((p) => {
-      m[String(p.id)] = p.name;
-    });
-    return m;
-  }, [data.parameters]);
-
-  const parameterTypesById = useMemo(() => {
-    const m: Record<string, 'timer' | 'numeric' | undefined> = {};
-    (data.parameters ?? []).forEach((p) => {
-      const t = p.type === 'timer' ? 'timer' : p.type === 'numeric' ? 'numeric' : undefined;
-      m[String(p.id)] = t;
-    });
-    return m;
-  }, [data.parameters]);
-
-  const { title, body } = useMemo(
-    () =>
-      buildRescueCompletionDescription(
-        outcome,
-        data.completion,
-        parameterValues,
-        parameterNamesById,
-        parameterTypesById,
-        rescueItem.name,
-        data.parameters ?? [],
-      ),
-    [
-      outcome,
-      data.completion,
-      parameterValues,
-      parameterNamesById,
-      parameterTypesById,
-      rescueItem.name,
-      data.parameters,
-    ],
-  );
-
-  const emblem = useMemo(() => {
-    if (outcome === 'passed') {
-      return { icon: 'checkmark.circle.fill' as const, color: success, bg: successContainer };
-    }
-    if (outcome === 'failed') {
-      return { icon: 'xmark.circle.fill' as const, color: error, bg: errorContainer };
-    }
-    return { icon: 'info.circle.fill' as const, color: primary, bg: primaryContainer };
-  }, [outcome, success, error, primary, successContainer, errorContainer, primaryContainer]);
-
-  /** Финальные значения параметров: таймеры — в формате ЧЧ:ММ:СС */
-  const parameterRows = useMemo(() => {
-    return (data.parameters ?? []).map((p) => {
-      const value = parameterValues[p.id];
-      const display =
-        value === undefined
-          ? '—'
-          : p.type === 'timer'
-            ? formatSecondsAsHms(value)
-            : String(value);
-      return { id: p.id, name: p.name, display };
-    });
-  }, [data.parameters, parameterValues]);
-
-  const titleColor =
-    outcome === 'passed' ? success : outcome === 'failed' ? error : undefined;
-
-  const implicationTags = useMemo(() => {
-    return selectedImplications.filter((imp) => imp?.description?.trim());
-  }, [selectedImplications]);
+  const artworkBorderColor = outcome === 'failed' ? theme.error : theme.success;
+  const implications = selectedImplications.filter((item) => item?.description?.trim());
+  const visibleParameters = parameters.filter((parameter) => !parameter.isHidden);
 
   return (
-    <ScreenBackground style={styles.container}>
+    <ScreenBackground>
       <NoScreenCapture />
-      <Animated.View style={styles.flex} entering={FadeIn.duration(300)}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <ThemedView style={[styles.content, { backgroundColor: 'transparent' }]}>
-            {/* Эмблема результата */}
-            <View style={[styles.emblem, { backgroundColor: emblem.bg }]}>
-              <IconSymbol name={emblem.icon} size={44} color={emblem.color} />
+      <View style={styles.screen} onLayout={(event) => setSize(event.nativeEvent.layout)}>
+      {finished ? <Animated.View style={styles.screen} entering={reducedMotion ? undefined : FadeIn.duration(500)}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.content}>
+          {artwork && bannerWidth > 0 ? <View style={[styles.frame, styles.banner, { height: bannerWidth * artwork.ratio, borderColor: artworkBorderColor }]}><Image source={artwork.final} style={styles.frameImage} resizeMode="cover" accessibilityIgnoresInvertColors accessible={false} /></View> : null}
+          <ResultTile style={styles.card}>
+            <View style={styles.summaryText}>
+              <View style={styles.headingRow}>
+                <MaterialIcons name="summarize" size={Spacing.card * 1.5} color={theme.primary} accessible={false} />
+                <ThemedText type="subtitle" accessibilityRole="header" style={styles.headingText}>Итог</ThemedText>
+              </View>
+              <ThemedText>{outcome === 'failed' ? body : outcome === 'undetermined' ? 'Сценарий завершён. Ознакомьтесь с итоговыми показателями и последствиями ваших решений.' : body}</ThemedText>
             </View>
-            <ThemedText type="title" style={[styles.title, titleColor ? { color: titleColor } : undefined]}>
-              {title}
-            </ThemedText>
-            <ThemedText type="caption" style={styles.subtitle} numberOfLines={2}>
-              {rescueItem.name}
-            </ThemedText>
+          </ResultTile>
 
-            {/* Итог: связное объяснение, почему такой исход */}
-            <GlassCard padding={16} borderRadius={16} style={styles.card}>
-              <ThemedText type="label" style={styles.cardHeading}>
-                Итог
-              </ThemedText>
-              <ThemedText style={styles.body}>{body}</ThemedText>
-            </GlassCard>
-
-            {/* Финальные значения параметров сцены */}
-            {parameterRows.length > 0 ? (
-              <GlassCard padding={16} borderRadius={16} style={styles.card}>
-                <ThemedText type="label" style={styles.cardHeading}>
-                  Показатели
-                </ThemedText>
-                <View style={styles.rowsWrap}>
-                  {parameterRows.map((row) => (
-                    <View key={row.id} style={[styles.parameterRow, { borderBottomColor: border }]}>
-                      <ThemedText style={styles.parameterName}>{row.name}</ThemedText>
-                      <ThemedText type="mono" style={styles.parameterValue}>
-                        {row.display}
-                      </ThemedText>
-                    </View>
-                  ))}
-                </View>
-              </GlassCard>
-            ) : null}
-
-            {implicationTags.length > 0 ? (
-              <GlassCard padding={16} borderRadius={16} style={styles.card}>
-                <ThemedText type="label" style={styles.cardHeading}>
-                  Последствия ваших ответов
-                </ThemedText>
-                <View style={styles.tagsWrap}>
-                  {implicationTags.map((imp, i) => {
-                    const sev = normalizeImplicationSeverity(imp.severity);
-                    const bg = implicationTagBackground(sev);
-                    return (
-                      <View
-                        key={`${i}-${imp.description.slice(0, 32)}`}
-                        style={[styles.implicationTag, { backgroundColor: bg }]}
-                      >
-                        <ThemedText style={[styles.implicationTagText, { color: white }]}>
-                          {imp.description.trim()}
-                        </ThemedText>
+          {visibleParameters.length > 0 && (
+            <View style={styles.section}>
+              <View style={[styles.heading, styles.headingRow]}>
+                <MaterialIcons name="bar-chart" size={Spacing.card * 1.5} color={theme.primary} accessible={false} />
+                <ThemedText type="subtitle" accessibilityRole="header" style={styles.headingText}>Ключевые показатели</ThemedText>
+              </View>
+              <View style={styles.metrics}>
+                {visibleParameters.map((p) => {
+                  const value = parameterValues[p.id];
+                  const display = value === undefined ? '—' : p.type === 'timer' ? formatSecondsAsHms(value) : String(value);
+                  const band = value === undefined ? null : findSeverityForValue(value, p.severities);
+                  const labels = { normal: 'Нормальная серьёзность', low: 'Низкая серьёзность', medium: 'Средняя серьёзность', high: 'Высокая серьёзность' };
+                  const status = band?.severity ? labels[band.severity] : value !== undefined && p.severities?.length && !band ? 'Вне заданных диапазонов' : '';
+                  const description = band?.description?.trim();
+                  const color = colorForSeverity(band?.severity, {
+                    success: theme.onSuccessContainer,
+                    warning: theme.onWarningContainer,
+                    error: theme.onErrorContainer,
+                    neutral: theme.neutral,
+                  });
+                  return (
+                    <ResultTile key={p.id} padding={Spacing.card} accessible accessibilityLabel={`${p.name}: ${display}${p.unit ? ` ${p.unit}` : ''}${status ? `. ${status}` : ''}${description ? `. ${description}` : ''}`} style={[styles.metric, compactMetrics && styles.metricFull]}>
+                      <View style={styles.metricContent}>
+                        {p.icon ? <View style={[styles.metricIcon, { backgroundColor: theme.primaryContainer }]}>
+                          <ParameterIcon icon={p.icon} color={theme.primary} />
+                        </View> : null}
+                        <View style={styles.metricText}>
+                          <ThemedText type="caption" style={{ color: theme.neutral }}>{p.name}</ThemedText>
+                          <View style={styles.metricValue}>
+                            <ThemedText type="subtitle" style={band?.severity ? { color } : undefined}>{display}</ThemedText>
+                            {p.unit ? <ThemedText type="caption" style={{ color: theme.neutral }}>{p.unit}</ThemedText> : null}
+                          </View>
+                        </View>
                       </View>
-                    );
-                  })}
-                </View>
-              </GlassCard>
-            ) : null}
+                      {status || description ? <View style={styles.metricDescription}>
+                        {status ? <ThemedText type="label">{status}</ThemedText> : null}
+                        {description ? <ThemedText type="label">{description}</ThemedText> : null}
+                      </View> : null}
+                    </ResultTile>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
-            <Button
-              title="Готово"
-              onPress={onBack}
-              variant="primary"
-              size="large"
-              fullWidth
-              style={styles.backButton}
-            />
-          </ThemedView>
-        </ScrollView>
-      </Animated.View>
+          {implications.length > 0 && (
+            <View style={styles.section}>
+              <View style={[styles.heading, styles.headingRow]}>
+                <MaterialIcons name="fact-check" size={Spacing.card * 1.5} color={theme.primary} accessible={false} />
+                <ThemedText type="subtitle" accessibilityRole="header" style={styles.headingText}>Разбор решений</ThemedText>
+              </View>
+              {implications.map((item, index) => {
+                const severity = String(item.severity).toLowerCase();
+                const isWarning = severity === RescueParameterSeverityEnum.Medium || severity === RescueParameterSeverityEnum.High;
+                const color = severity === RescueParameterSeverityEnum.High ? theme.error : isWarning ? theme.warning : theme.primary;
+                const backgroundColor = severity === RescueParameterSeverityEnum.High ? theme.errorContainer : isWarning ? theme.warningContainer : theme.primaryContainer;
+                return (
+                  <ResultTile key={`${index}-${item.description}`} variant={severity === RescueParameterSeverityEnum.High ? 'danger' : isWarning ? 'warning' : 'primary'} padding={Radius.lg} style={styles.decision} accessible accessibilityLabel={`${severity === RescueParameterSeverityEnum.High ? 'Важное замечание' : isWarning ? 'Предупреждение' : 'Решение'}: ${item.description.trim()}`}>
+                    <View style={styles.decisionRow}>
+                      <View style={[styles.decisionIcon, { backgroundColor }]}>
+                        <MaterialIcons name={isWarning ? 'error-outline' : 'check-circle-outline'} size={Spacing.card * 1.5} color={color} accessible={false} />
+                      </View>
+                      <ThemedText style={styles.decisionText}>{item.description.trim()}</ThemedText>
+                    </View>
+                  </ResultTile>
+                );
+              })}
+            </View>
+          )}
+          <Button title="Завершить" onPress={onBack} variant="primary" size="large" fullWidth accessibilityRole="button" />
+        </View>
+      </ScrollView>
+      </Animated.View> : artwork && imageWidth > 0 ? (
+        <Animated.View style={[styles.introImage, loaded && styles.frame, { top: (size.height - imageWidth * artwork.ratio) / 2, width: imageWidth, height: imageWidth * artwork.ratio, borderColor: artworkBorderColor }, animatedStyle]}>
+          <ExpoImage source={loaded ? artwork.final : artwork.animation} style={styles.screen} contentFit="cover" onLoad={startTransition} onError={() => setFinished(true)} accessible={false} />
+        </Animated.View>
+      ) : null}
+      </View>
     </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  flex: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-    width: '100%',
-  },
-  scrollContent: {
-    paddingBottom: 48,
-  },
-  content: {
-    padding: 16,
-    width: '100%',
-    maxWidth: 420,
-    alignSelf: 'center',
-  },
-  emblem: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  title: {
-    marginBottom: 4,
-    fontSize: 28,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    marginBottom: 20,
-    textAlign: 'center',
-    opacity: 0.7,
-  },
-  card: {
-    marginBottom: 12,
-    width: '100%',
-  },
-  cardHeading: {
-    opacity: 0.6,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  body: {
-    fontSize: 15,
-    lineHeight: 22,
-    opacity: 0.9,
-  },
-  rowsWrap: {
-    gap: 10,
-  },
-  parameterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
-    paddingBottom: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  parameterName: {
-    fontSize: 15,
-    flex: 1,
-    opacity: 0.85,
-  },
-  parameterValue: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  tagsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  implicationTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
-    maxWidth: '100%',
-  },
-  implicationTagText: {
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 19,
-  },
-  backButton: {
-    marginTop: 8,
-    maxWidth: 300,
-    alignSelf: 'center',
-  },
+  screen: { flex: 1 },
+  introImage: { position: 'absolute', alignSelf: 'center' },
+  frame: { borderRadius: Radius.xl, borderWidth: ResultTileTokens.borderWidth, overflow: 'hidden' },
+  frameImage: { width: '100%', height: '100%' },
+  banner: { width: '100%', marginBottom: Spacing.card },
+  scrollContent: { paddingBottom: Spacing.pageBottom },
+  content: { width: '100%', maxWidth: Spacing.pageX * 30, alignSelf: 'center', padding: Spacing.pageX },
+  card: { marginBottom: Spacing.card * 2 },
+  section: { marginBottom: Spacing.card * 2 },
+  summaryText: { gap: Radius.sm },
+  heading: { marginBottom: Radius.lg },
+  headingRow: { flexDirection: 'row', alignItems: 'center', gap: Radius.sm },
+  headingText: { flexShrink: 1 },
+  metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: Radius.sm },
+  metric: { flexBasis: '48%', flexGrow: 1, maxWidth: '50%', minWidth: 0 },
+  metricFull: { flexBasis: '100%', maxWidth: '100%' },
+  metricContent: { flexDirection: 'row', alignItems: 'center', gap: Radius.sm },
+  metricIcon: { width: Spacing.minTouchTarget, height: Spacing.minTouchTarget, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center' },
+  metricText: { flex: 1, minWidth: 0 },
+  metricDescription: { marginTop: Radius.sm },
+  metricValue: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: Radius.sm },
+  parameterIcon: { width: IconSize.resultMetric, height: IconSize.resultMetric },
+  decision: { marginBottom: Radius.sm },
+  decisionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Radius.md },
+  decisionIcon: { width: Spacing.card * 2, height: Spacing.card * 2, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
+  decisionText: { flex: 1 },
 });

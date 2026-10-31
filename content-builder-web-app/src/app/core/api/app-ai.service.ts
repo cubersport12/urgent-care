@@ -71,7 +71,6 @@ export class AppAIService {
         }
         return parsed.data;
       }),
-      retry(1),
       catchError((error: unknown) => this._handleError(error, 'Не удалось сгенерировать сценарий спасения'))
     );
   }

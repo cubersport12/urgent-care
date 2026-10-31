@@ -6266,6 +6266,131 @@
         }
       }
     },
+    "/api/v1/training/random/{attempt_id}/complete": {
+      "post": {
+        "tags": [
+          "training"
+        ],
+        "summary": "Complete Random Training",
+        "operationId": "training_complete_random_training",
+        "parameters": [
+          {
+            "name": "attempt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attempt Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RandomCompletion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Training Complete Random Training"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/training/random/history": {
+      "get": {
+        "tags": [
+          "training"
+        ],
+        "summary": "Random Training History",
+        "operationId": "training_random_training_history",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Training Random Training History"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/training/me": {
       "get": {
         "tags": [
@@ -6937,6 +7062,46 @@
             "schema": {
               "type": "string",
               "title": "Doc Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/media/public/{file_path}": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Download Public Image",
+        "operationId": "media_download_public_image",
+        "parameters": [
+          {
+            "name": "file_path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Path"
             }
           }
         ],
@@ -8948,6 +9113,29 @@
             "type": "integer",
             "title": "Rank"
           },
+          "effectColor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effectcolor"
+          },
+          "glowEffect": {
+            "type": "string",
+            "enum": [
+              "none",
+              "pulse",
+              "shimmer",
+              "orbit"
+            ],
+            "title": "Gloweffect",
+            "default": "none"
+          },
           "enforcement": {
             "type": "boolean",
             "title": "Enforcement"
@@ -9489,6 +9677,30 @@
             ],
             "title": "Backgroundpath"
           },
+          "iconPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iconpathdark"
+          },
+          "backgroundPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backgroundpathdark"
+          },
           "order": {
             "anyOf": [
               {
@@ -9607,6 +9819,30 @@
             ],
             "title": "Backgroundpath"
           },
+          "iconPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iconpathdark"
+          },
+          "backgroundPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backgroundpathdark"
+          },
           "order": {
             "anyOf": [
               {
@@ -9681,6 +9917,8 @@
           "name",
           "iconPath",
           "backgroundPath",
+          "iconPathDark",
+          "backgroundPathDark",
           "order",
           "parentId",
           "showRandomOpen",
@@ -9727,6 +9965,30 @@
               }
             ],
             "title": "Backgroundpath"
+          },
+          "iconPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iconpathdark"
+          },
+          "backgroundPathDark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backgroundpathdark"
           },
           "order": {
             "anyOf": [
@@ -10908,6 +11170,45 @@
         "type": "object",
         "title": "QrStatsOut"
       },
+      "RandomAnswer": {
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "title": "Questionid"
+          },
+          "answerIds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Answerids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "questionId",
+          "answerIds"
+        ],
+        "title": "RandomAnswer"
+      },
+      "RandomCompletion": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/RandomAnswer"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Answers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answers"
+        ],
+        "title": "RandomCompletion"
+      },
       "RecommendedArticleOut": {
         "properties": {
           "id": {
@@ -11662,6 +11963,28 @@
           "name": {
             "type": "string",
             "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
           },
           "delta": {
             "type": "number",
@@ -12854,6 +13177,29 @@
             "title": "Rank",
             "default": 0
           },
+          "effectColor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effectcolor"
+          },
+          "glowEffect": {
+            "type": "string",
+            "enum": [
+              "none",
+              "pulse",
+              "shimmer",
+              "orbit"
+            ],
+            "title": "Gloweffect",
+            "default": "none"
+          },
           "isDefault": {
             "type": "boolean",
             "title": "Isdefault",
@@ -13091,6 +13437,29 @@
             "type": "integer",
             "title": "Rank"
           },
+          "effectColor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effectcolor"
+          },
+          "glowEffect": {
+            "type": "string",
+            "enum": [
+              "none",
+              "pulse",
+              "shimmer",
+              "orbit"
+            ],
+            "title": "Gloweffect",
+            "default": "none"
+          },
           "isDefault": {
             "type": "boolean",
             "title": "Isdefault"
@@ -13204,6 +13573,35 @@
               }
             ],
             "title": "Rank"
+          },
+          "effectColor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effectcolor"
+          },
+          "glowEffect": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "pulse",
+                  "shimmer",
+                  "orbit"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gloweffect"
           },
           "isDefault": {
             "anyOf": [

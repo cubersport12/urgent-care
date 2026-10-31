@@ -74,28 +74,6 @@ export function ExplorerItemComponent({
   const isHomeRescue = isHome && item.type === 'rescue';
   const status = item.type === 'folder' || isHomeRescue ? undefined : getStatus(item, isRead, testStats, rescueStats);
 
-  const descriptionPrefix =
-    item.type === 'test' && testStats
-      ? testStats.passed
-        ? 'Успешно пройден · '
-        : testStats.passed === false
-          ? 'Не пройден · '
-          : ''
-      : item.type === 'rescue' && rescueStats?.completedAt
-        ? rescueStats.passed === true
-          ? 'Успешно · '
-          : 'Не пройден · '
-        : '';
-
-  const defaultDescription =
-    item.type === 'folder'
-      ? 'Открыть раздел'
-      : item.type === 'article'
-        ? 'Статья'
-        : item.type === 'test'
-          ? 'Тест'
-          : 'Режим спасения';
-
   // В названии режима спасения часто скрыт диагноз — маскируем только его:
   // до первой попытки (и пока недоступен) — «Режим спасения · N».
   // Тесты и документы всегда с настоящими названиями.
@@ -108,10 +86,12 @@ export function ExplorerItemComponent({
           ? rescueDisplayName(item.data.name, showRealName, index)
           : item.data.name
       }
-      description={isHomeRescue ? undefined : `${descriptionPrefix}${description ?? defaultDescription}`}
+      description={isHomeRescue ? undefined : description}
       kind={getKind(item)}
       iconPath={item.type === 'folder' ? (item.data as AppFolderVm).iconPath : null}
       backgroundPath={item.type === 'folder' ? (item.data as AppFolderVm).backgroundPath : null}
+      iconPathDark={item.type === 'folder' ? (item.data as AppFolderVm).iconPathDark : null}
+      backgroundPathDark={item.type === 'folder' ? (item.data as AppFolderVm).backgroundPathDark : null}
       status={status}
       disabled={isDisabled}
       locked={(item.data.lockedBy as LockReason | null) ?? undefined}

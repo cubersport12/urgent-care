@@ -1,5 +1,5 @@
 import { useAchievementUnlocks } from '@/contexts/achievements-context';
-import { useTest } from '@/contexts/test-context';
+import { useTest, type TestAnswer } from '@/contexts/test-context';
 import { computeTestOutcome, persistTestCompletion, resetTestCompletionGuard } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
@@ -14,9 +14,10 @@ import { TestResultsView } from './test-taking/test-results-view';
 type TestTakingViewProps = {
   onBack: () => void;
   onFinish: () => void;
+  onSaveTraining?: (answers: TestAnswer[]) => Promise<void>;
 };
 
-export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
+export function TestTakingView({ onBack, onFinish, onSaveTraining }: TestTakingViewProps) {
   const {
     test,
     currentQuestionIndex,
@@ -44,6 +45,7 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
     testId: test?.id || '',
     startedAt: startedAt || new Date().toISOString(),
   });
+  const { addOrUpdate } = testStatsHook;
 
   const question = getCurrentQuestion();
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
@@ -61,23 +63,22 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
   const saveCompletion = useCallback(() => {
     if (!test) return Promise.resolve(null);
     if (!completionPromiseRef.current) {
-      completionPromiseRef.current = persistTestCompletion({
-        testId: test.id,
-        minScore: test.minScore,
-        maxErrors: test.maxErrors,
-        answers: processSkippedQuestions(),
-        finishReason,
-        onStats:
-          deviceId && startedAt
-            ? (patch) => testStatsHook.addOrUpdate(patch)
-            : undefined,
-      }).catch((error) => {
+      completionPromiseRef.current = (onSaveTraining
+        ? onSaveTraining(processSkippedQuestions()).then(() => null)
+        : persistTestCompletion({
+            testId: test.id,
+            minScore: test.minScore,
+            maxErrors: test.maxErrors,
+            answers: processSkippedQuestions(),
+            finishReason,
+            onStats: deviceId && startedAt ? (patch) => addOrUpdate(patch) : undefined,
+          })).catch((error) => {
         completionPromiseRef.current = null;
         throw error;
       });
     }
     return completionPromiseRef.current;
-  }, [test, processSkippedQuestions, finishReason, deviceId, startedAt, testStatsHook.addOrUpdate]);
+  }, [test, processSkippedQuestions, finishReason, deviceId, startedAt, addOrUpdate, onSaveTraining]);
 
   useEffect(() => {
     resetTestCompletionGuard();
@@ -115,15 +116,15 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
 
   // Автозавершение теста при превышении лимита ошибок (ошибок стало больше maxErrors)
   useEffect(() => {
-    if (!test || isTestCompleted) return;
+    if (!test || isTestCompleted || onSaveTraining) return;
     if (test.maxErrors != null && getTotalErrors() > test.maxErrors) {
       finishTest('autoMaxErrors');
     }
-  }, [test, isTestCompleted, answers, finishTest, getTotalErrors]);
+  }, [test, isTestCompleted, answers, finishTest, getTotalErrors, onSaveTraining]);
 
   // Обновляем статистику после каждого ответа - рассчитываем passed
   useEffect(() => {
-    if (test && deviceId && startedAt && testStatsHook && answers.length !== previousAnswersLengthRef.current) {
+    if (!onSaveTraining && test && deviceId && startedAt && testStatsHook && answers.length !== previousAnswersLengthRef.current) {
       previousAnswersLengthRef.current = answers.length;
 
       const { isPassed } = computeTestOutcome({
@@ -142,7 +143,7 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
       };
       void updateStats();
     }
-  }, [test, deviceId, startedAt, testStatsHook, answers, getTotalScore, getTotalErrors]);
+  }, [test, deviceId, startedAt, testStatsHook, answers, getTotalScore, getTotalErrors, onSaveTraining]);
 
   useEffect(() => {
     if (!question) return;
@@ -268,6 +269,7 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
           onFinish={finishAfterSaving}
           animatedStyle={animatedStyle}
           resetTests={resetTests}
+          isTraining={!!onSaveTraining}
         />
       </>
     );
@@ -298,6 +300,7 @@ export function TestTakingView({ onBack, onFinish }: TestTakingViewProps) {
         onSkip={handleSkip}
         onPrevious={handlePrevious}
         canNavigateToQuestion={canNavigateToCurrentQuestion}
+        onSaveTraining={onSaveTraining}
       />
     </>
   );

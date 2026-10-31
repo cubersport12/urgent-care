@@ -1,11 +1,12 @@
 import { ThemedText } from '@/components/themed-text';
 import { GlassCard } from '@/components/ui/glass-card';
-import { StatusBadge, type StatusType } from '@/components/ui/status-badge';
+import type { StatusType } from '@/components/ui/status-badge';
 import { TypeIcon, type MaterialKind } from '@/components/ui/type-icon';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Spacing, ThemeValues } from '@/constants/theme';
+import { IconSize, Radius, Spacing, ThemeValues } from '@/constants/theme';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme } from '@/hooks/use-theme-color';
+import { useTheme } from '@/contexts/theme-context';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 import type { LockReason } from '@/components/explorer/types';
 import { useState } from 'react';
@@ -18,6 +19,8 @@ type ContentCardProps = {
   kind: MaterialKind;
   iconPath?: string | null;
   backgroundPath?: string | null;
+  iconPathDark?: string | null;
+  backgroundPathDark?: string | null;
   status?: StatusType;
   disabled?: boolean;
   /** Причина блокировки: 'tariff' — золотой замок + золотая полоса слева; иначе серый замок без полосы */
@@ -32,24 +35,37 @@ export function ContentCard({
   kind,
   iconPath,
   backgroundPath,
+  iconPathDark,
+  backgroundPathDark,
   status,
   disabled = false,
   locked,
   onPress,
   index = 0,
 }: ContentCardProps) {
-  const { neutralSoft, warning } = useAppTheme();
-  const { response: icon } = useFileImage(iconPath ?? '');
-  const { response: background } = useFileImage(backgroundPath ?? '');
+  const { neutral, neutralSoft, warning, success, error, surfaceRaised } = useAppTheme();
+  const { theme } = useTheme();
+  const { response: icon } = useFileImage((theme === 'dark' ? iconPathDark ?? iconPath : iconPath) ?? '');
+  const { response: background } = useFileImage((theme === 'dark' ? backgroundPathDark ?? backgroundPath : backgroundPath) ?? '');
   const [failedIcon, setFailedIcon] = useState<string>();
   // Золото с полосой — только тарифный замок; остальные причины помечаем серым замком без полосы
   const isTariffLock = locked === 'tariff';
+  const statusLabels: Record<StatusType, string> = {
+    read: 'Прочитано', unread: 'Не прочитано', passed: 'Пройдено',
+    'not-passed': 'Не пройдено', success: 'Успешно', failure: 'Не успешно', locked: 'Заблокировано',
+  };
+  const kindLabels: Record<MaterialKind, string> = { folder: 'Раздел', article: 'Статья', test: 'Тест', rescue: 'Режим спасения' };
+  const indicator = locked ? 'lock.fill' : status === 'failure' ? 'xmark.circle.fill' : status === 'read' || status === 'passed' || status === 'success' ? 'checkmark.circle.fill' : status ? 'circle' : undefined;
+  const indicatorColor = locked ? (isTariffLock ? warning : neutral) : status === 'failure' ? error : status === 'not-passed' || status === 'unread' ? neutral : success;
 
   return (
     <Animated.View entering={staggerEnter(index)}>
       <Pressable
         onPress={disabled ? undefined : onPress}
         disabled={disabled}
+        accessibilityRole="button"
+        accessibilityLabel={[kindLabels[kind], title, locked ? 'Заблокировано' : status ? statusLabels[status] : undefined, description].filter(Boolean).join(', ')}
+        accessibilityState={{ disabled }}
         style={({ pressed }) => [
           {
             opacity: disabled || locked ? ThemeValues.disabledOpacity : 1,
@@ -62,21 +78,24 @@ export function ContentCard({
             <View pointerEvents="none" style={[styles.lockStrip, { backgroundColor: warning }]} />
           ) : null}
           <View style={styles.row}>
-            {icon && failedIcon !== icon ? (
-              <Image source={{ uri: icon }} resizeMode="contain" style={styles.iconImage} onError={() => setFailedIcon(icon)} />
-            ) : <TypeIcon kind={kind} size={20} locked={locked ?? undefined} />}
+            <View style={styles.iconWrap}>
+              {icon && failedIcon !== icon ? (
+                <Image source={{ uri: icon }} resizeMode="contain" style={styles.iconImage} onError={() => setFailedIcon(icon)} />
+              ) : <TypeIcon kind={kind} size={IconSize.contentType} />}
+              {indicator ? <View style={[styles.indicator, { backgroundColor: surfaceRaised }]}>
+                <IconSymbol name={indicator} size={Spacing.card} color={indicatorColor} />
+              </View> : null}
+            </View>
             <View style={styles.body}>
-              <ThemedText style={styles.title} numberOfLines={1}>
+              <ThemedText type="defaultSemiBold" numberOfLines={2}>
                 {title}
               </ThemedText>
               {description ? (
-                <ThemedText style={[styles.description, { color: neutralSoft }]} numberOfLines={1}>
+                <ThemedText type="caption" style={{ color: neutral }} numberOfLines={1}>
                   {description}
                 </ThemedText>
               ) : null}
             </View>
-            {locked && icon && failedIcon !== icon ? <IconSymbol name="lock.fill" size={16} color={locked === 'tariff' ? warning : neutralSoft} /> : null}
-            {locked ? null : status ? <StatusBadge status={status} /> : null}
             <IconSymbol name="chevron.right" size={16} color={neutralSoft} />
           </View>
         </GlassCard>
@@ -87,6 +106,8 @@ export function ContentCard({
 
 const styles = StyleSheet.create({
   iconImage: { width: Spacing.minTouchTarget, height: Spacing.minTouchTarget },
+  iconWrap: { position: 'relative' },
+  indicator: { position: 'absolute', right: -Radius.sm / 2, bottom: -Radius.sm / 2, borderRadius: Radius.pill },
   card: {
     marginBottom: 10,
   },
@@ -98,14 +119,6 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     minWidth: 0,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  description: {
-    fontSize: 13,
-    marginTop: 2,
   },
   // Вертикальная золотая полоса причины слева: отрицательные отступы = padding GlassCard (16),
   // контейнер карточки overflow hidden — полоса повторяет круглый угол карточки

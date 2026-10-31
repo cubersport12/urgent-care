@@ -125,7 +125,11 @@ export class AppApi {
         if (opts?.id) {
           return apiCall(() => rescueGetRescue({ path: { item_id: opts.id! } })).then((x) => [x as T]);
         }
-        return apiCall(() => rescueListRescue({ query })).then((x) => x as T[]);
+        console.info('-------> list rescue');
+        return apiCall(() => rescueListRescue({ query })).then((x) => {
+          console.info('-------> list rescue result', x);
+          return x as T[];
+        });
       default:
         return Promise.reject(new Error(`Unknown resource: ${resource}`));
     }

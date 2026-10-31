@@ -1,7 +1,8 @@
-import { Radius } from '@/constants/theme';
+import { Radius, TariffTint } from '@/constants/theme';
 import { useTheme } from '@/contexts/theme-context';
 import { useAppTheme, useGlass, useThemeShadow } from '@/hooks/use-theme-color';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { Image, Platform, Pressable, StyleSheet, View, type ViewProps } from 'react-native';
 
@@ -21,6 +22,7 @@ type GlassCardProps = ViewProps & {
   disabled?: boolean;
   backgroundImage?: string;
   backgroundImageScrim?: string;
+  tintColor?: string;
 };
 
 export function GlassCard({
@@ -33,6 +35,7 @@ export function GlassCard({
   disabled,
   backgroundImage,
   backgroundImageScrim,
+  tintColor,
   ...rest
 }: GlassCardProps) {
   const { theme } = useTheme();
@@ -76,6 +79,14 @@ export function GlassCard({
           tint="dark"
           pointerEvents="none"
           style={[StyleSheet.absoluteFill, { borderRadius, overflow: 'hidden' }]}
+        />
+      ) : null}
+      {tintColor && /^#[0-9a-f]{6}$/i.test(tintColor) ? (
+        <LinearGradient
+          pointerEvents="none"
+          colors={[`${tintColor}${TariffTint[theme][0]}`, `${tintColor}${TariffTint[theme][1]}`]}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFill, { borderRadius }]}
         />
       ) : null}
       {!isLight ? (

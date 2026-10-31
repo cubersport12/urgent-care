@@ -28,6 +28,8 @@ class FolderOut(CamelModel):
     name: str
     icon_path: str | None = Field(None, alias="iconPath", max_length=1000)
     background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
+    icon_path_dark: str | None = Field(None, alias="iconPathDark", max_length=1000)
+    background_path_dark: str | None = Field(None, alias="backgroundPathDark", max_length=1000)
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     show_random_open: bool = Field(False, alias="showRandomOpen")
@@ -43,6 +45,8 @@ class FolderCreate(CamelModel):
     name: str
     icon_path: str | None = Field(None, alias="iconPath", max_length=1000)
     background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
+    icon_path_dark: str | None = Field(None, alias="iconPathDark", max_length=1000)
+    background_path_dark: str | None = Field(None, alias="backgroundPathDark", max_length=1000)
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     show_random_open: bool = Field(False, alias="showRandomOpen")
@@ -54,6 +58,8 @@ class FolderUpdate(CamelModel):
     name: str | None = None
     icon_path: str | None = Field(None, alias="iconPath", max_length=1000)
     background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
+    icon_path_dark: str | None = Field(None, alias="iconPathDark", max_length=1000)
+    background_path_dark: str | None = Field(None, alias="backgroundPathDark", max_length=1000)
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     show_random_open: bool = Field(False, alias="showRandomOpen")

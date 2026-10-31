@@ -4,7 +4,6 @@ import { useTheme } from '@/contexts/theme-context';
 import {
   type NullableValue,
   RescueParameterSeverityEnum,
-  RescueParameterSeverityVm,
   type RescueSceneChoiceVm,
   type RescueSceneDocumentVm,
   RescueTimerParameterVm,
@@ -12,6 +11,7 @@ import {
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
+import { colorForSeverity, findSeverityForValue } from '@/lib/rescue-parameter-severity';
 import { Image } from 'expo-image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -30,38 +30,6 @@ import { Button } from '../ui/button';
 /** Проверяет, является ли строка data URI (base64) */
 function isDataUri(value: string): boolean {
   return typeof value === 'string' && value.startsWith('data:');
-}
-
-/** Находит первый подходящий по min/max уровень серьёзности для значения */
-function findSeverityForValue(
-  v: number,
-  severities?: RescueParameterSeverityVm[],
-): RescueParameterSeverityVm | null {
-  if (!severities?.length) return null;
-  for (const s of severities) {
-    const min = s.min ?? -Infinity;
-    const max = s.max ?? Infinity;
-    if (v >= min && v <= max) return s;
-  }
-  return null;
-}
-
-/** Цвет значения параметра по enum серьёзности */
-function colorForSeverity(
-  severity: RescueParameterSeverityEnum | undefined,
-  c: { success: string; warning: string; error: string; neutral: string },
-): string {
-  switch (severity) {
-    case RescueParameterSeverityEnum.Normal:
-    case RescueParameterSeverityEnum.Low:
-      return c.success;
-    case RescueParameterSeverityEnum.Medium:
-      return c.warning;
-    case RescueParameterSeverityEnum.High:
-      return c.error;
-    default:
-      return c.neutral;
-  }
 }
 
 /** Glass-карточка параметра в стиле kimi PatientParameterCard */

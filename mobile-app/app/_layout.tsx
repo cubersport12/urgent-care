@@ -5,10 +5,9 @@ import { AuthProvider } from '@/contexts/auth-context';
 import { ImmersiveProvider } from '@/contexts/immersive-context';
 import { NotificationsProvider } from '@/contexts/notifications-context';
 import { TestProvider } from '@/contexts/test-context';
-import { ThemeProvider } from '@/contexts/theme-context';
+import { ThemeProvider, useTheme } from '@/contexts/theme-context';
 import { GlobalNotificationBanner } from '@/components/ui/global-notification-banner';
 
-configureApiClient();
 import {
   Inter_300Light,
   Inter_400Regular,
@@ -21,18 +20,62 @@ import {
 } from '@expo-google-fonts/ibm-plex-mono';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
+import { Image as ExpoImage } from 'expo-image';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import 'react-native-reanimated';
-import { Colors } from '@/constants/theme';
-import { useTheme } from '@/contexts/theme-context';
+import { Animation, Colors } from '@/constants/theme';
 import { CookieConsentBanner } from '@/components/cookie-consent-banner';
+import Animated, { FadeOut, useReducedMotion } from 'react-native-reanimated';
 
+configureApiClient();
 SplashScreen.preventAutoHideAsync();
+
+const startupImages = {
+  light: { animation: require('@/assets/images/startup-light.gif'), final: require('@/assets/images/startup-light-final.png') },
+  dark: { animation: require('@/assets/images/startup-dark.gif'), final: require('@/assets/images/startup-dark-final.png') },
+} as const;
+
+function StartupSplash() {
+  const { theme, isThemeLoaded } = useTheme();
+  const reducedMotion = useReducedMotion();
+  const [visible, setVisible] = useState(true);
+  const started = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  function start() {
+    if (started.current) return;
+    started.current = true;
+    void SplashScreen.hideAsync();
+    timer.current = setTimeout(() => setVisible(false), reducedMotion ? 1000 : 2000);
+  }
+
+  function onError() {
+    if (timer.current) clearTimeout(timer.current);
+    void SplashScreen.hideAsync();
+    setVisible(false);
+  }
+
+  if (!isThemeLoaded || !visible) return null;
+
+  return (
+    <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: Colors[theme].splashBackground }]} exiting={reducedMotion ? undefined : FadeOut.duration(Animation.enterDuration)} accessibilityViewIsModal>
+      <ExpoImage
+        source={reducedMotion ? startupImages[theme].final : startupImages[theme].animation}
+        style={styles.splashImage}
+        contentFit="contain"
+        onLoad={start}
+        onError={onError}
+        accessible={false}
+      />
+    </Animated.View>
+  );
+}
 
 function RootStack() {
   const { theme } = useTheme();
@@ -97,12 +140,6 @@ export default function RootLayout() {
     IBMPlexMono_500Medium,
   });
 
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
   if (!fontsLoaded) {
     return null;
   }
@@ -116,9 +153,12 @@ export default function RootLayout() {
               <NotificationsProvider>
                 <AchievementsProvider>
                   <CertificatesProvider>
-                    <RootStack />
-                    <GlobalNotificationBanner />
-                    <CookieConsentBanner />
+                    <View style={styles.root}>
+                      <RootStack />
+                      <GlobalNotificationBanner />
+                      <CookieConsentBanner />
+                      <StartupSplash />
+                    </View>
                   </CertificatesProvider>
                 </AchievementsProvider>
               </NotificationsProvider>
@@ -129,3 +169,8 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  splashImage: { width: '100%', height: '100%' },
+});

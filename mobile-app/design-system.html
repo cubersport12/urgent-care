@@ -337,6 +337,8 @@ table.spec td:last-child, table.spec th:last-child { text-align: right; }
   border-radius: 12px; margin-bottom: 10px; cursor: pointer;
 }
 .content-card:active { transform: scale(0.98); opacity: .95; }
+.content-card .type-icon { width: 41px; height: 41px; }
+.content-card .type-icon > .s20 { font-size: 25px; }
 .cc-body { flex: 1; min-width: 0; }
 .cc-title { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cc-desc { font-size: 13px; color: var(--c-neutralSoft); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -511,6 +513,28 @@ footer {
   color: var(--c-neutral); font-size: 13px; text-align: center;
 }
 footer code { color: var(--c-neutral); }
+
+/* ResultTile — значения из ResultTileTokens в constants/theme.ts */
+:root[data-theme='dark'] {
+  --rt-neutral-surface:#07141F; --rt-neutral-edge:linear-gradient(135deg,#102A3E,#1765A0,#102A3E);
+  --rt-primary-surface:#062448; --rt-primary-edge:linear-gradient(135deg,#084276,#0084FF,#06345C);
+  --rt-warning-surface:#472609; --rt-warning-edge:linear-gradient(135deg,#7C3D0B,#F59E0B,#71360A);
+  --rt-danger-surface:#421C22; --rt-danger-edge:linear-gradient(135deg,#79323A,#FF6B6B,#6B2930);
+}
+:root[data-theme='light'] {
+  --rt-neutral-surface:#FFFFFF; --rt-neutral-edge:linear-gradient(135deg,#D8E6F2,#8ABDEA,#D8E6F2);
+  --rt-primary-surface:#EAF4FF; --rt-primary-edge:linear-gradient(135deg,#BCDDF8,#0070E0,#B4D5F0);
+  --rt-warning-surface:#FFF3DF; --rt-warning-edge:linear-gradient(135deg,#F3D7AC,#D97706,#F3D7AC);
+  --rt-danger-surface:#FFF0F0; --rt-danger-edge:linear-gradient(135deg,#F4CCCC,#E05555,#F4CCCC);
+}
+.rt-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+.rt-edge { border-radius:16px; padding:1px; background:var(--rt-edge); }
+.rt-surface { border-radius:15px; padding:16px; background:var(--rt-surface); min-height:100%; }
+.rt-neutral { --rt-edge:var(--rt-neutral-edge); --rt-surface:var(--rt-neutral-surface); }
+.rt-primary { --rt-edge:var(--rt-primary-edge); --rt-surface:var(--rt-primary-surface); }
+.rt-warning { --rt-edge:var(--rt-warning-edge); --rt-surface:var(--rt-warning-surface); }
+.rt-danger { --rt-edge:var(--rt-danger-edge); --rt-surface:var(--rt-danger-surface); }
+
 </style>
 </head>
 <body>
@@ -526,6 +550,7 @@ footer code { color: var(--c-neutral); }
 </header>
 
 <nav class="doc-nav">
+  <a href="#result-tiles">Плитки результата</a>
   <a href="#colors">Цвета</a>
   <a href="#typography">Типографика</a>
   <a href="#radius">Скругления</a>
@@ -724,23 +749,26 @@ footer code { color: var(--c-neutral); }
       <span class="demo-cap" style="flex:1">круг 36px · folder/test — primary + glow · article — нейтральный · rescue — error + glow</span>
     </div>
     <div class="content-card">
-      <div class="type-icon ti-folder"><span class="ms s20">folder</span></div>
-      <div class="cc-body"><div class="cc-title">Терапия: острые состояния</div><div class="cc-desc">Папка · 12 материалов</div></div>
-      <span class="badge b-mute"><span class="ms s12">lock</span>Заблокировано</span>
+      <div class="type-icon ti-folder" style="position:relative"><span class="ms s20">folder</span><span class="ms s16" style="position:absolute;right:-4px;bottom:-4px;color:var(--c-warning);background:var(--doc-surface);border-radius:50%">lock</span></div>
+      <div class="cc-body"><div class="cc-title">Терапия: острые состояния</div></div>
       <span class="ms s16 cc-chev">chevron_right</span>
     </div>
     <div class="content-card">
-      <div class="type-icon ti-article"><span class="ms s20">description</span></div>
-      <div class="cc-body"><div class="cc-title">Острая боль: алгоритм действий</div><div class="cc-desc">Статья · 12 мин чтения</div></div>
-      <span class="badge b-good"><span class="ms s12">check_circle</span>Прочитано</span>
+      <div class="type-icon ti-article" style="position:relative"><span class="ms s20">description</span><span class="ms s16" style="position:absolute;right:-4px;bottom:-4px;color:var(--c-success);background:var(--doc-surface);border-radius:50%">check_circle</span></div>
+      <div class="cc-body"><div class="cc-title">Острая боль: алгоритм действий</div></div>
+      <span class="ms s16 cc-chev">chevron_right</span>
+    </div>
+    <div class="content-card">
+      <div class="type-icon ti-test" style="position:relative"><span class="ms s20">assignment</span><span class="ms s16" style="position:absolute;right:-4px;bottom:-4px;color:var(--c-error);background:var(--doc-surface);border-radius:50%">cancel</span></div>
+      <div class="cc-body"><div class="cc-title">Зачёт: острые состояния</div><div class="cc-desc">28.10.2026, 12:30</div></div>
       <span class="ms s16 cc-chev">chevron_right</span>
     </div>
     <div class="content-card">
       <div class="type-icon ti-rescue"><span class="ms s20">local_hospital</span></div>
-      <div class="cc-body"><div class="cc-title">Режим спасения · 3</div><div class="cc-desc">Симуляция · диагноз скрыт до первой попытки</div></div>
+      <div class="cc-body"><div class="cc-title">Режим спасения · 3</div></div>
       <span class="ms s16 cc-chev">chevron_right</span>
     </div>
-    <div class="demo-cap">GlassCard radius 12 · gap 12 · заголовок 15/500 · описание 13 · нажмие — press-состояние</div>
+    <div class="demo-cap">GlassCard radius 12 · иконка типа 25 в круге 41 (<code>IconSize.contentType</code>); состояние показано на ней галочкой, крестом, пустым кругом или замком. Название занимает до двух строк, дата попытки показывается при наличии. Диктору передаются тип, название, состояние и дата; при увеличении текста карточка растёт по высоте.</div>
   </div>
 
   <h3 class="h3">FilterPills</h3>
@@ -987,6 +1015,28 @@ footer code { color: var(--c-neutral); }
   <div class="note warn">Известные ловушки проекта: hand-rolled fade на web залипает (см. Правила движения); GlassCard на web без блюра выглядит иначе, чем на нативе — проверять обе платформы.</div>
 </section>
 
+
+<section id="result-tiles">
+  <div class="sec-h"><h2>Плитки результата</h2></div>
+  <p class="sec-sub"><code>components/ui/result-tile.tsx</code> — информационная поверхность для итогов, показателей и обратной связи. Градиентная кромка статична; она не означает нажатие и не зависит от настройки уменьшения движения.</p>
+  <p class="sec-sub">В режиме спасения успешный и неуспешный исходы открываются однократной анимацией: после последнего кадра и паузы в одну секунду изображение уменьшается и переезжает в шапку, затем появляются результаты. При уменьшении движения результаты и неподвижный кадр показываются сразу; для неопределённого исхода анимация не используется.</p>
+  <div class="rt-grid">
+    <div class="rt-edge rt-neutral"><div class="rt-surface"><strong>Neutral</strong><p>Итог и показатели</p></div></div>
+    <div class="rt-edge rt-primary"><div class="rt-surface"><strong>Primary</strong><p>Информация и положительная обратная связь</p></div></div>
+    <div class="rt-edge rt-warning"><div class="rt-surface"><strong>Warning</strong><p>Предупреждение</p></div></div>
+    <div class="rt-edge rt-danger"><div class="rt-surface"><strong>Danger</strong><p>Неблагоприятное последствие</p></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <table class="spec">
+      <tr><th>Токены</th><td style="text-align:left"><code>ResultTileTokens</code>: поверхность и три цвета кромки отдельно для light / dark; толщина кромки 1, радиус <code>Radius.xl</code>.</td></tr>
+      <tr><th>Варианты</th><td style="text-align:left"><code>neutral</code>, <code>primary</code>, <code>warning</code>, <code>danger</code>. Значение следует пояснять текстом или значком, не только цветом.</td></tr>
+      <tr><th>Содержимое и размеры</th><td style="text-align:left">Любое содержимое через children; <code>padding</code> по умолчанию <code>Spacing.card</code>. В итогах показатели занимают две колонки: иконка над сгруппированными названием и значением. При ширине менее 360 dp или системном масштабе текста больше 1,2 — одна колонка. Длинный текст переносится.</td></tr>
+      <tr><th>Состояния</th><td style="text-align:left">Плитка сама по себе не интерактивна, не получает фокус и не показывает стрелку. Для действия используйте отдельный доступный контрол.</td></tr>
+      <tr><th>Доступность</th><td style="text-align:left">Контрастный текст в обеих темах, масштабируемый текст, подписи показателей доступны экранному диктору. Декоративная кромка не анимируется.</td></tr>
+    </table>
+  </div>
+</section>
+
 </main>
 
 <footer>
@@ -1128,5 +1178,6 @@ document.querySelectorAll('#filterPills .pill').forEach(p => p.addEventListener(
 document.getElementById('railToggle').addEventListener('click', () =>
   document.getElementById('railDemo').classList.toggle('collapsed'));
 </script>
+<!-- Профиль: необязательный цвет тарифа задаётся администратором. GlassCard.tintColor накладывает спокойный статичный градиент с прозрачностью TariffTint из constants/theme.ts; без цвета карточка стандартная. Бейдж тарифа залит заданным цветом; цвет текста и значка выбирается по контрасту. Название тарифа остаётся текстовым индикатором. -->
 </body>
 </html>

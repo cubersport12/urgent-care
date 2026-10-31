@@ -619,6 +619,14 @@ export type BillingMeOut = {
      */
     rank: number;
     /**
+     * Effectcolor
+     */
+    effectColor?: string | null;
+    /**
+     * Gloweffect
+     */
+    glowEffect?: 'none' | 'pulse' | 'shimmer' | 'orbit';
+    /**
      * Enforcement
      */
     enforcement: boolean;
@@ -934,6 +942,14 @@ export type FolderCreate = {
      */
     backgroundPath?: string | null;
     /**
+     * Iconpathdark
+     */
+    iconPathDark?: string | null;
+    /**
+     * Backgroundpathdark
+     */
+    backgroundPathDark?: string | null;
+    /**
      * Order
      */
     order?: number | null;
@@ -996,6 +1012,14 @@ export type FolderOut = {
      */
     backgroundPath: string | null;
     /**
+     * Iconpathdark
+     */
+    iconPathDark: string | null;
+    /**
+     * Backgroundpathdark
+     */
+    backgroundPathDark: string | null;
+    /**
      * Order
      */
     order: number | null;
@@ -1041,6 +1065,14 @@ export type FolderUpdate = {
      * Backgroundpath
      */
     backgroundPath?: string | null;
+    /**
+     * Iconpathdark
+     */
+    iconPathDark?: string | null;
+    /**
+     * Backgroundpathdark
+     */
+    backgroundPathDark?: string | null;
     /**
      * Order
      */
@@ -1710,6 +1742,30 @@ export type QrStatsOut = {
 };
 
 /**
+ * RandomAnswer
+ */
+export type RandomAnswer = {
+    /**
+     * Questionid
+     */
+    questionId: string;
+    /**
+     * Answerids
+     */
+    answerIds: Array<number>;
+};
+
+/**
+ * RandomCompletion
+ */
+export type RandomCompletion = {
+    /**
+     * Answers
+     */
+    answers: Array<RandomAnswer>;
+};
+
+/**
  * RecommendedArticleOut
  */
 export type RecommendedArticleOut = {
@@ -2125,6 +2181,14 @@ export type RescueTimerParameter = {
      * Name
      */
     name: string;
+    /**
+     * Icon
+     */
+    icon?: string | null;
+    /**
+     * Unit
+     */
+    unit?: string | null;
     /**
      * Delta
      */
@@ -2727,6 +2791,14 @@ export type TariffCreate = {
      */
     rank?: number;
     /**
+     * Effectcolor
+     */
+    effectColor?: string | null;
+    /**
+     * Gloweffect
+     */
+    glowEffect?: 'none' | 'pulse' | 'shimmer' | 'orbit';
+    /**
      * Isdefault
      */
     isDefault?: boolean;
@@ -2883,6 +2955,14 @@ export type TariffOut = {
      */
     rank: number;
     /**
+     * Effectcolor
+     */
+    effectColor?: string | null;
+    /**
+     * Gloweffect
+     */
+    glowEffect?: 'none' | 'pulse' | 'shimmer' | 'orbit';
+    /**
      * Isdefault
      */
     isDefault: boolean;
@@ -2932,6 +3012,14 @@ export type TariffUpdate = {
      * Rank
      */
     rank?: number | null;
+    /**
+     * Effectcolor
+     */
+    effectColor?: string | null;
+    /**
+     * Gloweffect
+     */
+    glowEffect?: 'none' | 'pulse' | 'shimmer' | 'orbit' | null;
     /**
      * Isdefault
      */
@@ -7354,6 +7442,81 @@ export type StatsResetAllStatsResponses = {
 
 export type StatsResetAllStatsResponse = StatsResetAllStatsResponses[keyof StatsResetAllStatsResponses];
 
+export type TrainingCompleteRandomTrainingData = {
+    body: RandomCompletion;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Attempt Id
+         */
+        attempt_id: string;
+    };
+    query?: never;
+    url: '/api/v1/training/random/{attempt_id}/complete';
+};
+
+export type TrainingCompleteRandomTrainingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TrainingCompleteRandomTrainingError = TrainingCompleteRandomTrainingErrors[keyof TrainingCompleteRandomTrainingErrors];
+
+export type TrainingCompleteRandomTrainingResponses = {
+    /**
+     * Response Training Complete Random Training
+     *
+     * Successful Response
+     */
+    200: {
+        [key: string]: unknown;
+    };
+};
+
+export type TrainingCompleteRandomTrainingResponse = TrainingCompleteRandomTrainingResponses[keyof TrainingCompleteRandomTrainingResponses];
+
+export type TrainingRandomTrainingHistoryData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/training/random/history';
+};
+
+export type TrainingRandomTrainingHistoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type TrainingRandomTrainingHistoryError = TrainingRandomTrainingHistoryErrors[keyof TrainingRandomTrainingHistoryErrors];
+
+export type TrainingRandomTrainingHistoryResponses = {
+    /**
+     * Response Training Random Training History
+     *
+     * Successful Response
+     */
+    200: Array<{
+        [key: string]: unknown;
+    }>;
+};
+
+export type TrainingRandomTrainingHistoryResponse = TrainingRandomTrainingHistoryResponses[keyof TrainingRandomTrainingHistoryResponses];
+
 export type TrainingTrainingMeData = {
     body?: never;
     headers?: {
@@ -7741,6 +7904,34 @@ export type LegalGetLegalDocumentFileErrors = {
 export type LegalGetLegalDocumentFileError = LegalGetLegalDocumentFileErrors[keyof LegalGetLegalDocumentFileErrors];
 
 export type LegalGetLegalDocumentFileResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};
+
+export type MediaDownloadPublicImageData = {
+    body?: never;
+    path: {
+        /**
+         * File Path
+         */
+        file_path: string;
+    };
+    query?: never;
+    url: '/api/v1/media/public/{file_path}';
+};
+
+export type MediaDownloadPublicImageErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type MediaDownloadPublicImageError = MediaDownloadPublicImageErrors[keyof MediaDownloadPublicImageErrors];
+
+export type MediaDownloadPublicImageResponses = {
     /**
      * Successful Response
      */

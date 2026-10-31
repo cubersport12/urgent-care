@@ -414,6 +414,8 @@ class BillingService:
             cancel_at_period_end=sub.cancel_at_period_end,
             price_rub=tariff.price_rub,
             rank=tariff.rank,
+            effect_color=tariff.effect_color,
+            glow_effect=tariff.glow_effect,
             enforcement=settings.billing_enforcement,
             scheduled_tariff_id=scheduled_tariff.id if scheduled_tariff else None,
             scheduled_tariff_code=scheduled_tariff.code if scheduled_tariff else None,

@@ -17,6 +17,8 @@ class Folder(Base):
     name: Mapped[str] = mapped_column(String(500), nullable=False)
     icon_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     background_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    icon_path_dark: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    background_path_dark: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     order: Mapped[int | None] = mapped_column(Integer, nullable=True)
     parent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     show_random_open: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())

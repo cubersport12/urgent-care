@@ -1209,6 +1209,29 @@ export const BillingMeOutSchema = {
             type: 'integer',
             title: 'Rank'
         },
+        effectColor: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^#[0-9a-fA-F]{6}$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Effectcolor'
+        },
+        glowEffect: {
+            type: 'string',
+            enum: [
+                'none',
+                'pulse',
+                'shimmer',
+                'orbit'
+            ],
+            title: 'Gloweffect',
+            default: 'none'
+        },
         enforcement: {
             type: 'boolean',
             title: 'Enforcement'
@@ -1765,6 +1788,30 @@ export const FolderCreateSchema = {
             ],
             title: 'Backgroundpath'
         },
+        iconPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpathdark'
+        },
+        backgroundPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Backgroundpathdark'
+        },
         order: {
             anyOf: [
                 {
@@ -1885,6 +1932,30 @@ export const FolderOutSchema = {
             ],
             title: 'Backgroundpath'
         },
+        iconPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpathdark'
+        },
+        backgroundPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Backgroundpathdark'
+        },
         order: {
             anyOf: [
                 {
@@ -1959,6 +2030,8 @@ export const FolderOutSchema = {
         'name',
         'iconPath',
         'backgroundPath',
+        'iconPathDark',
+        'backgroundPathDark',
         'order',
         'parentId',
         'showRandomOpen',
@@ -2006,6 +2079,30 @@ export const FolderUpdateSchema = {
                 }
             ],
             title: 'Backgroundpath'
+        },
+        iconPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpathdark'
+        },
+        backgroundPathDark: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 1000
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Backgroundpathdark'
         },
         order: {
             anyOf: [
@@ -3220,6 +3317,47 @@ export const QrStatsOutSchema = {
     title: 'QrStatsOut'
 } as const;
 
+export const RandomAnswerSchema = {
+    properties: {
+        questionId: {
+            type: 'string',
+            title: 'Questionid'
+        },
+        answerIds: {
+            items: {
+                type: 'integer'
+            },
+            type: 'array',
+            maxItems: 100,
+            title: 'Answerids'
+        }
+    },
+    type: 'object',
+    required: [
+        'questionId',
+        'answerIds'
+    ],
+    title: 'RandomAnswer'
+} as const;
+
+export const RandomCompletionSchema = {
+    properties: {
+        answers: {
+            items: {
+                $ref: '#/components/schemas/RandomAnswer'
+            },
+            type: 'array',
+            maxItems: 20,
+            title: 'Answers'
+        }
+    },
+    type: 'object',
+    required: [
+        'answers'
+    ],
+    title: 'RandomCompletion'
+} as const;
+
 export const RecommendedArticleOutSchema = {
     properties: {
         id: {
@@ -3991,6 +4129,28 @@ export const RescueTimerParameterSchema = {
         name: {
             type: 'string',
             title: 'Name'
+        },
+        icon: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon'
+        },
+        unit: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Unit'
         },
         delta: {
             type: 'number',
@@ -5208,6 +5368,29 @@ export const TariffCreateSchema = {
             title: 'Rank',
             default: 0
         },
+        effectColor: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^#[0-9a-fA-F]{6}$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Effectcolor'
+        },
+        glowEffect: {
+            type: 'string',
+            enum: [
+                'none',
+                'pulse',
+                'shimmer',
+                'orbit'
+            ],
+            title: 'Gloweffect',
+            default: 'none'
+        },
         isDefault: {
             type: 'boolean',
             title: 'Isdefault',
@@ -5450,6 +5633,29 @@ export const TariffOutSchema = {
             type: 'integer',
             title: 'Rank'
         },
+        effectColor: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^#[0-9a-fA-F]{6}$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Effectcolor'
+        },
+        glowEffect: {
+            type: 'string',
+            enum: [
+                'none',
+                'pulse',
+                'shimmer',
+                'orbit'
+            ],
+            title: 'Gloweffect',
+            default: 'none'
+        },
         isDefault: {
             type: 'boolean',
             title: 'Isdefault'
@@ -5564,6 +5770,35 @@ export const TariffUpdateSchema = {
                 }
             ],
             title: 'Rank'
+        },
+        effectColor: {
+            anyOf: [
+                {
+                    type: 'string',
+                    pattern: '^#[0-9a-fA-F]{6}$'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Effectcolor'
+        },
+        glowEffect: {
+            anyOf: [
+                {
+                    type: 'string',
+                    enum: [
+                        'none',
+                        'pulse',
+                        'shimmer',
+                        'orbit'
+                    ]
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Gloweffect'
         },
         isDefault: {
             anyOf: [

@@ -20,6 +20,7 @@ from app.models import (  # noqa: F401
     notification,
     password_reset,
     push_token,
+    random_training,
     rescue,
     support,
     test,

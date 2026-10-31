@@ -7,6 +7,7 @@ import httpx
 from openai import AsyncOpenAI
 import structlog
 from fastapi import HTTPException, status
+from pydantic import ValidationError
 
 from app.core.config import settings
 from app.schemas.ai import GeneratedRescueResponse, GeneratedTestResponse
@@ -120,18 +121,22 @@ class AIGeneratorService:
                 f"{scene_rule} Жёсткий максимум — 100 сцен. Сюжет не обрезай: выдай все задуманные сцены целиком."
                 f"{difficulty_rule}\n"
                 "ПРАВИЛА ДЛЯ ЗНАЧЕНИЙ ПОЛЕЙ:\n"
-                "- severity в implications ДОЛЖЕН быть строго одним из: \"normal\", \"low\", \"medium\", \"high\". Использовать warning или critical ЗАПРЕЩЕНО.\n"
+                "- severity в implications и severities ДОЛЖЕН быть строго одним из: \"normal\", \"low\", \"medium\", \"high\". Использовать warning или critical ЗАПРЕЩЕНО.\n"
                 "- operator в completion ДОЛЖЕН быть строго одним из: \"gte\", \"gt\", \"lte\", \"lt\", \"eq\", \"neq\".\n"
                 "- type в parameters ДОЛЖЕН быть \"numeric\" или \"timer\".\n"
+                "- Для каждого числового жизненного показателя в parameters (например, САД, ДАД, ЧСС, ЧДД, SpO2, температура) обязательно заполни severities: массив диапазонов с числовыми min, max, severity и кратким description на русском.\n"
+                "- Для каждого такого показателя в severities обязательно должны встретиться все четыре разных значения severity: normal (норма), low (низкая), medium (средняя), high (высокая серьёзность). Недостаточно четырёх диапазонов с повторяющимися значениями. Это серьёзность состояния, а не направление изменения показателя.\n"
+                "- Подбирай границы индивидуально для показателя и клинического контекста, включая возраст пациента; учитывай опасные отклонения ниже и выше нормы, если они применимы. Одну серьёзность можно повторить в нескольких диапазонах.\n"
+                "- Обе границы min и max включаются. Диапазоны не должны пересекаться; покрой ими возможные значения в сценарии, включая startValue и значения после изменений. Выбери подходящую точность показателя и согласуй с ней startValue, delta и parameterChanges, чтобы между диапазонами не было пропусков для достижимых значений.\n"
                 "- Не передавай поля со значением null.\n"
                 "- implications.description — одно короткое предложение.\n"
                 "- id делай короткими и уникальными: параметры p1..pN, сцены s1..sN, выборы c1..cM. UUID НЕ генерируй; nextSceneId, parameterId и completion.parameterId ссылаются на эти же короткие id.\n"
                 "- ЭКОНОМЬ ВЫВОД: JSON пиши компактно, без переносов строк и отступов — иначе ответ не влезет в лимит и будет обрезан.\n"
-                "Верни ответ ИСКЛЮЧИТЕЛЬНО в формате JSON со структурой:\n"
+                "Верни ответ ИСКЛЮЧИТЕЛЬНО в формате JSON со структурой (диапазоны в примере условные, подбирай свои):\n"
                 "{\n"
                 '  "defaultBackground": "bg-hospital",\n'
                 '  "parameters": [\n'
-                '    {"id": "p1", "name": "Название", "delta": -1.0, "startValue": 100.0, "type": "numeric"}\n'
+                '    {"id": "p1", "name": "Название показателя", "delta": -1.0, "startValue": 100.0, "type": "numeric", "severities": [{"min": 0, "max": 29, "severity": "high", "description": "Критически низкое значение"}, {"min": 30, "max": 59, "severity": "medium", "description": "Значительное снижение"}, {"min": 60, "max": 89, "severity": "low", "description": "Небольшое снижение"}, {"min": 90, "max": 110, "severity": "normal", "description": "Норма"}, {"min": 111, "max": 250, "severity": "high", "description": "Высокое значение"}]}\n'
                 "  ],\n"
                 '  "scenes": [\n'
                 "    {\n"
@@ -148,24 +153,32 @@ class AIGeneratorService:
                 "}"
             )
 
-            completion = await client.chat.completions.create(
-                model=settings.deepseek_model or "deepseek-flash",
-                messages=[
-                    {"role": "system", "content": system_instruction},
-                    {"role": "user", "content": prompt},
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.3,
-                # Для запросов свыше 15 сцен увеличиваем лимит, чтобы ответ не обрезался.
-                max_tokens=65_536 if scene_count and scene_count > 15 else 8_192,
-            )
-            choice = completion.choices[0]
-            if choice.finish_reason == "length":
-                raise ValueError(
-                    "ответ ИИ обрезан лимитом вывода — уменьшите количество сцен или упростите промпт"
+            attempt = 0
+            while True:
+                completion = await client.chat.completions.create(
+                    model=settings.deepseek_model or "deepseek-flash",
+                    messages=[
+                        {"role": "system", "content": system_instruction},
+                        {"role": "user", "content": prompt},
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.3,
+                    # DeepSeek включает рассуждение по умолчанию и тратит на него лимит ответа.
+                    extra_body={"thinking": {"type": "disabled"}},
+                    max_tokens=65_536 if scene_count and scene_count > 15 else 32_768,
                 )
-            raw = choice.message.content or ""
-            return GeneratedRescueResponse.model_validate_json(_clean_json(raw))
+                choice = completion.choices[0]
+                if choice.finish_reason == "length":
+                    raise ValueError(
+                        "ответ ИИ превысил лимит вывода — уменьшите количество сцен или упростите промпт"
+                    )
+                try:
+                    return GeneratedRescueResponse.model_validate_json(_clean_json(choice.message.content or ""))
+                except ValidationError:
+                    if attempt:
+                        raise
+                    attempt += 1
+                    logger.warning("deepseek_generate_rescue_invalid_response_retry")
         except Exception as exc:
             logger.warning("deepseek_generate_rescue_failed", error=str(exc))
             raise HTTPException(

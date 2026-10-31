@@ -164,6 +164,8 @@ export type RescueParameterSeverityVm = {
 export type RescueTimerParameterVm = {
   id: string;
   name: string;
+  icon?: string;
+  unit?: string;
   /** Необязательное пояснение к параметру (показывается в мобильном приложении) */
   description?: string;
   delta: number;

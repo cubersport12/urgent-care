@@ -101,6 +101,13 @@ export class TariffsEditorService {
           label="RuStore: код продукта-подписки (productId из консоли RuStore)"
           formControlName="rustoreProductId"
         />
+        <fieldset class="flex flex-col gap-2">
+          <legend class="text-sm font-medium">Цвет карточки профиля</legend>
+          <app-checkbox formControlName="colorEnabled" label="Выделять карточку цветом тарифа" />
+          @if (_form.controls.colorEnabled.value) {
+            <label class="flex items-center gap-3 text-sm">Цвет <input type="color" formControlName="effectColor" aria-label="Цвет карточки тарифа" /></label>
+          }
+        </fieldset>
         <app-checkbox formControlName="isActive" label="Активен на витрине" />
         <app-checkbox formControlName="isDefault" label="Тариф по умолчанию (бесплатный)" />
       </form>
@@ -122,6 +129,8 @@ export class TariffEditDialogComponent {
     description: new FormControl<string | null>(null),
     priceRub: new FormControl(0, { nonNullable: true, validators: [Validators.required] }),
     periodDays: new FormControl(30, { nonNullable: true, validators: [Validators.required, Validators.min(1)] }),
+    effectColor: new FormControl('#d4a633', { nonNullable: true }),
+    colorEnabled: new FormControl(false, { nonNullable: true }),
     rank: new FormControl(0, { nonNullable: true, validators: [Validators.required] }),
     sortOrder: new FormControl(0, { nonNullable: true }),
     rustoreProductId: new FormControl<string | null>(null),
@@ -140,6 +149,8 @@ export class TariffEditDialogComponent {
         priceRub: this._data.priceRub,
         periodDays: this._data.periodDays,
         rank: this._data.rank,
+        effectColor: this._data.effectColor ?? '#d4a633',
+        colorEnabled: !!this._data.effectColor,
         sortOrder: this._data.sortOrder,
         rustoreProductId: this._data.rustoreProductId ?? null,
         isActive: this._data.isActive,
@@ -171,6 +182,8 @@ export class TariffEditDialogComponent {
       priceRub: Number(v.priceRub),
       periodDays: Number(v.periodDays),
       rank: Number(v.rank),
+      effectColor: v.colorEnabled ? v.effectColor : null,
+      glowEffect: 'none',
       sortOrder: Number(v.sortOrder),
       rustoreProductId: v.rustoreProductId?.trim() || null,
       isActive: v.isActive,

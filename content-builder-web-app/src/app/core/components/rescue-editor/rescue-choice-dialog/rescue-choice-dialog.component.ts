@@ -216,7 +216,7 @@ export class RescueChoiceDialogComponent {
       nextSceneId: v.nextSceneId ?? null,
       parameterChanges: rawChanges.map(pc => ({
         parameterId: pc['parameterId'] as string,
-        value: (pc['value'] as number) ?? 0
+        value: Number(pc['value'] ?? 0)
       })),
       implications: this._implicationsList()
     });
