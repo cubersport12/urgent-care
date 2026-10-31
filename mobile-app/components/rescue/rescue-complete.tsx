@@ -1,5 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Radius, ResultTileTokens, Spacing } from '@/constants/theme';
+import { IconSize, Radius, ResultTileTokens, Spacing } from '@/constants/theme';
 import {
   type AppRescueItemVm,
   RescueParameterSeverityEnum,
@@ -14,6 +14,7 @@ import {
   resolveRescueOutcome,
 } from '@/lib/rescue-completion';
 import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
+import { colorForSeverity, findSeverityForValue } from '@/lib/rescue-parameter-severity';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -49,7 +50,7 @@ function ParameterIcon({ icon, color }: { icon?: string; color: string }) {
     return response ? <Image source={{ uri: response }} style={styles.parameterIcon} resizeMode="contain" /> : null;
   }
   return icon && Object.prototype.hasOwnProperty.call(MaterialIcons.glyphMap, icon)
-    ? <MaterialIcons name={icon as keyof typeof MaterialIcons.glyphMap} size={Spacing.card * 1.5} color={color} />
+    ? <MaterialIcons name={icon as keyof typeof MaterialIcons.glyphMap} size={IconSize.resultMetric} color={color} accessible={false} />
     : null;
 }
 
@@ -88,10 +89,9 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
   }
   const names = Object.fromEntries(parameters.map((p) => [String(p.id), p.name]));
   const types = Object.fromEntries(parameters.map((p) => [String(p.id), p.type]));
-  const { title, body } = buildRescueCompletionDescription(
+  const { body } = buildRescueCompletionDescription(
     outcome, data.completion, parameterValues, names, types, rescueItem.name, parameters,
   );
-  const emblemColor = outcome === 'failed' ? theme.error : theme.primary;
   const artworkBorderColor = outcome === 'failed' ? theme.error : theme.success;
   const implications = selectedImplications.filter((item) => item?.description?.trim());
   const visibleParameters = parameters.filter((parameter) => !parameter.isHidden);
@@ -104,44 +104,54 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           {artwork && bannerWidth > 0 ? <View style={[styles.frame, styles.banner, { height: bannerWidth * artwork.ratio, borderColor: artworkBorderColor }]}><Image source={artwork.final} style={styles.frameImage} resizeMode="cover" accessibilityIgnoresInvertColors accessible={false} /></View> : null}
-          <View style={[styles.hero, compactMetrics && styles.heroCompact]}>
-            <View style={[styles.emblem, { backgroundColor: outcome === 'failed' ? theme.errorContainer : theme.primaryContainer }]}>
-              <MaterialIcons name={outcome === 'failed' ? 'error-outline' : outcome === 'passed' ? 'verified-user' : 'info-outline'} size={Spacing.card * 2} color={emblemColor} accessible={false} />
-            </View>
-            <View style={styles.heroText}>
-              <ThemedText type="h1" accessibilityRole="header">{title}</ThemedText>
-              <ThemedText style={[styles.subtitle, { color: theme.neutral }]}>{rescueItem.name}</ThemedText>
-            </View>
-          </View>
-
           <ResultTile style={styles.card}>
             <View style={styles.summaryText}>
-              <ThemedText type="subtitle" accessibilityRole="header">Итог</ThemedText>
-              <ThemedText>{outcome === 'failed' ? `Не удалось достичь успешного исхода. Разберите свои решения и попробуйте ещё раз.\n\n${body}` : outcome === 'undetermined' ? 'Сценарий завершён. Ознакомьтесь с итоговыми показателями и последствиями ваших решений.' : body}</ThemedText>
+              <View style={styles.headingRow}>
+                <MaterialIcons name="summarize" size={Spacing.card * 1.5} color={theme.primary} accessible={false} />
+                <ThemedText type="subtitle" accessibilityRole="header" style={styles.headingText}>Итог</ThemedText>
+              </View>
+              <ThemedText>{outcome === 'failed' ? body : outcome === 'undetermined' ? 'Сценарий завершён. Ознакомьтесь с итоговыми показателями и последствиями ваших решений.' : body}</ThemedText>
             </View>
           </ResultTile>
 
           {visibleParameters.length > 0 && (
             <View style={styles.section}>
-              <View style={styles.heading}>
-                <ThemedText type="subtitle" accessibilityRole="header">Ключевые показатели</ThemedText>
+              <View style={[styles.heading, styles.headingRow]}>
+                <MaterialIcons name="bar-chart" size={Spacing.card * 1.5} color={theme.primary} accessible={false} />
+                <ThemedText type="subtitle" accessibilityRole="header" style={styles.headingText}>Ключевые показатели</ThemedText>
               </View>
               <View style={styles.metrics}>
                 {visibleParameters.map((p) => {
                   const value = parameterValues[p.id];
                   const display = value === undefined ? '—' : p.type === 'timer' ? formatSecondsAsHms(value) : String(value);
+                  const band = value === undefined ? null : findSeverityForValue(value, p.severities);
+                  const labels = { normal: 'Нормальная серьёзность', low: 'Низкая серьёзность', medium: 'Средняя серьёзность', high: 'Высокая серьёзность' };
+                  const status = band?.severity ? labels[band.severity] : value !== undefined && p.severities?.length && !band ? 'Вне заданных диапазонов' : '';
+                  const description = band?.description?.trim();
+                  const color = colorForSeverity(band?.severity, {
+                    success: theme.onSuccessContainer,
+                    warning: theme.onWarningContainer,
+                    error: theme.onErrorContainer,
+                    neutral: theme.neutral,
+                  });
                   return (
-                    <ResultTile key={p.id} padding={Spacing.card} accessible accessibilityLabel={`${p.name}: ${display}${p.unit ? ` ${p.unit}` : ''}`} style={[styles.metric, compactMetrics && styles.metricFull]}>
+                    <ResultTile key={p.id} padding={Spacing.card} accessible accessibilityLabel={`${p.name}: ${display}${p.unit ? ` ${p.unit}` : ''}${status ? `. ${status}` : ''}${description ? `. ${description}` : ''}`} style={[styles.metric, compactMetrics && styles.metricFull]}>
                       <View style={styles.metricContent}>
-                        <View style={styles.metricHeading}>
+                        {p.icon ? <View style={[styles.metricIcon, { backgroundColor: theme.primaryContainer }]}>
                           <ParameterIcon icon={p.icon} color={theme.primary} />
-                          <ThemedText type="caption" style={styles.metricName}>{p.name}</ThemedText>
-                        </View>
-                        <View style={styles.metricValue}>
-                          <ThemedText type="subtitle">{display}</ThemedText>
-                          {p.unit ? <ThemedText type="caption" style={{ color: theme.neutral }}>{p.unit}</ThemedText> : null}
+                        </View> : null}
+                        <View style={styles.metricText}>
+                          <ThemedText type="caption" style={{ color: theme.neutral }}>{p.name}</ThemedText>
+                          <View style={styles.metricValue}>
+                            <ThemedText type="subtitle" style={band?.severity ? { color } : undefined}>{display}</ThemedText>
+                            {p.unit ? <ThemedText type="caption" style={{ color: theme.neutral }}>{p.unit}</ThemedText> : null}
+                          </View>
                         </View>
                       </View>
+                      {status || description ? <View style={styles.metricDescription}>
+                        {status ? <ThemedText type="label">{status}</ThemedText> : null}
+                        {description ? <ThemedText type="label">{description}</ThemedText> : null}
+                      </View> : null}
                     </ResultTile>
                   );
                 })}
@@ -151,8 +161,9 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
 
           {implications.length > 0 && (
             <View style={styles.section}>
-              <View style={styles.heading}>
-                <ThemedText type="subtitle" accessibilityRole="header">Разбор решений</ThemedText>
+              <View style={[styles.heading, styles.headingRow]}>
+                <MaterialIcons name="fact-check" size={Spacing.card * 1.5} color={theme.primary} accessible={false} />
+                <ThemedText type="subtitle" accessibilityRole="header" style={styles.headingText}>Разбор решений</ThemedText>
               </View>
               {implications.map((item, index) => {
                 const severity = String(item.severity).toLowerCase();
@@ -190,26 +201,24 @@ const styles = StyleSheet.create({
   introImage: { position: 'absolute', alignSelf: 'center' },
   frame: { borderRadius: Radius.xl, borderWidth: ResultTileTokens.borderWidth, overflow: 'hidden' },
   frameImage: { width: '100%', height: '100%' },
-  banner: { width: '100%' },
+  banner: { width: '100%', marginBottom: Spacing.card },
   scrollContent: { paddingBottom: Spacing.pageBottom },
   content: { width: '100%', maxWidth: Spacing.pageX * 30, alignSelf: 'center', padding: Spacing.pageX },
-  hero: { flexDirection: 'row', alignItems: 'center', gap: Spacing.card, marginVertical: Spacing.card },
-  heroCompact: { alignItems: 'flex-start', flexDirection: 'column' },
-  heroText: { flex: 1, alignSelf: 'stretch', justifyContent: 'center' },
-  emblem: { width: Spacing.header, height: Spacing.header, borderRadius: Radius.xl, alignItems: 'center', justifyContent: 'center' },
-  subtitle: { marginTop: Radius.sm },
   card: { marginBottom: Spacing.card * 2 },
   section: { marginBottom: Spacing.card * 2 },
   summaryText: { gap: Radius.sm },
   heading: { marginBottom: Radius.lg },
+  headingRow: { flexDirection: 'row', alignItems: 'center', gap: Radius.sm },
+  headingText: { flexShrink: 1 },
   metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: Radius.sm },
-  metric: { flexBasis: '48%', flexGrow: 1, minWidth: 0 },
-  metricFull: { flexBasis: '100%' },
-  metricContent: { flex: 1, gap: Spacing.card, justifyContent: 'space-between' },
-  metricHeading: { flexDirection: 'row', alignItems: 'center', gap: Radius.sm },
-  metricName: { flex: 1 },
+  metric: { flexBasis: '48%', flexGrow: 1, maxWidth: '50%', minWidth: 0 },
+  metricFull: { flexBasis: '100%', maxWidth: '100%' },
+  metricContent: { flexDirection: 'row', alignItems: 'center', gap: Radius.sm },
+  metricIcon: { width: Spacing.minTouchTarget, height: Spacing.minTouchTarget, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center' },
+  metricText: { flex: 1, minWidth: 0 },
+  metricDescription: { marginTop: Radius.sm },
   metricValue: { flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', gap: Radius.sm },
-  parameterIcon: { width: Spacing.card * 1.5, height: Spacing.card * 1.5 },
+  parameterIcon: { width: IconSize.resultMetric, height: IconSize.resultMetric },
   decision: { marginBottom: Radius.sm },
   decisionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Radius.md },
   decisionIcon: { width: Spacing.card * 2, height: Spacing.card * 2, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },

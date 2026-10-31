@@ -337,6 +337,8 @@ table.spec td:last-child, table.spec th:last-child { text-align: right; }
   border-radius: 12px; margin-bottom: 10px; cursor: pointer;
 }
 .content-card:active { transform: scale(0.98); opacity: .95; }
+.content-card .type-icon { width: 41px; height: 41px; }
+.content-card .type-icon > .s20 { font-size: 25px; }
 .cc-body { flex: 1; min-width: 0; }
 .cc-title { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cc-desc { font-size: 13px; color: var(--c-neutralSoft); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -747,23 +749,26 @@ footer code { color: var(--c-neutral); }
       <span class="demo-cap" style="flex:1">круг 36px · folder/test — primary + glow · article — нейтральный · rescue — error + glow</span>
     </div>
     <div class="content-card">
-      <div class="type-icon ti-folder"><span class="ms s20">folder</span></div>
-      <div class="cc-body"><div class="cc-title">Терапия: острые состояния</div><div class="cc-desc">Папка · 12 материалов</div></div>
-      <span class="badge b-mute"><span class="ms s12">lock</span>Заблокировано</span>
+      <div class="type-icon ti-folder" style="position:relative"><span class="ms s20">folder</span><span class="ms s16" style="position:absolute;right:-4px;bottom:-4px;color:var(--c-warning);background:var(--doc-surface);border-radius:50%">lock</span></div>
+      <div class="cc-body"><div class="cc-title">Терапия: острые состояния</div></div>
       <span class="ms s16 cc-chev">chevron_right</span>
     </div>
     <div class="content-card">
-      <div class="type-icon ti-article"><span class="ms s20">description</span></div>
-      <div class="cc-body"><div class="cc-title">Острая боль: алгоритм действий</div><div class="cc-desc">Статья · 12 мин чтения</div></div>
-      <span class="badge b-good"><span class="ms s12">check_circle</span>Прочитано</span>
+      <div class="type-icon ti-article" style="position:relative"><span class="ms s20">description</span><span class="ms s16" style="position:absolute;right:-4px;bottom:-4px;color:var(--c-success);background:var(--doc-surface);border-radius:50%">check_circle</span></div>
+      <div class="cc-body"><div class="cc-title">Острая боль: алгоритм действий</div></div>
+      <span class="ms s16 cc-chev">chevron_right</span>
+    </div>
+    <div class="content-card">
+      <div class="type-icon ti-test" style="position:relative"><span class="ms s20">assignment</span><span class="ms s16" style="position:absolute;right:-4px;bottom:-4px;color:var(--c-error);background:var(--doc-surface);border-radius:50%">cancel</span></div>
+      <div class="cc-body"><div class="cc-title">Зачёт: острые состояния</div><div class="cc-desc">28.10.2026, 12:30</div></div>
       <span class="ms s16 cc-chev">chevron_right</span>
     </div>
     <div class="content-card">
       <div class="type-icon ti-rescue"><span class="ms s20">local_hospital</span></div>
-      <div class="cc-body"><div class="cc-title">Режим спасения · 3</div><div class="cc-desc">Симуляция · диагноз скрыт до первой попытки</div></div>
+      <div class="cc-body"><div class="cc-title">Режим спасения · 3</div></div>
       <span class="ms s16 cc-chev">chevron_right</span>
     </div>
-    <div class="demo-cap">GlassCard radius 12 · gap 12 · заголовок 15/500 · описание 13 · нажмие — press-состояние</div>
+    <div class="demo-cap">GlassCard radius 12 · иконка типа 25 в круге 41 (<code>IconSize.contentType</code>); состояние показано на ней галочкой, крестом, пустым кругом или замком. Название занимает до двух строк, дата попытки показывается при наличии. Диктору передаются тип, название, состояние и дата; при увеличении текста карточка растёт по высоте.</div>
   </div>
 
   <h3 class="h3">FilterPills</h3>
@@ -1025,7 +1030,7 @@ footer code { color: var(--c-neutral); }
     <table class="spec">
       <tr><th>Токены</th><td style="text-align:left"><code>ResultTileTokens</code>: поверхность и три цвета кромки отдельно для light / dark; толщина кромки 1, радиус <code>Radius.xl</code>.</td></tr>
       <tr><th>Варианты</th><td style="text-align:left"><code>neutral</code>, <code>primary</code>, <code>warning</code>, <code>danger</code>. Значение следует пояснять текстом или значком, не только цветом.</td></tr>
-      <tr><th>Содержимое и размеры</th><td style="text-align:left">Любое содержимое через children; <code>padding</code> по умолчанию <code>Spacing.card</code>. В итогах показатели занимают две колонки; при ширине менее 360 dp или системном масштабе текста больше 1,2 — одну. Длинный текст переносится.</td></tr>
+      <tr><th>Содержимое и размеры</th><td style="text-align:left">Любое содержимое через children; <code>padding</code> по умолчанию <code>Spacing.card</code>. В итогах показатели занимают две колонки: иконка над сгруппированными названием и значением. При ширине менее 360 dp или системном масштабе текста больше 1,2 — одна колонка. Длинный текст переносится.</td></tr>
       <tr><th>Состояния</th><td style="text-align:left">Плитка сама по себе не интерактивна, не получает фокус и не показывает стрелку. Для действия используйте отдельный доступный контрол.</td></tr>
       <tr><th>Доступность</th><td style="text-align:left">Контрастный текст в обеих темах, масштабируемый текст, подписи показателей доступны экранному диктору. Декоративная кромка не анимируется.</td></tr>
     </table>
@@ -1173,6 +1178,6 @@ document.querySelectorAll('#filterPills .pill').forEach(p => p.addEventListener(
 document.getElementById('railToggle').addEventListener('click', () =>
   document.getElementById('railDemo').classList.toggle('collapsed'));
 </script>
-<!-- Профиль: цвет и эффект тарифа задаются администратором; без эффекта карточка обычная. Эффекты pulse, shimmer и orbit анимируют только контур карточки выбранным цветом; при уменьшении движения остаётся неподвижная цветная рамка. Название тарифа отображается текстом. -->
+<!-- Профиль: необязательный цвет тарифа задаётся администратором. GlassCard.tintColor накладывает спокойный статичный градиент с прозрачностью TariffTint из constants/theme.ts; без цвета карточка стандартная. Бейдж тарифа залит заданным цветом; цвет текста и значка выбирается по контрасту. Название тарифа остаётся текстовым индикатором. -->
 </body>
 </html>

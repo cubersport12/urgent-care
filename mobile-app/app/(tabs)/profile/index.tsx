@@ -6,8 +6,8 @@ import { CityPicker } from '@/components/ui/city-picker';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
-import { TariffEffect } from '@/components/ui/tariff-effect';
-import { Radius, Spacing } from '@/constants/theme';
+import { Colors, Radius, Spacing } from '@/constants/theme';
+import { prefersDarkTariffText } from '@/lib/tariff-contrast';
 import { useAuth } from '@/contexts/auth-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useNotifications } from '@/contexts/notifications-context';
@@ -173,7 +173,8 @@ export default function ProfileScreen() {
     return parts[0].substring(0, 2).toUpperCase();
   };
 
-  const tariffColor = billing?.glowEffect && billing.glowEffect !== 'none' ? billing.effectColor : null;
+  const tariffColor = billing?.effectColor && /^#[0-9a-f]{6}$/i.test(billing.effectColor) ? billing.effectColor : null;
+  const badgeTextColor = tariffColor ? (prefersDarkTariffText(tariffColor) ? Colors.light.shadow : Colors.light.white) : primary;
   const initials = getInitials(accountName);
   const { response: avatarUri } = useFileImage(user?.avatar_key ?? '');
 
@@ -220,7 +221,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         <Animated.View entering={staggerEnter(1)}>
-          <GlassCard padding={Spacing.card} style={tariffColor ? { borderColor: tariffColor } : undefined}>
+          <GlassCard padding={Spacing.card} tintColor={tariffColor ?? undefined}>
             <View style={styles.profileHeader}>
               <View style={[styles.avatar, { backgroundColor: primaryContainer }]}>
                 {avatarUri ? (
@@ -238,18 +239,17 @@ export default function ProfileScreen() {
                   {[user?.city?.label || user?.city?.name, user?.occupation ? `${user.occupation}${user.birth_year ? `, ${new Date().getFullYear() - user.birth_year} лет` : ''}` : null].filter(Boolean).join(' · ')}
                 </ThemedText> : null}
                 <View style={[styles.badge, {
-                  backgroundColor: tariffColor ? warningContainer : glass.primaryTint,
+                  backgroundColor: tariffColor ?? glass.primaryTint,
                   borderColor: tariffColor ?? glass.primaryBorder,
                 }]}>
-                  <IconSymbol name={tariffColor ? 'star.fill' : 'person.fill'} size={Spacing.card} color={tariffColor ? warning : primary} />
-                  <ThemedText type="caption" style={{ color: tariffColor ? warning : primary }}>
+                  <IconSymbol name={tariffColor ? 'star.fill' : 'person.fill'} size={Spacing.card} color={badgeTextColor} />
+                  <ThemedText type="caption" style={{ color: badgeTextColor }}>
                     {billing?.tariffTitle ?? 'Загрузка…'}
                   </ThemedText>
                 </View>
               </View>
             </View>
           </GlassCard>
-          {tariffColor && <TariffEffect color={tariffColor} effect={billing?.glowEffect ?? 'none'} />}
         </Animated.View>
 
         {/* Section: ПОДПИСКА */}

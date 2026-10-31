@@ -58,6 +58,12 @@ export const Glass = {
   },
 } as const;
 
+/** Прозрачность оттенка тарифа поверх карточки для светлой и тёмной темы. */
+export const TariffTint = {
+  light: ['18', '04'],
+  dark: ['30', '06'],
+} as const;
+
 export const Radius = {
   sm: 8,
   md: 10,
@@ -78,6 +84,8 @@ export const Spacing = {
 
 export const IconSize = {
   metric: 28,
+  resultMetric: 38,
+  contentType: 25,
 } as const;
 
 /** Поверхности и градиентная кромка информационных плиток результата. */
