@@ -29,7 +29,7 @@ export class RescueState {
     return (parentId: NullableValue<string>) => [...state.rescueItems?.filter(x => x.parentId == parentId) ?? []].map(x => ({ ...x }));
   }
 
-  @Action(RescueActions.FetchRescueItems, { cancelUncompleted: true })
+  @Action(RescueActions.FetchRescueItems)
   private _fetchRescueItems(ctx: StateContext<RescueStateModel>, { parentId }: RescueActions.FetchRescueItems) {
     const { rescueItems } = ctx.getState();
     if (rescueItems?.some(x => x.parentId === (parentId ?? null))) {
@@ -37,8 +37,9 @@ export class RescueState {
     }
     return this._rescueStorage.fetchRescueItems(parentId)
       .pipe(tap((r) => {
+        console.info('--------------->', r);
         ctx.setState(patch({
-          rescueItems: append(r)
+          rescueItems: uniqBy([...(ctx.getState().rescueItems ?? []), ...r], x => x.id)
         }));
       }));
   }

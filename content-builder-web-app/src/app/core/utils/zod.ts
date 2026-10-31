@@ -153,7 +153,10 @@ export const rescueTimerParameterSchema = z.object({
 /** Изменение параметра при выборе */
 export const rescueChoiceParameterChangeSchema = z.object({
   parameterId: z.string().describe('id параметра из data.parameters'),
-  value: z.number().describe('На сколько изменить параметр (может быть отрицательным)')
+  value: z.preprocess(
+    value => typeof value === 'string' && value.trim() !== '' ? Number(value) : value,
+    z.number().finite()
+  ).describe('На сколько изменить параметр (может быть отрицательным)')
 });
 
 /** Последствие выбора в сцене (описание + серьёзность) */
@@ -175,7 +178,7 @@ export const rescueSceneChoiceSchema = z.object({
 export const rescueSceneSchema = z.object({
   id: z.string().describe('UUID сцены'),
   order: z.number().nullable().optional().describe('Порядок сцены в сценарии'),
-  background: z.string().describe('URL или id файла фона'),
+  background: z.string().optional().describe('URL или id файла фона'),
   text: z.string().describe('Текст сцены — описание ситуации'),
   choices: z.array(rescueSceneChoiceSchema).nullable().optional().default([]).describe('Варианты действий; пустой массив — вводный слайд без выбора'),
   hidden: z.boolean().nullable().optional().describe('Скрыть сцену'),
@@ -279,7 +282,7 @@ export const rescueItemSchema = z.object({
   description: z.string(),
   // Для хранения: сцены могут содержать documents, параметры — description
   // (в AI-промпт rescueItemDataSchema они не попадают)
-  data: rescueItemDataSchema
+  data: z.preprocess((value) => value ?? {}, rescueItemDataSchema
     .extend({
       parameters: z.array(
         rescueTimerParameterSchema.extend({
@@ -291,8 +294,7 @@ export const rescueItemSchema = z.object({
           documents: z.array(rescueSceneDocumentSchema).optional().describe('Документы сцены')
         })
       ).optional()
-    })
-    .optional(),
+    })),
   requiredTariffId: z.string().nullable().optional(),
   requiredRewardId: z.string().nullable().optional()
 });

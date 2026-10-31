@@ -70,6 +70,7 @@ export abstract class BaseStorage {
         .then((data) => {
           obs.next(data?.map((d) => zod.parse(d) as T) ?? []);
           obs.complete();
+          console.info('-------> fetch', data);
         })
         .catch((err: unknown) => obs.error(err));
     });

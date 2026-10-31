@@ -92,7 +92,7 @@
           icon="paste"
           size="sm"
           tooltip="Вставить в активную папку (Ctrl+V)"
-          [disabled]="!_canPasteTo(_getPanelFolderId(_activePanel()))"
+          [disabled]="!_canPasteTo()(_getPanelFolderId()(_activePanel()))"
           [badge]="_clipboard() ? true : undefined"
           badgeColor="bg-blue-500"
           (clicked)="_pasteToActivePanel()"
@@ -241,13 +241,13 @@
       <mat-icon svgIcon="scissors" />
       <span>Вырезать</span>
     </button>
-    @if (_clipboard() && _canPasteTo(_getPanelFolderId(_contextMenuPanel()))) {
-      <button mat-menu-item (click)="_paste(_getPanelFolderId(_contextMenuPanel()))">
+    @if (_clipboard() && _canPasteTo()(_getPanelFolderId()(_contextMenuPanel()))) {
+      <button mat-menu-item (click)="_paste(_getPanelFolderId()(_contextMenuPanel()))">
         <mat-icon svgIcon="paste" />
         <span>Вставить сюда</span>
       </button>
     }
-    @if (item.type === 'folder' && _clipboard() && _canPasteTo(item.id)) {
+    @if (item.type === 'folder' && _clipboard() && _canPasteTo()(item.id)) {
       <button mat-menu-item (click)="_paste(item.id)">
         <mat-icon svgIcon="paste" />
         <span>Вставить в папку</span>
@@ -265,11 +265,11 @@
 <ng-template #panelTemplate let-side="side" let-fetching="fetching">
   <section
     class="flex flex-col h-full min-h-0 rounded-2xl bg-white dark:bg-slate-900 border overflow-hidden shadow-xs transition-all duration-150 relative"
-    [class.border-blue-500]="_isPanelActive(side)"
-    [class.ring-2]="_isPanelActive(side)"
-    [class.ring-blue-500/20]="_isPanelActive(side)"
-    [class.border-slate-200]="!_isPanelActive(side)"
-    [class.dark:border-slate-800]="!_isPanelActive(side)"
+    [class.border-blue-500]="_isPanelActive()(side)"
+    [class.ring-2]="_isPanelActive()(side)"
+    [class.ring-blue-500/20]="_isPanelActive()(side)"
+    [class.border-slate-200]="!_isPanelActive()(side)"
+    [class.dark:border-slate-800]="!_isPanelActive()(side)"
     (mousedown)="_activatePanel(side)"
     (click)="_clearSelection(side)"
   >
@@ -279,7 +279,7 @@
       <div class="flex items-center gap-1 min-w-0 flex-1 overflow-x-auto no-scrollbar">
         <!-- Root Button -->
         <app-button
-          [variant]="_getPanelPath(side).length === 0 ? 'secondary' : 'ghost'"
+          [variant]="_getPanelPath()(side).length === 0 ? 'secondary' : 'ghost'"
           size="sm"
           icon="house"
           tooltip="Корневая папка"
@@ -288,7 +288,7 @@
           Корень
         </app-button>
 
-        @for (folder of _getPanelPath(side); track folder.id; let idx = $index; let isLast = $last) {
+        @for (folder of _getPanelPath()(side); track folder.id; let idx = $index; let isLast = $last) {
           <mat-icon svgIcon="chevron-right" class="!w-3 !h-3 text-slate-400 shrink-0" />
           <app-button
             [variant]="isLast ? 'secondary' : 'ghost'"
@@ -308,7 +308,7 @@
           placeholder="Поиск..."
           icon="magnifying-glass"
           [clearable]="true"
-          [value]="_getPanelSearchQuery(side)"
+          [value]="_getPanelSearchQuery()(side)"
           (valueChange)="_setPanelSearchQuery(side, $event)"
           (cleared)="_clearPanelSearchQuery(side)"
           class="w-28 sm:w-36"
@@ -316,7 +316,7 @@
         />
 
         <span class="px-2 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-          {{ _getPanelOptions(side).length }}
+          {{ _getPanelOptions()(side).length }}
         </span>
       </div>
     </div>
@@ -339,7 +339,7 @@
           </tr>
         </thead>
 
-        @if (_canGoUp(side)) {
+        @if (_canGoUp()(side)) {
           <tbody>
             <tr
               class="tc-parent-row cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
@@ -364,24 +364,24 @@
           [id]="_getDropListId(side)"
           [cdkDropListConnectedTo]="_getConnectedDropLists(side)"
           cdkDropListOrientation="vertical"
-          [cdkDropListData]="_getPanelOptions(side)"
+          [cdkDropListData]="_getPanelOptions()(side)"
           (cdkDropListDropped)="_handleDrop(side, $event)"
         >
-          @for (item of _getPanelOptions(side); track item.id) {
+          @for (item of _getPanelOptions()(side); track item.id) {
             <tr
               class="tc-row cursor-pointer group"
-              [class.tc-row-selected]="_isSelected(side, item)"
+              [class.tc-row-selected]="_isSelected()(side, item)"
               [attr.data-tc-item-id]="item.id"
               [attr.data-tc-side]="side"
               cdkDrag
               [cdkDragData]="item"
-              [style.opacity]="_isHidden(item) || _isCut(item) ? 0.45 : 1"
+              [style.opacity]="_isHidden(item) || _isCut()(item) ? 0.45 : 1"
               (click)="_handleItemSelect(side, item, $event)"
               (dblclick)="_handleItemOpen(side, item, $event)"
               (contextmenu)="_onRowContextMenu($event, side, item)"
             >
               <td class="tc-cell">
-                @if (_isPending(side, item.id)) {
+                @if (_isPending()(side, item.id)) {
                   <div class="flex items-center gap-2 py-1">
                     <app-skeleton shape="circle" size="24px" />
                     <app-skeleton height="16px" borderRadius="4px" width="60%" />
@@ -397,7 +397,7 @@
                       <mat-icon class="!w-4 !h-4" [svgIcon]="_getSvgIcon(item)" />
                     </div>
 
-                    @if (_isRenaming(side, item.id)) {
+                    @if (_isRenaming()(side, item.id)) {
                       <app-text-editable-value
                         class="min-w-0 flex-1 text-left"
                         [editing]="true"
@@ -414,8 +414,8 @@
               </td>
 
               <td class="tc-cell tc-tariff-col">
-                <span class="tc-tariff-badge" [title]="_getTariffLabel(item)">
-                  {{ _getTariffLabel(item) }}
+                <span class="tc-tariff-badge" [title]="_getTariffLabel()(item)">
+                  {{ _getTariffLabel()(item) }}
                 </span>
               </td>
 
@@ -455,14 +455,14 @@
       </table>
 
       <!-- Empty State -->
-      @if (_getPanelOptions(side).length === 0 && !_canGoUp(side)) {
+      @if (_getPanelOptions()(side).length === 0 && !_canGoUp()(side)) {
         <div class="flex flex-col items-center justify-center p-8 text-center h-full min-h-48 text-slate-400 dark:text-slate-500">
           <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/60 flex items-center justify-center mb-3 text-slate-400">
             <mat-icon svgIcon="folder-open" class="!w-6 !h-6" />
           </div>
-          @if (_getPanelSearchQuery(side)) {
+          @if (_getPanelSearchQuery()(side)) {
             <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 m-0">Ничего не найдено</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 m-0">По запросу «{{ _getPanelSearchQuery(side) }}» элементов нет</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 m-0">По запросу «{{ _getPanelSearchQuery()(side) }}» элементов нет</p>
             <app-button
               variant="ghost"
               size="sm"
