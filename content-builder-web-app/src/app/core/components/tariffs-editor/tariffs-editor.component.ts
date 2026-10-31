@@ -101,6 +101,15 @@ export class TariffsEditorService {
           label="RuStore: код продукта-подписки (productId из консоли RuStore)"
           formControlName="rustoreProductId"
         />
+        <fieldset class="flex flex-col gap-2">
+          <legend class="text-sm font-medium">Эффект тарифа в профиле</legend>
+          <label class="flex items-center gap-3 text-sm">Цвет <input type="color" formControlName="effectColor" aria-label="Цвет эффекта тарифа" /></label>
+          <label class="flex flex-col gap-1 text-sm">Эффект свечения
+            <select formControlName="glowEffect" class="rounded border border-slate-300 bg-white p-2 text-slate-900 dark:bg-slate-800 dark:text-white">
+              <option value="none">Без эффекта</option><option value="pulse">Пульсация рамки</option><option value="shimmer">Бегущий свет</option><option value="orbit">Двойной свет</option>
+            </select>
+          </label>
+        </fieldset>
         <app-checkbox formControlName="isActive" label="Активен на витрине" />
         <app-checkbox formControlName="isDefault" label="Тариф по умолчанию (бесплатный)" />
       </form>
@@ -122,6 +131,8 @@ export class TariffEditDialogComponent {
     description: new FormControl<string | null>(null),
     priceRub: new FormControl(0, { nonNullable: true, validators: [Validators.required] }),
     periodDays: new FormControl(30, { nonNullable: true, validators: [Validators.required, Validators.min(1)] }),
+    effectColor: new FormControl('#d4a633', { nonNullable: true }),
+    glowEffect: new FormControl<NonNullable<TariffCreate['glowEffect']>>('none', { nonNullable: true }),
     rank: new FormControl(0, { nonNullable: true, validators: [Validators.required] }),
     sortOrder: new FormControl(0, { nonNullable: true }),
     rustoreProductId: new FormControl<string | null>(null),
@@ -140,6 +151,8 @@ export class TariffEditDialogComponent {
         priceRub: this._data.priceRub,
         periodDays: this._data.periodDays,
         rank: this._data.rank,
+        effectColor: this._data.effectColor ?? '#d4a633',
+        glowEffect: this._data.glowEffect ?? 'none',
         sortOrder: this._data.sortOrder,
         rustoreProductId: this._data.rustoreProductId ?? null,
         isActive: this._data.isActive,
@@ -171,6 +184,8 @@ export class TariffEditDialogComponent {
       priceRub: Number(v.priceRub),
       periodDays: Number(v.periodDays),
       rank: Number(v.rank),
+      effectColor: v.glowEffect === 'none' ? null : v.effectColor,
+      glowEffect: v.glowEffect,
       sortOrder: Number(v.sortOrder),
       rustoreProductId: v.rustoreProductId?.trim() || null,
       isActive: v.isActive,

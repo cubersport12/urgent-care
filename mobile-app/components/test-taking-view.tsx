@@ -116,11 +116,11 @@ export function TestTakingView({ onBack, onFinish, onSaveTraining }: TestTakingV
 
   // Автозавершение теста при превышении лимита ошибок (ошибок стало больше maxErrors)
   useEffect(() => {
-    if (!test || isTestCompleted) return;
+    if (!test || isTestCompleted || onSaveTraining) return;
     if (test.maxErrors != null && getTotalErrors() > test.maxErrors) {
       finishTest('autoMaxErrors');
     }
-  }, [test, isTestCompleted, answers, finishTest, getTotalErrors]);
+  }, [test, isTestCompleted, answers, finishTest, getTotalErrors, onSaveTraining]);
 
   // Обновляем статистику после каждого ответа - рассчитываем passed
   useEffect(() => {

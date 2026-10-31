@@ -24,6 +24,8 @@ class Tariff(Base):
     price_rub: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     period_days: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
     rank: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    effect_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
+    glow_effect: Mapped[str] = mapped_column(String(16), nullable=False, default="none", server_default="none")
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

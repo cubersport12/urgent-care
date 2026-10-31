@@ -102,6 +102,16 @@ function TabsInner() {
         })}
       />
       <Tabs.Screen
+        name="random-training"
+        options={{
+          title: 'Тренировка',
+          tabBarIcon: ({ color }) => <IconSymbol size={24} name="bolt.fill" color={color} />,
+        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => handleTabPressToRoot('/(tabs)/random-training', navigation, 'random-training', e),
+        })}
+      />
+      <Tabs.Screen
         name="training"
         options={{
           title: 'Повторение',
@@ -111,16 +121,6 @@ function TabsInner() {
         }}
         listeners={({ navigation }) => ({
           tabPress: (e) => handleTabPressToRoot('/(tabs)/training', navigation, 'training', e),
-        })}
-      />
-      <Tabs.Screen
-        name="random-training"
-        options={{
-          title: 'Тренировка',
-          tabBarIcon: ({ color }) => <IconSymbol size={24} name="bolt.fill" color={color} />,
-        }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => handleTabPressToRoot('/(tabs)/random-training', navigation, 'random-training', e),
         })}
       />
       <Tabs.Screen

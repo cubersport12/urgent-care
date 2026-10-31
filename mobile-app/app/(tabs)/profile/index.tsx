@@ -6,19 +6,19 @@ import { CityPicker } from '@/components/ui/city-picker';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
+import { TariffEffect } from '@/components/ui/tariff-effect';
 import { Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useNotifications } from '@/contexts/notifications-context';
 import { useTheme } from '@/contexts/theme-context';
-import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 import { useAppTheme, useGlass, useGlow } from '@/hooks/use-theme-color';
 import { updateMe } from '@/lib/auth-api';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -128,7 +128,6 @@ export default function ProfileScreen() {
     primary,
     neutralSoft,
     error: dangerColor,
-    text,
     success,
     warning,
     accentPurple,
@@ -139,13 +138,11 @@ export default function ProfileScreen() {
     accentPurpleContainer,
     elevated1,
     elevated2,
-    border,
     borderVariant,
   } = useAppTheme();
   const glass = useGlass();
   const glow = useGlow();
   const { contentPaddingBottom } = useNavRail();
-  const { data: stats, fetchData } = useAccountOverallStats();
   const { unreadCount: unreadNotifications, refreshUnread } = useNotifications();
 
   const loadBilling = useCallback(() => {
@@ -176,12 +173,9 @@ export default function ProfileScreen() {
     return parts[0].substring(0, 2).toUpperCase();
   };
 
+  const tariffColor = billing?.glowEffect && billing.glowEffect !== 'none' ? billing.effectColor : null;
   const initials = getInitials(accountName);
   const { response: avatarUri } = useFileImage(user?.avatar_key ?? '');
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
 
   useFocusEffect(
     useCallback(() => {
@@ -225,101 +219,37 @@ export default function ProfileScreen() {
           </ThemedText>
         </Animated.View>
 
-        {/* Profile Card */}
-        <Animated.View entering={staggerEnter(1)} style={styles.profileCardWrap}>
-          <GlassCard padding={16} borderRadius={16}>
-            <View style={styles.profileHeaderRow}>
-              <View style={[styles.avatar, { borderColor: primary, backgroundColor: glass.primaryTint }]}>
+        <Animated.View entering={staggerEnter(1)}>
+          <GlassCard padding={Spacing.card} style={tariffColor ? { borderColor: tariffColor } : undefined}>
+            <View style={styles.profileHeader}>
+              <View style={[styles.avatar, { backgroundColor: primaryContainer }]}>
                 {avatarUri ? (
-                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} accessibilityLabel="Фото профиля" />
                 ) : initials ? (
-                  <ThemedText style={[styles.avatarText, { color: primary }]}>
-                    {initials}
-                  </ThemedText>
+                  <ThemedText type="subtitle" style={{ color: primary }}>{initials}</ThemedText>
                 ) : (
-                  <IconSymbol name="person.fill" size={32} color={primary} />
+                  <IconSymbol name="person.fill" size={Spacing.card * 2} color={primary} />
                 )}
               </View>
               <View style={styles.profileInfo}>
-                <ThemedText style={styles.name}>{accountName}</ThemedText>
-                <ThemedText style={[styles.subtitle, { color: neutralSoft }]}>
-                  {user?.email ?? 'Стоматологический факультет'}
-                </ThemedText>
-                {user?.city ? (
-                  <ThemedText style={[styles.subtitle, { color: neutralSoft }]}>
-                    {user.city.label || user.city.name}
+                <ThemedText type="defaultSemiBold">{accountName}</ThemedText>
+                {user?.email ? <ThemedText type="caption" style={{ color: neutral }}>{user.email}</ThemedText> : null}
+                {(user?.city || user?.occupation) ? <ThemedText type="caption" style={{ color: neutral }}>
+                  {[user?.city?.label || user?.city?.name, user?.occupation ? `${user.occupation}${user.birth_year ? `, ${new Date().getFullYear() - user.birth_year} лет` : ''}` : null].filter(Boolean).join(' · ')}
+                </ThemedText> : null}
+                <View style={[styles.badge, {
+                  backgroundColor: tariffColor ? warningContainer : glass.primaryTint,
+                  borderColor: tariffColor ?? glass.primaryBorder,
+                }]}>
+                  <IconSymbol name={tariffColor ? 'star.fill' : 'person.fill'} size={Spacing.card} color={tariffColor ? warning : primary} />
+                  <ThemedText type="caption" style={{ color: tariffColor ? warning : primary }}>
+                    {billing?.tariffTitle ?? 'Загрузка…'}
                   </ThemedText>
-                ) : null}
-                {user?.occupation ? (
-                  <ThemedText style={[styles.subtitle, { color: neutralSoft }]}>
-                    {user.occupation}
-                    {user.birth_year ? `, ${new Date().getFullYear() - user.birth_year} лет` : ''}
-                  </ThemedText>
-                ) : null}
-                
-                {/* Subscription Badge */}
-                <View style={styles.badgeContainer}>
-                  <View
-                    style={[
-                      styles.badge,
-                      {
-                        backgroundColor: billing && billing.priceRub > 0 ? warningContainer : glass.primaryTint,
-                        borderColor: billing && billing.priceRub > 0 ? glass.warningBorder : glass.primaryBorder,
-                      },
-                    ]}
-                  >
-                    <IconSymbol
-                      name={billing && billing.priceRub > 0 ? 'star.fill' : 'person.fill'}
-                      size={12}
-                      color={billing && billing.priceRub > 0 ? warning : primary}
-                    />
-                    <ThemedText
-                      style={[
-                        styles.badgeText,
-                        { color: billing && billing.priceRub > 0 ? warning : primary },
-                      ]}
-                    >
-                      {billing ? (billing.priceRub > 0 ? 'Premium' : 'Базовый') : 'Загрузка…'}
-                    </ThemedText>
-                  </View>
                 </View>
               </View>
             </View>
           </GlassCard>
-        </Animated.View>
-
-        {/* Stats Section */}
-        <Animated.View entering={staggerEnter(2)} style={styles.statsCardWrap}>
-          <GlassCard padding={16} borderRadius={16}>
-            <View style={styles.statsRow}>
-              <View style={styles.statCol}>
-                <ThemedText style={[styles.statVal, { color: text }]}>
-                  {stats.totals.documents}
-                </ThemedText>
-                <ThemedText style={[styles.statLabel, { color: neutralSoft }]}>
-                  Статей
-                </ThemedText>
-              </View>
-              <View style={[styles.statDivider, { backgroundColor: border }]} />
-              <View style={styles.statCol}>
-                <ThemedText style={[styles.statVal, { color: text }]}>
-                  {stats.totals.tests}
-                </ThemedText>
-                <ThemedText style={[styles.statLabel, { color: neutralSoft }]}>
-                  Тестов
-                </ThemedText>
-              </View>
-              <View style={[styles.statDivider, { backgroundColor: border }]} />
-              <View style={styles.statCol}>
-                <ThemedText style={[styles.statVal, { color: text }]}>
-                  {stats.totals.rescues}
-                </ThemedText>
-                <ThemedText style={[styles.statLabel, { color: neutralSoft }]}>
-                  Режимов
-                </ThemedText>
-              </View>
-            </View>
-          </GlassCard>
+          {tariffColor && <TariffEffect color={tariffColor} effect={billing?.glowEffect ?? 'none'} />}
         </Animated.View>
 
         {/* Section: ПОДПИСКА */}
@@ -612,19 +542,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.pageX,
     paddingTop: 16,
   },
-  profileCardWrap: {
-    zIndex: 1,
-  },
-  profileHeaderRow: {
+  profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: Spacing.card,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 1.5,
+    width: Spacing.nav,
+    height: Spacing.nav,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -633,62 +559,19 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  avatarText: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
   profileInfo: {
     flex: 1,
-    justifyContent: 'center',
-    gap: 2,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  subtitle: {
-    fontSize: 13,
-  },
-  badgeContainer: {
-    flexDirection: 'row',
-    marginTop: 4,
+    gap: Spacing.card / 4,
   },
   badge: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  statsCardWrap: {
-    marginTop: 12,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  statCol: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statVal: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  statLabel: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 24,
+    gap: Spacing.card / 4,
+    paddingHorizontal: Spacing.card / 2,
+    paddingVertical: Spacing.card / 4,
+    borderRadius: Radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   section: {
     marginTop: 20,

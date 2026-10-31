@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class CamelModel(BaseModel):
@@ -30,6 +30,10 @@ class TariffFeatureStateOut(TariffFeatureOut):
     included: bool
 
 
+TariffGlow = Literal["none", "pulse", "shimmer", "orbit"]
+TariffColor = Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}$")]
+
+
 class TariffOut(CamelModel):
     id: UUID
     code: str
@@ -38,6 +42,8 @@ class TariffOut(CamelModel):
     price_rub: int = Field(alias="priceRub")
     period_days: int = Field(alias="periodDays")
     rank: int
+    effect_color: TariffColor | None = Field(None, alias="effectColor")
+    glow_effect: TariffGlow = Field("none", alias="glowEffect")
     is_default: bool = Field(alias="isDefault")
     is_active: bool = Field(alias="isActive")
     sort_order: int = Field(alias="sortOrder")
@@ -52,6 +58,8 @@ class TariffCreate(CamelModel):
     price_rub: int = Field(0, alias="priceRub")
     period_days: int = Field(30, alias="periodDays")
     rank: int = 0
+    effect_color: TariffColor | None = Field(None, alias="effectColor")
+    glow_effect: TariffGlow = Field("none", alias="glowEffect")
     is_default: bool = Field(False, alias="isDefault")
     is_active: bool = Field(True, alias="isActive")
     sort_order: int = Field(0, alias="sortOrder")
@@ -66,10 +74,19 @@ class TariffUpdate(CamelModel):
     price_rub: int | None = Field(None, alias="priceRub")
     period_days: int | None = Field(None, alias="periodDays")
     rank: int | None = None
+    effect_color: TariffColor | None = Field(None, alias="effectColor")
+    glow_effect: TariffGlow | None = Field(None, alias="glowEffect")
     is_default: bool | None = Field(None, alias="isDefault")
     is_active: bool | None = Field(None, alias="isActive")
     sort_order: int | None = Field(None, alias="sortOrder")
     rustore_product_id: str | None = Field(None, alias="rustoreProductId", max_length=128)
+    @field_validator("glow_effect", mode="before")
+    @classmethod
+    def require_effect_if_provided(cls, value: object) -> object:
+        if value is None:
+            raise ValueError("glowEffect cannot be null")
+        return value
+
     # None = не трогать связи, [] = очистить (алиас на union — только через Annotated целиком)
     feature_ids: Annotated[list[UUID] | None, Field(alias="featureIds")] = None
 
@@ -106,6 +123,8 @@ class BillingMeOut(CamelModel):
     cancel_at_period_end: bool = Field(alias="cancelAtPeriodEnd")
     price_rub: int = Field(alias="priceRub")
     rank: int
+    effect_color: TariffColor | None = Field(None, alias="effectColor")
+    glow_effect: TariffGlow = Field("none", alias="glowEffect")
     enforcement: bool
     scheduled_tariff_id: UUID | None = Field(None, alias="scheduledTariffId")
     scheduled_tariff_code: str | None = Field(None, alias="scheduledTariffCode")

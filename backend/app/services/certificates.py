@@ -23,7 +23,7 @@ _DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 _TEMPLATE_PATH = _DATA_DIR / "cert_origin.png"
 # Размер макета, в котором сняты координаты
 _DESIGN_SIZE = (1491.0, 1055.0)
-_NAVY = (26, 42, 110)
+_TEXT_COLOR = (245, 250, 255)
 
 _FONT_REGULAR_CANDIDATES = (
     _DATA_DIR / "fonts" / "DejaVuSans.ttf",
@@ -49,7 +49,7 @@ def _px(design_value: float, actual: float) -> int:
 
 
 def _centered(draw: ImageDraw.ImageDraw, center: tuple[float, float], label: str, font) -> None:
-    draw.text(center, label, font=font, fill=_NAVY, anchor="mm")
+    draw.text(center, label, font=font, fill=_TEXT_COLOR, anchor="mm")
 
 
 def _render(full_name: str, number: int, issued: datetime, verify_url: str) -> bytes:
@@ -57,27 +57,30 @@ def _render(full_name: str, number: int, issued: datetime, verify_url: str) -> b
     w, h = img.size
     draw = ImageDraw.Draw(img)
 
-    # ФИО над линией под «ВЫДАН:»; длинное имя — уменьшаем кегль
+    # ФИО внутри центральной рамки; длинное имя — уменьшаем кегль
     size = round(52 / _DESIGN_SIZE[0] * w)
     name_font = _font(_FONT_BOLD_CANDIDATES, size)
-    max_width = 0.74 * w
-    while size > 24 and draw.textlength(full_name, font=name_font) > max_width:
-        size -= 2
+    max_width = 0.46 * w
+    while size > 1 and draw.textlength(full_name, font=name_font) > max_width:
+        size -= 1
         name_font = _font(_FONT_BOLD_CANDIDATES, size)
-    _centered(draw, (0.5 * w, 0.552 * h), full_name, name_font)
+    _centered(draw, (0.5 * w, 0.471 * h), full_name, name_font)
 
-    value_font = _font(_FONT_REGULAR_CANDIDATES, round(30 / _DESIGN_SIZE[0] * w))
-    _centered(draw, (0.289 * w, 0.828 * h), issued.strftime("%d.%m.%Y"), value_font)
-    _centered(draw, (0.477 * w, 0.828 * h), f"TD-{issued.year}-{number:06d}", value_font)
+    value_font = _font(_FONT_REGULAR_CANDIDATES, round(26 / _DESIGN_SIZE[0] * w))
+    _centered(draw, (0.147 * w, 0.872 * h), issued.strftime("%d.%m.%Y"), value_font)
+    _centered(draw, (0.379 * w, 0.872 * h), f"TD-{issued.year}-{number:06d}", value_font)
 
-    # QR в готовую рамку слева
-    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, border=0)
+    # QR с белым полем внутри рамки справа
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, border=4, box_size=1)
     qr.add_data(verify_url)
     qr.make(fit=True)
     qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
-    box_w, box_h = round(0.072 * w), round(0.097 * h)
-    qr_img = qr_img.resize((box_w, box_h), Image.Resampling.NEAREST)
-    img.paste(qr_img, (round(0.0745 * w), round(0.706 * h)))
+    box_size = round(0.07 * w)
+    scale = max(1, box_size // qr_img.width)
+    qr_img = qr_img.resize((qr_img.width * scale, qr_img.height * scale), Image.Resampling.NEAREST)
+    qr_box = Image.new("RGB", (box_size, box_size), "white")
+    qr_box.paste(qr_img, ((box_size - qr_img.width) // 2, (box_size - qr_img.height) // 2))
+    img.paste(qr_box, (round(0.769 * w), round(0.81 * h)))
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -128,7 +131,7 @@ async def issue_certificate(
     if existing:
         # Имя изменилось — перерисовываем под прежним номером
         verify_url = f"{settings.api_public_base_url.rstrip('/')}/api/v1/certificates/{existing.number}"
-        png = _render(printed_name, existing.number, issued, verify_url)
+        png = _render(printed_name, existing.number, existing.issued_at, verify_url)
         s3 = get_s3_client()
         await s3.ensure_bucket()
         await s3.upload_bytes(data=png, key=existing.file_path, content_type="image/png")
