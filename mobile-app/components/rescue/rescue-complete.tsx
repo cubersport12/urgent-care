@@ -6,6 +6,7 @@ import {
   type RescueScheneChoiceImplicationVm,
 } from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
+import { useTheme } from '@/contexts/theme-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import {
   buildRescueCompletionDescription,
@@ -31,8 +32,14 @@ type RescueCompleteProps = {
 };
 
 const outcomeImages = {
-  passed: { animation: require('@/assets/images/rescue/success.gif'), final: require('@/assets/images/rescue/success-final.png'), ratio: 485 / 800 },
-  failed: { animation: require('@/assets/images/rescue/failure.gif'), final: require('@/assets/images/rescue/failure-final.png'), ratio: 525 / 800 },
+  passed: {
+    light: { animation: require('@/assets/images/rescue/success.gif'), final: require('@/assets/images/rescue/success-final.png'), ratio: 485 / 800 },
+    dark: { animation: require('@/assets/images/rescue/success-dark.gif'), final: require('@/assets/images/rescue/success-dark-final.png'), ratio: 485 / 800 },
+  },
+  failed: {
+    light: { animation: require('@/assets/images/rescue/failure.gif'), final: require('@/assets/images/rescue/failure-final.png'), ratio: 525 / 800 },
+    dark: { animation: require('@/assets/images/rescue/failure-dark.gif'), final: require('@/assets/images/rescue/failure-dark-final.png'), ratio: 525 / 800 },
+  },
 } as const;
 
 function ParameterIcon({ icon, color }: { icon?: string; color: string }) {
@@ -48,12 +55,13 @@ function ParameterIcon({ icon, color }: { icon?: string; color: string }) {
 
 export function RescueComplete({ rescueItem, parameterValues, selectedImplications = [], onBack }: RescueCompleteProps) {
   const theme = useAppTheme();
+  const { theme: themeName } = useTheme();
   const { width, fontScale } = useWindowDimensions();
   const compactMetrics = width < ResultTileTokens.metricCompactBreakpoint || fontScale > ResultTileTokens.metricCompactFontScale;
   const data = useMemo(() => parseRescueItemDataVm(rescueItem.data), [rescueItem.data]);
   const parameters = data.parameters ?? [];
   const outcome = resolveRescueOutcome(data.completion, parameterValues, parameters);
-  const artwork = outcome === 'undetermined' ? undefined : outcomeImages[outcome];
+  const artwork = outcome === 'undetermined' ? undefined : outcomeImages[outcome][themeName];
   const reducedMotion = useReducedMotion();
   const [finished, setFinished] = useState(!artwork || reducedMotion);
   const [loaded, setLoaded] = useState(false);
@@ -76,7 +84,7 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
       translateY.value = withSequence(withTiming(0, { duration: 300 }), withTiming(Spacing.pageX + bannerWidth * artwork.ratio / 2 - size.height / 2, { duration: 600 }, (done) => {
         if (done) runOnJS(setFinished)(true);
       }));
-    }, 3500);
+    }, 2500);
   }
   const names = Object.fromEntries(parameters.map((p) => [String(p.id), p.name]));
   const types = Object.fromEntries(parameters.map((p) => [String(p.id), p.type]));
@@ -84,6 +92,7 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
     outcome, data.completion, parameterValues, names, types, rescueItem.name, parameters,
   );
   const emblemColor = outcome === 'failed' ? theme.error : theme.primary;
+  const artworkBorderColor = outcome === 'failed' ? theme.error : theme.success;
   const implications = selectedImplications.filter((item) => item?.description?.trim());
   const visibleParameters = parameters.filter((parameter) => !parameter.isHidden);
 
@@ -94,7 +103,7 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
       {finished ? <Animated.View style={styles.screen} entering={reducedMotion ? undefined : FadeIn.duration(500)}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          {artwork && bannerWidth > 0 ? <View style={[styles.frame, styles.banner, { height: bannerWidth * artwork.ratio, borderColor: emblemColor }]}><Image source={artwork.final} style={styles.frameImage} resizeMode="cover" accessibilityIgnoresInvertColors accessible={false} /></View> : null}
+          {artwork && bannerWidth > 0 ? <View style={[styles.frame, styles.banner, { height: bannerWidth * artwork.ratio, borderColor: artworkBorderColor }]}><Image source={artwork.final} style={styles.frameImage} resizeMode="cover" accessibilityIgnoresInvertColors accessible={false} /></View> : null}
           <View style={[styles.hero, compactMetrics && styles.heroCompact]}>
             <View style={[styles.emblem, { backgroundColor: outcome === 'failed' ? theme.errorContainer : theme.primaryContainer }]}>
               <MaterialIcons name={outcome === 'failed' ? 'error-outline' : outcome === 'passed' ? 'verified-user' : 'info-outline'} size={Spacing.card * 2} color={emblemColor} accessible={false} />
@@ -167,7 +176,7 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
         </View>
       </ScrollView>
       </Animated.View> : artwork && imageWidth > 0 ? (
-        <Animated.View style={[styles.introImage, styles.frame, { top: (size.height - imageWidth * artwork.ratio) / 2, width: imageWidth, height: imageWidth * artwork.ratio, borderColor: emblemColor }, animatedStyle]}>
+        <Animated.View style={[styles.introImage, loaded && styles.frame, { top: (size.height - imageWidth * artwork.ratio) / 2, width: imageWidth, height: imageWidth * artwork.ratio, borderColor: artworkBorderColor }, animatedStyle]}>
           <ExpoImage source={loaded ? artwork.final : artwork.animation} style={styles.screen} contentFit="cover" onLoad={startTransition} onError={() => setFinished(true)} accessible={false} />
         </Animated.View>
       ) : null}

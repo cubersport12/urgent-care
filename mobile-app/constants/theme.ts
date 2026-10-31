@@ -147,6 +147,7 @@ export const Animation = {
 export const Colors = {
   light: {
     primary: '#0070E0',
+    splashBackground: '#F7FAF9',
     onPrimary: '#FFFFFF',
     primaryContainer: 'rgba(0, 112, 224, 0.12)',
     onPrimaryContainer: '#005BB5',
@@ -206,6 +207,7 @@ export const Colors = {
   },
   dark: {
     primary: '#0084FF',
+    splashBackground: '#050505',
     onPrimary: '#FFFFFF',
     primaryContainer: 'rgba(0, 132, 255, 0.15)',
     onPrimaryContainer: '#B3D9FF',
