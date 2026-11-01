@@ -70,7 +70,7 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
   const [parameters, setParameters] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
     rescueItem.data?.parameters?.forEach((p) => {
-      initial[p.id] = p.startValue;
+      initial[p.id] = Number(p.startValue ?? 0);
     });
     return initial;
   });
@@ -105,7 +105,7 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
     }
     const timerId = timerParam.id;
     // В контенте часто delta = 0; для таймера по умолчанию −1 с/с, чтобы «истекал» каждую секунду.
-    const rawTimerDelta = timerParam.delta ?? 0;
+    const rawTimerDelta = Number(timerParam.delta ?? 0);
     const timerDelta = rawTimerDelta === 0 ? -1 : rawTimerDelta;
 
     timerIntervalRef.current = setInterval(() => {
@@ -116,7 +116,7 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
 
         for (const p of sceneParameters) {
           if (p.type === 'timer') continue;
-          const d = p.delta ?? 0;
+          const d = Number(p.delta ?? 0);
           if (d === 0) continue;
           if (next[p.id] !== undefined) {
             next[p.id] = next[p.id] + d;
@@ -190,7 +190,7 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
     if (choice?.parameterChanges && choice.parameterChanges.length > 0) {
       choice.parameterChanges.forEach((change) => {
         if (nextParams[change.parameterId] !== undefined) {
-          nextParams[change.parameterId] += change.value;
+          nextParams[change.parameterId] += Number(change.value ?? 0);
         }
       });
       setParameters(nextParams);
