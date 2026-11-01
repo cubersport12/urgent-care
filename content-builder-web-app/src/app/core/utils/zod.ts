@@ -129,10 +129,19 @@ function normalizeRescueCompareOperator(val: unknown): RescueCompletionCompareOp
   return RescueCompletionCompareOperator.Gte;
 }
 
+const rescueNumber = z.preprocess(
+  value => typeof value === 'string' || value === null ? Number(value) : value,
+  z.number().finite()
+);
+const optionalRescueNumber = z.preprocess(
+  value => typeof value === 'string' ? Number(value) : value,
+  z.number().finite().nullable().optional()
+);
+
 /** Уровень серьёзности параметра (диапазон + метка) */
 export const rescueParameterSeveritySchema = z.object({
-  min: z.number().nullable().optional(),
-  max: z.number().nullable().optional(),
+  min: optionalRescueNumber,
+  max: optionalRescueNumber,
   severity: z.preprocess((v) => (v != null ? normalizeRescueSeverity(v) : undefined), z.nativeEnum(RescueParameterSeverityEnum).optional()),
   description: z.string().nullable().optional()
 });
@@ -143,8 +152,8 @@ export const rescueTimerParameterSchema = z.object({
   name: z.string().describe('Отображаемое имя параметра'),
   icon: z.string().nullable().optional(),
   unit: z.string().nullable().optional(),
-  delta: z.number().describe('Изменение за тик таймера; для type=timer обычно 0'),
-  startValue: z.number().describe('Стартовое значение: число или секунды суток для timer'),
+  delta: rescueNumber.describe('Изменение за тик таймера; для type=timer обычно 0'),
+  startValue: rescueNumber.describe('Стартовое значение: число или секунды суток для timer'),
   type: z.enum(['numeric', 'timer']).optional().describe('numeric — число; timer — время'),
   severities: z.array(rescueParameterSeveritySchema).nullable().optional().describe('Диапазоны и уровни серьёзности'),
   isHidden: z.boolean().nullable().optional().describe('Скрыть параметр в UI')
@@ -153,10 +162,7 @@ export const rescueTimerParameterSchema = z.object({
 /** Изменение параметра при выборе */
 export const rescueChoiceParameterChangeSchema = z.object({
   parameterId: z.string().describe('id параметра из data.parameters'),
-  value: z.preprocess(
-    value => typeof value === 'string' && value.trim() !== '' ? Number(value) : value,
-    z.number().finite()
-  ).describe('На сколько изменить параметр (может быть отрицательным)')
+  value: rescueNumber.describe('На сколько изменить параметр (может быть отрицательным)')
 });
 
 /** Последствие выбора в сцене (описание + серьёзность) */
@@ -177,7 +183,7 @@ export const rescueSceneChoiceSchema = z.object({
 /** Сцена визуальной новеллы */
 export const rescueSceneSchema = z.object({
   id: z.string().describe('UUID сцены'),
-  order: z.number().nullable().optional().describe('Порядок сцены в сценарии'),
+  order: optionalRescueNumber.describe('Порядок сцены в сценарии'),
   background: z.string().optional().describe('URL или id файла фона'),
   text: z.string().describe('Текст сцены — описание ситуации'),
   choices: z.array(rescueSceneChoiceSchema).nullable().optional().default([]).describe('Варианты действий; пустой массив — вводный слайд без выбора'),
@@ -197,7 +203,7 @@ export const rescueCompletionCompareSchema = z.object({
   type: z.literal('compare'),
   parameterId: z.string().describe('id из parameters'),
   operator: z.preprocess(normalizeRescueCompareOperator, z.nativeEnum(RescueCompletionCompareOperator)).describe('eq | neq | gt | gte | lt | lte'),
-  value: z.number().describe('Константа для сравнения')
+  value: rescueNumber.describe('Константа для сравнения')
 });
 
 /** Рекурсивное условие завершения спасения (compare | group) */
@@ -275,7 +281,7 @@ export function formatAiGeneratedQuestionsSchemaForPrompt(): string {
 
 export const rescueItemSchema = z.object({
   id: z.string(),
-  order: z.number().nullable().optional(),
+  order: optionalRescueNumber,
   name: z.string(),
   parentId: z.string().nullable().optional(),
   createdAt: z.string(),

@@ -1,0 +1,16 @@
+name: urgent-care
+
+services:
+  postgres:
+    ports: !override
+      - "127.0.0.1:55432:5432"
+  redis:
+    ports: !reset []
+
+volumes:
+  pgdata:
+    external: true
+    name: urgent-care-restored-pgdata
+  miniodata:
+    external: true
+    name: backend_miniodata

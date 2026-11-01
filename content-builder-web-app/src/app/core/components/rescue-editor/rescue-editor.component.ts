@@ -6,6 +6,7 @@ import {
   generateGUID,
   NullableValue,
   openFile,
+  rescueItemSchema,
   RescueChoiceParameterChangeVm,
   RescueParameterSeverityVm,
   RescueSceneChoiceVm,
@@ -227,7 +228,7 @@ export class RescueEditorComponent {
   private _validationDialogRef: MatDialogRef<unknown, void> | null = null;
 
   /** Сценарий, ожидающий решения в диалоге ошибок валидации */
-  private _pendingVm: AppRescueItemVm | null = null;
+  protected _pendingVm: AppRescueItemVm | null = null;
 
   protected readonly _parametersDisplayedColumns: string[] = ['index', 'name', 'delta', 'startValue', 'actions'];
   protected readonly _scenesDisplayedColumns: string[] = ['index', 'background', 'text', 'isReviewed', 'actions'];
@@ -587,7 +588,27 @@ export class RescueEditorComponent {
 
   protected _handleSubmit(): void {
     if (this._savingFiles()) return;
-    const vm = this._getRescueVm();
+    const draft = this._getRescueVm();
+    const result = rescueItemSchema.safeParse(draft);
+    if (!result.success) {
+      const sceneErrors = new Map<string, string>();
+      const messages = result.error.issues.map(issue => {
+        const path = issue.path.map(part => typeof part === 'number' ? `[${part + 1}]` : part).join('.').replace(/\.\[/g, '[');
+        const reason = issue.code === 'invalid_type'
+          ? `ожидался тип ${issue.expected}, получен ${issue.received}`
+          : issue.message;
+        const message = `${path || 'Сценарий'}: ${reason}`;
+        if (issue.path[0] === 'data' && issue.path[1] === 'scenes' && typeof issue.path[2] === 'number') {
+          const scene = draft.data.scenes?.[issue.path[2]];
+          if (scene) sceneErrors.set(scene.id, message);
+        }
+        return message;
+      });
+      this._pendingVm = null;
+      this._showValidationErrors(messages, sceneErrors);
+      return;
+    }
+    const vm = { ...draft, ...result.data, data: result.data.data } as AppRescueItemVm;
     const { global, sceneErrors } = this._validateRescueGraph(vm.data);
     if (global.length > 0 || sceneErrors.size > 0) {
       const messages = [
