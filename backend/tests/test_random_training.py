@@ -73,6 +73,46 @@ def test_selection_rejects_invalid_session(monkeypatch):
     assert error.value.code == 4401
 
 
+@pytest.mark.asyncio
+async def test_marathon_selection_and_completion(monkeypatch):
+    user = SimpleNamespace(id=uuid4(), role="user")
+    visible = SimpleNamespace(id="visible", name="Visible", hidden=False,
+                              questions=[question(i) for i in range(25)])
+    locked = SimpleNamespace(id="locked", name="Locked", hidden=False, questions=[question(100)])
+    db = SimpleNamespace(execute=AsyncMock(), commit=AsyncMock(), flush=AsyncMock(), add=lambda row: setattr(db, "row", row))
+    db.scalar = AsyncMock(side_effect=lambda _statement: db.row)
+    db.scalars = AsyncMock(side_effect=lambda _statement: SimpleNamespace(all=lambda: [db.row]))
+    monkeypatch.setattr(training, "get_user_by_session", AsyncMock(return_value=user))
+    monkeypatch.setattr(training.TestRepository, "list_all", AsyncMock(return_value=[visible, locked]))
+    monkeypatch.setattr(training, "annotate_content_list", AsyncMock(return_value=[(visible, None), (locked, "tariff")]))
+    events = []
+    async def send(event):
+        events.append(event)
+    ws = SimpleNamespace(accept=AsyncMock(), close=AsyncMock(), send_json=send)
+    await training.random_training_ws(ws, db, "x", "marathon")
+    ready = events[-1]
+    assert all(event['total'] == 25 for event in events[:-1])
+    assert len({q['questionText'] for q in ready['questions']}) == 25
+    questions = ready['questions']
+    def answer(index, choice):
+        return {"questionId": questions[index]["id"], "answerIds": [choice]}
+    def payload(answers):
+        return training.RandomCompletion(answers=answers)
+    from fastapi import HTTPException
+    with pytest.raises(HTTPException) as error:
+        await training.complete_random_training(db.row.id, payload([answer(1, 0)]), db, user)
+    assert error.value.status_code == 422
+    with pytest.raises(HTTPException) as error:
+        await training.complete_random_training(db.row.id, payload([answer(0, 1), answer(1, 0)]), db, user)
+    assert error.value.status_code == 422
+    await training.complete_random_training(db.row.id, payload([answer(i, 0) for i in range(21)] + [answer(21, 1)]), db, user)
+    history = (await training.random_training_history(db, user))[0]
+    assert history['correct'] == 21
+    assert history['total'] == 25
+    assert len(history['items']) == 22
+    await training.complete_random_training(db.row.id, payload([]), db, user)
+
+
 @pytest.mark.parametrize("difficulty,count", [("easy", 5), ("medium", 10), ("hard", 20)])
 def test_selection_counts(monkeypatch, difficulty, count):
     user = SimpleNamespace(id=uuid4(), role="user")

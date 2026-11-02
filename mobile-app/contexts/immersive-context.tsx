@@ -8,10 +8,11 @@ type ImmersiveContextValue = {
 const ImmersiveContext = createContext<ImmersiveContextValue | null>(null);
 
 export function ImmersiveProvider({ children }: { children: React.ReactNode }) {
-  const [isImmersive, setIsImmersive] = useState(false);
+  const [activeCount, setActiveCount] = useState(0);
   const setImmersive = useCallback((value: boolean) => {
-    setIsImmersive(value);
+    setActiveCount((count) => Math.max(0, count + (value ? 1 : -1)));
   }, []);
+  const isImmersive = activeCount > 0;
   const value = useMemo(
     () => ({ isImmersive, setImmersive }),
     [isImmersive, setImmersive],
@@ -33,7 +34,8 @@ export function useImmersive(): ImmersiveContextValue {
 export function useImmersiveMode(active: boolean) {
   const { setImmersive } = useImmersive();
   useEffect(() => {
-    setImmersive(active);
+    if (!active) return;
+    setImmersive(true);
     return () => setImmersive(false);
   }, [active, setImmersive]);
 }

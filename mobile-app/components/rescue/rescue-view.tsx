@@ -14,10 +14,11 @@ import { ArticleView } from '@/components/article-view';
 import { NoScreenCapture } from '@/components/ui/no-screen-capture';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
-import { Button } from '../ui/button';
+import { BackButton } from '../explorer/back-button';
 import { RescueSceneVisualNovel } from './rescue-story';
 import { showConfirm } from '@/lib/alert';
 
@@ -37,10 +38,21 @@ type RescueViewProps = {
 };
 
 export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 }: RescueViewProps) {
-  const { page: backgroundColor, border: borderColor } = useAppTheme();
+  const { page: backgroundColor } = useAppTheme();
   const glass = useGlass();
   const insets = useSafeAreaInsets();
   const { isWide, contentPaddingLeft } = useNavRail();
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const hideHeaderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showHeader = useCallback(() => {
+    if (hideHeaderTimer.current) clearTimeout(hideHeaderTimer.current);
+    setHeaderVisible(true);
+    hideHeaderTimer.current = setTimeout(() => setHeaderVisible(false), 3000);
+  }, []);
+  const animatedHeaderStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(headerVisible ? 1 : 0, { duration: 300 }),
+    transform: [{ translateY: withTiming(headerVisible ? 0 : -64, { duration: 300 }) }],
+  }), [headerVisible]);
   const handleChromeBack = useCallback(() => {
     showConfirm(
       'Выйти из режима спасения?',
@@ -155,6 +167,12 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
 
   // Документы сцены: открытие статьи как полноэкранного оверлея поверх сцены
   const [selectedArticle, setSelectedArticle] = useState<AppArticleVm | null>(null);
+  useEffect(() => {
+    if (!selectedArticle) showHeader();
+    return () => {
+      if (hideHeaderTimer.current) clearTimeout(hideHeaderTimer.current);
+    };
+  }, [selectedArticle, showHeader]);
   const [isLoadingArticle, setIsLoadingArticle] = useState(false);
   const handleOpenDocument = useCallback(async (articleId: string) => {
     setIsLoadingArticle(true);
@@ -225,6 +243,7 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
 
   return (
     <ThemedView
+      onTouchStart={!selectedArticle ? showHeader : undefined}
       style={[
         styles.container,
         {
@@ -238,18 +257,12 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
     >
       <NoScreenCapture />
       {/* Шапку сцены скрываем при открытом документе — у ArticleView своя кнопка «Назад» */}
-      {!isWide && !selectedArticle ? (
-        <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
-          <Button
-            title="Назад"
-            onPress={handleChromeBack}
-            variant="default"
-            icon="chevron.left"
-            iconPosition="left"
-            size="medium"
-            style={styles.backButton}
-          />
-        </ThemedView>
+      {!selectedArticle ? (
+        <Animated.View style={[styles.header, animatedHeaderStyle]} pointerEvents={headerVisible ? 'auto' : 'none'}>
+          <View style={styles.closeButton}>
+            <BackButton onPress={handleChromeBack} close label="Закрыть режим спасения" />
+          </View>
+        </Animated.View>
       ) : null}
       {selectedArticle ? (
         <ArticleView article={selectedArticle} onBack={() => setSelectedArticle(null)} />
@@ -287,20 +300,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 30,
     paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    alignItems: 'flex-start',
-  },
-  backButton: {
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    minHeight: 40,
-    justifyContent: 'flex-start',
+  },
+  closeButton: {
+    marginLeft: 'auto',
   },
   sceneArea: {
     flex: 1,

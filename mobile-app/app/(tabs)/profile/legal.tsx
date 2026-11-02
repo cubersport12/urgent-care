@@ -1,5 +1,5 @@
 import { useFilePdf } from '@/hooks/api';
-import { LEGAL_DOCUMENTS, legalDocTitle, type LegalDocId } from '@/lib/legal-docs';
+import { LEGAL_DOCUMENTS, type LegalDocId } from '@/lib/legal-docs';
 import { ThemedText } from '@/components/themed-text';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -7,11 +7,16 @@ import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { ScreenAppBar } from '@/components/ui/screen-app-bar';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { PdfView } from '@/components/pdf-view/pdf-view';
+import { BackButton } from '@/components/explorer/back-button';
 import { Spacing } from '@/constants/theme';
 import { useNavRail } from '@/contexts/nav-rail-context';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useImmersiveMode } from '@/contexts/immersive-context';
+import { useIsFocused } from '@react-navigation/native';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 /** Нормативные документы: список + просмотр PDF. */
 export default function LegalDocsScreen() {
@@ -57,24 +62,36 @@ export default function LegalDocsScreen() {
 }
 
 function LegalDocViewer({ id, onBack }: { id: LegalDocId; onBack: () => void }) {
+  useChromeBack(onBack);
+  const isFocused = useIsFocused();
+  useImmersiveMode(isFocused);
   const { response: pdfUri, isLoading } = useFilePdf(`legal/${id}.pdf`);
-  const { primary, neutral } = useAppTheme();
+  const { neutral } = useAppTheme();
+  const glass = useGlass();
+  const headerOffset = useSharedValue(0);
+  const headerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: withTiming(headerOffset.value, { duration: 220 }) }],
+  }));
+  const title = LEGAL_DOCUMENTS.find((document) => document.id === id)?.title ?? 'Документ';
 
   return (
     <ScreenBackground style={styles.root}>
-      <View style={styles.viewerHeader}>
-        <Pressable onPress={onBack} style={styles.backRow}>
-          <IconSymbol name="chevron.left" size={26} color={primary} />
-          <ThemedText style={[styles.backText, { color: primary }]}>Назад</ThemedText>
-        </Pressable>
-        <ThemedText type="caption" style={{ color: neutral }} numberOfLines={1}>
-          {legalDocTitle(id)}
-        </ThemedText>
-      </View>
+      <Animated.View style={[styles.viewerHeader, { backgroundColor: glass.header, borderBottomColor: glass.border }, headerStyle]}>
+        <View style={styles.viewerTitle} pointerEvents="none">
+          <ThemedText type="defaultSemiBold" style={styles.viewerTitleText} numberOfLines={1} accessibilityRole="header">
+            {title}
+          </ThemedText>
+        </View>
+        <View style={styles.viewerCloseButton}>
+          <BackButton onPress={onBack} close label="Закрыть документ" />
+        </View>
+      </Animated.View>
       {isLoading ? (
         <LoadingOverlay />
       ) : pdfUri ? (
-        <PdfView source={pdfUri} style={styles.preview} />
+        <PdfView source={pdfUri} style={styles.preview} onScrollDirection={(direction) => {
+          headerOffset.value = direction === 'down' ? -64 : 0;
+        }} />
       ) : (
         <View style={styles.centered}>
           <ThemedText style={{ color: neutral, textAlign: 'center' }}>
@@ -110,19 +127,34 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   viewerHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    height: 56,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 4,
-  },
-  backRow: {
-    flexDirection: 'row',
+    borderBottomWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
-    gap: 4,
-    alignSelf: 'flex-start',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
   },
-  backText: {
-    fontSize: 16,
-    fontWeight: '400',
+  viewerTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  viewerTitleText: {
+    fontSize: 18,
+    textAlign: 'center',
+    maxWidth: '70%',
+  },
+  viewerCloseButton: {
+    marginLeft: 'auto',
   },
   centered: {
     flex: 1,

@@ -8,14 +8,17 @@ import { ProgressBar } from '@/components/ui/progress-bar';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Radius, Spacing } from '@/constants/theme';
 import { useNavRail } from '@/contexts/nav-rail-context';
+import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useImmersiveMode } from '@/contexts/immersive-context';
 import { useTest, type TestAnswer } from '@/contexts/test-context';
 import type { AppTestQuestionVm } from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { selectionStepDelays } from '@/lib/random-training-delay';
-import { BackButton } from '@/components/explorer/back-button';
+import { ScreenAppBar } from '@/components/ui/screen-app-bar';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, Pressable, View } from 'react-native';
 
 const levels: { id: Difficulty; label: string; count: number }[] = [
   { id: 'easy', label: 'Лёгкий', count: 5 },
@@ -24,21 +27,27 @@ const levels: { id: Difficulty; label: string; count: number }[] = [
 ];
 const messages = ['Выбираем случайный вопрос', 'Крутим рулетку…', 'Ищем интересные вопросы', 'Собираем тренировку'];
 
-export default function RandomTrainingScreen() {
+export default function RandomTrainingMode({ marathon }: { marathon: boolean }) {
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
+  const router = useRouter();
+  const navigation = useNavigation();
   const [stage, setStage] = useState<'home' | 'loading' | 'ready' | 'playing'>('home');
   const [history, setHistory] = useState<TrainingHistory[]>([]);
   const [historyError, setHistoryError] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
+  const [total, setTotal] = useState(0);
   const [visibleQuestions, setVisibleQuestions] = useState(0);
   const [messageIndex, setMessageIndex] = useState(0);
   const [selection, setSelection] = useState<{ id: string; questions: AppTestQuestionVm[] } | null>(null);
   const socket = useRef<WebSocket | null>(null);
   const stepDelays = useRef<number[]>([]);
   const focused = useIsFocused();
-  const { startTest, resetTest } = useTest();
+  useImmersiveMode(focused && stage === 'playing');
+  const { startTest, resetTest, finishTest, processSkippedQuestions } = useTest();
+  const saving = useRef<Promise<void> | null>(null);
+  const leaving = useRef(false);
   const { primary, neutral, layout2, success, error: errorColor, successContainer, errorContainer, onSuccessContainer, onErrorContainer } = useAppTheme();
   const level = levels.find((item) => item.id === difficulty)!;
   const { contentPaddingBottom } = useNavRail();
@@ -57,10 +66,10 @@ export default function RandomTrainingScreen() {
     return () => clearInterval(timer);
   }, [stage]);
   useEffect(() => {
-    if (stage !== 'loading' || visibleQuestions >= progress) return;
+    if (stage !== 'loading' || marathon || visibleQuestions >= progress) return;
     const timer = setTimeout(() => setVisibleQuestions((count) => count + 1), stepDelays.current[visibleQuestions]);
     return () => clearTimeout(timer);
-  }, [stage, progress, visibleQuestions]);
+  }, [stage, progress, visibleQuestions, marathon]);
   useEffect(() => {
     if (stage === 'loading' && selection && visibleQuestions >= selection.questions.length) setStage('ready');
   }, [stage, selection, visibleQuestions]);
@@ -70,6 +79,16 @@ export default function RandomTrainingScreen() {
     const ws = socket.current;
     socket.current = null;
     ws?.close();
+    if (stage === 'playing' && marathon && selection) {
+      const answers = processSkippedQuestions(false);
+      if (answers.length) {
+        const pending = saving.current ?? completeRandomTraining(selection.id, answers).then(() => undefined);
+        saving.current = pending;
+        void pending.then(() => { resetTest(); setSelection(null); setStage('home'); void refresh(); })
+          .catch(() => { saving.current = null; finishTest(); setError('Не удалось сохранить результат. Вернитесь к марафону и повторите.'); });
+        return;
+      }
+    }
     if (stage === 'playing') resetTest();
     if (stage !== 'home') { setSelection(null); setStage('home'); }
     // The transition away cancels a pending or unfinished training.
@@ -78,22 +97,24 @@ export default function RandomTrainingScreen() {
 
   const beginSelection = () => {
     stepDelays.current = selectionStepDelays(level.count);
-    setError(''); setProgress(0); setVisibleQuestions(0); setMessageIndex(Math.floor(Math.random() * messages.length)); setSelection(null); setStage('loading');
+    setError(''); setProgress(0); setTotal(0); setVisibleQuestions(0); setMessageIndex(Math.floor(Math.random() * messages.length)); setSelection(null); setStage('loading');
     try {
-      const ws = openTrainingSocket(difficulty);
+      const ws = openTrainingSocket(marathon ? 'marathon' : difficulty);
       socket.current = ws;
       let finished = false;
       ws.onmessage = (message) => {
         if (socket.current !== ws) return;
         try {
           const event = JSON.parse(String(message.data)) as TrainingEvent;
-          if (event.type === 'progress') setProgress(event.count);
+          if (event.type === 'progress') { setProgress(event.count); setTotal(event.total); if (marathon) setVisibleQuestions(event.count); }
           if (event.type === 'ready') {
             finished = true;
             setSelection(event);
             setProgress(event.questions.length);
+            setTotal(event.questions.length);
+            if (marathon) setVisibleQuestions(event.questions.length);
           }
-          if (event.type === 'insufficient') { finished = true; setError(`Доступно вопросов: ${event.available}. Выберите другой уровень.`); setStage('home'); }
+          if (event.type === 'insufficient') { finished = true; setError(marathon ? 'Нет доступных вопросов для марафона.' : `Доступно вопросов: ${event.available}. Выберите другой уровень.`); setStage('home'); }
           if (event.type === 'error') { finished = true; setError(event.message); setStage('home'); }
         } catch { finished = true; setError('Не удалось получить вопросы. Попробуйте снова.'); setStage('home'); ws.close(); }
       };
@@ -110,34 +131,60 @@ export default function RandomTrainingScreen() {
     if (!selection) return;
     startTest({ id: selection.id, name: 'Тренировка', questions: selection.questions,
       order: null, parentId: null, minScore: null, maxErrors: 0,
-      showCorrectAnswer: true, includeToStatistics: false, showSkipButton: true,
-      showNavigation: false, showBackButton: true, hidden: false,
+      showCorrectAnswer: true, includeToStatistics: false, showSkipButton: !marathon,
+      showNavigation: false, showBackButton: !marathon, hidden: false,
       randomizeQuestions: false, questionsToShow: null, accessabilityConditions: null,
       resetTestIds: null, requiredTariffId: null, requiredRewardId: null, isLocked: false, lockedBy: null });
     setStage('playing');
+    saving.current = null;
   };
   const save = useCallback(async (answers: TestAnswer[]) => {
     if (!selection) throw new Error('Попытка не найдена');
-    await completeRandomTraining(selection.id, answers);
-  }, [selection]);
+    if (marathon && !answers.length) return;
+    if (!saving.current) saving.current = completeRandomTraining(selection.id, answers).then(() => undefined).catch((error) => { saving.current = null; throw error; });
+    await saving.current;
+  }, [selection, marathon]);
   const finish = () => { resetTest(); setSelection(null); setStage('home'); void refresh(); };
   const cancel = () => {
     const ws = socket.current; socket.current = null; ws?.close();
     setSelection(null); setStage('home');
   };
 
-  if (stage === 'playing' && focused) return <TestTakingView onBack={finish} onFinish={finish} onSaveTraining={save} />;
+  const goBack = () => {
+    if (stage === 'home') {
+      if (router.canGoBack()) router.back();
+      else router.replace('/(tabs)/random-training');
+    }
+    else cancel();
+  };
+  useChromeBack(focused && stage !== 'playing' ? goBack : null);
+  useEffect(() => navigation.addListener('beforeRemove', (event) => {
+    if (stage !== 'playing' || leaving.current) return;
+    event.preventDefault();
+    void save(processSkippedQuestions(!marathon)).then(() => {
+      leaving.current = true;
+      resetTest();
+      navigation.dispatch(event.data.action);
+    }).catch(() => {
+      const message = 'Не удалось сохранить результат. Попробуйте ещё раз.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(message);
+      else Alert.alert('Ошибка', message);
+    });
+  }), [navigation, stage, save, processSkippedQuestions, marathon, resetTest]);
+
+  const filteredHistory = history.filter((attempt) => (attempt.difficulty === 'marathon') === marathon);
+  if (stage === 'playing' && focused) return <TestTakingView onBack={finish} onFinish={finish} onSaveTraining={save} marathon={marathon} />;
   return (
     <ScreenBackground style={{ flex: 1 }}>
+      <ScreenAppBar title={marathon ? 'Марафон' : 'Обычная тренировка'} onBack={goBack} showBack={focused} />
       <FlatList
-        data={stage === 'home' && !historyError ? history : []}
+        data={stage === 'home' && !historyError ? filteredHistory : []}
         keyExtractor={(attempt) => attempt.id}
         contentContainerStyle={{ paddingHorizontal: Spacing.pageX, paddingTop: Spacing.card, paddingBottom: contentPaddingBottom }}
         ItemSeparatorComponent={() => <View style={{ height: Spacing.card / 2 }} />}
         ListHeaderComponent={<View style={{ gap: Spacing.card, paddingBottom: Spacing.card }}>
-        {stage !== 'home' && <BackButton onPress={cancel} label="Назад" />}
-        <ThemedText type="h1">Тренировка</ThemedText>
         {stage === 'home' ? <>
+          {marathon ? <ThemedText type="caption" style={{ color: neutral }}>Все доступные вопросы до первой ошибки</ThemedText> :
           <View style={{ gap: Spacing.card / 2 }}>
             <ThemedText type="defaultSemiBold">Уровень сложности</ThemedText>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.card / 2 }}>
@@ -145,11 +192,13 @@ export default function RandomTrainingScreen() {
             </View>
             <ThemedText type="caption" style={{ color: neutral }}>{level.count} вопросов · для прохождения ответьте без ошибок</ThemedText>
           </View>
+          }
           <Button title="Подобрать вопросы" onPress={beginSelection} />
           {!!error && <ThemedText accessibilityRole="alert">{error}</ThemedText>}
           <View style={{ gap: Spacing.card / 2 }}>
             <ThemedText type="subtitle">Прошлые попытки</ThemedText>
-            {historyError ? <Button title="Не удалось загрузить историю. Повторить" variant="glass" onPress={() => void refresh()} /> : history.length === 0 ? <ThemedText type="caption" style={{ color: neutral }}>Пока нет завершённых тренировок</ThemedText> : null}
+            {marathon && filteredHistory.length > 0 && <ThemedText>Личный рекорд: {Math.max(...filteredHistory.map((attempt) => attempt.correct))}</ThemedText>}
+            {historyError ? <Button title="Не удалось загрузить историю. Повторить" variant="glass" onPress={() => void refresh()} /> : filteredHistory.length === 0 ? <ThemedText type="caption" style={{ color: neutral }}>Пока нет завершённых тренировок</ThemedText> : null}
           </View>
         </> : <>
           <GlassCard>
@@ -158,12 +207,12 @@ export default function RandomTrainingScreen() {
                 {stage === 'loading' && <ActivityIndicator color={primary} size="large" />}
                 <View style={{ flex: 1, gap: Spacing.card / 2 }}>
                   <ThemedText type="subtitle" accessibilityLiveRegion="polite">{stage === 'loading' ? 'Подбираем вопросы' : 'Всё готово'}</ThemedText>
-                  <ThemedText style={{ color: neutral }}>{stage === 'loading' ? messages[messageIndex] : `${level.label} уровень · ${selection?.questions.length ?? progress} вопросов`}</ThemedText>
+                  <ThemedText style={{ color: neutral }}>{stage === 'loading' ? messages[messageIndex] : `${marathon ? 'Марафон' : `${level.label} уровень`} · ${selection?.questions.length ?? progress} вопросов`}</ThemedText>
                 </View>
               </View>
               <View style={{ gap: Spacing.card / 2 }}>
-                <ThemedText type="caption">Подобрано: {visibleQuestions} из {level.count}</ThemedText>
-                <ProgressBar current={visibleQuestions} total={level.count} variant="muted" />
+                <ThemedText type="caption">Подобрано: {visibleQuestions} из {marathon ? total : level.count}</ThemedText>
+                <ProgressBar current={visibleQuestions} total={marathon ? total || 1 : level.count} variant="muted" />
               </View>
               {stage === 'ready' && <Button title="Начать тренировку" onPress={start} />}
             </View>
@@ -183,13 +232,13 @@ export default function RandomTrainingScreen() {
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: Spacing.card / 2 }}>
                   <View style={{ backgroundColor: passed ? successContainer : errorContainer, borderRadius: Radius.sm, paddingHorizontal: Spacing.card / 2, paddingVertical: Spacing.card / 4 }}>
-                    <ThemedText type="caption" style={{ color: passed ? onSuccessContainer : onErrorContainer }}>{passed ? 'Пройдена' : 'Не пройдена'}</ThemedText>
+                    <ThemedText type="caption" style={{ color: passed ? onSuccessContainer : onErrorContainer }}>{marathon ? (passed ? 'Все вопросы пройдены' : attempt.correct < attempt.items.length ? 'Первая ошибка' : 'Завершён досрочно') : passed ? 'Пройдена' : 'Не пройдена'}</ThemedText>
                   </View>
-                  <ThemedText type="defaultSemiBold">{attempt.correct} из {attempt.total}</ThemedText>
+                  <ThemedText type="defaultSemiBold">{marathon ? `Серия: ${attempt.correct} · Отвечено: ${attempt.items.length} из ${attempt.total}` : `${attempt.correct} из ${attempt.total}`}</ThemedText>
                   <View style={{ flex: 1 }} />
                   <IconSymbol name={isExpanded ? 'chevron.down' : 'chevron.right'} size={Spacing.card} color={neutral} />
                 </View>
-                <ThemedText type="caption" style={{ color: neutral }}>{new Date(attempt.completedAt).toLocaleString('ru-RU')} · {levels.find((item) => item.id === attempt.difficulty)?.label}</ThemedText>
+                <ThemedText type="caption" style={{ color: neutral }}>{new Date(attempt.completedAt).toLocaleString('ru-RU')} · {marathon ? 'Марафон' : levels.find((item) => item.id === attempt.difficulty)?.label}</ThemedText>
               </Pressable>
               {isExpanded && <View style={{ paddingHorizontal: Spacing.card, paddingBottom: Spacing.card, gap: Spacing.card }}>
                 {attempt.items.map((item, index) => item.question ? <View key={item.question.id} style={{ gap: Spacing.card / 2 }}>

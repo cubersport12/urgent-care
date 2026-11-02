@@ -1,14 +1,11 @@
 import { useChromeBack } from '@/contexts/chrome-back-context';
-import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTest, type TestAnswer } from '@/contexts/test-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { persistTestCompletion } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
-import { Gradients } from '@/constants/theme';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Alert, Platform, Pressable, ScrollView, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { BackButton } from '../explorer/back-button';
@@ -17,6 +14,7 @@ import { ThemedView } from '../themed-view';
 import { GlassCard } from '../ui/glass-card';
 import { Button } from '../ui/button';
 import { ScreenBackground } from '../ui/screen-background';
+import { ProgressBar } from '../ui/progress-bar';
 import { useTestTakingStyles } from './styles';
 import { getAnswerStatus } from './utils';
 
@@ -33,6 +31,7 @@ type TestQuestionViewProps = {
   onPrevious: () => void;
   canNavigateToQuestion?: boolean;
   onSaveTraining?: (answers: TestAnswer[]) => Promise<void>;
+  marathon?: boolean;
 };
 
 export function TestQuestionView({
@@ -48,6 +47,7 @@ export function TestQuestionView({
   onPrevious,
   canNavigateToQuestion = false,
   onSaveTraining,
+  marathon = false,
 }: TestQuestionViewProps) {
   const {
     test,
@@ -99,10 +99,10 @@ export function TestQuestionView({
     question?.image || ''
   );
 
-  const handleFinish = async (returnToFolderAfterFinish = false) => {
+  const handleFinish = async () => {
     if (!test) return;
 
-    const finalAnswers = processSkippedQuestions();
+    const finalAnswers = processSkippedQuestions(!marathon);
     try {
       if (onSaveTraining) await onSaveTraining(finalAnswers);
       else await persistTestCompletion({
@@ -117,9 +117,6 @@ export function TestQuestionView({
             : undefined,
       });
       finishTest('user');
-      // Кнопка «Завершить тест» должна сначала показать сводку.
-      // Кнопка «Назад» сохраняет прежнее поведение и возвращает в папку.
-      if (returnToFolderAfterFinish) onFinish();
     } catch (error) {
       const errorMessage = 'Не удалось сохранить результаты теста. Попробуйте еще раз.';
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -131,20 +128,20 @@ export function TestQuestionView({
     }
   };
 
-  const handleFinishWithConfirmation = (returnToFolderAfterFinish = false) => {
+  const handleFinishWithConfirmation = () => {
     if (!test || !question) return;
 
-    const message = 'Вы уверены, что хотите завершить тест? Неотвеченные вопросы будут засчитаны как неправильные.';
+    const message = marathon ? 'Завершить марафон и сохранить результат?' : 'Вы уверены, что хотите завершить тест? Неотвеченные вопросы будут засчитаны как неправильные.';
     
     if (Platform.OS === 'web') {
       // Для веб используем window.confirm
       if (typeof window !== 'undefined' && window.confirm(message)) {
         // Сохраняем текущий ответ, если он выбран
-        if (selectedAnswers.length > 0 && !showResult) {
+        if (!marathon && selectedAnswers.length > 0 && !showResult) {
           submitAnswer(question.id, selectedAnswers);
         }
         // Вызываем handleFinish асинхронно
-        void handleFinish(returnToFolderAfterFinish);
+        void handleFinish();
       }
     } else {
       // Для нативных платформ используем Alert.alert
@@ -161,10 +158,10 @@ export function TestQuestionView({
             style: 'destructive',
             onPress: async () => {
               // Сохраняем текущий ответ, если он выбран
-              if (selectedAnswers.length > 0 && !showResult) {
+              if (!marathon && selectedAnswers.length > 0 && !showResult) {
                 submitAnswer(question.id, selectedAnswers);
               }
-              await handleFinish(returnToFolderAfterFinish);
+              await handleFinish();
             },
           },
         ]
@@ -173,11 +170,9 @@ export function TestQuestionView({
   };
 
   const handleBackToFolder = () => {
-    // При нажатии на кнопку "Назад" вызываем процедуру завершения теста
-    handleFinishWithConfirmation(true);
+    handleFinishWithConfirmation();
   };
 
-  const { isWide } = useNavRail();
   useChromeBack(test && question ? handleBackToFolder : null);
 
   if (!test || !question) return null;
@@ -220,8 +215,6 @@ export function TestQuestionView({
     return hasSomeCorrect && (notAllCorrect || hasIncorrect) && !currentAnswer.isCorrect;
   })();
 
-  const progressPercent =
-    totalQuestions > 0 ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0;
   const nextLabel = showResult
     ? isTestCompleted
       ? 'Завершить'
@@ -234,21 +227,22 @@ export function TestQuestionView({
   return (
     <ScreenBackground style={styles.container}>
       <Animated.View style={[styles.container, animatedStyle]}>
-        <View style={[styles.topProgressTrack, { backgroundColor: glass.progressTrack }]}>
-          <LinearGradient
-            colors={[...Gradients.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.topProgressFill, { width: `${progressPercent}%` }]}
-          />
-        </View>
-
         <ThemedView style={[styles.header, { borderBottomColor: glass.border }]}>
-          {!isWide ? (
-            <ThemedView style={styles.headerContent}>
-              <BackButton onPress={handleBackToFolder} />
-            </ThemedView>
-          ) : null}
+          <View style={styles.headerContent}>
+            <BackButton onPress={handleBackToFolder} close label="Завершить тест" />
+            <View style={styles.testHeaderDetails}>
+              <ThemedText type="defaultSemiBold" style={styles.testHeaderTitle} numberOfLines={1}>
+                {test.name}
+              </ThemedText>
+              <View
+                accessibilityRole="progressbar"
+                accessibilityLabel="Прогресс теста"
+                accessibilityValue={{ min: 0, max: totalQuestions, now: currentQuestionIndex + 1 }}
+              >
+                <ProgressBar current={currentQuestionIndex + 1} total={totalQuestions} height={8} />
+              </View>
+            </View>
+          </View>
           {test.showNavigation !== false &&
             test.questions &&
             test.questions.length > 0 &&

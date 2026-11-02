@@ -1,10 +1,15 @@
 import { useAppTheme } from '@/hooks/use-theme-color';
 import * as FileSystem from 'expo-file-system/legacy';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState, type ComponentProps, type ComponentType } from 'react';
+import { ActivityIndicator, Platform, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { PdfViewProps } from './pdf-view.types';
 import { normalizePdfDataUri, pdfJsHtmlFromBase64 } from './pdf-view.types';
+
+const PdfWebView = WebView as unknown as ComponentType<Omit<ComponentProps<typeof WebView>, 'onScroll'> & {
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  scrollEventThrottle?: number;
+}>;
 
 function extractBase64(dataUri: string): string {
   const match = dataUri.match(/base64,(.+)$/);
@@ -22,6 +27,7 @@ export function PdfView({
   style,
   onScrollToEnd,
   onScrollProgress,
+  onScrollDirection,
 }: PdfViewProps) {
   const { page: backgroundColor } = useAppTheme();
   const [webViewSource, setWebViewSource] = useState<{ uri: string } | { html: string; baseUrl?: string } | null>(
@@ -32,11 +38,15 @@ export function PdfView({
   const hasCalledScrollEndRef = useRef(false);
   const hasCalledOnLoadRef = useRef(false);
   const progressSentRef = useRef<Set<number>>(new Set());
+  const lastScrollYRef = useRef(0);
+  const lastScrollDirectionRef = useRef<'up' | 'down' | null>(null);
 
   useEffect(() => {
     hasCalledScrollEndRef.current = false;
     hasCalledOnLoadRef.current = false;
     progressSentRef.current = new Set();
+    lastScrollYRef.current = 0;
+    lastScrollDirectionRef.current = null;
   }, [source]);
 
   useEffect(() => {
@@ -137,6 +147,9 @@ export function PdfView({
         onScrollProgress?.(pct);
       }
     }
+    if (data === 'direction:up' || data === 'direction:down') {
+      onScrollDirection?.(data.slice('direction:'.length) as 'up' | 'down');
+    }
     if (data === 'end' && onScrollToEnd && !hasCalledScrollEndRef.current) {
       hasCalledScrollEndRef.current = true;
       onScrollToEnd();
@@ -153,7 +166,7 @@ export function PdfView({
 
   return (
     <View style={[styles.container, style, { backgroundColor }]}>
-      <WebView
+      <PdfWebView
         source={webViewSource}
         style={styles.webview}
         originWhitelist={['*']}
@@ -175,6 +188,19 @@ export function PdfView({
           onError?.(new Error('Failed to load PDF'));
         }}
         onMessage={handleMessage}
+        onScroll={Platform.OS === 'ios' ? (event) => {
+          const y = event.nativeEvent.contentOffset.y;
+          const delta = y - lastScrollYRef.current;
+          if (Math.abs(delta) > 3) {
+            const direction = delta > 0 ? 'down' : 'up';
+            if (direction !== lastScrollDirectionRef.current) {
+              lastScrollDirectionRef.current = direction;
+              onScrollDirection?.(direction);
+            }
+            lastScrollYRef.current = y;
+          }
+        } : undefined}
+        scrollEventThrottle={16}
       />
     </View>
   );

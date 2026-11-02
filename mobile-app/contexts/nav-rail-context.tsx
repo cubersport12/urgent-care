@@ -1,5 +1,6 @@
 import { NavRail } from '@/constants/theme';
 import { useWideLayout } from '@/hooks/use-wide-layout';
+import { useImmersive } from '@/contexts/immersive-context';
 import React, {
   createContext,
   ReactNode,
@@ -34,6 +35,7 @@ const NavRailContext = createContext<NavRailContextType>({
 
 export function NavRailProvider({ children }: { children: ReactNode }) {
   const { isWide } = useWideLayout();
+  const { isImmersive } = useImmersive();
   const insets = useSafeAreaInsets();
   const [expanded, setExpanded] = useState(false);
 
@@ -59,9 +61,9 @@ export function NavRailProvider({ children }: { children: ReactNode }) {
       railWidth,
       railOuterWidth,
       contentPaddingLeft: railOuterWidth,
-      contentPaddingBottom: isWide ? 24 : 96,
+      contentPaddingBottom: isWide || isImmersive ? 24 : 96,
     }),
-    [isWide, expanded, toggleExpanded, railWidth, railOuterWidth],
+    [isWide, isImmersive, expanded, toggleExpanded, railWidth, railOuterWidth],
   );
 
   return <NavRailContext.Provider value={value}>{children}</NavRailContext.Provider>;

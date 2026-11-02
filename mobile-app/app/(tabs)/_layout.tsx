@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { ChromeBackProvider } from '@/contexts/chrome-back-context';
 import { NavRailProvider, useNavRail } from '@/contexts/nav-rail-context';
 import { useNotifications } from '@/contexts/notifications-context';
+import { useImmersive } from '@/contexts/immersive-context';
 import { useTheme } from '@/contexts/theme-context';
 import { handleTabPressToRoot } from '@/lib/tab-navigation';
 import { BottomTabBar, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -16,9 +17,11 @@ import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 
 function AppTabBar(props: BottomTabBarProps) {
   const { isWide } = useNavRail();
+  const { isImmersive } = useImmersive();
   if (isWide) {
     return <SideNavRail {...props} />;
   }
+  if (isImmersive) return null;
   return <BottomTabBar {...props} />;
 }
 

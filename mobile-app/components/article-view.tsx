@@ -2,15 +2,18 @@ import { recordLearningEvent } from '@/api/learning-events';
 import { useArticlesStats, useFilePdf } from '@/hooks/api';
 import { AppArticleStatsVm, AppArticleVm } from '@/hooks/api/types';
 import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useImmersiveMode } from '@/contexts/immersive-context';
+import { useIsFocused } from '@react-navigation/native';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useAppTheme } from '@/hooks/use-theme-color';
+import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { apiFetch } from '@/lib/api';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PdfView } from './pdf-view/pdf-view';
+import { BackButton } from './explorer/back-button';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 import { Button } from './ui/button';
@@ -97,25 +100,25 @@ const ArticleViewContent = memo(({
   tintColorRef: React.MutableRefObject<string>;
   onScrollProgressRef: React.MutableRefObject<(percent: number) => void>;
 }) => {
-  const { border: borderColor } = useAppTheme();
-  const { isWide } = useNavRail();
   useChromeBack(onBack);
+  const glass = useGlass();
+  const headerOffset = useSharedValue(0);
+  const headerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: withTiming(headerOffset.value, { duration: 220 }) }],
+  }));
 
   return (
     <Animated.View style={styles.container} entering={FadeIn.duration(300)}>
-      {!isWide ? (
-        <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
-          <Button
-            title="Назад"
-            onPress={onBack}
-            variant="default"
-            icon="chevron.left"
-            iconPosition="left"
-            size="medium"
-            style={styles.backButton}
-          />
-        </ThemedView>
-      ) : null}
+      <Animated.View style={[styles.header, { backgroundColor: glass.header, borderBottomColor: glass.border }, headerStyle]} pointerEvents="box-none">
+        <View style={styles.headerTitle} pointerEvents="none">
+          <ThemedText type="defaultSemiBold" style={styles.headerTitleText} numberOfLines={1} accessibilityRole="header">
+            {article.name}
+          </ThemedText>
+        </View>
+        <View style={styles.closeButton}>
+          <BackButton onPress={onBack} close label="Закрыть документ" />
+        </View>
+      </Animated.View>
       {isLoading ? (
         <ThemedView style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={tintColorRef.current} />
@@ -128,6 +131,9 @@ const ArticleViewContent = memo(({
             source={pdfUri}
             onScrollToEnd={() => onScrolledToEndRef.current()}
             onScrollProgress={(pct) => onScrollProgressRef.current(pct)}
+            onScrollDirection={(direction) => {
+              headerOffset.value = direction === 'down' ? -64 : 0;
+            }}
             onError={(error) => {
               console.error('PDF error:', error);
             }}
@@ -149,6 +155,8 @@ const ArticleViewContent = memo(({
 ArticleViewContent.displayName = 'ArticleViewContent';
 
 export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious = false }: ArticleViewProps) {
+  const isFocused = useIsFocused();
+  useImmersiveMode(isFocused);
   // Единственный хук, который должен вызывать перерисовку
   const { response: pdfUri, isLoading } = useFilePdf(`${article.id}.pdf`);
   const insets = useSafeAreaInsets();
@@ -359,11 +367,34 @@ const styles = StyleSheet.create({
     ...(Platform.OS === 'web' ? { minHeight: 0, height: '100%' } : {}),
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    height: 56,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    // borderBottomColor will be set dynamically
-    alignItems: 'flex-start',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+  },
+  headerTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitleText: {
+    fontSize: 18,
+    textAlign: 'center',
+    maxWidth: '70%',
+  },
+  closeButton: {
+    marginLeft: 'auto',
   },
   backButton: {
     flexDirection: 'row',

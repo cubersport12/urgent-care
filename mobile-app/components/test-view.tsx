@@ -1,6 +1,5 @@
 import { AppTestVm } from '@/hooks/api/types';
 import { useChromeBack } from '@/contexts/chrome-back-context';
-import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTestsStats } from '@/hooks/api/useTestStats';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/hooks/use-theme-color';
@@ -8,7 +7,6 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BackButton } from './explorer/back-button';
 import { ThemedText } from './themed-text';
 import { GlassCard } from './ui/glass-card';
 import { Button } from './ui/button';
@@ -16,6 +14,7 @@ import { IconSymbol } from './ui/icon-symbol';
 import { NoScreenCapture } from './ui/no-screen-capture';
 import { StatusBadge } from './ui/status-badge';
 import { ScreenBackground } from './ui/screen-background';
+import { ScreenAppBar } from './ui/screen-app-bar';
 
 type TestViewProps = {
   test: AppTestVm;
@@ -24,13 +23,12 @@ type TestViewProps = {
 };
 
 export function TestView({ test, onBack, onStart }: TestViewProps) {
-  const { isWide } = useNavRail();
   useChromeBack(onBack);
   const { primary: tintColor, border } = useAppTheme();
   const insets = useSafeAreaInsets();
   // Кнопка прибита к низу: таб-бар absolute — нужен запас на его высоту
   const footerPaddingBottom =
-    Math.max(insets.bottom, 12) + (isWide ? 12 : Spacing.nav);
+    Math.max(insets.bottom, 12) + 12;
 
   // Массив id — через useMemo: литерал менял бы идентичность на каждый рендер
   // и useTestsStats уходил бы в бесконечный рефетч.
@@ -85,16 +83,12 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
     <ScreenBackground style={styles.container}>
       <NoScreenCapture />
       <Animated.View style={styles.inner} entering={FadeIn.duration(300)}>
-        {!isWide ? <BackButton onPress={onBack} label="Назад" /> : null}
+        <ScreenAppBar title={test.name} onBack={onBack} />
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContent}
           showsVerticalScrollIndicator={false}
         >
-          <ThemedText type="h1" style={styles.title}>
-            {test.name}
-          </ThemedText>
-
           <GlassCard padding={16} borderRadius={12} style={styles.card}>
             <View style={styles.cardHeader}>
               <IconSymbol name="clock.fill" size={20} color={tintColor} />
@@ -172,23 +166,16 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  inner: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
+  inner: { flex: 1 },
   scrollView: { flex: 1 },
   scrollViewContent: {
     flexGrow: 1,
-    paddingHorizontal: 4,
-    paddingTop: 8,
+    paddingHorizontal: Spacing.pageX,
+    paddingTop: Spacing.card,
     paddingBottom: 16,
     maxWidth: 560,
     width: '100%',
     alignSelf: 'center',
-  },
-  title: {
-    marginBottom: 24,
-    fontSize: 28,
-    fontWeight: 'bold',
-    lineHeight: 36,
-    textAlign: 'center',
   },
   card: { marginBottom: 16, width: '100%', gap: 8 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
@@ -211,6 +198,6 @@ const styles = StyleSheet.create({
   emptyHint: { textAlign: 'center', marginBottom: 16 },
   startButtonContainer: {
     paddingTop: 12,
-    paddingHorizontal: 4,
+    paddingHorizontal: Spacing.pageX,
   },
 });

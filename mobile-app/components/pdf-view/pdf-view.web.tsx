@@ -16,6 +16,7 @@ export function PdfView({
   style,
   onScrollToEnd,
   onScrollProgress,
+  onScrollDirection,
 }: PdfViewProps) {
   const { theme } = useTheme();
   const html = useMemo(() => {
@@ -27,8 +28,8 @@ export function PdfView({
   }, [source, theme]);
 
   // Колбэки — через ref, чтобы слушатель message не переустанавливать на каждый рендер
-  const callbacksRef = useRef({ onLoad, onError, onScrollToEnd, onScrollProgress });
-  callbacksRef.current = { onLoad, onError, onScrollToEnd, onScrollProgress };
+  const callbacksRef = useRef({ onLoad, onError, onScrollToEnd, onScrollProgress, onScrollDirection });
+  callbacksRef.current = { onLoad, onError, onScrollToEnd, onScrollProgress, onScrollDirection };
 
   const hasCalledOnLoadRef = useRef(false);
   const hasCalledOnScrollToEndRef = useRef(false);
@@ -61,6 +62,8 @@ export function PdfView({
         if (!Number.isNaN(percent)) {
           callbacks.onScrollProgress?.(percent);
         }
+      } else if (data === 'direction:up' || data === 'direction:down') {
+        callbacks.onScrollDirection?.(data.slice('direction:'.length) as 'up' | 'down');
       }
     };
     window.addEventListener('message', handleMessage);

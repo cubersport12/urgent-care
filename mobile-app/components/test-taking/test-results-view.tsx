@@ -8,10 +8,11 @@ import type { AppArticleVm } from '@/hooks/api/types';
 import { computeTestOutcome } from '@/hooks/api/useTestResults';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
+import { BackButton } from '../explorer/back-button';
 import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
 import { IconSymbol } from '../ui/icon-symbol';
@@ -24,9 +25,10 @@ type TestResultsViewProps = {
   animatedStyle: any;
   resetTests?: { id: string; name: string }[] | null;
   isTraining?: boolean;
+  marathon?: boolean;
 };
 
-export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, isTraining }: TestResultsViewProps) {
+export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, isTraining, marathon = false }: TestResultsViewProps) {
   const {
     test,
     answers,
@@ -48,14 +50,14 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
   // Обрабатываем пропущенные вопросы при монтировании компонента
   useEffect(() => {
     if (test) {
-      processSkippedQuestions();
+      processSkippedQuestions(!marathon);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Выполняем только при монтировании
 
   // Вычисляем финальные ответы (включая все неотвеченные вопросы) без изменения состояния
   const finalAnswers = useMemo(() => {
-    if (!test || !test.questions) return answers;
+    if (marathon || !test || !test.questions) return answers;
 
     const unansweredQuestions = test.questions.filter(
       question => !answers.find(a => a.questionId === question.id)
@@ -70,7 +72,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
 
     // Возвращаем финальный массив ответов (включая пропущенные)
     return [...answers, ...skippedAnswers];
-  }, [test, answers]);
+  }, [test, answers, marathon]);
 
   const outcome = useMemo(
     () =>
@@ -122,7 +124,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
   const { totalScore, totalErrors, isPassed } = outcome;
 
   // Экран завершения один для всех случаев: просто пройден / не пройден
-  const statusText = isPassed ? 'Тест пройден ✓' : 'Тест не пройден ✗';
+  const statusText = marathon ? (totalErrors ? 'Первая ошибка' : answers.length === test.questions?.length ? 'Все вопросы пройдены' : 'Завершён досрочно') : isPassed ? 'Тест пройден ✓' : 'Тест не пройден ✗';
 
   const handleFinish = () => {
     finishTest();
@@ -142,36 +144,28 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
         animatedStyle,
       ]}
     >
-      {!isWide ? (
-        <ThemedView style={styles.header}>
-          <Pressable
-            onPress={onBack}
-            style={({ pressed }) => [
-              styles.backButton,
-              {
-                backgroundColor: pressed ? pressedBackgroundColor : backgroundColor,
-              },
-            ]}
-          >
-            <IconSymbol name="chevron.left" size={28} color={tintColor} />
-            <ThemedText style={styles.backButtonText}>Назад</ThemedText>
-          </Pressable>
-        </ThemedView>
-      ) : null}
+      <ThemedView style={[styles.header, headerStyles.container]}>
+        <BackButton onPress={onBack} close label="Закрыть результаты теста" />
+        <View pointerEvents="none" style={headerStyles.title}>
+          <ThemedText type="defaultSemiBold" style={headerStyles.titleText} numberOfLines={1} accessibilityRole="header">
+            {test.name}
+          </ThemedText>
+        </View>
+      </ThemedView>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollViewContent, { paddingBottom: 88 + footerPad }]}
       >
         <ThemedView style={styles.content}>
           <ThemedText type="title" style={styles.resultsTitle}>
-            Результаты теста
+            {marathon ? 'Результат марафона' : 'Результаты теста'}
           </ThemedText>
           <ThemedView style={styles.summaryCard}>
             <ThemedText type="subtitle" style={styles.summaryTitle}>
               Итоги:
             </ThemedText>
             <ThemedText style={styles.summaryItem}>
-              Набрано баллов: {totalScore}
+              {marathon ? `Верных ответов подряд: ${answers.filter((answer) => answer.isCorrect).length}` : `Набрано баллов: ${totalScore}`}
               {test.minScore !== undefined && test.minScore !== null && (
                 <ThemedText> / {test.minScore} (минимум)</ThemedText>
               )}
@@ -268,3 +262,23 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
     </Animated.View>
   );
 }
+
+const headerStyles = StyleSheet.create({
+  container: {
+    position: 'relative',
+  },
+  title: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleText: {
+    maxWidth: '70%',
+    fontSize: 18,
+    textAlign: 'center',
+  },
+});
