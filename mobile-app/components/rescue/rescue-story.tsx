@@ -1,4 +1,4 @@
-import { Fonts, getSceneSurfaces, Radius, Spacing } from '@/constants/theme';
+import { Fonts, getSceneSurfaces, Radius } from '@/constants/theme';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTheme } from '@/contexts/theme-context';
 import {
@@ -163,8 +163,7 @@ export function RescueSceneVisualNovel({
   // Ниже кнопки «Назад» (телефон) / под статус-бар (wide) — без двойного insets.top
   const parametersTopPad =
     (isWide ? insets.top : 0) + 8 + (sceneNotReviewedByAuthor ? 42 : 0);
-  // Отступ снизу: safe area + tab bar на телефоне, чтобы текст не обрезался
-  const bottomPad = Math.max(insets.bottom, 12) + (isWide ? 8 : Spacing.nav);
+  const bottomPad = Math.max(insets.bottom, 12) + 8;
   const textAreaMaxHeight = Math.round(windowHeight * 0.42);
 
   const resolvedBackground = useMemo(() => {

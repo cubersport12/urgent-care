@@ -25,7 +25,7 @@ import { apiFetchRelation } from '@/hooks/api/useApiFetch';
 import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-completion';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme } from '@/hooks/use-theme-color';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -108,7 +108,6 @@ export function Explorer() {
 
   const { neutralSoft: descriptionColor, primary } = useAppTheme();
   const overallStats = useAccountOverallStats();
-  const rescueTitleRef = useRef('Режим спасения');
   const { deviceId } = useDeviceId();
   const foldersResponse = useFolders(currentFolderId);
   const articlesResponse = useArticles(currentFolderId);
@@ -651,7 +650,8 @@ export function Explorer() {
   useChromeBack(showFolderChromeBack ? handleBackFromFolder : null);
 
   // Hide global notification toast while reading / testing / rescue novel
-  useImmersiveMode(!!(selectedArticle || selectedTest || selectedRescueItem));
+  const isFocused = useIsFocused();
+  useImmersiveMode(isFocused && !!(selectedArticle || selectedTest || selectedRescueItem));
 
   // Если выбрана статья, показываем ArticleView
   if (selectedArticle) {
@@ -704,7 +704,6 @@ export function Explorer() {
     return (
       <RescueView
         rescueItem={selectedRescueItem}
-        displayName={rescueTitleRef.current}
         onBack={async () => {
           try {
             await rescueStatsMutation.addOrUpdate({
@@ -758,7 +757,6 @@ export function Explorer() {
         onBack={handleBackFromItem}
         onRescueSessionStarted={() => void rescueStatsList.fetchData()}
         onStart={() => {
-          rescueTitleRef.current = rescueDisplayName(selectedRescueItem.name, rescueAttempted, rescueIndex < 0 ? 0 : rescueIndex);
           setRescueFinalParameters({});
           setRescueCollectedImplications([]);
           setIsRescueStarted(true);

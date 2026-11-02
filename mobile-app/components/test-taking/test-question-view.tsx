@@ -99,7 +99,7 @@ export function TestQuestionView({
     question?.image || ''
   );
 
-  const handleFinish = async (returnToFolderAfterFinish = false) => {
+  const handleFinish = async () => {
     if (!test) return;
 
     const finalAnswers = processSkippedQuestions(!marathon);
@@ -117,9 +117,6 @@ export function TestQuestionView({
             : undefined,
       });
       finishTest('user');
-      // Кнопка «Завершить тест» должна сначала показать сводку.
-      // Кнопка «Назад» сохраняет прежнее поведение и возвращает в папку.
-      if (returnToFolderAfterFinish) onFinish();
     } catch (error) {
       const errorMessage = 'Не удалось сохранить результаты теста. Попробуйте еще раз.';
       if (Platform.OS === 'web' && typeof window !== 'undefined') {
@@ -131,7 +128,7 @@ export function TestQuestionView({
     }
   };
 
-  const handleFinishWithConfirmation = (returnToFolderAfterFinish = false) => {
+  const handleFinishWithConfirmation = () => {
     if (!test || !question) return;
 
     const message = marathon ? 'Завершить марафон и сохранить результат?' : 'Вы уверены, что хотите завершить тест? Неотвеченные вопросы будут засчитаны как неправильные.';
@@ -144,7 +141,7 @@ export function TestQuestionView({
           submitAnswer(question.id, selectedAnswers);
         }
         // Вызываем handleFinish асинхронно
-        void handleFinish(returnToFolderAfterFinish);
+        void handleFinish();
       }
     } else {
       // Для нативных платформ используем Alert.alert
@@ -164,7 +161,7 @@ export function TestQuestionView({
               if (!marathon && selectedAnswers.length > 0 && !showResult) {
                 submitAnswer(question.id, selectedAnswers);
               }
-              await handleFinish(returnToFolderAfterFinish);
+              await handleFinish();
             },
           },
         ]
@@ -173,8 +170,7 @@ export function TestQuestionView({
   };
 
   const handleBackToFolder = () => {
-    // При нажатии на кнопку "Назад" вызываем процедуру завершения теста
-    handleFinishWithConfirmation(true);
+    handleFinishWithConfirmation();
   };
 
   useChromeBack(test && question ? handleBackToFolder : null);

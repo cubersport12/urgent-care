@@ -1,10 +1,15 @@
 import { useAppTheme } from '@/hooks/use-theme-color';
 import * as FileSystem from 'expo-file-system/legacy';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState, type ComponentProps, type ComponentType } from 'react';
+import { ActivityIndicator, Platform, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { PdfViewProps } from './pdf-view.types';
 import { normalizePdfDataUri, pdfJsHtmlFromBase64 } from './pdf-view.types';
+
+const PdfWebView = WebView as unknown as ComponentType<Omit<ComponentProps<typeof WebView>, 'onScroll'> & {
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  scrollEventThrottle?: number;
+}>;
 
 function extractBase64(dataUri: string): string {
   const match = dataUri.match(/base64,(.+)$/);
@@ -161,7 +166,7 @@ export function PdfView({
 
   return (
     <View style={[styles.container, style, { backgroundColor }]}>
-      <WebView
+      <PdfWebView
         source={webViewSource}
         style={styles.webview}
         originWhitelist={['*']}

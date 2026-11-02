@@ -11,6 +11,8 @@ import { BackButton } from '@/components/explorer/back-button';
 import { Spacing } from '@/constants/theme';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useImmersiveMode } from '@/contexts/immersive-context';
+import { useIsFocused } from '@react-navigation/native';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -61,6 +63,8 @@ export default function LegalDocsScreen() {
 
 function LegalDocViewer({ id, onBack }: { id: LegalDocId; onBack: () => void }) {
   useChromeBack(onBack);
+  const isFocused = useIsFocused();
+  useImmersiveMode(isFocused);
   const { response: pdfUri, isLoading } = useFilePdf(`legal/${id}.pdf`);
   const { neutral } = useAppTheme();
   const glass = useGlass();

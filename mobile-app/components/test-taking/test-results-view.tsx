@@ -8,7 +8,7 @@ import type { AppArticleVm } from '@/hooks/api/types';
 import { computeTestOutcome } from '@/hooks/api/useTestResults';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
@@ -144,8 +144,13 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
         animatedStyle,
       ]}
     >
-      <ThemedView style={styles.header}>
+      <ThemedView style={[styles.header, headerStyles.container]}>
         <BackButton onPress={onBack} close label="Закрыть результаты теста" />
+        <View pointerEvents="none" style={headerStyles.title}>
+          <ThemedText type="defaultSemiBold" style={headerStyles.titleText} numberOfLines={1} accessibilityRole="header">
+            {test.name}
+          </ThemedText>
+        </View>
       </ThemedView>
       <ScrollView
         style={styles.scrollView}
@@ -257,3 +262,23 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
     </Animated.View>
   );
 }
+
+const headerStyles = StyleSheet.create({
+  container: {
+    position: 'relative',
+  },
+  title: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleText: {
+    maxWidth: '70%',
+    fontSize: 18,
+    textAlign: 'center',
+  },
+});

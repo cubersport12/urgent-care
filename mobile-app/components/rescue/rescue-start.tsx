@@ -1,6 +1,5 @@
 import { Spacing } from '@/constants/theme';
 import { useChromeBack } from '@/contexts/chrome-back-context';
-import { useNavRail } from '@/contexts/nav-rail-context';
 import { AppRescueItemVm, RescueTimerParameterVm } from '@/hooks/api/types';
 import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { useAddOrUpdateRescueStats } from '@/hooks/api/useRescueStats';
@@ -32,7 +31,6 @@ type RescueStartProps = {
 export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescueSessionStarted }: RescueStartProps) {
   const { deviceId } = useDeviceId();
   const insets = useSafeAreaInsets();
-  const { isWide } = useNavRail();
   useChromeBack(onBack);
   const { addOrUpdate, isLoading: isRecordingStart } = useAddOrUpdateRescueStats({
     clientId: deviceId ?? '',
@@ -53,7 +51,7 @@ export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescue
 
   const { primary: tintColor, border } = useAppTheme();
   const footerPaddingBottom =
-    Math.max(insets.bottom, 12) + (isWide ? 12 : Spacing.nav);
+    Math.max(insets.bottom, 12) + 12;
 
   const formatDate = (dateString: string) => {
     try {

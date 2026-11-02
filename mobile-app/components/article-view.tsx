@@ -2,6 +2,8 @@ import { recordLearningEvent } from '@/api/learning-events';
 import { useArticlesStats, useFilePdf } from '@/hooks/api';
 import { AppArticleStatsVm, AppArticleVm } from '@/hooks/api/types';
 import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useImmersiveMode } from '@/contexts/immersive-context';
+import { useIsFocused } from '@react-navigation/native';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
@@ -153,6 +155,8 @@ const ArticleViewContent = memo(({
 ArticleViewContent.displayName = 'ArticleViewContent';
 
 export function ArticleView({ article, onBack, onNext, onPrevious, hasPrevious = false }: ArticleViewProps) {
+  const isFocused = useIsFocused();
+  useImmersiveMode(isFocused);
   // Единственный хук, который должен вызывать перерисовку
   const { response: pdfUri, isLoading } = useFilePdf(`${article.id}.pdf`);
   const insets = useSafeAreaInsets();

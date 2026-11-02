@@ -14,17 +14,16 @@ import { ArticleView } from '@/components/article-view';
 import { NoScreenCapture } from '@/components/ui/no-screen-capture';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
 import { BackButton } from '../explorer/back-button';
-import { Spacing } from '@/constants/theme';
 import { RescueSceneVisualNovel } from './rescue-story';
 import { showConfirm } from '@/lib/alert';
 
 type RescueViewProps = {
   rescueItem: AppRescueItemVm;
-  displayName: string;
   onBack: () => void | Promise<void>;
   /**
    * Финальные значения параметров и все implications выбранных ответов
@@ -38,11 +37,22 @@ type RescueViewProps = {
   typingSpeedMs?: number;
 };
 
-export function RescueView({ rescueItem, displayName, onBack, onComplete, typingSpeedMs = 35 }: RescueViewProps) {
-  const { page: backgroundColor, border: borderColor } = useAppTheme();
+export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 }: RescueViewProps) {
+  const { page: backgroundColor } = useAppTheme();
   const glass = useGlass();
   const insets = useSafeAreaInsets();
   const { isWide, contentPaddingLeft } = useNavRail();
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const hideHeaderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showHeader = useCallback(() => {
+    if (hideHeaderTimer.current) clearTimeout(hideHeaderTimer.current);
+    setHeaderVisible(true);
+    hideHeaderTimer.current = setTimeout(() => setHeaderVisible(false), 3000);
+  }, []);
+  const animatedHeaderStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(headerVisible ? 1 : 0, { duration: 300 }),
+    transform: [{ translateY: withTiming(headerVisible ? 0 : -64, { duration: 300 }) }],
+  }), [headerVisible]);
   const handleChromeBack = useCallback(() => {
     showConfirm(
       'Выйти из режима спасения?',
@@ -157,6 +167,12 @@ export function RescueView({ rescueItem, displayName, onBack, onComplete, typing
 
   // Документы сцены: открытие статьи как полноэкранного оверлея поверх сцены
   const [selectedArticle, setSelectedArticle] = useState<AppArticleVm | null>(null);
+  useEffect(() => {
+    if (!selectedArticle) showHeader();
+    return () => {
+      if (hideHeaderTimer.current) clearTimeout(hideHeaderTimer.current);
+    };
+  }, [selectedArticle, showHeader]);
   const [isLoadingArticle, setIsLoadingArticle] = useState(false);
   const handleOpenDocument = useCallback(async (articleId: string) => {
     setIsLoadingArticle(true);
@@ -227,6 +243,7 @@ export function RescueView({ rescueItem, displayName, onBack, onComplete, typing
 
   return (
     <ThemedView
+      onTouchStart={!selectedArticle ? showHeader : undefined}
       style={[
         styles.container,
         {
@@ -241,10 +258,11 @@ export function RescueView({ rescueItem, displayName, onBack, onComplete, typing
       <NoScreenCapture />
       {/* Шапку сцены скрываем при открытом документе — у ArticleView своя кнопка «Назад» */}
       {!selectedArticle ? (
-        <ThemedView style={[styles.header, { borderBottomColor: borderColor, flexDirection: 'row', alignItems: 'center', gap: Spacing.card / 2 }]}>
-          <BackButton onPress={handleChromeBack} close label="Закрыть режим спасения" />
-          <ThemedText type="defaultSemiBold" numberOfLines={1} style={{ flex: 1 }}>{displayName}</ThemedText>
-        </ThemedView>
+        <Animated.View style={[styles.header, animatedHeaderStyle]} pointerEvents={headerVisible ? 'auto' : 'none'}>
+          <View style={styles.closeButton}>
+            <BackButton onPress={handleChromeBack} close label="Закрыть режим спасения" />
+          </View>
+        </Animated.View>
       ) : null}
       {selectedArticle ? (
         <ArticleView article={selectedArticle} onBack={() => setSelectedArticle(null)} />
@@ -282,20 +300,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 30,
     paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    alignItems: 'flex-start',
-  },
-  backButton: {
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    minHeight: 40,
-    justifyContent: 'flex-start',
+  },
+  closeButton: {
+    marginLeft: 'auto',
   },
   sceneArea: {
     flex: 1,

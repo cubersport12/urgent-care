@@ -9,6 +9,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Radius, Spacing } from '@/constants/theme';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useChromeBack } from '@/contexts/chrome-back-context';
+import { useImmersiveMode } from '@/contexts/immersive-context';
 import { useTest, type TestAnswer } from '@/contexts/test-context';
 import type { AppTestQuestionVm } from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
@@ -43,6 +44,7 @@ export default function RandomTrainingMode({ marathon }: { marathon: boolean }) 
   const socket = useRef<WebSocket | null>(null);
   const stepDelays = useRef<number[]>([]);
   const focused = useIsFocused();
+  useImmersiveMode(focused && stage === 'playing');
   const { startTest, resetTest, finishTest, processSkippedQuestions } = useTest();
   const saving = useRef<Promise<void> | null>(null);
   const leaving = useRef(false);

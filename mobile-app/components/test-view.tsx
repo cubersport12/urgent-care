@@ -1,6 +1,5 @@
 import { AppTestVm } from '@/hooks/api/types';
 import { useChromeBack } from '@/contexts/chrome-back-context';
-import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTestsStats } from '@/hooks/api/useTestStats';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/hooks/use-theme-color';
@@ -24,13 +23,12 @@ type TestViewProps = {
 };
 
 export function TestView({ test, onBack, onStart }: TestViewProps) {
-  const { isWide } = useNavRail();
   useChromeBack(onBack);
   const { primary: tintColor, border } = useAppTheme();
   const insets = useSafeAreaInsets();
   // Кнопка прибита к низу: таб-бар absolute — нужен запас на его высоту
   const footerPaddingBottom =
-    Math.max(insets.bottom, 12) + (isWide ? 12 : Spacing.nav);
+    Math.max(insets.bottom, 12) + 12;
 
   // Массив id — через useMemo: литерал менял бы идентичность на каждый рендер
   // и useTestsStats уходил бы в бесконечный рефетч.
@@ -168,12 +166,12 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  inner: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
+  inner: { flex: 1 },
   scrollView: { flex: 1 },
   scrollViewContent: {
     flexGrow: 1,
-    paddingHorizontal: 4,
-    paddingTop: 8,
+    paddingHorizontal: Spacing.pageX,
+    paddingTop: Spacing.card,
     paddingBottom: 16,
     maxWidth: 560,
     width: '100%',
@@ -200,6 +198,6 @@ const styles = StyleSheet.create({
   emptyHint: { textAlign: 'center', marginBottom: 16 },
   startButtonContainer: {
     paddingTop: 12,
-    paddingHorizontal: 4,
+    paddingHorizontal: Spacing.pageX,
   },
 });
