@@ -24,9 +24,10 @@ type TestResultsViewProps = {
   animatedStyle: any;
   resetTests?: { id: string; name: string }[] | null;
   isTraining?: boolean;
+  marathon?: boolean;
 };
 
-export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, isTraining }: TestResultsViewProps) {
+export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, isTraining, marathon = false }: TestResultsViewProps) {
   const {
     test,
     answers,
@@ -48,14 +49,14 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
   // Обрабатываем пропущенные вопросы при монтировании компонента
   useEffect(() => {
     if (test) {
-      processSkippedQuestions();
+      processSkippedQuestions(!marathon);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Выполняем только при монтировании
 
   // Вычисляем финальные ответы (включая все неотвеченные вопросы) без изменения состояния
   const finalAnswers = useMemo(() => {
-    if (!test || !test.questions) return answers;
+    if (marathon || !test || !test.questions) return answers;
 
     const unansweredQuestions = test.questions.filter(
       question => !answers.find(a => a.questionId === question.id)
@@ -70,7 +71,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
 
     // Возвращаем финальный массив ответов (включая пропущенные)
     return [...answers, ...skippedAnswers];
-  }, [test, answers]);
+  }, [test, answers, marathon]);
 
   const outcome = useMemo(
     () =>
@@ -122,7 +123,7 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
   const { totalScore, totalErrors, isPassed } = outcome;
 
   // Экран завершения один для всех случаев: просто пройден / не пройден
-  const statusText = isPassed ? 'Тест пройден ✓' : 'Тест не пройден ✗';
+  const statusText = marathon ? (totalErrors ? 'Первая ошибка' : answers.length === test.questions?.length ? 'Все вопросы пройдены' : 'Завершён досрочно') : isPassed ? 'Тест пройден ✓' : 'Тест не пройден ✗';
 
   const handleFinish = () => {
     finishTest();
@@ -164,14 +165,14 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
       >
         <ThemedView style={styles.content}>
           <ThemedText type="title" style={styles.resultsTitle}>
-            Результаты теста
+            {marathon ? 'Результат марафона' : 'Результаты теста'}
           </ThemedText>
           <ThemedView style={styles.summaryCard}>
             <ThemedText type="subtitle" style={styles.summaryTitle}>
               Итоги:
             </ThemedText>
             <ThemedText style={styles.summaryItem}>
-              Набрано баллов: {totalScore}
+              {marathon ? `Верных ответов подряд: ${answers.filter((answer) => answer.isCorrect).length}` : `Набрано баллов: ${totalScore}`}
               {test.minScore !== undefined && test.minScore !== null && (
                 <ThemedText> / {test.minScore} (минимум)</ThemedText>
               )}

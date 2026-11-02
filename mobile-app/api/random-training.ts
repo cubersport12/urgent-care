@@ -4,9 +4,10 @@ import type { AppTestQuestionVm } from '@/hooks/api/types';
 import { getSessionId } from '@/lib/auth-storage';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
+export type TrainingDifficulty = Difficulty | 'marathon';
 export type TrainingHistory = {
   id: string;
-  difficulty: Difficulty;
+  difficulty: TrainingDifficulty;
   completedAt: string;
   correct: number;
   total: number;
@@ -18,7 +19,7 @@ export type TrainingEvent =
   | { type: 'insufficient'; available: number }
   | { type: 'error'; message: string };
 
-export function openTrainingSocket(difficulty: Difficulty): WebSocket {
+export function openTrainingSocket(difficulty: TrainingDifficulty): WebSocket {
   const session = getSessionId();
   if (!session) throw new Error('Сессия истекла');
   return new WebSocket(`${API_BASE_URL.replace(/^http/, 'ws')}/api/v1/training/random/ws?session_id=${encodeURIComponent(session)}&difficulty=${difficulty}`);

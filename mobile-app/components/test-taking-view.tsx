@@ -15,9 +15,10 @@ type TestTakingViewProps = {
   onBack: () => void;
   onFinish: () => void;
   onSaveTraining?: (answers: TestAnswer[]) => Promise<void>;
+  marathon?: boolean;
 };
 
-export function TestTakingView({ onBack, onFinish, onSaveTraining }: TestTakingViewProps) {
+export function TestTakingView({ onBack, onFinish, onSaveTraining, marathon = false }: TestTakingViewProps) {
   const {
     test,
     currentQuestionIndex,
@@ -64,7 +65,7 @@ export function TestTakingView({ onBack, onFinish, onSaveTraining }: TestTakingV
     if (!test) return Promise.resolve(null);
     if (!completionPromiseRef.current) {
       completionPromiseRef.current = (onSaveTraining
-        ? onSaveTraining(processSkippedQuestions()).then(() => null)
+        ? onSaveTraining(processSkippedQuestions(!marathon)).then(() => null)
         : persistTestCompletion({
             testId: test.id,
             minScore: test.minScore,
@@ -78,7 +79,7 @@ export function TestTakingView({ onBack, onFinish, onSaveTraining }: TestTakingV
       });
     }
     return completionPromiseRef.current;
-  }, [test, processSkippedQuestions, finishReason, deviceId, startedAt, addOrUpdate, onSaveTraining]);
+  }, [test, processSkippedQuestions, finishReason, deviceId, startedAt, addOrUpdate, onSaveTraining, marathon]);
 
   useEffect(() => {
     resetTestCompletionGuard();
@@ -223,6 +224,13 @@ export function TestTakingView({ onBack, onFinish, onSaveTraining }: TestTakingV
       if (selectedAnswers.length === 0) return;
       
       submitAnswer(question.id, selectedAnswers);
+      if (marathon) {
+        const submitted = processSkippedQuestions(false);
+        if (!submitted[submitted.length - 1]?.isCorrect || isLastQuestion) {
+          finishTest();
+          return;
+        }
+      }
       
       // Статистика обновляется автоматически через useEffect при изменении totalScoreAccumulated
       
@@ -270,6 +278,7 @@ export function TestTakingView({ onBack, onFinish, onSaveTraining }: TestTakingV
           animatedStyle={animatedStyle}
           resetTests={resetTests}
           isTraining={!!onSaveTraining}
+          marathon={marathon}
         />
       </>
     );
@@ -301,6 +310,7 @@ export function TestTakingView({ onBack, onFinish, onSaveTraining }: TestTakingV
         onPrevious={handlePrevious}
         canNavigateToQuestion={canNavigateToCurrentQuestion}
         onSaveTraining={onSaveTraining}
+        marathon={marathon}
       />
     </>
   );

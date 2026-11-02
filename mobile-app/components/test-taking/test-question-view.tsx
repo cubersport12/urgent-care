@@ -33,6 +33,7 @@ type TestQuestionViewProps = {
   onPrevious: () => void;
   canNavigateToQuestion?: boolean;
   onSaveTraining?: (answers: TestAnswer[]) => Promise<void>;
+  marathon?: boolean;
 };
 
 export function TestQuestionView({
@@ -48,6 +49,7 @@ export function TestQuestionView({
   onPrevious,
   canNavigateToQuestion = false,
   onSaveTraining,
+  marathon = false,
 }: TestQuestionViewProps) {
   const {
     test,
@@ -102,7 +104,7 @@ export function TestQuestionView({
   const handleFinish = async (returnToFolderAfterFinish = false) => {
     if (!test) return;
 
-    const finalAnswers = processSkippedQuestions();
+    const finalAnswers = processSkippedQuestions(!marathon);
     try {
       if (onSaveTraining) await onSaveTraining(finalAnswers);
       else await persistTestCompletion({
@@ -134,13 +136,13 @@ export function TestQuestionView({
   const handleFinishWithConfirmation = (returnToFolderAfterFinish = false) => {
     if (!test || !question) return;
 
-    const message = 'Вы уверены, что хотите завершить тест? Неотвеченные вопросы будут засчитаны как неправильные.';
+    const message = marathon ? 'Завершить марафон и сохранить результат?' : 'Вы уверены, что хотите завершить тест? Неотвеченные вопросы будут засчитаны как неправильные.';
     
     if (Platform.OS === 'web') {
       // Для веб используем window.confirm
       if (typeof window !== 'undefined' && window.confirm(message)) {
         // Сохраняем текущий ответ, если он выбран
-        if (selectedAnswers.length > 0 && !showResult) {
+        if (!marathon && selectedAnswers.length > 0 && !showResult) {
           submitAnswer(question.id, selectedAnswers);
         }
         // Вызываем handleFinish асинхронно
@@ -161,7 +163,7 @@ export function TestQuestionView({
             style: 'destructive',
             onPress: async () => {
               // Сохраняем текущий ответ, если он выбран
-              if (selectedAnswers.length > 0 && !showResult) {
+              if (!marathon && selectedAnswers.length > 0 && !showResult) {
                 submitAnswer(question.id, selectedAnswers);
               }
               await handleFinish(returnToFolderAfterFinish);

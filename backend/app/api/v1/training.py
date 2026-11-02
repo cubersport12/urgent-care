@@ -51,7 +51,7 @@ class RandomAnswer(BaseModel):
 
 
 class RandomCompletion(BaseModel):
-    answers: list[RandomAnswer] = Field(max_length=20)
+    answers: list[RandomAnswer]
 
 
 @router.websocket("/random/ws")
@@ -66,7 +66,7 @@ async def random_training_ws(
         await websocket.close(code=4401)
         return
     await websocket.accept()
-    if difficulty not in DIFFICULTIES:
+    if difficulty not in DIFFICULTIES and difficulty != "marathon":
         await websocket.send_json({"type": "error", "message": "Неизвестный уровень сложности"})
         await websocket.close()
         return
@@ -90,7 +90,11 @@ async def random_training_ws(
             if questions:
                 pools.append([test, questions])
         available = sum(len(pool[1]) for pool in pools)
-        count = DIFFICULTIES[difficulty]
+        count = available if difficulty == "marathon" else DIFFICULTIES[difficulty]
+        if not count:
+            await websocket.send_json({"type": "insufficient", "available": 0})
+            await websocket.close()
+            return
         if available < count:
             await websocket.send_json({"type": "insufficient", "available": available})
             await websocket.close()
@@ -138,16 +142,21 @@ async def complete_random_training(
     by_id = {a.question_id: a.answer_ids for a in payload.answers}
     if len(by_id) != len(payload.answers) or set(by_id) - {item["question"]["id"] for item in row.questions}:
         raise HTTPException(422, "Некорректные ответы")
+    if row.difficulty == "marathon":
+        if not payload.answers or [a.question_id for a in payload.answers] != [item["question"]["id"] for item in row.questions[:len(payload.answers)]]:
+            raise HTTPException(422, "Некорректный порядок ответов")
     answers = []
-    for item in row.questions:
+    for item in row.questions[:len(payload.answers)] if row.difficulty == "marathon" else row.questions:
         question = item["question"]
         choices = question["answers"]
         indices = by_id.get(question["id"], [])
-        if len(set(indices)) != len(indices) or any(i < 0 or i >= len(choices) for i in indices):
+        if (row.difficulty == "marathon" and not indices) or len(set(indices)) != len(indices) or any(i < 0 or i >= len(choices) for i in indices):
             raise HTTPException(422, "Некорректные ответы")
         correct = {i for i, a in enumerate(choices) if a.get("isCorrect")}
         answers.append({"questionId": question["id"], "answerIds": indices,
                         "isCorrect": bool(indices) and set(indices) == correct})
+        if row.difficulty == "marathon" and not answers[-1]["isCorrect"] and len(answers) < len(payload.answers):
+            raise HTTPException(422, "Ответ после первой ошибки")
     row.answers = answers
     row.completed_at = datetime.now(UTC)
     await db.flush()
@@ -167,8 +176,9 @@ async def random_training_history(
     result = []
     for row in rows:
         answers = {a["questionId"]: a for a in row.answers or []}
+        questions = row.questions[:len(row.answers or [])] if row.difficulty == "marathon" else row.questions
         items = [{"testName": item["testName"], "question": item["question"], "answer": answers.get(item["question"]["id"])}
-                 if item["testId"] in visible else {"question": None} for item in row.questions]
+                 if item["testId"] in visible else {"question": None} for item in questions]
         result.append({"id": str(row.id), "difficulty": row.difficulty, "completedAt": row.completed_at,
                        "correct": sum(bool(a["isCorrect"]) for a in row.answers or []),
                        "total": len(row.questions), "items": items})

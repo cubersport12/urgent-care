@@ -31,7 +31,7 @@ type TestContextType = {
   getTotalScore: () => number;
   getTotalErrors: () => number;
   areAllQuestionsVisited: () => boolean;
-  processSkippedQuestions: () => TestAnswer[]; // Обрабатывает неотвеченные вопросы как ошибочные и возвращает финальные ответы
+  processSkippedQuestions: (includeUnanswered?: boolean) => TestAnswer[];
 };
 
 const TestContext = createContext<TestContextType | undefined>(undefined);
@@ -306,7 +306,8 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
   // Обрабатывает неотвеченные вопросы как ошибочные (независимо от того, посещал ли их пользователь).
   // Возвращает финальный массив ответов, включая неотвеченные вопросы.
-  const processSkippedQuestions = (): TestAnswer[] => {
+  const processSkippedQuestions = (includeUnanswered = true): TestAnswer[] => {
+    if (!includeUnanswered) return answersRef.current;
     if (!test || !test.questions) return answersRef.current;
 
     const current = answersRef.current;
