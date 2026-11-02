@@ -8,14 +8,16 @@ import { ProgressBar } from '@/components/ui/progress-bar';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Radius, Spacing } from '@/constants/theme';
 import { useNavRail } from '@/contexts/nav-rail-context';
+import { useChromeBack } from '@/contexts/chrome-back-context';
 import { useTest, type TestAnswer } from '@/contexts/test-context';
 import type { AppTestQuestionVm } from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { selectionStepDelays } from '@/lib/random-training-delay';
 import { BackButton } from '@/components/explorer/back-button';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, Pressable, View } from 'react-native';
 
 const levels: { id: Difficulty; label: string; count: number }[] = [
   { id: 'easy', label: 'Лёгкий', count: 5 },
@@ -24,9 +26,10 @@ const levels: { id: Difficulty; label: string; count: number }[] = [
 ];
 const messages = ['Выбираем случайный вопрос', 'Крутим рулетку…', 'Ищем интересные вопросы', 'Собираем тренировку'];
 
-export default function RandomTrainingScreen() {
+export default function RandomTrainingMode({ marathon }: { marathon: boolean }) {
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
-  const [marathon, setMarathon] = useState(false);
+  const router = useRouter();
+  const navigation = useNavigation();
   const [stage, setStage] = useState<'home' | 'loading' | 'ready' | 'playing'>('home');
   const [history, setHistory] = useState<TrainingHistory[]>([]);
   const [historyError, setHistoryError] = useState(false);
@@ -42,6 +45,7 @@ export default function RandomTrainingScreen() {
   const focused = useIsFocused();
   const { startTest, resetTest, finishTest, processSkippedQuestions } = useTest();
   const saving = useRef<Promise<void> | null>(null);
+  const leaving = useRef(false);
   const { primary, neutral, layout2, success, error: errorColor, successContainer, errorContainer, onSuccessContainer, onErrorContainer } = useAppTheme();
   const level = levels.find((item) => item.id === difficulty)!;
   const { contentPaddingBottom } = useNavRail();
@@ -144,6 +148,28 @@ export default function RandomTrainingScreen() {
     setSelection(null); setStage('home');
   };
 
+  const goBack = () => {
+    if (stage === 'home') {
+      if (router.canGoBack()) router.back();
+      else router.replace('/(tabs)/random-training');
+    }
+    else cancel();
+  };
+  useChromeBack(focused && stage !== 'playing' ? goBack : null);
+  useEffect(() => navigation.addListener('beforeRemove', (event) => {
+    if (stage !== 'playing' || leaving.current) return;
+    event.preventDefault();
+    void save(processSkippedQuestions(!marathon)).then(() => {
+      leaving.current = true;
+      resetTest();
+      navigation.dispatch(event.data.action);
+    }).catch(() => {
+      const message = 'Не удалось сохранить результат. Попробуйте ещё раз.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(message);
+      else Alert.alert('Ошибка', message);
+    });
+  }), [navigation, stage, save, processSkippedQuestions, marathon, resetTest]);
+
   const filteredHistory = history.filter((attempt) => (attempt.difficulty === 'marathon') === marathon);
   if (stage === 'playing' && focused) return <TestTakingView onBack={finish} onFinish={finish} onSaveTraining={save} marathon={marathon} />;
   return (
@@ -154,13 +180,9 @@ export default function RandomTrainingScreen() {
         contentContainerStyle={{ paddingHorizontal: Spacing.pageX, paddingTop: Spacing.card, paddingBottom: contentPaddingBottom }}
         ItemSeparatorComponent={() => <View style={{ height: Spacing.card / 2 }} />}
         ListHeaderComponent={<View style={{ gap: Spacing.card, paddingBottom: Spacing.card }}>
-        {stage !== 'home' && <BackButton onPress={cancel} label="Назад" />}
-        <ThemedText type="h1">Тренировка</ThemedText>
+        <BackButton onPress={goBack} label="Назад" />
+        <ThemedText type="h1">{marathon ? 'Марафон' : 'Обычная тренировка'}</ThemedText>
         {stage === 'home' ? <>
-          <View style={{ flexDirection: 'row', gap: Spacing.card / 2 }}>
-            <Button title="Обычная" size="small" variant={!marathon ? 'primary' : 'glass'} onPress={() => setMarathon(false)} accessibilityRole="button" accessibilityState={{ selected: !marathon }} />
-            <Button title="Марафон" size="small" variant={marathon ? 'primary' : 'glass'} onPress={() => setMarathon(true)} accessibilityRole="button" accessibilityState={{ selected: marathon }} />
-          </View>
           {marathon ? <ThemedText type="caption" style={{ color: neutral }}>Все доступные вопросы до первой ошибки</ThemedText> :
           <View style={{ gap: Spacing.card / 2 }}>
             <ThemedText type="defaultSemiBold">Уровень сложности</ThemedText>

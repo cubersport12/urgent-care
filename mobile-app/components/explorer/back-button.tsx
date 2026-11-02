@@ -9,7 +9,7 @@ type BackButtonProps = {
   label?: string;
 };
 
-export function BackButton({ onPress }: BackButtonProps) {
+export function BackButton({ onPress, label = 'Назад' }: BackButtonProps) {
   const { theme } = useTheme();
   const { text, layout1 } = useAppTheme();
   const glass = useGlass();
@@ -19,6 +19,9 @@ export function BackButton({ onPress }: BackButtonProps) {
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      hitSlop={8}
       style={({ pressed }) => [
         styles.button,
         {
