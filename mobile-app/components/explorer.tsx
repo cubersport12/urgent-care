@@ -24,15 +24,15 @@ import { pickRandomItem, randomOpenCandidates } from '@/lib/random-open';
 import { apiFetchRelation } from '@/hooks/api/useApiFetch';
 import { parseRescueItemDataVm, resolveRescueOutcome } from '@/lib/rescue-completion';
 import { useDeviceId } from '@/hooks/use-device-id';
-import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
+import { useAppTheme } from '@/hooks/use-theme-color';
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ArticleView } from './article-view';
 import { LockedTariffSheet, type LockedTariffItem } from './billing/locked-tariff-sheet';
-import { BackButton } from './explorer/back-button';
+import { ScreenAppBar } from './ui/screen-app-bar';
 import { ExplorerItemComponent, rescueDisplayName } from './explorer/explorer-item';
 import { StudyFolderCard } from './explorer/study-folder-card';
 import { BreadcrumbItem, ExplorerItem, type LockReason } from './explorer/types';
@@ -49,8 +49,6 @@ import { ScreenBackground } from './ui/screen-background';
 import { GlassCard } from './ui/glass-card';
 import { IconSymbol } from './ui/icon-symbol';
 import { useAccountOverallStats } from '@/hooks/api/useAccountOverallStats';
-import { useTheme } from '@/contexts/theme-context';
-import { BlurView } from 'expo-blur';
 import { Spacing } from '@/constants/theme';
 import { staggerEnter } from '@/hooks/use-enter-animation';
 
@@ -108,10 +106,9 @@ export function Explorer() {
     void fetchAllData();
   }, []);
 
-  const { neutralSoft: descriptionColor, layout1, primary } = useAppTheme();
-  const { theme } = useTheme();
-  const glass = useGlass();
+  const { neutralSoft: descriptionColor, primary } = useAppTheme();
   const overallStats = useAccountOverallStats();
+  const rescueTitleRef = useRef('Режим спасения');
   const { deviceId } = useDeviceId();
   const foldersResponse = useFolders(currentFolderId);
   const articlesResponse = useArticles(currentFolderId);
@@ -559,7 +556,7 @@ export function Explorer() {
     handleBackToFolder();
   };
 
-  const { isWide, contentPaddingBottom } = useNavRail();
+  const { contentPaddingBottom } = useNavRail();
 
   const handleBackFromFolder = () => {
     cancelRandomOpen();
@@ -707,6 +704,7 @@ export function Explorer() {
     return (
       <RescueView
         rescueItem={selectedRescueItem}
+        displayName={rescueTitleRef.current}
         onBack={async () => {
           try {
             await rescueStatsMutation.addOrUpdate({
@@ -760,6 +758,7 @@ export function Explorer() {
         onBack={handleBackFromItem}
         onRescueSessionStarted={() => void rescueStatsList.fetchData()}
         onStart={() => {
+          rescueTitleRef.current = rescueDisplayName(selectedRescueItem.name, rescueAttempted, rescueIndex < 0 ? 0 : rescueIndex);
           setRescueFinalParameters({});
           setRescueCollectedImplications([]);
           setIsRescueStarted(true);
@@ -843,27 +842,7 @@ export function Explorer() {
   return (
     <ScreenBackground variant={isRootView ? 'study' : 'default'} style={styles.container}>
       {currentFolderId !== undefined && (
-        <View
-          style={[
-            styles.header,
-            {
-              borderBottomColor: glass.border,
-              backgroundColor: theme === 'light' ? layout1 : glass.background,
-            },
-          ]}
-        >
-          {theme === 'dark' && Platform.OS !== 'web' ? (
-            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-          ) : null}
-          <View style={styles.headerContent}>
-            {!isWide ? <BackButton onPress={handleBackFromFolder} /> : null}
-            {currentFolderName ? (
-              <ThemedText style={styles.currentFolderName} numberOfLines={1}>
-                {currentFolderName}
-              </ThemedText>
-            ) : null}
-          </View>
-        </View>
+        <ScreenAppBar title={currentFolderName || 'Раздел'} onBack={handleBackFromFolder} />
       )}
       <Animated.View style={[styles.scrollViewContainer, animatedStyle]}>
         <ScrollView

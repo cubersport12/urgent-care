@@ -13,7 +13,7 @@ import { useTest, type TestAnswer } from '@/contexts/test-context';
 import type { AppTestQuestionVm } from '@/hooks/api/types';
 import { useAppTheme } from '@/hooks/use-theme-color';
 import { selectionStepDelays } from '@/lib/random-training-delay';
-import { BackButton } from '@/components/explorer/back-button';
+import { ScreenAppBar } from '@/components/ui/screen-app-bar';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -174,14 +174,13 @@ export default function RandomTrainingMode({ marathon }: { marathon: boolean }) 
   if (stage === 'playing' && focused) return <TestTakingView onBack={finish} onFinish={finish} onSaveTraining={save} marathon={marathon} />;
   return (
     <ScreenBackground style={{ flex: 1 }}>
+      <ScreenAppBar title={marathon ? 'Марафон' : 'Обычная тренировка'} onBack={goBack} showBack={focused} />
       <FlatList
         data={stage === 'home' && !historyError ? filteredHistory : []}
         keyExtractor={(attempt) => attempt.id}
         contentContainerStyle={{ paddingHorizontal: Spacing.pageX, paddingTop: Spacing.card, paddingBottom: contentPaddingBottom }}
         ItemSeparatorComponent={() => <View style={{ height: Spacing.card / 2 }} />}
         ListHeaderComponent={<View style={{ gap: Spacing.card, paddingBottom: Spacing.card }}>
-        <BackButton onPress={goBack} label="Назад" />
-        <ThemedText type="h1">{marathon ? 'Марафон' : 'Обычная тренировка'}</ThemedText>
         {stage === 'home' ? <>
           {marathon ? <ThemedText type="caption" style={{ color: neutral }}>Все доступные вопросы до первой ошибки</ThemedText> :
           <View style={{ gap: Spacing.card / 2 }}>

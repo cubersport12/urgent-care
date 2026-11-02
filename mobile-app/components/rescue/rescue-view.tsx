@@ -17,12 +17,14 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
 import { ThemedView } from '../themed-view';
-import { Button } from '../ui/button';
+import { BackButton } from '../explorer/back-button';
+import { Spacing } from '@/constants/theme';
 import { RescueSceneVisualNovel } from './rescue-story';
 import { showConfirm } from '@/lib/alert';
 
 type RescueViewProps = {
   rescueItem: AppRescueItemVm;
+  displayName: string;
   onBack: () => void | Promise<void>;
   /**
    * Финальные значения параметров и все implications выбранных ответов
@@ -36,7 +38,7 @@ type RescueViewProps = {
   typingSpeedMs?: number;
 };
 
-export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 }: RescueViewProps) {
+export function RescueView({ rescueItem, displayName, onBack, onComplete, typingSpeedMs = 35 }: RescueViewProps) {
   const { page: backgroundColor, border: borderColor } = useAppTheme();
   const glass = useGlass();
   const insets = useSafeAreaInsets();
@@ -238,17 +240,10 @@ export function RescueView({ rescueItem, onBack, onComplete, typingSpeedMs = 35 
     >
       <NoScreenCapture />
       {/* Шапку сцены скрываем при открытом документе — у ArticleView своя кнопка «Назад» */}
-      {!isWide && !selectedArticle ? (
-        <ThemedView style={[styles.header, { borderBottomColor: borderColor }]}>
-          <Button
-            title="Назад"
-            onPress={handleChromeBack}
-            variant="default"
-            icon="chevron.left"
-            iconPosition="left"
-            size="medium"
-            style={styles.backButton}
-          />
+      {!selectedArticle ? (
+        <ThemedView style={[styles.header, { borderBottomColor: borderColor, flexDirection: 'row', alignItems: 'center', gap: Spacing.card / 2 }]}>
+          <BackButton onPress={handleChromeBack} close label="Закрыть режим спасения" />
+          <ThemedText type="defaultSemiBold" numberOfLines={1} style={{ flex: 1 }}>{displayName}</ThemedText>
         </ThemedView>
       ) : null}
       {selectedArticle ? (

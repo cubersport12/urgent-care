@@ -15,6 +15,7 @@ export type PdfViewProps = {
   onScrollToEnd?: () => void;
   /** 0–100 scroll progress (native pdf.js viewer). */
   onScrollProgress?: (percent: number) => void;
+  onScrollDirection?: (direction: 'up' | 'down') => void;
 };
 
 /**
@@ -34,8 +35,19 @@ export const PDF_POST_JS = `
 /** Injected into pdf.js HTML scroll handler */
 export const PDF_SCROLL_PROGRESS_JS = `
     var __pdfProgressSent = {};
+    var __pdfLastTop = 0;
+    var __pdfLastDirection = '';
     function __pdfReportProgress() {
       var el = document.scrollingElement || document.documentElement;
+      var delta = el.scrollTop - __pdfLastTop;
+      if (Math.abs(delta) > 3) {
+        var direction = delta > 0 ? 'down' : 'up';
+        if (direction !== __pdfLastDirection) {
+          __pdfLastDirection = direction;
+          __pdfPost('direction:' + direction);
+        }
+        __pdfLastTop = el.scrollTop;
+      }
       var max = el.scrollHeight - el.clientHeight;
       var pct = max <= 0 ? 100 : Math.min(100, Math.round((el.scrollTop / max) * 100));
       [25, 50, 75].forEach(function(t) {

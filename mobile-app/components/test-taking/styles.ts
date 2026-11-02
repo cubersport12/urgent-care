@@ -19,8 +19,18 @@ function buildTestTakingStyles(theme: ThemeColors, glass: GlassColors) {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    minHeight: 44,
+    minHeight: 52,
     overflow: 'hidden',
+  },
+  testHeaderDetails: {
+    flex: 1,
+    minWidth: 0,
+    gap: 6,
+    paddingTop: 2,
+  },
+  testHeaderTitle: {
+    fontSize: 18,
+    textAlign: 'left',
   },
   backButton: {
     flexDirection: 'row',

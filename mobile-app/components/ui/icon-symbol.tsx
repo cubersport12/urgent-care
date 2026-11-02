@@ -20,6 +20,7 @@ const MAPPING = {
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'chevron.left': 'chevron-left',
+  'xmark': 'close',
   'checkmark.circle.fill': 'check-circle',
   'checkmark': 'check',
   'xmark.circle.fill': 'cancel',

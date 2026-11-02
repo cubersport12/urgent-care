@@ -8,7 +8,6 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BackButton } from './explorer/back-button';
 import { ThemedText } from './themed-text';
 import { GlassCard } from './ui/glass-card';
 import { Button } from './ui/button';
@@ -16,6 +15,7 @@ import { IconSymbol } from './ui/icon-symbol';
 import { NoScreenCapture } from './ui/no-screen-capture';
 import { StatusBadge } from './ui/status-badge';
 import { ScreenBackground } from './ui/screen-background';
+import { ScreenAppBar } from './ui/screen-app-bar';
 
 type TestViewProps = {
   test: AppTestVm;
@@ -85,16 +85,12 @@ export function TestView({ test, onBack, onStart }: TestViewProps) {
     <ScreenBackground style={styles.container}>
       <NoScreenCapture />
       <Animated.View style={styles.inner} entering={FadeIn.duration(300)}>
-        {!isWide ? <BackButton onPress={onBack} label="Назад" /> : null}
+        <ScreenAppBar title={test.name} onBack={onBack} />
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContent}
           showsVerticalScrollIndicator={false}
         >
-          <ThemedText type="h1" style={styles.title}>
-            {test.name}
-          </ThemedText>
-
           <GlassCard padding={16} borderRadius={12} style={styles.card}>
             <View style={styles.cardHeader}>
               <IconSymbol name="clock.fill" size={20} color={tintColor} />
@@ -182,13 +178,6 @@ const styles = StyleSheet.create({
     maxWidth: 560,
     width: '100%',
     alignSelf: 'center',
-  },
-  title: {
-    marginBottom: 24,
-    fontSize: 28,
-    fontWeight: 'bold',
-    lineHeight: 36,
-    textAlign: 'center',
   },
   card: { marginBottom: 16, width: '100%', gap: 8 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },

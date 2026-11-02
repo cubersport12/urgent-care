@@ -1,14 +1,11 @@
 import { useChromeBack } from '@/contexts/chrome-back-context';
-import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTest, type TestAnswer } from '@/contexts/test-context';
 import { useFileImage } from '@/hooks/api/useFileImage';
 import { persistTestCompletion } from '@/hooks/api/useTestResults';
 import { useAddOrUpdateTestStats } from '@/hooks/api/useTestStats';
 import { useDeviceId } from '@/hooks/use-device-id';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
-import { Gradients } from '@/constants/theme';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Alert, Platform, Pressable, ScrollView, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { BackButton } from '../explorer/back-button';
@@ -17,6 +14,7 @@ import { ThemedView } from '../themed-view';
 import { GlassCard } from '../ui/glass-card';
 import { Button } from '../ui/button';
 import { ScreenBackground } from '../ui/screen-background';
+import { ProgressBar } from '../ui/progress-bar';
 import { useTestTakingStyles } from './styles';
 import { getAnswerStatus } from './utils';
 
@@ -179,7 +177,6 @@ export function TestQuestionView({
     handleFinishWithConfirmation(true);
   };
 
-  const { isWide } = useNavRail();
   useChromeBack(test && question ? handleBackToFolder : null);
 
   if (!test || !question) return null;
@@ -222,8 +219,6 @@ export function TestQuestionView({
     return hasSomeCorrect && (notAllCorrect || hasIncorrect) && !currentAnswer.isCorrect;
   })();
 
-  const progressPercent =
-    totalQuestions > 0 ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0;
   const nextLabel = showResult
     ? isTestCompleted
       ? 'Завершить'
@@ -236,21 +231,22 @@ export function TestQuestionView({
   return (
     <ScreenBackground style={styles.container}>
       <Animated.View style={[styles.container, animatedStyle]}>
-        <View style={[styles.topProgressTrack, { backgroundColor: glass.progressTrack }]}>
-          <LinearGradient
-            colors={[...Gradients.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.topProgressFill, { width: `${progressPercent}%` }]}
-          />
-        </View>
-
         <ThemedView style={[styles.header, { borderBottomColor: glass.border }]}>
-          {!isWide ? (
-            <ThemedView style={styles.headerContent}>
-              <BackButton onPress={handleBackToFolder} />
-            </ThemedView>
-          ) : null}
+          <View style={styles.headerContent}>
+            <BackButton onPress={handleBackToFolder} close label="Завершить тест" />
+            <View style={styles.testHeaderDetails}>
+              <ThemedText type="defaultSemiBold" style={styles.testHeaderTitle} numberOfLines={1}>
+                {test.name}
+              </ThemedText>
+              <View
+                accessibilityRole="progressbar"
+                accessibilityLabel="Прогресс теста"
+                accessibilityValue={{ min: 0, max: totalQuestions, now: currentQuestionIndex + 1 }}
+              >
+                <ProgressBar current={currentQuestionIndex + 1} total={totalQuestions} height={8} />
+              </View>
+            </View>
+          </View>
           {test.showNavigation !== false &&
             test.questions &&
             test.questions.length > 0 &&

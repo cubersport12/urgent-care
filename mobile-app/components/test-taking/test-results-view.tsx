@@ -12,6 +12,7 @@ import { ActivityIndicator, Pressable, ScrollView } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '../themed-text';
+import { BackButton } from '../explorer/back-button';
 import { ThemedView } from '../themed-view';
 import { Button } from '../ui/button';
 import { IconSymbol } from '../ui/icon-symbol';
@@ -143,22 +144,9 @@ export function TestResultsView({ onBack, onFinish, animatedStyle, resetTests, i
         animatedStyle,
       ]}
     >
-      {!isWide ? (
-        <ThemedView style={styles.header}>
-          <Pressable
-            onPress={onBack}
-            style={({ pressed }) => [
-              styles.backButton,
-              {
-                backgroundColor: pressed ? pressedBackgroundColor : backgroundColor,
-              },
-            ]}
-          >
-            <IconSymbol name="chevron.left" size={28} color={tintColor} />
-            <ThemedText style={styles.backButtonText}>Назад</ThemedText>
-          </Pressable>
-        </ThemedView>
-      ) : null}
+      <ThemedView style={styles.header}>
+        <BackButton onPress={onBack} close label="Закрыть результаты теста" />
+      </ThemedView>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollViewContent, { paddingBottom: 88 + footerPad }]}

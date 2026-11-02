@@ -81,7 +81,10 @@ export function RescueStart({ rescueItem, displayName, onBack, onStart, onRescue
     <ScreenBackground style={styles.container}>
       <NoScreenCapture />
       <Animated.View style={styles.inner} entering={FadeIn.duration(300)}>
-        {!isWide ? <BackButton onPress={onBack} label="Назад" /> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.card / 2 }}>
+          <BackButton onPress={onBack} close label="Закрыть режим спасения" />
+          <ThemedText type="defaultSemiBold" numberOfLines={1} style={{ flex: 1 }}>{displayName ?? rescueItem.name}</ThemedText>
+        </View>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContent}

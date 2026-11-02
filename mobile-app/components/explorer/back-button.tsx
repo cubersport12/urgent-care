@@ -7,9 +7,10 @@ import { Platform, Pressable, StyleSheet } from 'react-native';
 type BackButtonProps = {
   onPress: () => void;
   label?: string;
+  close?: boolean;
 };
 
-export function BackButton({ onPress, label = 'Назад' }: BackButtonProps) {
+export function BackButton({ onPress, label, close = false }: BackButtonProps) {
   const { theme } = useTheme();
   const { text, layout1 } = useAppTheme();
   const glass = useGlass();
@@ -20,7 +21,7 @@ export function BackButton({ onPress, label = 'Назад' }: BackButtonProps) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={label ?? (close ? 'Закрыть' : 'Назад')}
       hitSlop={8}
       style={({ pressed }) => [
         styles.button,
@@ -34,16 +35,16 @@ export function BackButton({ onPress, label = 'Назад' }: BackButtonProps) {
       {showBlur ? (
         <BlurView intensity={20} tint="dark" pointerEvents="none" style={StyleSheet.absoluteFill} />
       ) : null}
-      <IconSymbol name="chevron.left" size={18} color={text} />
+      <IconSymbol name={close ? 'xmark' : 'chevron.left'} size={28} color={text} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
