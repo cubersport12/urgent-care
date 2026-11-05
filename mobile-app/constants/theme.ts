@@ -74,12 +74,17 @@ export const Radius = {
 } as const;
 
 export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 24,
   pageX: 16,
   pageBottom: 96,
   header: 56,
   nav: 64,
   card: 16,
   minTouchTarget: 44,
+  readingWidth: 720,
 } as const;
 
 export const IconSize = {
@@ -150,6 +155,8 @@ export const Animation = {
   blinkTimer: 1000,
   stagger: 60,
   enterDuration: 600,
+  rescueRevealDelay: 100,
+  rescueRevealDuration: 300,
 } as const;
 
 export const Colors = {
