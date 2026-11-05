@@ -38,7 +38,7 @@ ALLOWED_PREFIX = "public/"
 #   (конструктор кладёт их под исходным именем файла прямо в public/).
 # НЕ публичные: сертификаты (порядковый номер + ФИО внутри — перебирается),
 # PDF статей (тарифный гейтинг), legal — только через авторизованный /media.
-PUBLIC_IMAGE_PREFIXES = ("public/folders/", "public/achievements/", "public/rewards/", "public/avatars/")
+PUBLIC_IMAGE_PREFIXES = ("public/folders/", "public/achievements/", "public/rewards/", "public/avatars/", "public/notifications/")
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".gif")
 
 
@@ -140,6 +140,8 @@ async def upload_media(
     fileName: str | None = Form(None),
 ) -> MediaUploadOut:
     key = resolve_upload_key(file_name or fileName, file.filename)
+    if key.startswith("public/notifications/"):
+        raise HTTPException(status_code=403, detail="Используйте загрузку иконок уведомлений")
     data = await file.read()
     content_type = file.content_type or mimetypes.guess_type(key)[0] or "application/octet-stream"
     s3 = get_s3_client()
@@ -159,6 +161,8 @@ async def delete_media(
     _: Annotated[User, Depends(get_current_admin)],
 ) -> StarletteResponse:
     key = _normalize_key(file_path)
+    if key.startswith("public/notifications/"):
+        raise HTTPException(status_code=403, detail="Иконки уведомлений нельзя удалить")
     s3 = get_s3_client()
     ok = await s3.delete_file(key=key)
     if not ok:

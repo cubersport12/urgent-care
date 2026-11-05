@@ -18,6 +18,11 @@ from app.models.folder import Folder
 from app.models.learning_event import LearningEvent
 from app.models.login_code import LoginCode
 from app.models.notification import Notification
+from app.models.notification_campaign import (
+    NotificationDispatch,
+    NotificationSchedule,
+    NotificationTemplate,
+)
 from app.models.password_reset import PasswordResetToken
 from app.models.promo import PromoActivation, PromoCode
 from app.models.push_token import PushToken
@@ -46,6 +51,9 @@ __all__ = [
     "PaymentMethod",
     "SubscriptionChange",
     "Notification",
+    "NotificationDispatch",
+    "NotificationSchedule",
+    "NotificationTemplate",
     "PushToken",
     "Achievement",
     "Reward",

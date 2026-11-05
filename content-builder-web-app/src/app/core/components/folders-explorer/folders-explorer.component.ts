@@ -1,5 +1,6 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, linkedSignal, signal, viewChild } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions, ArticlesState, FoldersActions, FoldersState, RescueActions, RescueState, TestsActions, TestsState } from '@/core/store';
 import { MatIcon } from '@angular/material/icon';
@@ -48,7 +49,6 @@ import { AngularSplitModule } from 'angular-split';
 import { AppDialogService } from '@/core/services/app-dialog.service';
 import { ConfirmDeleteDialogComponent, ConfirmDeleteDialogData } from './confirm-delete-dialog.component';
 import { ShortcutsDialogComponent } from './shortcuts-dialog.component';
-import { TestNotificationDialogComponent, TestNotificationDialogResult } from './test-notification-dialog.component';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE, getSessionId } from '@/core/api/api-client';
@@ -101,6 +101,7 @@ import {
   }
 })
 export class FoldersExplorerComponent {
+  private readonly _router = inject(Router);
   private readonly _host = inject(ElementRef<HTMLElement>);
   private readonly _document = inject(DOCUMENT);
   private readonly _destroyRef = inject(DestroyRef);
@@ -728,17 +729,7 @@ export class FoldersExplorerComponent {
   }
 
   protected _sendTestNotification(): void {
-    this._appDialog
-      .open<TestNotificationDialogComponent, undefined, TestNotificationDialogResult>(
-        TestNotificationDialogComponent,
-        { width: '480px' }
-      )
-      .afterClosed()
-      .subscribe((res) => {
-        if (res?.success) {
-          this._snack.open(res.message, 'OK', { duration: 3500 });
-        }
-      });
+    void this._router.navigate(['/notifications']);
   }
 
   protected _openFolderProperties(folder: AppFolderVm): void {

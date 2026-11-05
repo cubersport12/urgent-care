@@ -3,11 +3,11 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_current_user, get_db, get_user_by_session
 from app.db.repositories.notifications import NotificationRepository
-from app.db.repositories.user import UserRepository
 from app.models.notification import Notification
 from app.models.user import User
 from app.realtime.notifications_hub import notification_hub
@@ -18,7 +18,7 @@ from app.schemas.notifications import (
     NotificationOut,
     UnreadCountOut,
 )
-from app.services.expo_push import push_user
+from app.services.notification_campaigns import create_dispatch
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -31,14 +31,8 @@ def _out(row: Notification) -> NotificationOut:
         created_at=row.created_at,
         read_at=row.read_at,
         is_read=row.read_at is not None,
+        icon_path=row.icon_path,
     )
-
-
-def _ws_payload(row: Notification) -> dict:
-    return {
-        "type": "notification",
-        "data": _out(row).model_dump(mode="json", by_alias=True),
-    }
 
 
 @router.get("", response_model=list[NotificationOut])
@@ -78,16 +72,9 @@ async def broadcast_notification(
     _admin: Annotated[User, Depends(get_current_admin)],
 ) -> BroadcastOut:
     """Create the same notification for every active user and push over WS."""
-    user_ids = await UserRepository(db).list_active_ids()
-    rows = await NotificationRepository(db).create_for_users(
-        user_ids=user_ids,
-        title=payload.title,
-        body=payload.body,
-    )
-    for row in rows:
-        await notification_hub.send_user(row.user_id, _ws_payload(row))
-        await push_user(db, row.user_id, title=row.title, body=row.body)
-    return BroadcastOut(created=len(rows))
+    dispatch = await create_dispatch(db, title=payload.title, body=payload.body, icon_path=None,
+                                     audience="all", user_ids=[], source="manual", personalize=False)
+    return BroadcastOut(created=dispatch.recipient_count)
 
 
 @router.post("/{notification_id}/read", response_model=NotificationOut)
@@ -109,13 +96,11 @@ async def create_notification(
     db: Annotated[AsyncSession, Depends(get_db)],
     _admin: Annotated[User, Depends(get_current_admin)],
 ) -> NotificationOut:
-    row = await NotificationRepository(db).create(
-        user_id=payload.user_id,
-        title=payload.title,
-        body=payload.body,
-    )
-    await notification_hub.send_user(row.user_id, _ws_payload(row))
-    await push_user(db, row.user_id, title=row.title, body=row.body)
+    dispatch = await create_dispatch(db, title=payload.title, body=payload.body, icon_path=None,
+                                     audience="selected", user_ids=[payload.user_id], source="manual", personalize=False)
+    row = await db.scalar(select(Notification).where(Notification.dispatch_id == dispatch.id))
+    if row is None:
+        raise HTTPException(status_code=404, detail="User not found or inactive")
     return _out(row)
 
 

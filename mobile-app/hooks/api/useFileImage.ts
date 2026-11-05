@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // - корневые картинки без подпапки — фоны сцен и картинки вопросов (ключ = имя файла).
 // Остальное (сертификаты — порядковый номер + ФИО, PDF статей — тарифный гейт,
 // не-картинки) — как раньше, авторизованным блобом. Зеркало PUBLIC_IMAGE_PREFIXES в media.py.
-const PUBLIC_IMAGE_PREFIXES = ['public/folders/', 'public/achievements/', 'public/rewards/', 'public/avatars/'];
+const PUBLIC_IMAGE_PREFIXES = ['public/folders/', 'public/achievements/', 'public/rewards/', 'public/avatars/', 'public/notifications/'];
 const IMAGE_EXTENSIONS = /\.(png|jpe?g|webp|gif)$/i;
 
 const isPublicImage = (fileName: string): boolean => {

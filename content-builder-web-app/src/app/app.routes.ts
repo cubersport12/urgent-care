@@ -46,6 +46,14 @@ export const routes: Routes = [
           import('./core/components/users-list/users-list.component').then((x) => x.UsersListComponent)
       },
       {
+        path: 'notifications',
+        title: 'Уведомления — Trouble Dent',
+        loadComponent: () =>
+          import('./core/components/notifications-editor/notifications-editor.component').then(
+            (x) => x.NotificationsEditorComponent
+          )
+      },
+      {
         path: 'support',
         title: 'Служба поддержки — Trouble Dent',
         loadComponent: () =>

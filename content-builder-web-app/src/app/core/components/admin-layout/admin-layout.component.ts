@@ -206,6 +206,7 @@ export class AdminLayoutComponent {
         title: 'Пользователи',
         items: [
           { label: 'Управление пользователями', route: '/users', icon: 'users' },
+          { label: 'Уведомления', route: '/notifications', icon: 'bell' },
           {
             label: 'Служба поддержки',
             route: '/support',

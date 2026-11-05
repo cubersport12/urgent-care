@@ -22,6 +22,7 @@ class NotificationOut(CamelModel):
     created_at: datetime = Field(alias="createdAt")
     read_at: datetime | None = Field(None, alias="readAt")
     is_read: bool = Field(alias="isRead")
+    icon_path: str | None = Field(None, alias="iconPath")
 
 
 class UnreadCountOut(CamelModel):

@@ -1,5 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { NotificationIcon } from '@/components/ui/notification-icon';
 import { useImmersive } from '@/contexts/immersive-context';
 import { useNotifications } from '@/contexts/notifications-context';
 import { useAppTheme } from '@/hooks/use-theme-color';
@@ -19,7 +20,7 @@ export function GlobalNotificationBanner() {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { primary, text, neutralSoft, surfaceRaised, primaryContainer, border, shadow } = useAppTheme();
+  const { text, neutralSoft, surfaceRaised, border, shadow } = useAppTheme();
 
   const onNotificationsScreen = pathname?.includes('notifications') ?? false;
   const hidden = !banner || isImmersive || onNotificationsScreen;
@@ -62,9 +63,7 @@ export function GlobalNotificationBanner() {
                 },
               ]}
             >
-              <View style={[styles.iconBg, { backgroundColor: primaryContainer }]}>
-                <IconSymbol name="bell.fill" size={16} color={primary} />
-              </View>
+              <NotificationIcon path={banner.iconPath} />
               <View style={styles.body}>
                 <ThemedText style={[styles.title, { color: text }]} numberOfLines={1}>
                   {banner.title}
@@ -105,13 +104,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.28,
     shadowRadius: 12,
-  },
-  iconBg: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   body: {
     flex: 1,

@@ -26,6 +26,7 @@ dependencies = [
     "pypdf==5.1.0",
     "pillow==12.3.0",
     "qrcode==8.2",
+    "croniter==6.2.4",
 ]
 
 [project.optional-dependencies]
