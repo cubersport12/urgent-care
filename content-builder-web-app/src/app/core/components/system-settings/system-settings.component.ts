@@ -6,9 +6,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Router } from '@angular/router';
 import {
   authSendResetLinkAdmin,
-  notificationsBroadcastNotification,
   systemSettingsGetSystemSettings,
   systemSettingsUpdateSystemSettings
 } from '@/core/api/generated/sdk.gen';
@@ -20,8 +20,7 @@ import {
   AppIconButtonComponent,
   AppInputComponent,
   AppSelectComponent,
-  AppSelectOption,
-  AppTextareaComponent
+  AppSelectOption
 } from '../ui';
 
 interface AdminRoleUser {
@@ -118,8 +117,7 @@ export class AdminInviteDialogComponent {
     AppButtonComponent,
     AppIconButtonComponent,
     AppInputComponent,
-    AppSelectComponent,
-    AppTextareaComponent
+    AppSelectComponent
   ],
   template: `
     <div class="p-6 max-w-7xl mx-auto space-y-6">
@@ -366,27 +364,7 @@ export class AdminInviteDialogComponent {
             </p>
           </div>
 
-          <div class="space-y-4">
-            <app-input
-              label="Заголовок уведомления"
-              [(ngModel)]="_notifyTitle"
-            />
-
-            <app-textarea
-              label="Текст сообщения"
-              [rows]="3"
-              [(ngModel)]="_notifyBody"
-            />
-
-            <app-button
-              icon="bell"
-              [disabled]="!_notifyTitle.trim() || !_notifyBody.trim()"
-              [loading]="_sendingNotification()"
-              (clicked)="_sendBroadcastNotification()"
-            >
-              {{ _sendingNotification() ? 'Отправка…' : 'Отправить всем пользователям' }}
-            </app-button>
-          </div>
+          <app-button icon="bell" (clicked)="_openNotifications()">Открыть уведомления</app-button>
         </div>
       }
     </div>
@@ -394,6 +372,7 @@ export class AdminInviteDialogComponent {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SystemSettingsComponent {
+  private readonly _router = inject(Router);
   private readonly _snack = inject(MatSnackBar);
   private readonly _dialogsService = inject(AppDialogService);
 
@@ -418,11 +397,6 @@ export class SystemSettingsComponent {
   protected _aiModel = 'gemini-1.5-pro';
   protected _aiApiKey = 'sk-uc-live-key-secured';
   protected _aiMedicalValidation = true;
-
-  // Notifications State
-  protected _notifyTitle = 'Плановое обновление платформы Trouble Dent';
-  protected _notifyBody = 'В субботу с 02:00 до 03:00 МСК будут проводиться технические работы.';
-  protected readonly _sendingNotification = signal(false);
 
   // Admins List
   protected readonly _admins = signal<AdminRoleUser[]>([
@@ -518,26 +492,7 @@ export class SystemSettingsComponent {
     this._snack.open(`Доступ отозван для ${admin.name}`, 'Закрыть', { duration: 3000 });
   }
 
-  protected async _sendBroadcastNotification(): Promise<void> {
-    if (!this._notifyTitle.trim() || !this._notifyBody.trim()) return;
-    this._sendingNotification.set(true);
-    try {
-      const res = await apiCall(() =>
-        notificationsBroadcastNotification({
-          body: {
-            title: this._notifyTitle.trim(),
-            body: this._notifyBody.trim()
-          }
-        })
-      );
-      this._snack.open(`Уведомление отправлено всем пользователям (создано: ${res.created})`, 'Закрыть', {
-        duration: 4000
-      });
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.detail : 'Ошибка при отправке оповещения';
-      this._snack.open(msg, 'Закрыть', { duration: 5000 });
-    } finally {
-      this._sendingNotification.set(false);
-    }
+  protected _openNotifications(): void {
+    void this._router.navigate(['/notifications']);
   }
 }

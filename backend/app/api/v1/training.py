@@ -71,7 +71,7 @@ async def random_training_ws(
         await websocket.close()
         return
     try:
-        tests = await TestRepository(db).list_all()
+        tests = await TestRepository(db).list_all(include_drafts=False)
         annotated = await annotate_content_list(db, user, tests, enforce_for_admin=True)
         pools = []
         seen = set()
@@ -135,7 +135,7 @@ async def complete_random_training(
         raise HTTPException(404, "Попытка не найдена")
     if row.completed_at:
         return {"id": str(row.id)}
-    tests = await TestRepository(db).list_all()
+    tests = await TestRepository(db).list_all(include_drafts=False)
     visible = {test.id for test, locked in await annotate_content_list(db, user, tests, enforce_for_admin=True) if not locked and not test.hidden}
     if any(item["testId"] not in visible for item in row.questions):
         raise HTTPException(403, "Доступ к вопросам изменился")
@@ -171,7 +171,7 @@ async def random_training_history(
     rows = (await db.scalars(select(RandomTraining).where(
         RandomTraining.user_id == user.id, RandomTraining.completed_at.is_not(None),
     ).order_by(RandomTraining.completed_at.desc()))).all()
-    tests = await TestRepository(db).list_all()
+    tests = await TestRepository(db).list_all(include_drafts=False)
     visible = {test.id for test, locked in await annotate_content_list(db, user, tests, enforce_for_admin=True) if not locked and not test.hidden}
     result = []
     for row in rows:
@@ -192,15 +192,18 @@ async def training_me(
     enforce_tariff: Annotated[bool, Query(alias="enforceTariff")] = False,
 ) -> list[TrainingTopicOut]:
     wrong = await load_user_wrong_stats(db, user.id)
-    tests = await TestRepository(db).list_all() if enforce_tariff and wrong else None
+    tests = await TestRepository(db).list_all(include_drafts=False) if wrong else None
     visible_test_ids: set[str] | None = None
     if tests is not None:
-        annotated_tests = await annotate_content_list(
-            db, user, tests, enforce_for_admin=True
-        )
-        visible_test_ids = {
-            str(test.id) for test, locked_by in annotated_tests if locked_by is None
-        }
+        if enforce_tariff or user.role != "admin":
+            annotated_tests = await annotate_content_list(
+                db, user, tests, enforce_for_admin=enforce_tariff
+            )
+            visible_test_ids = {
+                str(test.id) for test, locked_by in annotated_tests if locked_by is None
+            }
+        else:
+            visible_test_ids = {str(test.id) for test in tests}
     topics = await group_wrong_by_test(db, wrong, tests=tests)
     if visible_test_ids is not None:
         topics = [topic for topic in topics if topic["test_id"] in visible_test_ids]

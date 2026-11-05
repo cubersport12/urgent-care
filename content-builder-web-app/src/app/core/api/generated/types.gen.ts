@@ -434,6 +434,7 @@ export type ArticleOut = {
      * Name
      */
     name: string;
+    status: ContentStatus;
     /**
      * Order
      */
@@ -532,6 +533,7 @@ export type ArticleStatsUpsert = {
  * ArticleUpdate
  */
 export type ArticleUpdate = {
+    status?: ContentStatus;
     /**
      * Name
      */
@@ -651,6 +653,16 @@ export type BillingMeOut = {
      */
     scheduledChangeStatus?: string | null;
     promo?: ActivePromoOut | null;
+};
+
+/**
+ * Body_admin-notifications_upload_icon
+ */
+export type BodyAdminNotificationsUploadIcon = {
+    /**
+     * File
+     */
+    file: Blob | File;
 };
 
 /**
@@ -788,6 +800,40 @@ export type BulkTariffRequest = {
 };
 
 /**
+ * CampaignInput
+ */
+export type CampaignInput = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Body
+     */
+    body?: string;
+    /**
+     * Icon Path
+     */
+    icon_path?: string | null;
+    /**
+     * Audience
+     */
+    audience: 'all' | 'selected';
+    /**
+     * User Ids
+     */
+    user_ids?: Array<string>;
+    /**
+     * Cron
+     */
+    cron?: string | null;
+};
+
+/**
  * CertificateIssueRequest
  */
 export type CertificateIssueRequest = {
@@ -902,6 +948,16 @@ export type ConfirmRustoreRequest = {
 };
 
 /**
+ * ContentStatus
+ */
+export const ContentStatus = { DRAFT: 'draft', PUBLISHED: 'published' } as const;
+
+/**
+ * ContentStatus
+ */
+export type ContentStatus = typeof ContentStatus[keyof typeof ContentStatus];
+
+/**
  * DeleteAccount
  */
 export type DeleteAccount = {
@@ -919,6 +975,94 @@ export type DeleteRequest = {
      * Items
      */
     items: Array<ItemRef>;
+};
+
+/**
+ * DispatchInput
+ */
+export type DispatchInput = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Body
+     */
+    body?: string;
+    /**
+     * Icon Path
+     */
+    icon_path?: string | null;
+    /**
+     * Audience
+     */
+    audience: 'all' | 'selected';
+    /**
+     * User Ids
+     */
+    user_ids?: Array<string>;
+    /**
+     * Cron
+     */
+    cron?: string | null;
+    /**
+     * Template Id
+     */
+    template_id?: string | null;
+};
+
+/**
+ * DispatchOut
+ */
+export type DispatchOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Source
+     */
+    source: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Icon Path
+     */
+    icon_path: string | null;
+    /**
+     * Audience
+     */
+    audience: string;
+    /**
+     * Recipient Count
+     */
+    recipient_count: number;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Push Accepted
+     */
+    push_accepted: number;
+    /**
+     * Push Failed
+     */
+    push_failed: number;
+    /**
+     * Created At
+     */
+    created_at: string;
 };
 
 /**
@@ -1003,6 +1147,7 @@ export type FolderOut = {
      * Name
      */
     name: string;
+    status: ContentStatus;
     /**
      * Iconpath
      */
@@ -1053,6 +1198,7 @@ export type FolderOut = {
  * FolderUpdate
  */
 export type FolderUpdate = {
+    status?: ContentStatus;
     /**
      * Name
      */
@@ -1450,6 +1596,10 @@ export type NotificationOut = {
      * Isread
      */
     isRead: boolean;
+    /**
+     * Iconpath
+     */
+    iconPath?: string | null;
 };
 
 /**
@@ -1973,6 +2123,7 @@ export type RescueOut = {
      * Name
      */
     name: string;
+    status: ContentStatus;
     /**
      * Order
      */
@@ -2215,6 +2366,7 @@ export type RescueTimerParameter = {
  * RescueUpdate
  */
 export type RescueUpdate = {
+    status?: ContentStatus;
     /**
      * Name
      */
@@ -2501,6 +2653,34 @@ export type RewardUpdate = {
      * Isactive
      */
     isActive?: boolean | null;
+};
+
+/**
+ * ScheduleOut
+ */
+export type ScheduleOut = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Snapshot
+     */
+    snapshot: {
+        [key: string]: unknown;
+    };
+    /**
+     * Cron
+     */
+    cron: string;
+    /**
+     * Next Run At
+     */
+    next_run_at: string;
+    /**
+     * Active
+     */
+    active: boolean;
 };
 
 /**
@@ -3043,6 +3223,52 @@ export type TariffUpdate = {
 };
 
 /**
+ * TemplateOut
+ */
+export type TemplateOut = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Body
+     */
+    body?: string;
+    /**
+     * Icon Path
+     */
+    icon_path?: string | null;
+    /**
+     * Audience
+     */
+    audience: 'all' | 'selected';
+    /**
+     * User Ids
+     */
+    user_ids?: Array<string>;
+    /**
+     * Cron
+     */
+    cron?: string | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
  * TestCreate
  */
 export type TestCreate = {
@@ -3136,6 +3362,7 @@ export type TestOut = {
      * Name
      */
     name: string;
+    status: ContentStatus;
     /**
      * Order
      */
@@ -3398,6 +3625,7 @@ export type TestStatsUpdate = {
  * TestUpdate
  */
 export type TestUpdate = {
+    status?: ContentStatus;
     /**
      * Name
      */
@@ -3848,6 +4076,394 @@ export type UserOutWritable = {
      */
     created_at: string;
 };
+
+export type AdminNotificationsUploadIconData = {
+    body: BodyAdminNotificationsUploadIcon;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/notifications/icons';
+};
+
+export type AdminNotificationsUploadIconErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsUploadIconError = AdminNotificationsUploadIconErrors[keyof AdminNotificationsUploadIconErrors];
+
+export type AdminNotificationsUploadIconResponses = {
+    /**
+     * Response Admin-Notifications Upload Icon
+     *
+     * Successful Response
+     */
+    201: {
+        [key: string]: string;
+    };
+};
+
+export type AdminNotificationsUploadIconResponse = AdminNotificationsUploadIconResponses[keyof AdminNotificationsUploadIconResponses];
+
+export type AdminNotificationsListTemplatesData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/notifications/templates';
+};
+
+export type AdminNotificationsListTemplatesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsListTemplatesError = AdminNotificationsListTemplatesErrors[keyof AdminNotificationsListTemplatesErrors];
+
+export type AdminNotificationsListTemplatesResponses = {
+    /**
+     * Response Admin-Notifications List Templates
+     *
+     * Successful Response
+     */
+    200: Array<TemplateOut>;
+};
+
+export type AdminNotificationsListTemplatesResponse = AdminNotificationsListTemplatesResponses[keyof AdminNotificationsListTemplatesResponses];
+
+export type AdminNotificationsCreateTemplateData = {
+    body: CampaignInput;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/notifications/templates';
+};
+
+export type AdminNotificationsCreateTemplateErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsCreateTemplateError = AdminNotificationsCreateTemplateErrors[keyof AdminNotificationsCreateTemplateErrors];
+
+export type AdminNotificationsCreateTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    201: TemplateOut;
+};
+
+export type AdminNotificationsCreateTemplateResponse = AdminNotificationsCreateTemplateResponses[keyof AdminNotificationsCreateTemplateResponses];
+
+export type AdminNotificationsDeleteTemplateData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/notifications/templates/{template_id}';
+};
+
+export type AdminNotificationsDeleteTemplateErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsDeleteTemplateError = AdminNotificationsDeleteTemplateErrors[keyof AdminNotificationsDeleteTemplateErrors];
+
+export type AdminNotificationsDeleteTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type AdminNotificationsDeleteTemplateResponse = AdminNotificationsDeleteTemplateResponses[keyof AdminNotificationsDeleteTemplateResponses];
+
+export type AdminNotificationsUpdateTemplateData = {
+    body: CampaignInput;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Template Id
+         */
+        template_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/notifications/templates/{template_id}';
+};
+
+export type AdminNotificationsUpdateTemplateErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsUpdateTemplateError = AdminNotificationsUpdateTemplateErrors[keyof AdminNotificationsUpdateTemplateErrors];
+
+export type AdminNotificationsUpdateTemplateResponses = {
+    /**
+     * Successful Response
+     */
+    200: TemplateOut;
+};
+
+export type AdminNotificationsUpdateTemplateResponse = AdminNotificationsUpdateTemplateResponses[keyof AdminNotificationsUpdateTemplateResponses];
+
+export type AdminNotificationsSendCampaignData = {
+    body: DispatchInput;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/notifications/send';
+};
+
+export type AdminNotificationsSendCampaignErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsSendCampaignError = AdminNotificationsSendCampaignErrors[keyof AdminNotificationsSendCampaignErrors];
+
+export type AdminNotificationsSendCampaignResponses = {
+    /**
+     * Successful Response
+     */
+    201: DispatchOut;
+};
+
+export type AdminNotificationsSendCampaignResponse = AdminNotificationsSendCampaignResponses[keyof AdminNotificationsSendCampaignResponses];
+
+export type AdminNotificationsListSchedulesData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/notifications/schedules';
+};
+
+export type AdminNotificationsListSchedulesErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsListSchedulesError = AdminNotificationsListSchedulesErrors[keyof AdminNotificationsListSchedulesErrors];
+
+export type AdminNotificationsListSchedulesResponses = {
+    /**
+     * Response Admin-Notifications List Schedules
+     *
+     * Successful Response
+     */
+    200: Array<ScheduleOut>;
+};
+
+export type AdminNotificationsListSchedulesResponse = AdminNotificationsListSchedulesResponses[keyof AdminNotificationsListSchedulesResponses];
+
+export type AdminNotificationsCreateScheduleData = {
+    body: DispatchInput;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/notifications/schedules';
+};
+
+export type AdminNotificationsCreateScheduleErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsCreateScheduleError = AdminNotificationsCreateScheduleErrors[keyof AdminNotificationsCreateScheduleErrors];
+
+export type AdminNotificationsCreateScheduleResponses = {
+    /**
+     * Successful Response
+     */
+    201: ScheduleOut;
+};
+
+export type AdminNotificationsCreateScheduleResponse = AdminNotificationsCreateScheduleResponses[keyof AdminNotificationsCreateScheduleResponses];
+
+export type AdminNotificationsStopScheduleData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Schedule Id
+         */
+        schedule_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/notifications/schedules/{schedule_id}/stop';
+};
+
+export type AdminNotificationsStopScheduleErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsStopScheduleError = AdminNotificationsStopScheduleErrors[keyof AdminNotificationsStopScheduleErrors];
+
+export type AdminNotificationsStopScheduleResponses = {
+    /**
+     * Successful Response
+     */
+    200: ScheduleOut;
+};
+
+export type AdminNotificationsStopScheduleResponse = AdminNotificationsStopScheduleResponses[keyof AdminNotificationsStopScheduleResponses];
+
+export type AdminNotificationsHistoryData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: {
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/admin/notifications/history';
+};
+
+export type AdminNotificationsHistoryErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsHistoryError = AdminNotificationsHistoryErrors[keyof AdminNotificationsHistoryErrors];
+
+export type AdminNotificationsHistoryResponses = {
+    /**
+     * Response Admin-Notifications History
+     *
+     * Successful Response
+     */
+    200: Array<DispatchOut>;
+};
+
+export type AdminNotificationsHistoryResponse = AdminNotificationsHistoryResponses[keyof AdminNotificationsHistoryResponses];
+
+export type AdminNotificationsRepeatData = {
+    body?: never;
+    headers: {
+        /**
+         * Idempotency-Key
+         */
+        'Idempotency-Key': string;
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path: {
+        /**
+         * Dispatch Id
+         */
+        dispatch_id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/notifications/history/{dispatch_id}/repeat';
+};
+
+export type AdminNotificationsRepeatErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AdminNotificationsRepeatError = AdminNotificationsRepeatErrors[keyof AdminNotificationsRepeatErrors];
+
+export type AdminNotificationsRepeatResponses = {
+    /**
+     * Successful Response
+     */
+    201: DispatchOut;
+};
+
+export type AdminNotificationsRepeatResponse = AdminNotificationsRepeatResponses[keyof AdminNotificationsRepeatResponses];
 
 export type AuthRegisterData = {
     body: UserCreate;
@@ -6190,6 +6806,10 @@ export type FoldersListFoldersData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/folders';
 };
@@ -6426,6 +7046,10 @@ export type FoldersGetFolderData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/folders/{item_id}';
 };
@@ -6506,6 +7130,10 @@ export type ArticlesListArticlesData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/articles';
 };
@@ -6616,6 +7244,10 @@ export type ArticlesGetArticleData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/articles/{item_id}';
 };
@@ -6696,6 +7328,10 @@ export type TestsListTestsData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/tests';
 };
@@ -6806,6 +7442,10 @@ export type TestsGetTestData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/tests/{item_id}';
 };
@@ -6886,6 +7526,10 @@ export type RescueListRescueData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/rescue';
 };
@@ -7003,6 +7647,10 @@ export type RescueGetRescueData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/rescue/{item_id}';
 };
@@ -7912,13 +8560,28 @@ export type LegalGetLegalDocumentFileResponses = {
 
 export type MediaDownloadPublicImageData = {
     body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
     path: {
         /**
          * File Path
          */
         file_path: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Enforcetariff
+         */
+        enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
+    };
     url: '/api/v1/media/public/{file_path}';
 };
 
@@ -7993,6 +8656,10 @@ export type MediaDownloadMediaData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/media/{file_path}';
 };

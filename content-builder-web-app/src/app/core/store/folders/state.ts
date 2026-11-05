@@ -31,7 +31,12 @@ export class FoldersState {
   private _createFolder(ctx: StateContext<FoldersStateModel>, action: FoldersActions.CreateFolder) {
     const { parentId, payload } = action;
     const newId = action.payload.id ?? generateGUID();
-    const newFolder = { ...payload, id: newId, parentId: parentId ?? null } as AppFolderVm;
+    const newFolder = {
+      ...payload,
+      id: newId,
+      parentId: parentId ?? null,
+      status: 'draft'
+    } as AppFolderVm;
     return this._foldersStorage.createFolder(newFolder)
       .pipe(tap(() => {
         const { folders } = ctx.getState();

@@ -11,6 +11,7 @@ import type {
 } from '@/core/api/generated/types.gen';
 
 export type NullableValue<T> = T | null | undefined;
+export type AppPublicationStatus = 'draft' | 'published';
 
 export type AppIdentity = { id: string };
 export type AppBaseVm = {
@@ -20,7 +21,8 @@ export type AppBaseVm = {
 } & AppIdentity;
 
 /** UI/store models: OpenAPI DTOs softened so form values may be `undefined`. */
-export type AppFolderVm = Omit<FolderOut, 'order' | 'parentId'> & {
+export type AppFolderVm = Omit<FolderOut, 'order' | 'parentId' | 'status'> & {
+  status?: AppPublicationStatus;
   order?: NullableValue<number>;
   parentId?: NullableValue<string>;
 };
@@ -30,6 +32,7 @@ export type AppLinkToArticleVm = LinkToArticle;
 export type AppArticleVm = Omit<
   ArticleOut,
   | 'order'
+  | 'status'
   | 'parentId'
   | 'nextRunArticle'
   | 'timeRead'
@@ -40,6 +43,7 @@ export type AppArticleVm = Omit<
   | 'isLocked'
   | 'lockedBy'
 > & {
+  status?: AppPublicationStatus;
   order?: NullableValue<number>;
   parentId?: NullableValue<string>;
   nextRunArticle?: NullableValue<string>;
@@ -130,7 +134,9 @@ export type AppTestVm = Omit<
   | 'hidden'
   | 'randomizeQuestions'
   | 'questionsToShow'
+  | 'status'
 > & {
+  status?: AppPublicationStatus;
   order?: NullableValue<number>;
   parentId?: NullableValue<string>;
   minScore?: NullableValue<number>;
@@ -251,7 +257,8 @@ export type AppRescueItemDataVm = {
   completion?: AppRescueItemCompletionVm;
 };
 
-export type AppRescueItemVm = Omit<RescueOut, 'data' | 'order' | 'parentId' | 'description'> & {
+export type AppRescueItemVm = Omit<RescueOut, 'data' | 'order' | 'parentId' | 'description' | 'status'> & {
+  status?: AppPublicationStatus;
   order?: NullableValue<number>;
   parentId?: NullableValue<string>;
   description?: string;

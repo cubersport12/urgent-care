@@ -1,4 +1,5 @@
 """FastAPI application factory."""
+import asyncio
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -64,9 +65,14 @@ async def lifespan(app: FastAPI):
             await seed_cities_if_empty(session)
     except Exception as exc:
         log.warning("cities_seed_skipped", error=str(exc))
+    from app.services.notification_campaigns import run_campaign_worker
+
+    worker = asyncio.create_task(run_campaign_worker())
     try:
         yield
     finally:
+        worker.cancel()
+        await asyncio.gather(worker, return_exceptions=True)
         await close_file_cache()
         await engine.dispose()
         log.info("app_stopped")

@@ -108,25 +108,25 @@ export class AppApi {
     switch (resource) {
       case 'folders':
         if (opts?.id) {
-          return apiCall(() => foldersGetFolder({ path: { item_id: opts.id! } })).then((x) => [x as T]);
+          return apiCall(() => foldersGetFolder({ path: { item_id: opts.id! }, query: { includeDrafts: true } })).then((x) => [x as T]);
         }
-        return apiCall(() => foldersListFolders({ query })).then((x) => x as T[]);
+        return apiCall(() => foldersListFolders({ query: { ...query, includeDrafts: true } })).then((x) => x as T[]);
       case 'articles':
         if (opts?.id) {
-          return apiCall(() => articlesGetArticle({ path: { item_id: opts.id! } })).then((x) => [x as T]);
+          return apiCall(() => articlesGetArticle({ path: { item_id: opts.id! }, query: { includeDrafts: true } })).then((x) => [x as T]);
         }
-        return apiCall(() => articlesListArticles({ query })).then((x) => x as T[]);
+        return apiCall(() => articlesListArticles({ query: { ...query, includeDrafts: true } })).then((x) => x as T[]);
       case 'tests':
         if (opts?.id) {
-          return apiCall(() => testsGetTest({ path: { item_id: opts.id! } })).then((x) => [x as T]);
+          return apiCall(() => testsGetTest({ path: { item_id: opts.id! }, query: { includeDrafts: true } })).then((x) => [x as T]);
         }
-        return apiCall(() => testsListTests({ query })).then((x) => x as T[]);
+        return apiCall(() => testsListTests({ query: { ...query, includeDrafts: true } })).then((x) => x as T[]);
       case 'rescue':
         if (opts?.id) {
-          return apiCall(() => rescueGetRescue({ path: { item_id: opts.id! } })).then((x) => [x as T]);
+          return apiCall(() => rescueGetRescue({ path: { item_id: opts.id! }, query: { includeDrafts: true } })).then((x) => [x as T]);
         }
         console.info('-------> list rescue');
-        return apiCall(() => rescueListRescue({ query })).then((x) => {
+        return apiCall(() => rescueListRescue({ query: { ...query, includeDrafts: true } })).then((x) => {
           console.info('-------> list rescue result', x);
           return x as T[];
         });
@@ -213,7 +213,7 @@ export class AppApi {
     const headers = new Headers();
     const sessionId = getSessionId();
     if (sessionId) headers.set('X-Session-Id', sessionId);
-    const res = await fetch(`${API_BASE}/api/v1/media/${path}`, { headers });
+    const res = await fetch(`${API_BASE}/api/v1/media/${path}?includeDrafts=true`, { headers });
     if (!res.ok) {
       throw new Error(`Download failed: ${res.status}`);
     }
@@ -222,6 +222,6 @@ export class AppApi {
 
   getFileUrl(fileName: string): string {
     const path = fileName.startsWith('public/') ? fileName : `public/${fileName}`;
-    return `${API_BASE}/api/v1/media/${path}`;
+    return `${API_BASE}/api/v1/media/${path}?includeDrafts=true`;
   }
 }

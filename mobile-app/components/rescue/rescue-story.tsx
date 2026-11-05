@@ -1,4 +1,4 @@
-import { Fonts, getSceneSurfaces, Radius } from '@/constants/theme';
+import { Fonts, getSceneSurfaces, IconSize, Radius, Spacing } from '@/constants/theme';
 import { useNavRail } from '@/contexts/nav-rail-context';
 import { useTheme } from '@/contexts/theme-context';
 import {
@@ -13,6 +13,7 @@ import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { formatSecondsAsHms } from '@/lib/rescue-timer-format';
 import { colorForSeverity, findSeverityForValue } from '@/lib/rescue-parameter-severity';
 import { Image } from 'expo-image';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -32,6 +33,17 @@ function isDataUri(value: string): boolean {
   return typeof value === 'string' && value.startsWith('data:');
 }
 
+function ParameterIcon({ icon, color }: { icon?: string; color: string }) {
+  const isImage = !!icon && /\.png$/i.test(icon);
+  const { response } = useFileImage(isImage ? icon : '');
+  if (isImage) {
+    return response ? <Image source={{ uri: response }} style={styles.parameterIcon} contentFit="contain" accessible={false} /> : null;
+  }
+  return icon && Object.prototype.hasOwnProperty.call(MaterialIcons.glyphMap, icon)
+    ? <MaterialIcons name={icon as keyof typeof MaterialIcons.glyphMap} size={IconSize.metric} color={color} accessible={false} />
+    : null;
+}
+
 /** Glass-карточка параметра в стиле kimi PatientParameterCard */
 function ParameterBadge({
   param,
@@ -41,16 +53,11 @@ function ParameterBadge({
   value: number;
 }) {
   const { theme } = useTheme();
-  const glass = useGlass();
   const { border: borderColor } = useAppTheme();
   const { success, warning, error, neutral, surfaceRaised, surfaceRaisedPressed } = useAppTheme();
   const surfaces = getSceneSurfaces(theme, false);
   const severityBand = findSeverityForValue(value, param.severities);
   const severityColor = colorForSeverity(severityBand?.severity, { success, warning, error, neutral });
-  const min = severityBand?.min ?? 0;
-  const max = severityBand?.max ?? Math.max(value, min + 1, 200);
-  const range = max - min || 1;
-  const pct = Math.max(0, Math.min(100, ((value - min) / range) * 100));
 
   const backgroundColor = useSharedValue(surfaceRaised);
   const prevValueRef = useRef(value);
@@ -72,7 +79,6 @@ function ParameterBadge({
   }));
 
   const valueLabel = param.type === 'timer' ? formatSecondsAsHms(value) : String(value);
-  const isHigh = severityBand?.severity === RescueParameterSeverityEnum.High;
 
   return (
     <Animated.View
@@ -85,13 +91,16 @@ function ParameterBadge({
       ]}
     >
       <View style={styles.parameterCardRow}>
-        <ThemedText
-          lightColor={surfaces.mutedText}
-          darkColor={surfaces.mutedText}
-          style={styles.parameterName}
-        >
-          {param.name}
-        </ThemedText>
+        <View style={styles.parameterNameGroup}>
+          {param.icon ? <ParameterIcon icon={param.icon} color={surfaces.mutedText} /> : null}
+          <ThemedText
+            lightColor={surfaces.mutedText}
+            darkColor={surfaces.mutedText}
+            style={styles.parameterName}
+          >
+            {param.name}
+          </ThemedText>
+        </View>
         <ThemedText
           type="mono"
           lightColor={severityColor}
@@ -100,20 +109,6 @@ function ParameterBadge({
         >
           {valueLabel}
         </ThemedText>
-      </View>
-      <View style={[styles.parameterTrack, { backgroundColor: glass.progressTrack }]}>
-        <View
-          style={[
-            styles.parameterFill,
-            {
-              width: `${pct}%`,
-              backgroundColor: severityColor,
-              shadowColor: isHigh ? severityColor : 'transparent',
-              shadowOpacity: isHigh ? 0.8 : 0,
-              shadowRadius: isHigh ? 6 : 0,
-            },
-          ]}
-        />
       </View>
     </Animated.View>
   );
@@ -503,6 +498,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
+  parameterNameGroup: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  parameterIcon: {
+    width: IconSize.metric,
+    height: IconSize.metric,
+  },
   parameterName: {
     fontSize: 13,
     flexShrink: 1,
@@ -510,16 +515,6 @@ const styles = StyleSheet.create({
   parameterValue: {
     fontSize: 18,
     fontWeight: '400',
-  },
-  parameterTrack: {
-    marginTop: 8,
-    height: 3,
-    borderRadius: Radius.pill,
-    overflow: 'hidden',
-  },
-  parameterFill: {
-    height: '100%',
-    borderRadius: Radius.pill,
   },
   unreviewedSceneFrame: {
     borderWidth: 4,

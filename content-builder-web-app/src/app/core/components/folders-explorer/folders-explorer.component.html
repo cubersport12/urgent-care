@@ -117,6 +117,17 @@
           (clicked)="_setTariffOnSelected()"
         />
 
+        <app-button
+          size="sm"
+          variant="ghost"
+          [icon]="_publicationTarget()?.status === 'published' ? 'exclamation-circle' : 'check'"
+          [disabled]="_publicationTarget() == null || _publicationPendingId() != null"
+          [tooltip]="_publicationTarget()?.status === 'published' ? 'Перевести в черновик' : 'Опубликовать выбранный элемент'"
+          (clicked)="_toggleSelectedPublication()"
+        >
+          {{ _publicationTarget()?.status === 'published' ? 'В черновик' : 'Опубликовать' }}
+        </app-button>
+
         <app-icon-button
           icon="trash"
           size="sm"
@@ -210,15 +221,13 @@
   </footer>
 </div>
 
-<!-- Context Menu Trigger & MatMenu -->
-<div class="hidden" #contextMenuTrigger [matMenuTriggerFor]="contextMenu"></div>
 <mat-menu #contextMenu="matMenu">
-  @if (_contextMenuItem(); as item) {
-    <button mat-menu-item (click)="_open(_contextMenuPanel(), item)">
+  <ng-template matMenuContent let-item="item" let-side="side">
+    <button mat-menu-item (click)="_open(side, item)">
       <mat-icon svgIcon="folder-open" class="text-blue-500" />
       <span>Открыть</span>
     </button>
-    <button mat-menu-item (click)="_beginRename(item.id, _contextMenuPanel())">
+    <button mat-menu-item (click)="_beginRename(item.id, side)">
       <mat-icon svgIcon="edit" class="text-slate-500" />
       <span>Переименовать</span>
     </button>
@@ -233,16 +242,16 @@
       <span>Назначить тариф</span>
     </button>
     <mat-divider />
-    <button mat-menu-item (click)="_copy(item, _contextMenuPanel())">
+    <button mat-menu-item (click)="_copy(item, side)">
       <mat-icon svgIcon="copy" />
       <span>Копировать</span>
     </button>
-    <button mat-menu-item (click)="_cut(item, _contextMenuPanel())">
+    <button mat-menu-item (click)="_cut(item, side)">
       <mat-icon svgIcon="scissors" />
       <span>Вырезать</span>
     </button>
-    @if (_clipboard() && _canPasteTo()(_getPanelFolderId()(_contextMenuPanel()))) {
-      <button mat-menu-item (click)="_paste(_getPanelFolderId()(_contextMenuPanel()))">
+    @if (_clipboard() && _canPasteTo()(_getPanelFolderId()(side))) {
+      <button mat-menu-item (click)="_paste(_getPanelFolderId()(side))">
         <mat-icon svgIcon="paste" />
         <span>Вставить сюда</span>
       </button>
@@ -254,11 +263,11 @@
       </button>
     }
     <mat-divider />
-    <button mat-menu-item (click)="_delete(item, _contextMenuPanel())" class="!text-red-600 dark:!text-red-400">
+    <button mat-menu-item (click)="_delete(item, side)" class="!text-red-600 dark:!text-red-400">
       <mat-icon svgIcon="trash" class="text-red-500" />
       <span>Удалить</span>
     </button>
-  }
+  </ng-template>
 </mat-menu>
 
 <!-- Template for each Explorer Panel -->
@@ -334,6 +343,7 @@
           <tr>
             <th class="tc-header-cell">НАИМЕНОВАНИЕ</th>
             <th class="tc-header-cell tc-tariff-col">ТАРИФ</th>
+            <th class="tc-header-cell tc-status-col">СТАТУС</th>
             <th class="tc-header-cell tc-type-col">ТИП</th>
             <th class="tc-header-cell tc-actions-col">ДЕЙСТВИЯ</th>
           </tr>
@@ -346,7 +356,7 @@
               (dblclick)="_handleGoUpClick(side, $event)"
               (click)="_handleGoUpClick(side, $event)"
             >
-              <td class="tc-cell" colspan="4">
+              <td class="tc-cell" colspan="5">
                 <div class="flex items-center gap-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
                   <div class="w-6 h-6 rounded-md bg-slate-200/70 dark:bg-slate-800 flex items-center justify-center shrink-0 text-slate-500">
                     <mat-icon svgIcon="arrow-up" class="!w-3 !h-3" />
@@ -378,7 +388,7 @@
               [style.opacity]="_isHidden(item) || _isCut()(item) ? 0.45 : 1"
               (click)="_handleItemSelect(side, item, $event)"
               (dblclick)="_handleItemOpen(side, item, $event)"
-              (contextmenu)="_onRowContextMenu($event, side, item)"
+              (contextmenu)="_onRowContextMenu($event, side, item, rowMenuTrigger)"
             >
               <td class="tc-cell">
                 @if (_isPending()(side, item.id)) {
@@ -419,6 +429,42 @@
                 </span>
               </td>
 
+              <td class="tc-cell tc-status-col">
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center gap-1.5 rounded-lg border px-2 py-1 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 disabled:cursor-wait disabled:opacity-60"
+                  [class.border-amber-200]="item.status !== 'published'"
+                  [class.bg-amber-50]="item.status !== 'published'"
+                  [class.text-amber-800]="item.status !== 'published'"
+                  [class.hover:bg-amber-100]="item.status !== 'published'"
+                  [class.dark:border-amber-900]="item.status !== 'published'"
+                  [class.dark:bg-amber-950/50]="item.status !== 'published'"
+                  [class.dark:text-amber-200]="item.status !== 'published'"
+                  [class.border-emerald-200]="item.status === 'published'"
+                  [class.bg-emerald-50]="item.status === 'published'"
+                  [class.text-emerald-800]="item.status === 'published'"
+                  [class.hover:bg-emerald-100]="item.status === 'published'"
+                  [class.dark:border-emerald-900]="item.status === 'published'"
+                  [class.dark:bg-emerald-950/50]="item.status === 'published'"
+                  [class.dark:text-emerald-200]="item.status === 'published'"
+                  [attr.aria-label]="(item.status === 'published' ? 'Перевести в черновик: ' : 'Опубликовать: ') + item.name"
+                  [matTooltip]="item.status === 'published' ? 'Нажмите, чтобы перевести в черновик' : 'Нажмите, чтобы опубликовать'"
+                  [disabled]="_publicationPendingId() != null"
+                  (click)="_togglePublication(item); $event.stopPropagation()"
+                  (dblclick)="$event.stopPropagation()"
+                >
+                  @if (_publicationPendingId() === item.id) {
+                    <mat-icon svgIcon="spinner" class="!h-3.5 !w-3.5 animate-spin" />
+                  } @else {
+                    <mat-icon
+                      [svgIcon]="item.status === 'published' ? 'check' : 'exclamation-circle'"
+                      class="!h-3.5 !w-3.5"
+                    />
+                  }
+                  {{ item.status === 'published' ? 'Опубликовано' : 'Черновик' }}
+                </button>
+              </td>
+
               <td class="tc-cell tc-type-col">
                 <span class="text-xs text-slate-500 dark:text-slate-400">
                   {{ _getTypeLabel(item) }}
@@ -426,7 +472,7 @@
               </td>
 
               <td class="tc-cell tc-actions-col">
-                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                   @if (item.type === 'folder') {
                     <app-icon-button
                       icon="sliders-h"
@@ -441,12 +487,21 @@
                     tooltip="Назначить тариф"
                     (clicked)="_setTariffOnItem(item); $event.stopPropagation()"
                   />
-                  <app-icon-button
-                    icon="ellipsis-vertical"
-                    size="sm"
-                    tooltip="Ещё действия"
-                    (clicked)="_onRowContextMenu($event, side, item); $event.stopPropagation()"
-                  />
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="!inline-flex !h-8 !w-8 !p-0 items-center justify-center"
+                    [attr.aria-label]="'Ещё действия: ' + item.name"
+                    matTooltip="Ещё действия"
+                    #rowMenuTrigger="matMenuTrigger"
+                    [matMenuTriggerFor]="contextMenu"
+                    [matMenuTriggerData]="{ item, side }"
+                    (menuOpened)="_activePanel.set(side)"
+                    (click)="$event.stopPropagation()"
+                    (dblclick)="$event.stopPropagation()"
+                  >
+                    <mat-icon svgIcon="ellipsis-vertical" class="!h-3.5 !w-3.5" />
+                  </button>
                 </div>
               </td>
             </tr>

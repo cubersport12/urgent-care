@@ -8,8 +8,9 @@ from uuid import UUID
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.repositories.content import ArticleRepository, published_content_statement
 from app.models.user import User
-from app.schemas.content import CamelModel, FolderOut, RescueOut
+from app.schemas.content import ArticleOut, CamelModel, FolderOut, RescueOut
 from app.services.entitlements import (
     default_tariff_id,
     is_reward_visible,
@@ -62,6 +63,7 @@ def content_out(item: Any, schema: type[CamelModel], locked_by: str | None) -> C
     fields: dict[str, Any] = {
         "id": item.id,
         "name": item.name,
+        "status": item.status,
         "order": item.order,
         "parent_id": item.parent_id,
         "required_tariff_id": item.required_tariff_id,
@@ -79,13 +81,47 @@ def content_out(item: Any, schema: type[CamelModel], locked_by: str | None) -> C
     return schema.model_validate(fields)
 
 
+async def hide_unpublished_article_links(
+    db: AsyncSession, items: Sequence[CamelModel], *, include_drafts: bool = False
+) -> None:
+    if include_drafts:
+        return
+    visible_ids = {
+        item.id for item in await ArticleRepository(db).list_all(include_drafts=False)
+    }
+    for item in items:
+        if isinstance(item, ArticleOut):
+            if item.next_run_article not in visible_ids:
+                item.next_run_article = None
+            if item.links_to_articles is not None:
+                item.links_to_articles = [
+                    link for link in item.links_to_articles if link.article_id in visible_ids
+                ]
+        elif isinstance(item, RescueOut) and item.data:
+            for scene in item.data.get("scenes", []):
+                if isinstance(scene, dict) and isinstance(scene.get("documents"), list):
+                    scene["documents"] = [
+                        document for document in scene["documents"]
+                        if isinstance(document, dict)
+                        and document.get("articleId") in visible_ids
+                    ]
+
+
 async def assert_content_visible(
     db: AsyncSession,
     user: User,
     item: Any,
     *,
     enforce_for_admin: bool = False,
+    include_drafts: bool = False,
 ) -> None:
+    if not (user.role == "admin" and include_drafts):
+        model = type(item)
+        result = await db.execute(
+            published_content_statement(model).where(model.id == item.id)
+        )
+        if result.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail="Item not found")
     if user.role == "admin" and not enforce_for_admin:
         return
     rank = await user_content_rank(db, user, enforce_for_admin=enforce_for_admin)

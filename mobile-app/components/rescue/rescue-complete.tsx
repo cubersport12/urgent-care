@@ -1,5 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { IconSize, Radius, ResultTileTokens, Spacing } from '@/constants/theme';
+import { Animation, IconSize, Radius, ResultTileTokens, Spacing } from '@/constants/theme';
 import {
   type AppRescueItemVm,
   RescueParameterSeverityEnum,
@@ -18,7 +18,7 @@ import { colorForSeverity, findSeverityForValue } from '@/lib/rescue-parameter-s
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import Animated, { FadeIn, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { interpolate, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSequence, withTiming } from 'react-native-reanimated';
 import { ThemedText } from '../themed-text';
 import { Button } from '../ui/button';
 import { NoScreenCapture } from '../ui/no-screen-capture';
@@ -34,12 +34,12 @@ type RescueCompleteProps = {
 
 const outcomeImages = {
   passed: {
-    light: { animation: require('@/assets/images/rescue/success.gif'), final: require('@/assets/images/rescue/success-final.png'), ratio: 485 / 800 },
-    dark: { animation: require('@/assets/images/rescue/success-dark.gif'), final: require('@/assets/images/rescue/success-dark-final.png'), ratio: 485 / 800 },
+    light: { image: require('@/assets/images/rescue/success-final.png'), ratio: 485 / 800 },
+    dark: { image: require('@/assets/images/rescue/success-dark-final.png'), ratio: 485 / 800 },
   },
   failed: {
-    light: { animation: require('@/assets/images/rescue/failure.gif'), final: require('@/assets/images/rescue/failure-final.png'), ratio: 525 / 800 },
-    dark: { animation: require('@/assets/images/rescue/failure-dark.gif'), final: require('@/assets/images/rescue/failure-dark-final.png'), ratio: 525 / 800 },
+    light: { image: require('@/assets/images/rescue/failure-final.png'), ratio: 525 / 800 },
+    dark: { image: require('@/assets/images/rescue/failure-dark-final.png'), ratio: 525 / 800 },
   },
 } as const;
 
@@ -65,28 +65,45 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
   const artwork = outcome === 'undetermined' ? undefined : outcomeImages[outcome][themeName];
   const reducedMotion = useReducedMotion();
   const [finished, setFinished] = useState(!artwork || reducedMotion);
-  const [loaded, setLoaded] = useState(false);
+  const [imageReady, setImageReady] = useState(false);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scale = useSharedValue(1);
-  const translateY = useSharedValue(0);
-  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }, { scale: scale.value }] }));
+  const motion = useSharedValue(reducedMotion ? 2 : 0);
+  const frameOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const frameStyle = useAnimatedStyle(() => ({ opacity: frameOpacity.value }));
   const imageWidth = artwork && size.width && size.height ? Math.max(0, Math.min(size.width - Spacing.pageX * 2, (size.height - Spacing.pageX * 2) / artwork.ratio)) : 0;
   const bannerWidth = Math.min(size.width - Spacing.pageX * 2, Spacing.pageX * 28);
+  const expandedScale = bannerWidth > 0 ? imageWidth / bannerWidth : 1;
+  const centerOffset = size.height / 2 - Spacing.pageX - bannerWidth * (artwork?.ratio ?? 0) / 2;
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: interpolate(motion.value, [0, 1, 2], [centerOffset, centerOffset, 0]) },
+      { scale: interpolate(motion.value, [0, 1, 2], [expandedScale, expandedScale * 0.9, 1]) },
+    ],
+  }));
 
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(() => {
+    if (!artwork || finished || reducedMotion || !imageReady || !imageWidth || timer.current) return;
 
-  function startTransition() {
-    if (!artwork || timer.current || !imageWidth) return;
     timer.current = setTimeout(() => {
-      setLoaded(true);
-      const targetScale = bannerWidth / imageWidth;
-      scale.value = withSequence(withTiming(0.9, { duration: 300 }), withTiming(targetScale, { duration: 600 }));
-      translateY.value = withSequence(withTiming(0, { duration: 300 }), withTiming(Spacing.pageX + bannerWidth * artwork.ratio / 2 - size.height / 2, { duration: 600 }, (done) => {
-        if (done) runOnJS(setFinished)(true);
-      }));
-    }, 2500);
-  }
+      timer.current = null;
+      frameOpacity.value = withDelay(
+        Animation.rescueRevealDelay,
+        withTiming(1, { duration: Animation.rescueRevealDuration }),
+      );
+      motion.value = withSequence(
+        withTiming(1, { duration: Animation.rescueRevealDuration }),
+        withTiming(2, { duration: Animation.enterDuration }, (done) => {
+          if (done) runOnJS(setFinished)(true);
+        }),
+      );
+    }, Animation.rescueRevealDelay);
+
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+    };
+  }, [artwork, finished, frameOpacity, imageReady, imageWidth, motion, reducedMotion]);
   const names = Object.fromEntries(parameters.map((p) => [String(p.id), p.name]));
   const types = Object.fromEntries(parameters.map((p) => [String(p.id), p.type]));
   const { body } = buildRescueCompletionDescription(
@@ -100,10 +117,31 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
     <ScreenBackground>
       <NoScreenCapture />
       <View style={styles.screen} onLayout={(event) => setSize(event.nativeEvent.layout)}>
-      {finished ? <Animated.View style={styles.screen} entering={reducedMotion ? undefined : FadeIn.duration(500)}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent} scrollEnabled={finished} removeClippedSubviews={false}>
         <View style={styles.content}>
-          {artwork && bannerWidth > 0 ? <View style={[styles.frame, styles.banner, { height: bannerWidth * artwork.ratio, borderColor: artworkBorderColor }]}><Image source={artwork.final} style={styles.frameImage} resizeMode="cover" accessibilityIgnoresInvertColors accessible={false} /></View> : null}
+          {artwork && imageWidth > 0 ? (
+            <View style={[styles.banner, { height: bannerWidth * artwork.ratio }]}>
+              <Animated.View style={[styles.artwork, animatedStyle]}>
+                <ExpoImage
+                  source={artwork.image}
+                  style={styles.frameImage}
+                  contentFit="cover"
+                  transition={0}
+                  allowDownscaling={false}
+                  onDisplay={() => setImageReady(true)}
+                  onError={() => {
+                    motion.value = 2;
+                    frameOpacity.value = 1;
+                    setFinished(true);
+                  }}
+                  accessibilityIgnoresInvertColors
+                  accessible={false}
+                />
+                <Animated.View pointerEvents="none" style={[styles.frameOverlay, { borderColor: artworkBorderColor }, frameStyle]} />
+              </Animated.View>
+            </View>
+          ) : null}
+          {finished ? <View>
           <ResultTile style={styles.card}>
             <View style={styles.summaryText}>
               <View style={styles.headingRow}>
@@ -184,13 +222,9 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
             </View>
           )}
           <Button title="Завершить" onPress={onBack} variant="primary" size="large" fullWidth accessibilityRole="button" />
+          </View> : null}
         </View>
       </ScrollView>
-      </Animated.View> : artwork && imageWidth > 0 ? (
-        <Animated.View style={[styles.introImage, loaded && styles.frame, { top: (size.height - imageWidth * artwork.ratio) / 2, width: imageWidth, height: imageWidth * artwork.ratio, borderColor: artworkBorderColor }, animatedStyle]}>
-          <ExpoImage source={loaded ? artwork.final : artwork.animation} style={styles.screen} contentFit="cover" onLoad={startTransition} onError={() => setFinished(true)} accessible={false} />
-        </Animated.View>
-      ) : null}
       </View>
     </ScreenBackground>
   );
@@ -198,11 +232,15 @@ export function RescueComplete({ rescueItem, parameterValues, selectedImplicatio
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  introImage: { position: 'absolute', alignSelf: 'center' },
-  frame: { borderRadius: Radius.xl, borderWidth: ResultTileTokens.borderWidth, overflow: 'hidden' },
+  artwork: { width: '100%', height: '100%', borderRadius: Radius.xl, overflow: 'hidden' },
+  frameOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: Radius.xl,
+    borderWidth: ResultTileTokens.borderWidth,
+  },
   frameImage: { width: '100%', height: '100%' },
   banner: { width: '100%', marginBottom: Spacing.card },
-  scrollContent: { paddingBottom: Spacing.pageBottom },
+  scrollContent: { flexGrow: 1, paddingBottom: Spacing.pageBottom },
   content: { width: '100%', maxWidth: Spacing.pageX * 30, alignSelf: 'center', padding: Spacing.pageX },
   card: { marginBottom: Spacing.card * 2 },
   section: { marginBottom: Spacing.card * 2 },

@@ -13,6 +13,7 @@ from app.ai.embeddings import build_article_embedding_text
 from app.ai.pdf_text import load_article_pdf_text
 from app.db.repositories.content import FolderRepository
 from app.models.article import Article
+from app.db.repositories.content import published_content_statement
 from app.models.embedding_cache import EmbeddingCache
 
 log = logging.getLogger(__name__)
@@ -95,7 +96,7 @@ async def search_similar_articles(
 ) -> list[Article]:
     distance = Article.embedding.cosine_distance(query_embedding)
     stmt = (
-        select(Article)
+        published_content_statement(Article)
         .where(Article.embedding.isnot(None))
         .where(distance < distance_threshold)
         .order_by(distance)

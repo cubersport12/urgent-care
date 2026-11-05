@@ -1,10 +1,10 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, linkedSignal, signal, viewChild } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, linkedSignal, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { AppLoading, ArticlesActions, ArticlesState, FoldersActions, FoldersState, RescueActions, RescueState, TestsActions, TestsState } from '@/core/store';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
-import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatDivider } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -18,7 +18,8 @@ import {
   FoldersExplorerService,
   generateGUID,
   NullableValue,
-  RescueSceneVm
+  RescueSceneVm,
+  AppPublicationStatus
 } from '@/core/utils';
 import type { TariffOut } from '@/core/api/generated/types.gen';
 import { notificationsBroadcastNotification } from '@/core/api/generated/sdk.gen';
@@ -27,7 +28,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TextEditableValueComponent } from '../text-editable-value';
 import { SkeletonComponent } from '../skeleton';
 import { ArticleEditorService } from '../article-editor';
-import { catchError, forkJoin, from, map, mergeMap, Observable, of } from 'rxjs';
+import { catchError, finalize, forkJoin, from, map, mergeMap, Observable, of } from 'rxjs';
 import { NgTemplateOutlet, NgClass } from '@angular/common';
 import { cloneDeep, orderBy, random, range } from 'lodash';
 import { CdkDropList, CdkDrag, CdkDragDrop, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -47,8 +48,8 @@ import { AppFilesStorageService, AppFoldersStorageService, AppTariffsStorageServ
 import { AngularSplitModule } from 'angular-split';
 import { AppDialogService } from '@/core/services/app-dialog.service';
 import { ConfirmDeleteDialogComponent, ConfirmDeleteDialogData } from './confirm-delete-dialog.component';
+import { ConfirmPublicationDialogComponent, ConfirmPublicationDialogData } from './confirm-publication-dialog.component';
 import { ShortcutsDialogComponent } from './shortcuts-dialog.component';
-import { TestNotificationDialogComponent, TestNotificationDialogResult } from './test-notification-dialog.component';
 import { MatButtonModule } from '@angular/material/button';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE, getSessionId } from '@/core/api/api-client';
@@ -101,6 +102,7 @@ import {
   }
 })
 export class FoldersExplorerComponent {
+  private readonly _router = inject(Router);
   private readonly _host = inject(ElementRef<HTMLElement>);
   private readonly _document = inject(DOCUMENT);
   private readonly _destroyRef = inject(DestroyRef);
@@ -135,7 +137,6 @@ export class FoldersExplorerComponent {
   private readonly _getArticles = this._store.selectSignal(ArticlesState.getArticles);
   private readonly _getTests = this._store.selectSignal(TestsState.getTests);
   private readonly _getRescueItems = this._store.selectSignal(RescueState.getRescueItems);
-  private readonly _contextMenuTrigger = viewChild<MatMenuTrigger>('contextMenuTrigger');
 
   private _getAuthHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
@@ -180,8 +181,6 @@ export class FoldersExplorerComponent {
   protected readonly _rightSelectedIds = signal<string[]>([]);
   protected readonly _leftPath = signal<AppFolderVm[]>([]);
   protected readonly _rightPath = signal<AppFolderVm[]>([]);
-  protected readonly _contextMenuItem = signal<NullableValue<OptionType>>(null);
-  protected readonly _contextMenuPanel = signal<PanelSide>('left');
 
   /** null = показать все тарифы */
   protected readonly _filterTariffId = signal<string | null>(null);
@@ -227,6 +226,17 @@ export class FoldersExplorerComponent {
   });
 
   protected readonly _hasSelection = computed(() => this._getActionPanel() != null);
+  protected readonly _publicationPendingId = signal<string | null>(null);
+  protected readonly _publicationTarget = computed(() => {
+    const panel = this._getActionPanel();
+    if (panel == null) return null;
+    const ids = this._getSelectedIds()(panel);
+    if (ids.length > 1) return null;
+    if (ids.length === 1) {
+      return this._getPanelOptions()(panel).find(item => item.id === ids[0]) ?? null;
+    }
+    return this._getSelectedItem();
+  });
   protected readonly _isCreating = computed(() => this._dispatched.isDispatched(FoldersActions.CreateFolder)());
 
   constructor() {
@@ -728,17 +738,7 @@ export class FoldersExplorerComponent {
   }
 
   protected _sendTestNotification(): void {
-    this._appDialog
-      .open<TestNotificationDialogComponent, undefined, TestNotificationDialogResult>(
-        TestNotificationDialogComponent,
-        { width: '480px' }
-      )
-      .afterClosed()
-      .subscribe((res) => {
-        if (res?.success) {
-          this._snack.open(res.message, 'OK', { duration: 3500 });
-        }
-      });
+    void this._router.navigate(['/notifications']);
   }
 
   protected _openFolderProperties(folder: AppFolderVm): void {
@@ -798,6 +798,61 @@ export class FoldersExplorerComponent {
         if (tariffId == null) return;
         this._applyTariff(item, tariffId);
       });
+  }
+
+  protected _togglePublication(item: OptionType): void {
+    if (this._publicationPendingId() != null) return;
+
+    const targetStatus: AppPublicationStatus = item.status === 'published' ? 'draft' : 'published';
+    this._publicationPendingId.set(item.id);
+    this._appDialog
+      .open<ConfirmPublicationDialogComponent, ConfirmPublicationDialogData, boolean>(ConfirmPublicationDialogComponent, {
+        width: '460px',
+        data: {
+          name: item.name,
+          typeName: this._getTypeLabel(item),
+          isFolder: item.type === 'folder',
+          targetStatus
+        }
+      })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (!confirmed) {
+          this._publicationPendingId.set(null);
+          return;
+        }
+
+        this._setPublicationStatus(item, targetStatus)
+          .pipe(finalize(() => this._publicationPendingId.set(null)))
+          .subscribe({
+            next: () => this._snack.open(
+              targetStatus === 'published' ? 'Элемент опубликован' : 'Элемент переведён в черновик',
+              'OK',
+              { duration: 2500 }
+            ),
+            error: () => this._snack.open('Не удалось изменить статус элемента', 'OK', { duration: 3500 })
+          });
+      });
+  }
+
+  protected _toggleSelectedPublication(): void {
+    const item = this._publicationTarget();
+    if (item) this._togglePublication(item);
+  }
+
+  private _setPublicationStatus(item: OptionType, status: AppPublicationStatus): Observable<void> {
+    switch (item.type) {
+      case 'folder':
+        return this._store.dispatch(new FoldersActions.UpdateFolder(item.id, { status }));
+      case 'article':
+        return this._store.dispatch(new ArticlesActions.UpdateArticle(item.id, { status }));
+      case 'test':
+        return this._store.dispatch(new TestsActions.UpdateTest(item.id, { status }));
+      case 'rescue':
+        return this._store.dispatch(new RescueActions.UpdateRescueItem(item.id, { status }));
+      default:
+        return of(undefined);
+    }
   }
 
   protected _itemTariffId(item: OptionType): string | null {
@@ -862,13 +917,10 @@ export class FoldersExplorerComponent {
     this._fetchPanelData(this._getPanelFolderId()(side), side);
   }
 
-  protected _onRowContextMenu(event: MouseEvent, side: PanelSide, item: OptionType): void {
+  protected _onRowContextMenu(event: MouseEvent, side: PanelSide, item: OptionType, trigger: MatMenuTrigger): void {
     event.preventDefault();
-    event.stopPropagation();
-    this._contextMenuItem.set(item);
-    this._contextMenuPanel.set(side);
     this._select(side, item, event);
-    this._contextMenuTrigger()?.openMenu();
+    trigger.openMenu();
   }
 
   protected _confirmRename(option: OptionType, name: NullableValue<string>): void {
@@ -1214,7 +1266,7 @@ export class FoldersExplorerComponent {
     if (!(event.target instanceof HTMLElement)) {
       return true;
     }
-    if (event.target.closest('.mat-mdc-dialog-container, .mat-mdc-menu-panel')) {
+    if (event.target.closest('.mat-mdc-dialog-container, .mat-mdc-menu-panel, button[aria-haspopup="menu"]')) {
       return false;
     }
     return true;

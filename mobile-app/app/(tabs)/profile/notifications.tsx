@@ -3,6 +3,7 @@ import { ApiError } from '@/api/utils';
 import { ThemedText } from '@/components/themed-text';
 import { GlassCard } from '@/components/ui/glass-card';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { NotificationIcon } from '@/components/ui/notification-icon';
 import { ScreenAppBar } from '@/components/ui/screen-app-bar';
 import { ScreenBackground } from '@/components/ui/screen-background';
 import { Spacing } from '@/constants/theme';
@@ -74,8 +75,8 @@ export default function NotificationsScreen() {
   useEffect(() => {
     return onLiveNotification((ev) => {
       // В инбоксе только реальные уведомления; subscription_granted — баннер без записи в историю
-      if (ev.type !== 'achievement_unlocked') return;
-      const n = ev.data.notification;
+      if (ev.type !== 'achievement_unlocked' && ev.type !== 'notification') return;
+      const n = ev.type === 'notification' ? ev.data : ev.data.notification;
       setItems((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev]));
     });
   }, [onLiveNotification]);
@@ -178,6 +179,7 @@ export default function NotificationsScreen() {
                         { backgroundColor: n.isRead ? 'transparent' : primary },
                       ]}
                     />
+                    <NotificationIcon path={n.iconPath} />
                     <View style={styles.rowBody}>
                       <ThemedText
                         style={[

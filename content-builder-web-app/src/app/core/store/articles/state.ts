@@ -48,7 +48,8 @@ export class ArticlesState {
     const id = payload.id ?? generateGUID();
     const newArticle = {
       ...payload,
-      id
+      id,
+      status: 'draft' as const
     } as AppArticleVm;
     return this._articlesStorage.createArticle(newArticle)
       .pipe(tap(() => {

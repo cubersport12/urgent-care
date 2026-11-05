@@ -38,7 +38,7 @@ ALLOWED_PREFIX = "public/"
 #   (конструктор кладёт их под исходным именем файла прямо в public/).
 # НЕ публичные: сертификаты (порядковый номер + ФИО внутри — перебирается),
 # PDF статей (тарифный гейтинг), legal — только через авторизованный /media.
-PUBLIC_IMAGE_PREFIXES = ("public/folders/", "public/achievements/", "public/rewards/", "public/avatars/")
+PUBLIC_IMAGE_PREFIXES = ("public/folders/", "public/achievements/", "public/rewards/", "public/avatars/", "public/notifications/")
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".gif")
 
 
@@ -48,17 +48,21 @@ async def download_public_image(
     db: Annotated[AsyncSession, Depends(get_db)],
     x_session_id: Annotated[str | None, Header(alias="X-Session-Id")] = None,
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
+    include_drafts: bool = Query(False, alias="includeDrafts"),
 ) -> Response:
     # ВАЖНО: объявлен выше /{file_path:path} — иначе catch-all перехватит этот путь.
     key = _normalize_key(file_path)
     name = key.removeprefix(ALLOWED_PREFIX)
     root_image = "/" not in name and name.lower().endswith(IMAGE_EXTENSIONS)
     if not (root_image or (key.startswith(PUBLIC_IMAGE_PREFIXES) and key.lower().endswith(IMAGE_EXTENSIONS))):
+        if key.lower().endswith(".pdf") and file_path.startswith("public/"):
+            user = await get_current_user(db, x_session_id)
+            return await download_media(key, db, user, enforce_tariff, include_drafts)
         # /media/public/<key> is also the legacy authenticated download URL.
         if file_path.startswith("public/"):
             raise HTTPException(status_code=404, detail="File not found")
         user = await get_current_user(db, x_session_id)
-        return await download_media(key, db, user, enforce_tariff)
+        return await download_media(key, db, user, enforce_tariff, include_drafts)
     s3 = get_s3_client()
     try:
         body, content_type = await s3.get_object(key=key)
@@ -94,6 +98,7 @@ async def download_media(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
+    include_drafts: bool = Query(False, alias="includeDrafts"),
 ) -> Response:
     key = _normalize_key(file_path)
     log.info("media_download_received", key=key, enforce_tariff=enforce_tariff)
@@ -109,7 +114,10 @@ async def download_media(
             article_found=article is not None,
         )
         if article:
-            await assert_content_visible(db, user, article, enforce_for_admin=enforce_tariff)
+            await assert_content_visible(
+                db, user, article, enforce_for_admin=enforce_tariff,
+                include_drafts=include_drafts and user.role == "admin",
+            )
     s3 = get_s3_client()
     try:
         body, content_type = await s3.get_object(key=key)
@@ -140,6 +148,8 @@ async def upload_media(
     fileName: str | None = Form(None),
 ) -> MediaUploadOut:
     key = resolve_upload_key(file_name or fileName, file.filename)
+    if key.startswith("public/notifications/"):
+        raise HTTPException(status_code=403, detail="Используйте загрузку иконок уведомлений")
     data = await file.read()
     content_type = file.content_type or mimetypes.guess_type(key)[0] or "application/octet-stream"
     s3 = get_s3_client()
@@ -159,6 +169,8 @@ async def delete_media(
     _: Annotated[User, Depends(get_current_admin)],
 ) -> StarletteResponse:
     key = _normalize_key(file_path)
+    if key.startswith("public/notifications/"):
+        raise HTTPException(status_code=403, detail="Иконки уведомлений нельзя удалить")
     s3 = get_s3_client()
     ok = await s3.delete_file(key=key)
     if not ok:

@@ -10,6 +10,7 @@ from app.api.v1._content_access import (
     annotate_content_list,
     assert_content_visible,
     content_out,
+    hide_unpublished_article_links,
     with_default_tariff,
 )
 from app.api.v1._content_helpers import dump_create, dump_update, new_id, not_found
@@ -27,11 +28,19 @@ async def list_rescue(
     parent_id: str | None = Query(None, alias="parentId"),
     all_items: bool = Query(False, alias="all"),
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
+    include_drafts: bool = Query(False, alias="includeDrafts"),
 ) -> list[RescueOut]:
     repo = RescueRepository(db)
-    items = await repo.list_all() if all_items else await repo.list_by_parent(parent_id)
+    show_drafts = include_drafts and user.role == "admin"
+    items = (
+        await repo.list_all(include_drafts=show_drafts)
+        if all_items
+        else await repo.list_by_parent(parent_id, include_drafts=show_drafts)
+    )
     annotated = await annotate_content_list(db, user, items, enforce_for_admin=enforce_tariff)
-    return [content_out(item, RescueOut, locked) for item, locked in annotated]
+    result = [content_out(item, RescueOut, locked) for item, locked in annotated]
+    await hide_unpublished_article_links(db, result, include_drafts=show_drafts)
+    return result
 
 
 @router.get("/{item_id}", response_model=RescueOut)
@@ -40,12 +49,20 @@ async def get_rescue(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
+    include_drafts: bool = Query(False, alias="includeDrafts"),
 ):
     item = await RescueRepository(db).get(item_id)
     if not item:
         raise not_found("Rescue")
-    await assert_content_visible(db, user, item, enforce_for_admin=enforce_tariff)
-    return item
+    await assert_content_visible(
+        db, user, item, enforce_for_admin=enforce_tariff,
+        include_drafts=include_drafts and user.role == "admin",
+    )
+    visible_item = RescueOut.model_validate(item)
+    await hide_unpublished_article_links(
+        db, [visible_item], include_drafts=include_drafts and user.role == "admin"
+    )
+    return visible_item
 
 
 from app.core.errors import AppError

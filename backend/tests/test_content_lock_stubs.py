@@ -14,6 +14,7 @@ def _item(**over):
     data = {
         "id": "t1",
         "name": "Тест",
+        "status": "published",
         "order": 1,
         "parent_id": "f1",
         "min_score": 5,

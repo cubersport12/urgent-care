@@ -49,7 +49,8 @@ export class RescueState {
     const id = payload.id ?? generateGUID();
     const newRescueItem = {
       ...payload,
-      id
+      id,
+      status: 'draft' as const
     } as AppRescueItemVm;
     return this._rescueStorage.createRescueItem(newRescueItem, force)
       .pipe(tap(() => {

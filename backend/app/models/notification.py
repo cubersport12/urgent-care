@@ -25,6 +25,12 @@ class Notification(Base):
     )
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    dispatch_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("notification_dispatches.id", ondelete="SET NULL", name="fk_notifications_dispatch"),
+        index=True,
+    )
+    icon_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )

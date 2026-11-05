@@ -798,6 +798,9 @@ export const ArticleOutSchema = {
             type: 'string',
             title: 'Name'
         },
+        status: {
+            $ref: '#/components/schemas/ContentStatus'
+        },
         order: {
             anyOf: [
                 {
@@ -934,6 +937,7 @@ export const ArticleOutSchema = {
     required: [
         'id',
         'name',
+        'status',
         'order',
         'parentId',
         'nextRunArticle',
@@ -1037,6 +1041,10 @@ export const ArticleStatsUpsertSchema = {
 
 export const ArticleUpdateSchema = {
     properties: {
+        status: {
+            $ref: '#/components/schemas/ContentStatus',
+            default: 'draft'
+        },
         name: {
             anyOf: [
                 {
@@ -1320,6 +1328,21 @@ export const BillingMeOutSchema = {
     title: 'BillingMeOut'
 } as const;
 
+export const Body_admin_notifications_upload_iconSchema = {
+    properties: {
+        file: {
+            type: 'string',
+            format: 'binary',
+            title: 'File'
+        }
+    },
+    type: 'object',
+    required: [
+        'file'
+    ],
+    title: 'Body_admin-notifications_upload_icon'
+} as const;
+
 export const Body_auth_upload_avatarSchema = {
     properties: {
         file: {
@@ -1547,6 +1570,76 @@ export const BulkTariffRequestSchema = {
     title: 'BulkTariffRequest'
 } as const;
 
+export const CampaignInputSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Name'
+        },
+        title: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Title'
+        },
+        body: {
+            type: 'string',
+            maxLength: 5000,
+            title: 'Body',
+            default: ''
+        },
+        icon_path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon Path'
+        },
+        audience: {
+            type: 'string',
+            enum: [
+                'all',
+                'selected'
+            ],
+            title: 'Audience'
+        },
+        user_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'User Ids'
+        },
+        cron: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cron'
+        }
+    },
+    type: 'object',
+    required: [
+        'name',
+        'title',
+        'audience'
+    ],
+    title: 'CampaignInput'
+} as const;
+
 export const CertificateIssueRequestSchema = {
     properties: {
         userId: {
@@ -1713,6 +1806,15 @@ export const ConfirmRustoreRequestSchema = {
     title: 'ConfirmRustoreRequest'
 } as const;
 
+export const ContentStatusSchema = {
+    type: 'string',
+    enum: [
+        'draft',
+        'published'
+    ],
+    title: 'ContentStatus'
+} as const;
+
 export const DeleteAccountSchema = {
     properties: {
         password: {
@@ -1745,6 +1847,161 @@ export const DeleteRequestSchema = {
         'items'
     ],
     title: 'DeleteRequest'
+} as const;
+
+export const DispatchInputSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Name'
+        },
+        title: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Title'
+        },
+        body: {
+            type: 'string',
+            maxLength: 5000,
+            title: 'Body',
+            default: ''
+        },
+        icon_path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon Path'
+        },
+        audience: {
+            type: 'string',
+            enum: [
+                'all',
+                'selected'
+            ],
+            title: 'Audience'
+        },
+        user_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'User Ids'
+        },
+        cron: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cron'
+        },
+        template_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Template Id'
+        }
+    },
+    type: 'object',
+    required: [
+        'name',
+        'title',
+        'audience'
+    ],
+    title: 'DispatchInput'
+} as const;
+
+export const DispatchOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        source: {
+            type: 'string',
+            title: 'Source'
+        },
+        title: {
+            type: 'string',
+            title: 'Title'
+        },
+        body: {
+            type: 'string',
+            title: 'Body'
+        },
+        icon_path: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon Path'
+        },
+        audience: {
+            type: 'string',
+            title: 'Audience'
+        },
+        recipient_count: {
+            type: 'integer',
+            title: 'Recipient Count'
+        },
+        status: {
+            type: 'string',
+            title: 'Status'
+        },
+        push_accepted: {
+            type: 'integer',
+            title: 'Push Accepted'
+        },
+        push_failed: {
+            type: 'integer',
+            title: 'Push Failed'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'source',
+        'title',
+        'body',
+        'icon_path',
+        'audience',
+        'recipient_count',
+        'status',
+        'push_accepted',
+        'push_failed',
+        'created_at'
+    ],
+    title: 'DispatchOut'
 } as const;
 
 export const FolderCreateSchema = {
@@ -1908,6 +2165,9 @@ export const FolderOutSchema = {
             type: 'string',
             title: 'Name'
         },
+        status: {
+            $ref: '#/components/schemas/ContentStatus'
+        },
         iconPath: {
             anyOf: [
                 {
@@ -2028,6 +2288,7 @@ export const FolderOutSchema = {
     required: [
         'id',
         'name',
+        'status',
         'iconPath',
         'backgroundPath',
         'iconPathDark',
@@ -2045,6 +2306,10 @@ export const FolderOutSchema = {
 
 export const FolderUpdateSchema = {
     properties: {
+        status: {
+            $ref: '#/components/schemas/ContentStatus',
+            default: 'draft'
+        },
         name: {
             anyOf: [
                 {
@@ -2741,6 +3006,17 @@ export const NotificationOutSchema = {
         isRead: {
             type: 'boolean',
             title: 'Isread'
+        },
+        iconPath: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Iconpath'
         }
     },
     type: 'object',
@@ -3347,7 +3623,6 @@ export const RandomCompletionSchema = {
                 $ref: '#/components/schemas/RandomAnswer'
             },
             type: 'array',
-            maxItems: 20,
             title: 'Answers'
         }
     },
@@ -3719,6 +3994,9 @@ export const RescueOutSchema = {
             type: 'string',
             title: 'Name'
         },
+        status: {
+            $ref: '#/components/schemas/ContentStatus'
+        },
         order: {
             anyOf: [
                 {
@@ -3807,6 +4085,7 @@ export const RescueOutSchema = {
     required: [
         'id',
         'name',
+        'status',
         'order',
         'parentId',
         'createdAt',
@@ -4203,6 +4482,10 @@ export const RescueTimerParameterSchema = {
 
 export const RescueUpdateSchema = {
     properties: {
+        status: {
+            $ref: '#/components/schemas/ContentStatus',
+            default: 'draft'
+        },
         name: {
             anyOf: [
                 {
@@ -4833,6 +5116,42 @@ export const RewardUpdateSchema = {
     },
     type: 'object',
     title: 'RewardUpdate'
+} as const;
+
+export const ScheduleOutSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        snapshot: {
+            type: 'object',
+            title: 'Snapshot'
+        },
+        cron: {
+            type: 'string',
+            title: 'Cron'
+        },
+        next_run_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Next Run At'
+        },
+        active: {
+            type: 'boolean',
+            title: 'Active'
+        }
+    },
+    type: 'object',
+    required: [
+        'id',
+        'snapshot',
+        'cron',
+        'next_run_at',
+        'active'
+    ],
+    title: 'ScheduleOut'
 } as const;
 
 export const SendResetLinkRequestSchema = {
@@ -5865,6 +6184,94 @@ export const TariffUpdateSchema = {
     title: 'TariffUpdate'
 } as const;
 
+export const TemplateOutSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Name'
+        },
+        title: {
+            type: 'string',
+            maxLength: 200,
+            minLength: 1,
+            title: 'Title'
+        },
+        body: {
+            type: 'string',
+            maxLength: 5000,
+            title: 'Body',
+            default: ''
+        },
+        icon_path: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Icon Path'
+        },
+        audience: {
+            type: 'string',
+            enum: [
+                'all',
+                'selected'
+            ],
+            title: 'Audience'
+        },
+        user_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'User Ids'
+        },
+        cron: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 100
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Cron'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        created_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Created At'
+        },
+        updated_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Updated At'
+        }
+    },
+    type: 'object',
+    required: [
+        'name',
+        'title',
+        'audience',
+        'id',
+        'created_at',
+        'updated_at'
+    ],
+    title: 'TemplateOut'
+} as const;
+
 export const TestCreateSchema = {
     properties: {
         id: {
@@ -6094,6 +6501,9 @@ export const TestOutSchema = {
             type: 'string',
             title: 'Name'
         },
+        status: {
+            $ref: '#/components/schemas/ContentStatus'
+        },
         order: {
             anyOf: [
                 {
@@ -6309,6 +6719,7 @@ export const TestOutSchema = {
     required: [
         'id',
         'name',
+        'status',
         'order',
         'parentId',
         'minScore',
@@ -6705,6 +7116,10 @@ export const TestStatsUpdateSchema = {
 
 export const TestUpdateSchema = {
     properties: {
+        status: {
+            $ref: '#/components/schemas/ContentStatus',
+            default: 'draft'
+        },
         name: {
             anyOf: [
                 {

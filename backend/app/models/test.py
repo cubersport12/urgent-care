@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+from app.models.content_status import ContentStatus
 
 
 class Test(Base):
@@ -17,6 +18,9 @@ class Test(Base):
     name: Mapped[str] = mapped_column(String(500), nullable=False)
     order: Mapped[int | None] = mapped_column(Integer, nullable=True)
     parent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=ContentStatus.DRAFT, server_default=text("'draft'")
+    )
     min_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     max_errors: Mapped[int | None] = mapped_column(Integer, nullable=True)
     show_correct_answer: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
