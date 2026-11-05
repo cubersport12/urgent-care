@@ -19,7 +19,7 @@ def test_folder_image_fields():
     assert fields["background_path"] == "public/folders/bg.png"
     assert fields["icon_path_dark"] == "public/folders/icon-dark.png"
     assert fields["background_path_dark"] == "public/folders/bg-dark.png"
-    item = SimpleNamespace(id="f1", **fields)
+    item = SimpleNamespace(id="f1", status="published", **fields)
     for lock in (None, "tariff", "reward"):
         data = content_out(item, FolderOut, lock).model_dump(by_alias=True)
         assert data["iconPath"] == fields["icon_path"]
@@ -40,7 +40,8 @@ def test_folder_image_fields():
         "background_path_dark": None,
     }
     legacy = FolderOut.model_validate(SimpleNamespace(
-        id="old", name="Old", parent_id=None, order=None, required_tariff_id=None, required_reward_id=None
+        id="old", name="Old", status="published", parent_id=None, order=None,
+        required_tariff_id=None, required_reward_id=None
     ))
     assert legacy.icon_path is None
     assert legacy.icon_path_dark is None

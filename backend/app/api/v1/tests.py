@@ -26,9 +26,15 @@ async def list_tests(
     parent_id: str | None = Query(None, alias="parentId"),
     all_items: bool = Query(False, alias="all"),
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
+    include_drafts: bool = Query(False, alias="includeDrafts"),
 ) -> list[TestOut]:
     repo = TestRepository(db)
-    items = await repo.list_all() if all_items else await repo.list_by_parent(parent_id)
+    show_drafts = include_drafts and user.role == "admin"
+    items = (
+        await repo.list_all(include_drafts=show_drafts)
+        if all_items
+        else await repo.list_by_parent(parent_id, include_drafts=show_drafts)
+    )
     annotated = await annotate_content_list(db, user, items, enforce_for_admin=enforce_tariff)
     return [content_out(item, TestOut, locked) for item, locked in annotated]
 
@@ -39,11 +45,15 @@ async def get_test(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
+    include_drafts: bool = Query(False, alias="includeDrafts"),
 ):
     item = await TestRepository(db).get(item_id)
     if not item:
         raise not_found("Test")
-    await assert_content_visible(db, user, item, enforce_for_admin=enforce_tariff)
+    await assert_content_visible(
+        db, user, item, enforce_for_admin=enforce_tariff,
+        include_drafts=include_drafts and user.role == "admin",
+    )
     return item
 
 

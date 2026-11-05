@@ -434,6 +434,7 @@ export type ArticleOut = {
      * Name
      */
     name: string;
+    status: ContentStatus;
     /**
      * Order
      */
@@ -532,6 +533,7 @@ export type ArticleStatsUpsert = {
  * ArticleUpdate
  */
 export type ArticleUpdate = {
+    status?: ContentStatus;
     /**
      * Name
      */
@@ -946,6 +948,16 @@ export type ConfirmRustoreRequest = {
 };
 
 /**
+ * ContentStatus
+ */
+export const ContentStatus = { DRAFT: 'draft', PUBLISHED: 'published' } as const;
+
+/**
+ * ContentStatus
+ */
+export type ContentStatus = typeof ContentStatus[keyof typeof ContentStatus];
+
+/**
  * DeleteAccount
  */
 export type DeleteAccount = {
@@ -1135,6 +1147,7 @@ export type FolderOut = {
      * Name
      */
     name: string;
+    status: ContentStatus;
     /**
      * Iconpath
      */
@@ -1185,6 +1198,7 @@ export type FolderOut = {
  * FolderUpdate
  */
 export type FolderUpdate = {
+    status?: ContentStatus;
     /**
      * Name
      */
@@ -2109,6 +2123,7 @@ export type RescueOut = {
      * Name
      */
     name: string;
+    status: ContentStatus;
     /**
      * Order
      */
@@ -2351,6 +2366,7 @@ export type RescueTimerParameter = {
  * RescueUpdate
  */
 export type RescueUpdate = {
+    status?: ContentStatus;
     /**
      * Name
      */
@@ -3346,6 +3362,7 @@ export type TestOut = {
      * Name
      */
     name: string;
+    status: ContentStatus;
     /**
      * Order
      */
@@ -3608,6 +3625,7 @@ export type TestStatsUpdate = {
  * TestUpdate
  */
 export type TestUpdate = {
+    status?: ContentStatus;
     /**
      * Name
      */
@@ -6788,6 +6806,10 @@ export type FoldersListFoldersData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/folders';
 };
@@ -7024,6 +7046,10 @@ export type FoldersGetFolderData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/folders/{item_id}';
 };
@@ -7104,6 +7130,10 @@ export type ArticlesListArticlesData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/articles';
 };
@@ -7214,6 +7244,10 @@ export type ArticlesGetArticleData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/articles/{item_id}';
 };
@@ -7294,6 +7328,10 @@ export type TestsListTestsData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/tests';
 };
@@ -7404,6 +7442,10 @@ export type TestsGetTestData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/tests/{item_id}';
 };
@@ -7484,6 +7526,10 @@ export type RescueListRescueData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/rescue';
 };
@@ -7601,6 +7647,10 @@ export type RescueGetRescueData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/rescue/{item_id}';
 };
@@ -8527,6 +8577,10 @@ export type MediaDownloadPublicImageData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/media/public/{file_path}';
 };
@@ -8602,6 +8656,10 @@ export type MediaDownloadMediaData = {
          * Enforcetariff
          */
         enforceTariff?: boolean;
+        /**
+         * Includedrafts
+         */
+        includeDrafts?: boolean;
     };
     url: '/api/v1/media/{file_path}';
 };

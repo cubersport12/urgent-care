@@ -798,6 +798,9 @@ export const ArticleOutSchema = {
             type: 'string',
             title: 'Name'
         },
+        status: {
+            $ref: '#/components/schemas/ContentStatus'
+        },
         order: {
             anyOf: [
                 {
@@ -934,6 +937,7 @@ export const ArticleOutSchema = {
     required: [
         'id',
         'name',
+        'status',
         'order',
         'parentId',
         'nextRunArticle',
@@ -1037,6 +1041,10 @@ export const ArticleStatsUpsertSchema = {
 
 export const ArticleUpdateSchema = {
     properties: {
+        status: {
+            $ref: '#/components/schemas/ContentStatus',
+            default: 'draft'
+        },
         name: {
             anyOf: [
                 {
@@ -1798,6 +1806,15 @@ export const ConfirmRustoreRequestSchema = {
     title: 'ConfirmRustoreRequest'
 } as const;
 
+export const ContentStatusSchema = {
+    type: 'string',
+    enum: [
+        'draft',
+        'published'
+    ],
+    title: 'ContentStatus'
+} as const;
+
 export const DeleteAccountSchema = {
     properties: {
         password: {
@@ -2148,6 +2165,9 @@ export const FolderOutSchema = {
             type: 'string',
             title: 'Name'
         },
+        status: {
+            $ref: '#/components/schemas/ContentStatus'
+        },
         iconPath: {
             anyOf: [
                 {
@@ -2268,6 +2288,7 @@ export const FolderOutSchema = {
     required: [
         'id',
         'name',
+        'status',
         'iconPath',
         'backgroundPath',
         'iconPathDark',
@@ -2285,6 +2306,10 @@ export const FolderOutSchema = {
 
 export const FolderUpdateSchema = {
     properties: {
+        status: {
+            $ref: '#/components/schemas/ContentStatus',
+            default: 'draft'
+        },
         name: {
             anyOf: [
                 {
@@ -3969,6 +3994,9 @@ export const RescueOutSchema = {
             type: 'string',
             title: 'Name'
         },
+        status: {
+            $ref: '#/components/schemas/ContentStatus'
+        },
         order: {
             anyOf: [
                 {
@@ -4057,6 +4085,7 @@ export const RescueOutSchema = {
     required: [
         'id',
         'name',
+        'status',
         'order',
         'parentId',
         'createdAt',
@@ -4453,6 +4482,10 @@ export const RescueTimerParameterSchema = {
 
 export const RescueUpdateSchema = {
     properties: {
+        status: {
+            $ref: '#/components/schemas/ContentStatus',
+            default: 'draft'
+        },
         name: {
             anyOf: [
                 {
@@ -6468,6 +6501,9 @@ export const TestOutSchema = {
             type: 'string',
             title: 'Name'
         },
+        status: {
+            $ref: '#/components/schemas/ContentStatus'
+        },
         order: {
             anyOf: [
                 {
@@ -6683,6 +6719,7 @@ export const TestOutSchema = {
     required: [
         'id',
         'name',
+        'status',
         'order',
         'parentId',
         'minScore',
@@ -7079,6 +7116,10 @@ export const TestStatsUpdateSchema = {
 
 export const TestUpdateSchema = {
     properties: {
+        status: {
+            $ref: '#/components/schemas/ContentStatus',
+            default: 'draft'
+        },
         name: {
             anyOf: [
                 {

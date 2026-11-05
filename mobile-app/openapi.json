@@ -4719,6 +4719,16 @@
             }
           },
           {
+            "name": "includeDrafts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includedrafts"
+            }
+          },
+          {
             "name": "X-Session-Id",
             "in": "header",
             "required": false,
@@ -5085,6 +5095,16 @@
             }
           },
           {
+            "name": "includeDrafts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includedrafts"
+            }
+          },
+          {
             "name": "X-Session-Id",
             "in": "header",
             "required": false,
@@ -5288,6 +5308,16 @@
             }
           },
           {
+            "name": "includeDrafts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includedrafts"
+            }
+          },
+          {
             "name": "X-Session-Id",
             "in": "header",
             "required": false,
@@ -5416,6 +5446,16 @@
               "type": "boolean",
               "default": false,
               "title": "Enforcetariff"
+            }
+          },
+          {
+            "name": "includeDrafts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includedrafts"
             }
           },
           {
@@ -5622,6 +5662,16 @@
             }
           },
           {
+            "name": "includeDrafts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includedrafts"
+            }
+          },
+          {
             "name": "X-Session-Id",
             "in": "header",
             "required": false,
@@ -5750,6 +5800,16 @@
               "type": "boolean",
               "default": false,
               "title": "Enforcetariff"
+            }
+          },
+          {
+            "name": "includeDrafts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includedrafts"
             }
           },
           {
@@ -5956,6 +6016,16 @@
             }
           },
           {
+            "name": "includeDrafts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includedrafts"
+            }
+          },
+          {
             "name": "X-Session-Id",
             "in": "header",
             "required": false,
@@ -6096,6 +6166,16 @@
               "type": "boolean",
               "default": false,
               "title": "Enforcetariff"
+            }
+          },
+          {
+            "name": "includeDrafts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includedrafts"
             }
           },
           {
@@ -7801,6 +7881,16 @@
             }
           },
           {
+            "name": "includeDrafts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includedrafts"
+            }
+          },
+          {
             "name": "X-Session-Id",
             "in": "header",
             "required": false,
@@ -7864,6 +7954,16 @@
               "type": "boolean",
               "default": false,
               "title": "Enforcetariff"
+            }
+          },
+          {
+            "name": "includeDrafts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Includedrafts"
             }
           },
           {
@@ -9418,6 +9518,9 @@
             "type": "string",
             "title": "Name"
           },
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus"
+          },
           "order": {
             "anyOf": [
               {
@@ -9554,6 +9657,7 @@
         "required": [
           "id",
           "name",
+          "status",
           "order",
           "parentId",
           "nextRunArticle",
@@ -9654,6 +9758,10 @@
       },
       "ArticleUpdate": {
         "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus",
+            "default": "draft"
+          },
           "name": {
             "anyOf": [
               {
@@ -10399,6 +10507,14 @@
         ],
         "title": "ConfirmRustoreRequest"
       },
+      "ContentStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "published"
+        ],
+        "title": "ContentStatus"
+      },
       "DeleteAccount": {
         "properties": {
           "password": {
@@ -10743,6 +10859,9 @@
             "type": "string",
             "title": "Name"
           },
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus"
+          },
           "iconPath": {
             "anyOf": [
               {
@@ -10863,6 +10982,7 @@
         "required": [
           "id",
           "name",
+          "status",
           "iconPath",
           "backgroundPath",
           "iconPathDark",
@@ -10879,6 +10999,10 @@
       },
       "FolderUpdate": {
         "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus",
+            "default": "draft"
+          },
           "name": {
             "anyOf": [
               {
@@ -12518,6 +12642,9 @@
             "type": "string",
             "title": "Name"
           },
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus"
+          },
           "order": {
             "anyOf": [
               {
@@ -12606,6 +12733,7 @@
         "required": [
           "id",
           "name",
+          "status",
           "order",
           "parentId",
           "createdAt",
@@ -12994,6 +13122,10 @@
       },
       "RescueUpdate": {
         "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus",
+            "default": "draft"
+          },
           "name": {
             "anyOf": [
               {
@@ -14975,6 +15107,9 @@
             "type": "string",
             "title": "Name"
           },
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus"
+          },
           "order": {
             "anyOf": [
               {
@@ -15190,6 +15325,7 @@
         "required": [
           "id",
           "name",
+          "status",
           "order",
           "parentId",
           "minScore",
@@ -15579,6 +15715,10 @@
       },
       "TestUpdate": {
         "properties": {
+          "status": {
+            "$ref": "#/components/schemas/ContentStatus",
+            "default": "draft"
+          },
           "name": {
             "anyOf": [
               {

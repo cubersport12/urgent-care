@@ -48,7 +48,8 @@ export class TestsState {
     const id = payload.id ?? generateGUID();
     const newTest = {
       ...payload,
-      id
+      id,
+      status: 'draft' as const
     } as AppTestVm;
     return this._testsStorage.createTest(newTest)
       .pipe(tap(() => {

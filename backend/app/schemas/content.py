@@ -7,6 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.models.content_status import ContentStatus
+
 
 class CamelModel(BaseModel):
     model_config = ConfigDict(
@@ -26,6 +28,7 @@ class LinkToArticle(CamelModel):
 class FolderOut(CamelModel):
     id: str
     name: str
+    status: ContentStatus
     icon_path: str | None = Field(None, alias="iconPath", max_length=1000)
     background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
     icon_path_dark: str | None = Field(None, alias="iconPathDark", max_length=1000)
@@ -55,6 +58,7 @@ class FolderCreate(CamelModel):
 
 
 class FolderUpdate(CamelModel):
+    status: ContentStatus = ContentStatus.DRAFT
     name: str | None = None
     icon_path: str | None = Field(None, alias="iconPath", max_length=1000)
     background_path: str | None = Field(None, alias="backgroundPath", max_length=1000)
@@ -70,6 +74,7 @@ class FolderUpdate(CamelModel):
 class ArticleOut(CamelModel):
     id: str
     name: str
+    status: ContentStatus
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     next_run_article: str | None = Field(None, alias="nextRunArticle")
@@ -109,6 +114,7 @@ class ArticleCreate(CamelModel):
 
 
 class ArticleUpdate(CamelModel):
+    status: ContentStatus = ContentStatus.DRAFT
     name: str | None = None
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
@@ -129,6 +135,7 @@ class ArticleUpdate(CamelModel):
 class TestOut(CamelModel):
     id: str
     name: str
+    status: ContentStatus
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     min_score: int | None = Field(None, alias="minScore")
@@ -174,6 +181,7 @@ class TestCreate(CamelModel):
 
 
 class TestUpdate(CamelModel):
+    status: ContentStatus = ContentStatus.DRAFT
     name: str | None = None
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
@@ -197,6 +205,7 @@ class TestUpdate(CamelModel):
 class RescueOut(CamelModel):
     id: str
     name: str
+    status: ContentStatus
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")
     created_at: datetime = Field(alias="createdAt")
@@ -222,6 +231,7 @@ class RescueCreate(CamelModel):
 
 
 class RescueUpdate(CamelModel):
+    status: ContentStatus = ContentStatus.DRAFT
     name: str | None = None
     order: int | None = None
     parent_id: str | None = Field(None, alias="parentId")

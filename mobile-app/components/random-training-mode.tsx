@@ -129,7 +129,7 @@ export default function RandomTrainingMode({ marathon }: { marathon: boolean }) 
 
   const start = () => {
     if (!selection) return;
-    startTest({ id: selection.id, name: 'Тренировка', questions: selection.questions,
+    startTest({ id: selection.id, name: 'Тренировка', status: 'published', questions: selection.questions,
       order: null, parentId: null, minScore: null, maxErrors: 0,
       showCorrectAnswer: true, includeToStatistics: false, showSkipButton: !marathon,
       showNavigation: false, showBackButton: !marathon, hidden: false,

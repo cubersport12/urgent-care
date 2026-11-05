@@ -10,6 +10,7 @@ import {
 } from './types';
 
 export const folderSchema = z.object({
+  status: z.enum(['draft', 'published']).default('draft'),
   iconPath: z.string().nullable().optional(),
   backgroundPath: z.string().nullable().optional(),
   iconPathDark: z.string().nullable().optional(),
@@ -24,6 +25,7 @@ export const folderSchema = z.object({
 });
 
 export const articleSchema = z.object({
+  status: z.enum(['draft', 'published']).default('draft'),
   id: z.string(),
   order: z.number().nullable(),
   name: z.string(),
@@ -62,6 +64,7 @@ export const questionSchema = z.object({
 });
 
 export const testSchema = z.object({
+  status: z.enum(['draft', 'published']).default('draft'),
   id: z.string(),
   order: z.number().nullable(),
   name: z.string(),
@@ -280,6 +283,7 @@ export function formatAiGeneratedQuestionsSchemaForPrompt(): string {
 }
 
 export const rescueItemSchema = z.object({
+  status: z.enum(['draft', 'published']).default('draft'),
   id: z.string(),
   order: optionalRescueNumber,
   name: z.string(),

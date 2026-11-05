@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, false
+from sqlalchemy import Boolean, ForeignKey, Integer, String, false, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+from app.models.content_status import ContentStatus
 
 
 class Folder(Base):
@@ -21,6 +22,9 @@ class Folder(Base):
     background_path_dark: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     order: Mapped[int | None] = mapped_column(Integer, nullable=True)
     parent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=ContentStatus.DRAFT, server_default=text("'draft'")
+    )
     show_random_open: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
     required_tariff_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("tariffs.id"), nullable=True, index=True

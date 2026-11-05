@@ -13,7 +13,7 @@ from app.api.v1._content_access import (
     with_default_tariff,
 )
 from app.api.v1._content_helpers import dump_create, dump_update, new_id, not_found
-from app.db.repositories.content import FolderRepository
+from app.db.repositories.content import FolderRepository, published_content_statement
 from app.models.article import Article
 from app.models.learning_event import LearningEvent
 from app.models.rescue import Rescue
@@ -41,9 +41,15 @@ async def list_folders(
     parent_id: str | None = Query(None, alias="parentId"),
     all_items: bool = Query(False, alias="all"),
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
+    include_drafts: bool = Query(False, alias="includeDrafts"),
 ) -> list[FolderOut]:
     repo = FolderRepository(db)
-    items = await repo.list_all() if all_items else await repo.list_by_parent(parent_id)
+    show_drafts = include_drafts and user.role == "admin"
+    items = (
+        await repo.list_all(include_drafts=show_drafts)
+        if all_items
+        else await repo.list_by_parent(parent_id, include_drafts=show_drafts)
+    )
     annotated = await annotate_content_list(db, user, items, enforce_for_admin=enforce_tariff)
     return [content_out(item, FolderOut, locked) for item, locked in annotated]
 
@@ -58,14 +64,17 @@ async def folders_material_counts(
     завершено текущим пользователем (документ прочитан, тест/режим пройден успешно)."""
 
     async def materials_by_folder(model) -> dict[str, list[str]]:
-        rows = (await db.execute(select(model.id, model.parent_id))).all()
+        statement = published_content_statement(model).with_only_columns(
+            model.id, model.parent_id
+        )
+        rows = (await db.execute(statement)).all()
         by_folder: dict[str, list[str]] = {}
         for mid, pid in rows:
             if pid is not None:
                 by_folder.setdefault(pid, []).append(mid)
         return by_folder
 
-    folders = await FolderRepository(db).list_all()
+    folders = await FolderRepository(db).list_all(include_drafts=False)
     children: dict[str, list[str]] = {}
     for f in folders:
         children.setdefault(f.parent_id, []).append(f.id)
@@ -204,11 +213,15 @@ async def get_folder(
     db: Annotated[AsyncSession, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
+    include_drafts: bool = Query(False, alias="includeDrafts"),
 ):
     item = await FolderRepository(db).get(item_id)
     if not item:
         raise not_found("Folder")
-    await assert_content_visible(db, user, item, enforce_for_admin=enforce_tariff)
+    await assert_content_visible(
+        db, user, item, enforce_for_admin=enforce_tariff,
+        include_drafts=include_drafts and user.role == "admin",
+    )
     return item
 
 
