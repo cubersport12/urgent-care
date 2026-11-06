@@ -47,7 +47,6 @@ class TariffOut(CamelModel):
     is_default: bool = Field(alias="isDefault")
     is_active: bool = Field(alias="isActive")
     sort_order: int = Field(alias="sortOrder")
-    rustore_product_id: str | None = Field(None, alias="rustoreProductId")
     features: list[TariffFeatureStateOut] = []
 
 
@@ -63,7 +62,6 @@ class TariffCreate(CamelModel):
     is_default: bool = Field(False, alias="isDefault")
     is_active: bool = Field(True, alias="isActive")
     sort_order: int = Field(0, alias="sortOrder")
-    rustore_product_id: str | None = Field(None, alias="rustoreProductId", max_length=128)
     feature_ids: list[UUID] = Field(default_factory=list, alias="featureIds")
 
 
@@ -79,7 +77,7 @@ class TariffUpdate(CamelModel):
     is_default: bool | None = Field(None, alias="isDefault")
     is_active: bool | None = Field(None, alias="isActive")
     sort_order: int | None = Field(None, alias="sortOrder")
-    rustore_product_id: str | None = Field(None, alias="rustoreProductId", max_length=128)
+
     @field_validator("glow_effect", mode="before")
     @classmethod
     def require_effect_if_provided(cls, value: object) -> object:
@@ -137,26 +135,19 @@ class BillingMeOut(CamelModel):
 class SubscribeRequest(CamelModel):
     tariff_id: UUID = Field(alias="tariffId")
     return_url: str | None = Field(None, alias="returnUrl", max_length=512)
-    # Метка сборки клиента (НЕ выбор платёжной системы): rustore-APK → "rustore",
-    # веб и остальные сборки — "web"/нет поля. Провайдера резолвит бекенд.
+    # Метка сборки клиента, по которой бекенд выбирает платёжного провайдера.
     channel: str | None = Field(None, max_length=32)
 
 
 class SubscribeOut(CamelModel):
     provider: str | None = Field(None, alias="provider")
     confirmation_url: str | None = Field(None, alias="confirmationUrl")
-    # productId подписки в RuStore: получен → покупка через мобильный SDK
-    rustore_product_id: str | None = Field(None, alias="rustoreProductId")
     payment_id: UUID | None = Field(None, alias="paymentId")
     mock: bool = False
     message: str | None = None
     scheduled: bool = False
     scheduled_effective_at: datetime | None = Field(None, alias="scheduledEffectiveAt")
     scheduled_tariff_id: UUID | None = Field(None, alias="scheduledTariffId")
-
-
-class ConfirmRustoreRequest(CamelModel):
-    purchase_id: str = Field(alias="purchaseId", min_length=1, max_length=128)
 
 
 class PaymentOut(CamelModel):

@@ -250,15 +250,6 @@ class BillingRepository:
         )
         return result.scalars().all()
 
-    async def list_rustore_subscriptions(self) -> Sequence[UserSubscription]:
-        result = await self.db.execute(
-            select(UserSubscription).where(
-                UserSubscription.rustore_purchase_id.is_not(None),
-                UserSubscription.status.in_(("active", "past_due")),
-            )
-        )
-        return result.scalars().all()
-
     async def list_due_scheduled_changes(self, now: datetime) -> Sequence[SubscriptionChange]:
         result = await self.db.execute(
             select(SubscriptionChange).where(

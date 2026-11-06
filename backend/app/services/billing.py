@@ -11,7 +11,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing import get_providers, provider_for_channel
-from app.billing.rustore import amount_from_micros, parse_millis
 from app.core.config import settings
 from app.db.repositories.billing import BillingRepository
 from app.models.article import Article
@@ -472,18 +471,9 @@ class BillingService:
                 detail="A plan change is already scheduled; cancel it first",
             )
 
-        # Выбор платёжной системы — здесь, по метке сборки клиента (channel):
-        # web / нет метки → YooKassa, rustore → RuStore Pay
+        # Платёжную систему выбираем по метке сборки клиента; без совпадения — YooKassa.
         provider_name = provider_for_channel(channel)
         provider = self.providers[provider_name]
-
-        # Плановая смена тарифа требует автосписания карт (YooKassa);
-        # в RuStore-подписке вместо неё — отмена продления и покупка нового тарифа
-        if provider_name == "rustore" and current.price_rub > 0 and target.rank <= current.rank:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                detail="Для смены тарифа отмените текущую подписку и оформите новую по окончании периода",
-            )
 
         # Paid → paid: апгрейд (выше рангом) — сразу, остаток дней текущего тарифа
         # сгорает (период нового начинается с нуля в _activate_plan);
@@ -507,12 +497,7 @@ class BillingService:
             )
 
         return_url = return_url or settings.yookassa_return_url
-        # Промокоды считаем только у юкасса: цена покупки в RuStore задана консолью
-        promo_activation, promo_code = (
-            await self._applicable_promo(user.id, target)
-            if provider_name == "yookassa"
-            else (None, None)
-        )
+        promo_activation, promo_code = await self._applicable_promo(user.id, target)
         # ponytail: один и тот же купон можно прикрепить к двум pending-платежам
         # (пользователь успел начать вторую покупку до завершения первой);
         # расходуется купон первым успешным вебхуком, второй просто активирует тариф
@@ -553,23 +538,6 @@ class BillingService:
         if not provider.configured:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="Payments unavailable")
 
-        if provider_name == "rustore":
-            checkout = await provider.start_checkout(
-                payment=payment,
-                tariff=target,
-                amount_rub=amount,
-                description=f"Подписка {target.title}",
-                return_url=return_url,
-                user_email=user.email,
-            )
-            payment.raw_json = checkout
-            await self.repo.save_payment(payment)
-            return SubscribeOut(
-                provider="rustore",
-                payment_id=payment.id,
-                rustore_product_id=target.rustore_product_id,
-            )
-
         try:
             yk_obj = await provider.start_checkout(
                 payment=payment,
@@ -604,7 +572,7 @@ class BillingService:
                 detail="YooKassa did not return confirmation_url",
             )
         return SubscribeOut(
-            provider="yookassa",
+            provider=provider_name,
             confirmation_url=confirmation,
             payment_id=payment.id,
             mock=False,
@@ -620,17 +588,6 @@ class BillingService:
         sub = await self.ensure_subscription(user)
         tariff = await self.repo.get_tariff(sub.tariff_id)
         if tariff and tariff.price_rub > 0 and not tariff.is_default:
-            if sub.rustore_purchase_id:
-                rs = self.providers["rustore"]
-                if rs.configured:
-                    try:
-                        # Гасим автопродление у RuStore; доступ — до конца периода
-                        await rs.cancel_subscription(sub.rustore_purchase_id)
-                    except Exception as exc:
-                        raise HTTPException(
-                            status.HTTP_502_BAD_GATEWAY,
-                            detail=f"RuStore error: {exc}",
-                        ) from exc
             sub.cancel_at_period_end = True
             await self.repo.save_subscription(sub)
         return await self.get_me(user)
@@ -643,117 +600,7 @@ class BillingService:
             if payment.external_id and self.yk.configured:
                 yk_obj = await self.yk.get_payment(payment.external_id)
                 await self._apply_provider_object(payment, yk_obj)
-        elif payment.provider == "rustore":
-            sub = await self.repo.get_subscription(user.id)
-            if sub:
-                await self.reconcile_rustore(sub)
         return PaymentOut.model_validate(payment)
-
-    async def confirm_rustore(
-        self, user: User, payment_id: UUID, purchase_id: str
-    ) -> PaymentOut:
-        """Подтверждение покупки через RuStore Pay SDK: серверная валидация и активация."""
-        payment = await self.repo.get_payment(payment_id)
-        if not payment or payment.user_id != user.id:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Payment not found")
-        if payment.provider != "rustore":
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, detail="Платёж не относится к RuStore"
-            )
-        if payment.status != "pending":
-            return PaymentOut.model_validate(payment)
-
-        rs = self.providers["rustore"]
-        if not rs.configured:
-            raise HTTPException(
-                status.HTTP_503_SERVICE_UNAVAILABLE, detail="RuStore payments unavailable"
-            )
-        tariff = await self.repo.get_tariff(payment.tariff_id)
-        if not tariff or not tariff.rustore_product_id:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, detail="Тариф недоступен в RuStore"
-            )
-        try:
-            body = await rs.get_subscription(tariff.rustore_product_id, purchase_id)
-        except Exception as exc:
-            raise HTTPException(
-                status.HTTP_502_BAD_GATEWAY, detail=f"RuStore error: {exc}"
-            ) from exc
-
-        # Покупка связывается с платежом через developerPayload = id платежа,
-        # который клиент передаёт в SDK при покупке; чужую покупку привязать нельзя
-        if str(body.get("developerPayload") or "") != str(payment.id):
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                detail="Покупка RuStore не соответствует платежу",
-            )
-        if body.get("paymentState") != 1:  # 1 — платёж получен
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, detail="Платёж не подтверждён RuStore"
-            )
-
-        payment.status = "succeeded"
-        payment.external_id = purchase_id
-        payment.raw_json = body
-        amount = amount_from_micros(body.get("priceAmountMicros"))
-        if amount is not None:
-            payment.amount_rub = amount
-        await self.repo.save_payment(payment)
-
-        sub = await self.repo.get_subscription(user.id)
-        if sub:
-            sub.rustore_purchase_id = purchase_id
-            await self._activate_plan(user, sub, tariff, payment_method_id=None, source="purchase")
-            expiry = parse_millis(body.get("expiryTimeMillis"))
-            if expiry and expiry > sub.current_period_end:
-                sub.current_period_end = expiry
-                await self.repo.save_subscription(sub)
-        return PaymentOut.model_validate(payment)
-
-    async def reconcile_rustore(self, sub: UserSubscription) -> bool:
-        """Ревалидация RuStore-подписки: продления и отмены (вебхуков у RuStore нет)."""
-        if not sub.rustore_purchase_id:
-            return False
-        rs = self.providers["rustore"]
-        if not rs.configured:
-            return False
-        tariff = await self.repo.get_tariff(sub.tariff_id)
-        if not tariff or not tariff.rustore_product_id:
-            return False
-        try:
-            body = await rs.get_subscription(
-                tariff.rustore_product_id, sub.rustore_purchase_id
-            )
-        except Exception:
-            return False
-
-        changed = False
-        if body.get("autoRenewing") is False and not sub.cancel_at_period_end:
-            sub.cancel_at_period_end = True
-            changed = True
-        expiry = parse_millis(body.get("expiryTimeMillis"))
-        if expiry and expiry > sub.current_period_end:
-            # RuStore продлил подписку — период и платёж-продление фиксируем у себя
-            amount = amount_from_micros(body.get("priceAmountMicros"))
-            await self.repo.create_payment(
-                user_id=sub.user_id,
-                subscription_id=sub.id,
-                tariff_id=tariff.id,
-                amount_rub=amount if amount is not None else float(tariff.price_rub),
-                status="succeeded",
-                provider="rustore",
-                # purchaseId у продления тот же (уникален) — платёж без внешнего id
-                external_id=None,
-                idempotency_key=str(uuid4()),
-                raw_json=body,
-            )
-            sub.current_period_end = expiry
-            sub.status = "active"
-            changed = True
-            await self._emit_subscription_granted(sub.user_id, tariff, sub, "renewal")
-        if changed:
-            await self.repo.save_subscription(sub)
-        return changed
 
     async def list_payments(self, user: User) -> list[PaymentOut]:
         items = await self.repo.list_payments(user.id)
@@ -782,19 +629,19 @@ class BillingService:
                 detail="Не найден успешный платёж для возврата средств",
             )
 
+        if valid_payment.provider != "yookassa":
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Возврат через этот платёжный провайдер не поддерживается",
+            )
+        if not valid_payment.external_id:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail="Не найден успешный платёж для возврата средств",
+            )
         message = "Возврат средств успешно выполнен"
-        if valid_payment.provider == "rustore":
-            # ponytail: API возвратов у RuStore публично не документирован —
-            # деньги возвращает админ в консоли RuStore, у нас только отметка
-            message = "Платёж помечен возвращённым; выполните возврат в консоли RuStore"
-        else:
-            if not valid_payment.external_id:
-                raise HTTPException(
-                    status.HTTP_400_BAD_REQUEST,
-                    detail="Не найден успешный платёж для возврата средств",
-                )
-            if self.yk.configured:
-                await self.yk.refund(valid_payment, valid_payment.amount_rub)
+        if self.yk.configured:
+            await self.yk.refund(valid_payment, valid_payment.amount_rub)
         valid_payment.status = "refunded"
         await self.repo.save_payment(valid_payment)
 
@@ -808,7 +655,6 @@ class BillingService:
                 sub.status = "active"
                 sub.cancel_at_period_end = False
                 sub.yookassa_payment_method_id = None
-                sub.rustore_purchase_id = None
                 sub.current_period_start = now
                 sub.current_period_end = now + timedelta(days=free.period_days)
                 await self.repo.save_subscription(sub)
@@ -1014,16 +860,6 @@ class BillingService:
         activated = 0
         renewed = 0
         downgraded = 0
-        rustore_reconciled = 0
-
-        # RuStore: продления/отмены ловим ревалидацией (вебхуков нет);
-        # ошибки по одной подписке не должны останавливать остальные
-        for sub in await self.repo.list_rustore_subscriptions():
-            try:
-                if await self.reconcile_rustore(sub):
-                    rustore_reconciled += 1
-            except Exception:
-                continue
 
         for change in await self.repo.list_due_scheduled_changes(now):
             ok = await self._charge_scheduled_change(change)
@@ -1097,7 +933,6 @@ class BillingService:
             "activated_changes": activated,
             "renewed": renewed,
             "downgraded": downgraded,
-            "rustore_reconciled": rustore_reconciled,
         }
 
     async def _charge_scheduled_change(self, change: SubscriptionChange) -> bool:

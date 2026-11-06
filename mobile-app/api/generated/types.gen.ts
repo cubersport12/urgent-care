@@ -938,16 +938,6 @@ export type CityOut = {
 };
 
 /**
- * ConfirmRustoreRequest
- */
-export type ConfirmRustoreRequest = {
-    /**
-     * Purchaseid
-     */
-    purchaseId: string;
-};
-
-/**
  * ContentStatus
  */
 export const ContentStatus = { DRAFT: 'draft', PUBLISHED: 'published' } as const;
@@ -2761,10 +2751,6 @@ export type SubscribeOut = {
      */
     confirmationUrl?: string | null;
     /**
-     * Rustoreproductid
-     */
-    rustoreProductId?: string | null;
-    /**
      * Paymentid
      */
     paymentId?: string | null;
@@ -2991,10 +2977,6 @@ export type TariffCreate = {
      */
     sortOrder?: number;
     /**
-     * Rustoreproductid
-     */
-    rustoreProductId?: string | null;
-    /**
      * Featureids
      */
     featureIds?: Array<string>;
@@ -3155,10 +3137,6 @@ export type TariffOut = {
      */
     sortOrder: number;
     /**
-     * Rustoreproductid
-     */
-    rustoreProductId?: string | null;
-    /**
      * Features
      */
     features?: Array<TariffFeatureStateOut>;
@@ -3212,10 +3190,6 @@ export type TariffUpdate = {
      * Sortorder
      */
     sortOrder?: number | null;
-    /**
-     * Rustoreproductid
-     */
-    rustoreProductId?: string | null;
     /**
      * Featureids
      */
@@ -5709,42 +5683,6 @@ export type BillingSyncPaymentResponses = {
 };
 
 export type BillingSyncPaymentResponse = BillingSyncPaymentResponses[keyof BillingSyncPaymentResponses];
-
-export type BillingConfirmPaymentData = {
-    body: ConfirmRustoreRequest;
-    headers?: {
-        /**
-         * X-Session-Id
-         */
-        'X-Session-Id'?: string | null;
-    };
-    path: {
-        /**
-         * Payment Id
-         */
-        payment_id: string;
-    };
-    query?: never;
-    url: '/api/v1/billing/payments/{payment_id}/confirm';
-};
-
-export type BillingConfirmPaymentErrors = {
-    /**
-     * Validation Error
-     */
-    422: HttpValidationError;
-};
-
-export type BillingConfirmPaymentError = BillingConfirmPaymentErrors[keyof BillingConfirmPaymentErrors];
-
-export type BillingConfirmPaymentResponses = {
-    /**
-     * Successful Response
-     */
-    200: PaymentOut;
-};
-
-export type BillingConfirmPaymentResponse = BillingConfirmPaymentResponses[keyof BillingConfirmPaymentResponses];
 
 export type BillingRefundUserSubscriptionData = {
     body: RefundRequest;

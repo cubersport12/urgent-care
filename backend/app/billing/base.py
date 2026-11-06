@@ -29,11 +29,9 @@ class PaymentProvider:
         return_url: str,
         user_email: str,
     ) -> dict[str, Any]:
-        """Начать оформление. YooKassa создаёт платёж и возвращает объект
-        с confirmation_url; RuStore ничего не вызывает и возвращает данные
-        для покупки через мобильный SDK."""
+        """Начать оформление платежа и вернуть ответ платёжного провайдера."""
         raise NotImplementedError
 
     async def refund(self, payment: Payment, amount_rub: float) -> dict[str, Any] | None:
-        """Вернуть платёж через API провайдера; None — возврат вручную (консоль)."""
+        """Вернуть платёж через API провайдера."""
         raise NotImplementedError

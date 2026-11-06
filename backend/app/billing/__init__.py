@@ -1,19 +1,13 @@
-"""Реестр платёжных провайдеров и выбор провайдера по каналу сборки.
-
-CHANNEL_TO_PROVIDER — единственное место, где решается, какая платёжная
-система обслужит покупку: клиент лишь сообщает метку сборки (channel),
-сам провайдер клиентом не выбирается. Нет метки / web → YooKassa.
-"""
+"""Реестр платёжных провайдеров и выбор провайдера по каналу сборки."""
 from __future__ import annotations
 
 from app.billing.base import PaymentProvider
-from app.billing.rustore import RuStoreProvider
 from app.billing.yookassa import YooKassaProvider
 
-PROVIDER_NAMES = ("yookassa", "rustore")
+PROVIDER_NAMES = ("yookassa",)
 
 CHANNEL_TO_PROVIDER: dict[str, str] = {
-    "rustore": "rustore",
+    "web": "yookassa",
 }
 
 
@@ -25,5 +19,4 @@ def get_providers() -> dict[str, PaymentProvider]:
     """Свежие инстансы на вызов (клиенты без состояния, тесты мутируют атрибуты)."""
     return {
         "yookassa": YooKassaProvider(),
-        "rustore": RuStoreProvider(),
     }

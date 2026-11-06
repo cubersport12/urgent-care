@@ -9,8 +9,6 @@ import { showConfirm } from '@/lib/alert';
 import {
   billingReturnUrl,
   openYookassaCheckout,
-  rustoreCheckout,
-  rustoreCheckoutError,
 } from '@/lib/billing-checkout';
 import { Alert } from 'react-native';
 
@@ -33,8 +31,7 @@ export type SubscribeContext = {
   setBusyId: (id: string | null) => void;
 };
 
-/** Оформление подписки. Форму чекаута подсказывает бекенд:
- *  rustoreProductId → SDK RuStore, confirmationUrl → браузер ЮKassa. */
+/** Оформление подписки через выбранный бекендом платёжный провайдер. */
 export async function runSubscribe(
   tariff: BillingTariff,
   { me, refresh, setBusyId }: SubscribeContext,
@@ -54,18 +51,6 @@ export async function runSubscribe(
             ? `Смена запланирована на ${formatDate(result.scheduledEffectiveAt)}`
             : 'Смена тарифа запланирована на конец периода'),
       );
-      return;
-    }
-
-    if (result.rustoreProductId && result.paymentId) {
-      try {
-        await rustoreCheckout(result.paymentId, result.rustoreProductId);
-        await refresh();
-        Alert.alert('Успешно', 'Подписка оформлена');
-      } catch (e) {
-        await refresh();
-        Alert.alert('Оплата RuStore', rustoreCheckoutError(e));
-      }
       return;
     }
 

@@ -1,4 +1,4 @@
-"""Expo push tokens per user/device."""
+"""Push tokens per user/device."""
 from __future__ import annotations
 
 import uuid
@@ -24,7 +24,7 @@ class PushToken(Base):
         nullable=False,
         index=True,
     )
-    token: Mapped[str] = mapped_column(String(255), nullable=False)
+    token: Mapped[str] = mapped_column(String(2048), nullable=False)
     platform: Mapped[str] = mapped_column(String(20), nullable=False, default="unknown")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
