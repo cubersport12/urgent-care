@@ -2798,77 +2798,6 @@
         }
       }
     },
-    "/api/v1/billing/payments/{payment_id}/confirm": {
-      "post": {
-        "tags": [
-          "billing"
-        ],
-        "summary": "Confirm Payment",
-        "description": "Подтверждение покупки через RuStore Pay SDK.",
-        "operationId": "billing_confirm_payment",
-        "parameters": [
-          {
-            "name": "payment_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Payment Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "auto_error": false,
-              "title": "X-Session-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConfirmRustoreRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaymentOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/billing/users/{user_id}/refund": {
       "post": {
         "tags": [
@@ -3398,7 +3327,7 @@
             "schema": {
               "type": "string",
               "minLength": 8,
-              "maxLength": 255,
+              "maxLength": 2048,
               "title": "Token"
             }
           },
@@ -10492,21 +10421,6 @@
         ],
         "title": "CityOut"
       },
-      "ConfirmRustoreRequest": {
-        "properties": {
-          "purchaseId": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 1,
-            "title": "Purchaseid"
-          }
-        },
-        "type": "object",
-        "required": [
-          "purchaseId"
-        ],
-        "title": "ConfirmRustoreRequest"
-      },
       "ContentStatus": {
         "type": "string",
         "enum": [
@@ -12120,7 +12034,7 @@
         "properties": {
           "token": {
             "type": "string",
-            "maxLength": 255,
+            "maxLength": 2048,
             "minLength": 8,
             "title": "Token"
           },
@@ -13917,17 +13831,6 @@
             ],
             "title": "Confirmationurl"
           },
-          "rustoreProductId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rustoreproductid"
-          },
           "paymentId": {
             "anyOf": [
               {
@@ -14340,18 +14243,6 @@
             "title": "Sortorder",
             "default": 0
           },
-          "rustoreProductId": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rustoreproductid"
-          },
           "featureIds": {
             "items": {
               "type": "string",
@@ -14597,17 +14488,6 @@
             "type": "integer",
             "title": "Sortorder"
           },
-          "rustoreProductId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rustoreproductid"
-          },
           "features": {
             "items": {
               "$ref": "#/components/schemas/TariffFeatureStateOut"
@@ -14760,18 +14640,6 @@
               }
             ],
             "title": "Sortorder"
-          },
-          "rustoreProductId": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 128
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rustoreproductid"
           },
           "featureIds": {
             "anyOf": [

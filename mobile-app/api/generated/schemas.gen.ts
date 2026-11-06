@@ -1790,22 +1790,6 @@ export const CityOutSchema = {
     title: 'CityOut'
 } as const;
 
-export const ConfirmRustoreRequestSchema = {
-    properties: {
-        purchaseId: {
-            type: 'string',
-            maxLength: 128,
-            minLength: 1,
-            title: 'Purchaseid'
-        }
-    },
-    type: 'object',
-    required: [
-        'purchaseId'
-    ],
-    title: 'ConfirmRustoreRequest'
-} as const;
-
 export const ContentStatusSchema = {
     type: 'string',
     enum: [
@@ -3456,7 +3440,7 @@ export const PushTokenUpsertSchema = {
     properties: {
         token: {
             type: 'string',
-            maxLength: 255,
+            maxLength: 2048,
             minLength: 8,
             title: 'Token'
         },
@@ -5293,17 +5277,6 @@ export const SubscribeOutSchema = {
             ],
             title: 'Confirmationurl'
         },
-        rustoreProductId: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Rustoreproductid'
-        },
         paymentId: {
             anyOf: [
                 {
@@ -5725,18 +5698,6 @@ export const TariffCreateSchema = {
             title: 'Sortorder',
             default: 0
         },
-        rustoreProductId: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 128
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Rustoreproductid'
-        },
         featureIds: {
             items: {
                 type: 'string',
@@ -5987,17 +5948,6 @@ export const TariffOutSchema = {
             type: 'integer',
             title: 'Sortorder'
         },
-        rustoreProductId: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Rustoreproductid'
-        },
         features: {
             items: {
                 $ref: '#/components/schemas/TariffFeatureStateOut'
@@ -6151,18 +6101,6 @@ export const TariffUpdateSchema = {
                 }
             ],
             title: 'Sortorder'
-        },
-        rustoreProductId: {
-            anyOf: [
-                {
-                    type: 'string',
-                    maxLength: 128
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Rustoreproductid'
         },
         featureIds: {
             anyOf: [

@@ -22,10 +22,11 @@ def _tariff(**over) -> Tariff:
     t.price_rub = 499
     t.period_days = 30
     t.rank = 1
+    t.effect_color = None
+    t.glow_effect = "none"
     t.is_default = False
     t.is_active = True
     t.sort_order = 0
-    t.rustore_product_id = None
     for k, v in over.items():
         setattr(t, k, v)
     return t

@@ -97,10 +97,6 @@ export class TariffsEditorService {
           <app-input label="Ранг тарифа" type="number" formControlName="rank" class="grow" [required]="true" />
           <app-input label="Порядок сортировки" type="number" formControlName="sortOrder" class="grow" />
         </div>
-        <app-input
-          label="RuStore: код продукта-подписки (productId из консоли RuStore)"
-          formControlName="rustoreProductId"
-        />
         <fieldset class="flex flex-col gap-2">
           <legend class="text-sm font-medium">Цвет карточки профиля</legend>
           <app-checkbox formControlName="colorEnabled" label="Выделять карточку цветом тарифа" />
@@ -133,7 +129,6 @@ export class TariffEditDialogComponent {
     colorEnabled: new FormControl(false, { nonNullable: true }),
     rank: new FormControl(0, { nonNullable: true, validators: [Validators.required] }),
     sortOrder: new FormControl(0, { nonNullable: true }),
-    rustoreProductId: new FormControl<string | null>(null),
     isActive: new FormControl(true, { nonNullable: true }),
     isDefault: new FormControl(false, { nonNullable: true }),
     featureIds: new FormControl<string[]>([], { nonNullable: true })
@@ -152,7 +147,6 @@ export class TariffEditDialogComponent {
         effectColor: this._data.effectColor ?? '#d4a633',
         colorEnabled: !!this._data.effectColor,
         sortOrder: this._data.sortOrder,
-        rustoreProductId: this._data.rustoreProductId ?? null,
         isActive: this._data.isActive,
         isDefault: this._data.isDefault,
         featureIds: (this._data.features ?? []).filter((f) => f.included).map((f) => f.id)
@@ -185,7 +179,6 @@ export class TariffEditDialogComponent {
       effectColor: v.colorEnabled ? v.effectColor : null,
       glowEffect: 'none',
       sortOrder: Number(v.sortOrder),
-      rustoreProductId: v.rustoreProductId?.trim() || null,
       isActive: v.isActive,
       isDefault: v.isDefault,
       featureIds: v.featureIds

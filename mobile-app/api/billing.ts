@@ -2,7 +2,6 @@
 import {
   billingBillingMe,
   billingCancelSubscription,
-  billingConfirmPayment,
   billingListPayments,
   billingListTariffs,
   billingSubscribe,
@@ -60,15 +59,6 @@ export const billingApi = {
   syncPayment: (paymentId: string): Promise<BillingPayment> =>
     apiCall(() =>
       billingSyncPayment({
-        path: { payment_id: paymentId },
-      }),
-    ),
-
-  /** Подтверждение покупки через RuStore Pay SDK. */
-  confirmRustore: (paymentId: string, purchaseId: string): Promise<BillingPayment> =>
-    apiCall(() =>
-      billingConfirmPayment({
-        body: { purchaseId },
         path: { payment_id: paymentId },
       }),
     ),
