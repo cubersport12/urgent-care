@@ -11,7 +11,7 @@ from app.models.achievement import UserAchievement
 from app.models.notification import Notification
 from app.realtime.notifications_hub import notification_hub
 from app.services.billing import BillingService
-from app.services.expo_push import push_user
+from app.services.fcm_push import push_user
 
 
 def _notif_payload(row: Notification) -> dict:

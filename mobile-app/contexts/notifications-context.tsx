@@ -7,7 +7,7 @@ import {
   type NotificationsWsEvent,
   type SubscriptionGrantedPayload,
 } from '@/lib/notifications-ws';
-import { registerPushToken } from '@/lib/push-notifications';
+import { registerPushToken, subscribePushTokenChanges } from '@/lib/push-notifications';
 import React, {
   createContext,
   useCallback,
@@ -74,6 +74,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
     refreshUnread();
     void connectNotificationsWs();
+    const unsubscribePushToken = subscribePushTokenChanges();
     void registerPushToken();
     const unsub = subscribeNotifications((ev) => {
       if (ev.type === 'notification') {
@@ -91,6 +92,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     });
     return () => {
       unsub();
+      unsubscribePushToken();
       disconnectNotificationsWs();
     };
   }, [initialized, sessionId, refreshUnread]);

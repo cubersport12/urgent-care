@@ -13,5 +13,5 @@ class CamelModel(BaseModel):
 
 
 class PushTokenUpsert(CamelModel):
-    token: str = Field(min_length=8, max_length=255)
+    token: str = Field(min_length=8, max_length=2048)
     platform: str = Field("unknown", max_length=20)

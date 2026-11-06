@@ -1,16 +1,38 @@
 import { apiFetch } from '@/lib/api';
-import Constants from 'expo-constants';
-import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { AppState, Platform } from 'react-native';
 
 let currentToken: string | null = null;
 let handlerReady = false;
 
+async function savePushToken(token: string): Promise<void> {
+  const previousToken = currentToken;
+  await apiFetch('/api/v1/push-tokens', {
+    method: 'PUT',
+    body: JSON.stringify({ token, platform: 'android' }),
+  });
+  currentToken = token;
+  if (previousToken && previousToken !== token) {
+    await apiFetch(`/api/v1/push-tokens?token=${encodeURIComponent(previousToken)}`, {
+      method: 'DELETE',
+    });
+  }
+}
+
+export function subscribePushTokenChanges(): () => void {
+  if (Platform.OS !== 'android') return () => {};
+  const subscription = Notifications.addPushTokenListener((token) => {
+    if (token.type === 'android') {
+      void savePushToken(token.data).catch((error) => console.warn('push register failed', error));
+    }
+  });
+  return () => subscription.remove();
+}
+
 function ensureHandler() {
   if (handlerReady) return;
   handlerReady = true;
-  // Foreground: in-app toast via WS. Background/killed: system tray via Expo push.
+  // Foreground: in-app toast via WS. Background: system notification via FCM.
   Notifications.setNotificationHandler({
     handleNotification: async () => {
       const active = AppState.currentState === 'active';
@@ -33,22 +55,10 @@ async function ensureAndroidChannel() {
   });
 }
 
-function projectId(): string | undefined {
-  return (
-    Constants.easConfig?.projectId ??
-    (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId
-  );
-}
-
-/** Request permission, get Expo push token, register with API. No-op on web / emulator. */
+/** Request permission and register the Android FCM token with the API. */
 export async function registerPushToken(): Promise<void> {
-  if (Platform.OS === 'web') return;
+  if (Platform.OS !== 'android') return;
   ensureHandler();
-
-  if (!Device.isDevice) {
-    // Remote push is not delivered on Android Emulator / iOS Simulator.
-    return;
-  }
 
   try {
     await ensureAndroidChannel();
@@ -60,18 +70,11 @@ export async function registerPushToken(): Promise<void> {
     }
     if (status !== 'granted') return;
 
-    const id = projectId();
-    const tokenRes = id
-      ? await Notifications.getExpoPushTokenAsync({ projectId: id })
-      : await Notifications.getExpoPushTokenAsync();
+    const tokenRes = await Notifications.getDevicePushTokenAsync();
     const token = tokenRes.data;
     if (!token) return;
 
-    await apiFetch('/api/v1/push-tokens', {
-      method: 'PUT',
-      body: JSON.stringify({ token, platform: Platform.OS }),
-    });
-    currentToken = token;
+    await savePushToken(token);
   } catch (e) {
     console.warn('push register failed', e);
   }

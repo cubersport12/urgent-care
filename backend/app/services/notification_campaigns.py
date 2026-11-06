@@ -6,7 +6,6 @@ import logging
 from datetime import UTC, datetime
 from uuid import UUID
 
-import httpx
 from croniter import croniter
 from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +17,7 @@ from app.models.push_token import PushToken
 from app.models.user import User
 from app.realtime.notifications_hub import notification_hub
 from app.schemas.notifications import NotificationOut
-from app.services.expo_push import EXPO_PUSH_URL
+from app.services.fcm_push import send_fcm_push
 
 log = logging.getLogger(__name__)
 
@@ -63,7 +62,12 @@ async def _deliver(dispatch_id: UUID) -> None:
     async with AsyncSessionLocal() as db:
         rows = (await db.scalars(select(Notification).where(Notification.dispatch_id == dispatch_id))).all()
         tokens = (await db.execute(
-            select(PushToken.user_id, PushToken.token).where(PushToken.user_id.in_([row.user_id for row in rows]))
+            select(PushToken.user_id, PushToken.token).where(
+                PushToken.user_id.in_([row.user_id for row in rows]),
+                PushToken.platform == "android",
+                ~PushToken.token.startswith("ExponentPushToken["),
+                ~PushToken.token.startswith("ExpoPushToken["),
+            )
         )).all()
         by_user: dict[UUID, list[str]] = {}
         for user_id, token in tokens:
@@ -76,31 +80,11 @@ async def _deliver(dispatch_id: UUID) -> None:
             ).model_dump(mode="json", by_alias=True)
             await notification_hub.send_user(row.user_id, {"type": "notification", "data": payload})
             for token in by_user.get(row.user_id, []):
-                messages.append({"to": token, "sound": "default", "title": row.title,
-                                 "body": (row.body or row.title)[:300], "data": {}, "channelId": "default"})
+                messages.append({"token": token,
+                                 "notification": {"title": row.title, "body": (row.body or row.title)[:300]},
+                                 "android": {"notification": {"channel_id": "default"}}})
 
-        accepted = failed = 0
-        uncertain = False
-        async with httpx.AsyncClient(timeout=15) as client:
-            for offset in range(0, len(messages), 100):
-                chunk = messages[offset:offset + 100]
-                try:
-                    response = await client.post(EXPO_PUSH_URL, json=chunk)
-                    if response.status_code >= 500:
-                        uncertain = True
-                        continue
-                    if response.status_code >= 400:
-                        failed += len(chunk)
-                        continue
-                    tickets = response.json().get("data", [])
-                    if not isinstance(tickets, list) or len(tickets) != len(chunk):
-                        uncertain = True
-                        continue
-                    accepted += sum(ticket.get("status") == "ok" for ticket in tickets)
-                    failed += sum(ticket.get("status") != "ok" for ticket in tickets)
-                except (httpx.HTTPError, ValueError, TypeError, AttributeError):
-                    log.exception("Notification push result is unknown")
-                    uncertain = True
+        accepted, failed, uncertain = await send_fcm_push(messages)
         await db.execute(update(NotificationDispatch).where(NotificationDispatch.id == dispatch_id).values(
             status="interrupted" if uncertain else "partial" if failed else "completed",
             push_accepted=accepted, push_failed=failed,
