@@ -87,6 +87,19 @@ export const Spacing = {
   readingWidth: 720,
 } as const;
 
+/** Размеры форм авторизации, включая компактный вариант для низких экранов. */
+export const AuthForm = {
+  compactViewportHeight: 720,
+  cardMaxWidth: 400,
+  cardPadding: 28,
+  compactCardPadding: Spacing.card,
+  logoSize: 64,
+  compactLogoSize: 48,
+  logoGap: 20,
+  inputHeight: 52,
+  inputGap: 18,
+} as const;
+
 export const IconSize = {
   metric: 28,
   resultMetric: 38,

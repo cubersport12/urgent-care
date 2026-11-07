@@ -3,6 +3,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ScreenBackground } from '@/components/ui/screen-background';
+import { AuthForm, Spacing } from '@/constants/theme';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { showAlert } from '@/lib/alert';
 import { login, loginWithCode, requestLoginCode, resendVerification } from '@/lib/auth-api';
@@ -15,6 +16,7 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -29,6 +31,7 @@ type GlassInputProps = {
   autoComplete?: 'email' | 'password' | 'name' | 'off' | 'username' | 'one-time-code';
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
   maxLength?: number;
+  compact?: boolean;
 };
 
 function GlassInput({
@@ -42,6 +45,7 @@ function GlassInput({
   autoComplete,
   keyboardType,
   maxLength,
+  compact = false,
 }: GlassInputProps) {
   const { primary: tintColor, text: textColor, neutralSoft } = useAppTheme();
   const glass = useGlass();
@@ -52,11 +56,12 @@ function GlassInput({
   const shouldHideText = isPassword && !showPassword;
 
   return (
-    <View style={styles.inputContainer}>
+    <View style={[styles.inputContainer, compact && styles.compactInputContainer]}>
       <ThemedText style={styles.label}>{label}</ThemedText>
       <View
         style={[
           styles.inputWrapper,
+          compact && styles.compactInputWrapper,
           {
             borderColor: isFocused ? tintColor : glass.border,
             backgroundColor: isFocused ? glass.backgroundHover : glass.backgroundSubtle,
@@ -99,8 +104,10 @@ function GlassInput({
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { height } = useWindowDimensions();
   const { primary: tintColor, layout1, border } = useAppTheme();
   const glass = useGlass();
+  const compact = height < AuthForm.compactViewportHeight;
   const [mode, setMode] = useState<'password' | 'code'>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -194,27 +201,32 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, compact && styles.compactScroll]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           <View
             style={[
               styles.card,
+              compact && styles.compactCard,
               {
                 backgroundColor: layout1,
                 borderColor: border,
               },
             ]}
           >
-            <View style={[styles.logoCircle, { borderColor: glass.border, backgroundColor: glass.backgroundSubtle }]}>
+            <View style={[
+              styles.logoCircle,
+              compact && styles.compactLogoCircle,
+              { borderColor: glass.border, backgroundColor: glass.backgroundSubtle },
+            ]}>
               <IconSymbol name="cross.fill" size={32} color={tintColor} />
             </View>
 
             <ThemedText type="h1" style={styles.title}>
               Вход
             </ThemedText>
-            <ThemedText style={styles.hint}>
+            <ThemedText style={[styles.hint, compact && styles.compactHint]}>
               {mode === 'password'
                 ? 'Введите почту и пароль учётной записи'
                 : 'Мы пришлём код на вашу почту'}
@@ -229,6 +241,7 @@ export default function LoginScreen() {
               autoCapitalize="none"
               autoComplete="email"
               keyboardType="email-address"
+              compact={compact}
             />
 
             {mode === 'password' ? (
@@ -241,6 +254,7 @@ export default function LoginScreen() {
                   onChangeText={setPassword}
                   secureTextEntry
                   autoComplete="password"
+                  compact={compact}
                 />
 
                 {notVerifiedEmail ? (
@@ -257,12 +271,12 @@ export default function LoginScreen() {
                 ) : null}
 
                 <Link href="/(auth)/forgot-password" asChild>
-                  <Pressable style={styles.forgotWrap}>
+                  <Pressable style={StyleSheet.flatten([styles.forgotWrap, compact && styles.compactForgotWrap])}>
                     <ThemedText style={[styles.forgot, { color: tintColor }]}>Забыли пароль?</ThemedText>
                   </Pressable>
                 </Link>
 
-                <View style={styles.buttonContainer}>
+                <View style={[styles.buttonContainer, compact && styles.compactButtonContainer]}>
                   <Button
                     title={submitting ? 'Вход...' : 'Войти'}
                     onPress={() => void handleLogin()}
@@ -288,10 +302,11 @@ export default function LoginScreen() {
                       autoComplete="one-time-code"
                       keyboardType="numeric"
                       maxLength={6}
+                      compact={compact}
                     />
                   </>
                 ) : null}
-                <View style={styles.buttonContainer}>
+                <View style={[styles.buttonContainer, compact && styles.compactButtonContainer]}>
                   <Button
                     title={
                       submitting
@@ -311,7 +326,7 @@ export default function LoginScreen() {
               </>
             )}
 
-            <Pressable onPress={toggleMode} style={styles.toggleWrap}>
+            <Pressable onPress={toggleMode} style={[styles.toggleWrap, compact && styles.compactToggleWrap]}>
               <ThemedText style={[styles.toggleText, { color: tintColor }]}>
                 {mode === 'password' ? 'Войти по коду из письма' : 'Войти по паролю'}
               </ThemedText>
@@ -337,25 +352,37 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 24,
+    padding: Spacing.lg,
+  },
+  compactScroll: {
+    padding: Spacing.sm,
   },
   card: {
-    maxWidth: 400,
+    maxWidth: AuthForm.cardMaxWidth,
     width: '100%',
     alignSelf: 'center',
     borderRadius: 24,
     borderWidth: 1,
-    padding: 28,
+    padding: AuthForm.cardPadding,
+  },
+  compactCard: {
+    padding: AuthForm.compactCardPadding,
   },
   logoCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: AuthForm.logoSize,
+    height: AuthForm.logoSize,
+    borderRadius: AuthForm.logoSize / 2,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: AuthForm.logoGap,
+  },
+  compactLogoCircle: {
+    width: AuthForm.compactLogoSize,
+    height: AuthForm.compactLogoSize,
+    borderRadius: AuthForm.compactLogoSize / 2,
+    marginBottom: Spacing.md,
   },
   title: {
     marginBottom: 8,
@@ -365,9 +392,12 @@ const styles = StyleSheet.create({
   },
   hint: {
     opacity: 0.75,
-    marginBottom: 28,
+    marginBottom: AuthForm.cardPadding,
     textAlign: 'center',
     fontSize: 14,
+  },
+  compactHint: {
+    marginBottom: Spacing.card,
   },
   codeHint: {
     opacity: 0.75,
@@ -377,8 +407,11 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   inputContainer: {
-    marginBottom: 18,
+    marginBottom: AuthForm.inputGap,
     width: '100%',
+  },
+  compactInputContainer: {
+    marginBottom: Spacing.md,
   },
   label: {
     fontSize: 13,
@@ -392,7 +425,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderRadius: 14,
-    height: 52,
+    height: AuthForm.inputHeight,
     paddingHorizontal: 14,
   },
   leftIcon: {
@@ -408,15 +441,24 @@ const styles = StyleSheet.create({
     padding: 4,
     marginLeft: 8,
   },
+  compactInputWrapper: {
+    height: Spacing.minTouchTarget,
+  },
   buttonContainer: {
-    marginTop: 12,
+    marginTop: Spacing.md,
     width: '100%',
+  },
+  compactButtonContainer: {
+    marginTop: Spacing.sm,
   },
   forgotWrap: {
     alignSelf: 'flex-end',
     marginTop: -6,
-    marginBottom: 8,
-    paddingVertical: 4,
+    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  compactForgotWrap: {
+    marginBottom: 0,
   },
   forgot: {
     fontSize: 14,
@@ -439,17 +481,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   toggleWrap: {
-    marginTop: 16,
-    paddingVertical: 8,
+    marginTop: Spacing.card,
+    paddingVertical: Spacing.sm,
     alignItems: 'center',
   },
   toggleText: {
     fontSize: 14,
     fontWeight: '600',
   },
+  compactToggleWrap: {
+    marginTop: Spacing.md,
+  },
   linkWrap: {
-    marginTop: 8,
-    paddingVertical: 8,
+    marginTop: Spacing.sm,
+    paddingVertical: Spacing.sm,
     alignItems: 'center',
   },
   linkText: {
