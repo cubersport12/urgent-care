@@ -118,6 +118,9 @@ jobs:
       )
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    concurrency:
+      group: android-apk-build
+      queue: max
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -141,7 +144,18 @@ jobs:
           ANDROID_KEYSTORE_FILE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-        run: npx expo prebuild --platform android --non-interactive --no-install
+        run: |
+          # ponytail: The seconds-since-2020 code reaches Android's limit in 2086; choose a new scheme before then.
+          node -e "
+            const fs = require('fs');
+            const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            const code = Math.floor(Date.now() / 1000) - 1577836800;
+            if (code <= 0 || code > 2100000000) throw new Error('Android versionCode is out of range');
+            app.expo.android.versionCode = code;
+            fs.writeFileSync('app.json', JSON.stringify(app, null, 2) + '\n');
+            console.log('Android versionCode:', code, '(seconds since 2020-01-01 UTC)');
+          "
+          npx expo prebuild --platform android --non-interactive --no-install
 
       # После prebuild, не до: prebuild считает существующую папку android/ «malformed»
       # и в non-interactive режиме rm -rf её целиком — кейстор, записанный раньше, стирается.
