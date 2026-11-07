@@ -135,43 +135,6 @@ jobs:
         working-directory: mobile-app
         run: npm ci
 
-      - name: Set app version from release tag
-        if: github.event_name == 'release' || (needs.create-release.outputs.tag_name != '' && needs.create-release.outputs.tag_name != null)
-        working-directory: mobile-app
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name || needs.create-release.outputs.tag_name }}
-        run: |
-          node -e "
-            const fs = require('fs');
-            const tag = String(process.env.RELEASE_TAG || '').replace(/^v[-_]?/i, '');
-            if (!tag) process.exit(0);
-            const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
-            const app = JSON.parse(fs.readFileSync('./app.json', 'utf8'));
-            pkg.version = tag;
-            app.expo.version = tag.split('+')[0];
-            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
-            fs.writeFileSync('./app.json', JSON.stringify(app, null, 2) + '\n');
-            console.log('version set to', tag);
-          "
-
-      - name: Append build hash (manual dispatch)
-        if: github.event_name != 'release' && (needs.create-release.outputs.tag_name == '' || needs.create-release.outputs.tag_name == null)
-        working-directory: mobile-app
-        run: |
-          export BUILD_HASH="$(git rev-parse --short HEAD)"
-          node -e "
-            const fs = require('fs');
-            const hash = process.env.BUILD_HASH;
-            const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
-            const app = JSON.parse(fs.readFileSync('./app.json', 'utf8'));
-            const basePkg = String(pkg.version || '1.0.0').split('+')[0];
-            const baseApp = String(app.expo?.version || '1.0.0').split('+')[0];
-            pkg.version = basePkg + '+' + hash;
-            app.expo.version = baseApp + '+' + hash;
-            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
-            fs.writeFileSync('./app.json', JSON.stringify(app, null, 2) + '\n');
-          "
-
       - name: Generate Android project (Expo prebuild)
         working-directory: mobile-app
         env:

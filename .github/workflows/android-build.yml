@@ -31,13 +31,6 @@ jobs:
         run: npm ci
         working-directory: ./mobile-app
 
-      - name: Append build hash to app version
-        run: |
-          BUILD_HASH="$(git rev-parse --short HEAD)"
-          node -e "const fs=require('fs'); const path='./mobile-app/package.json'; const pkg=JSON.parse(fs.readFileSync(path,'utf8')); const base=String(pkg.version||'1.0.0').split('+')[0]; pkg.version=base+'+'+process.env.BUILD_HASH; fs.writeFileSync(path, JSON.stringify(pkg, null, 2)+'\n');"
-        env:
-          BUILD_HASH: ${{ github.sha }}
-
       - name: Generate Android project (Expo prebuild)
         run: npx expo prebuild --platform android --non-interactive --no-install
         working-directory: ./mobile-app
