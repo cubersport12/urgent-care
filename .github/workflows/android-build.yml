@@ -13,6 +13,9 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    concurrency:
+      group: android-apk-build
+      queue: max
     env:
       EXPO_PUBLIC_API_URL: https://trouble-dent.ru
 
@@ -32,8 +35,19 @@ jobs:
         working-directory: ./mobile-app
 
       - name: Generate Android project (Expo prebuild)
-        run: npx expo prebuild --platform android --non-interactive --no-install
         working-directory: ./mobile-app
+        run: |
+          # ponytail: The seconds-since-2020 code reaches Android's limit in 2086; choose a new scheme before then.
+          node -e "
+            const fs = require('fs');
+            const app = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            const code = Math.floor(Date.now() / 1000) - 1577836800;
+            if (code <= 0 || code > 2100000000) throw new Error('Android versionCode is out of range');
+            app.expo.android.versionCode = code;
+            fs.writeFileSync('app.json', JSON.stringify(app, null, 2) + '\n');
+            console.log('Android versionCode:', code, '(seconds since 2020-01-01 UTC)');
+          "
+          npx expo prebuild --platform android --non-interactive --no-install
 
       - name: Setup Java
         uses: actions/setup-java@v4
