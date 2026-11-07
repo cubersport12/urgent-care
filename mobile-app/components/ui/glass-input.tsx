@@ -1,5 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { AuthForm, Spacing } from '@/constants/theme';
 import { useAppTheme, useGlass } from '@/hooks/use-theme-color';
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -13,6 +14,7 @@ type GlassInputProps = {
   secureTextEntry?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  compact?: boolean;
 };
 
 /** Поле ввода в стеклянном стиле (логин/регистрация/профиль). */
@@ -25,6 +27,7 @@ export function GlassInput({
   secureTextEntry,
   autoCapitalize,
   keyboardType,
+  compact = false,
 }: GlassInputProps) {
   const { primary: tintColor, text: textColor, neutralSoft } = useAppTheme();
   const glass = useGlass();
@@ -35,11 +38,12 @@ export function GlassInput({
   const shouldHideText = isPassword && !showPassword;
 
   return (
-    <View style={styles.inputContainer}>
+    <View style={[styles.inputContainer, compact && styles.compactInputContainer]}>
       <ThemedText style={styles.label}>{label}</ThemedText>
       <View
         style={[
           styles.inputWrapper,
+          compact && styles.compactInputWrapper,
           {
             borderColor: isFocused ? tintColor : glass.border,
             backgroundColor: isFocused ? glass.backgroundHover : glass.backgroundSubtle,
@@ -80,8 +84,11 @@ export function GlassInput({
 
 const styles = StyleSheet.create({
   inputContainer: {
-    marginBottom: 18,
+    marginBottom: AuthForm.inputGap,
     width: '100%',
+  },
+  compactInputContainer: {
+    marginBottom: Spacing.md,
   },
   label: {
     fontSize: 13,
@@ -95,8 +102,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderRadius: 14,
-    height: 52,
+    height: AuthForm.inputHeight,
     paddingHorizontal: 14,
+  },
+  compactInputWrapper: {
+    height: Spacing.minTouchTarget,
   },
   leftIcon: {
     marginRight: 12,
