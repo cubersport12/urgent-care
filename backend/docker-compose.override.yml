@@ -5,7 +5,8 @@ services:
     ports: !override
       - "127.0.0.1:55432:5432"
   redis:
-    ports: !reset []
+    ports: !override
+      - "127.0.0.1:6379:6379"
 
 volumes:
   pgdata:

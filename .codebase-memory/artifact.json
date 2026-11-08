@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "52851dfdb403fe3e893129ac682faa7c60086e11",
-    "indexed_at": "2026-11-08T11:03:43Z",
+    "commit": "30d785a26a571090565815225704d85b419dc825",
+    "indexed_at": "2026-11-08T15:39:25Z",
     "project": "urgent-care",
-    "nodes": 9169,
-    "edges": 30228,
-    "original_size": 39321600,
-    "compressed_size": 5551121,
+    "nodes": 9906,
+    "edges": 31858,
+    "original_size": 40763392,
+    "compressed_size": 5973849,
     "compression_level": 3
 }

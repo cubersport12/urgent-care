@@ -1,0 +1,48 @@
+{
+  "createdAt": "2026-11-08T15:34:06.519Z",
+  "target": "http://localhost:8000",
+  "virtualUsers": 100,
+  "requests": 4851,
+  "requestsPerSecond": 9.313355196417058,
+  "failedRequestRate": 0,
+  "checksPassed": 4850,
+  "checksFailed": 0,
+  "operations": {
+    "folder_list": {
+      "count": 1803,
+      "averageMs": 6635.301982085406,
+      "p95Ms": 8519.11716,
+      "p99Ms": 8775.13342
+    },
+    "article_list": {
+      "count": 1179,
+      "averageMs": 6747.948757251902,
+      "p95Ms": 8568.53543,
+      "p99Ms": 8888.06812
+    },
+    "test_list": {
+      "count": 1176,
+      "averageMs": 6730.921323469379,
+      "p95Ms": 8602.810475,
+      "p99Ms": 8826.63275
+    },
+    "article_open": {
+      "count": 479,
+      "averageMs": 6674.4664519833,
+      "p95Ms": 8599.651450000001,
+      "p99Ms": 8865.065052
+    },
+    "test_open": {
+      "count": 112,
+      "averageMs": 6974.486019642858,
+      "p95Ms": 8541.562,
+      "p99Ms": 8776.200482
+    }
+  },
+  "responseTimeMs": {
+    "average": 6562.5037539270315,
+    "p95": 8565.0269,
+    "p99": 8834.20335,
+    "maximum": 13959.8272
+  }
+}
