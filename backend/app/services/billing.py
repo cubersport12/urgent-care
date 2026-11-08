@@ -12,6 +12,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing import get_providers, provider_for_channel
+from app.billing.rustore import RuStoreProvider, amount_from_micros, parse_millis
 from app.core.config import settings
 from app.db.repositories.billing import BillingRepository
 from app.models.article import Article
@@ -30,9 +31,9 @@ from app.schemas.billing import (
     PromoCodeCreate,
     PromoCodeOut,
     PromoCodeUpdate,
-    RefundOut,
     RefundJournalItem,
     RefundJournalOut,
+    RefundOut,
     SubscribeOut,
     TariffCreate,
     TariffFeatureCreate,
@@ -589,6 +590,25 @@ class BillingService:
         sub = await self.ensure_subscription(user)
         tariff = await self.repo.get_tariff(sub.tariff_id)
         if tariff and tariff.price_rub > 0 and not tariff.is_default:
+            if sub.rustore_purchase_id and not sub.cancel_at_period_end:
+                rustore = self.providers.get("rustore")
+                if not isinstance(rustore, RuStoreProvider):
+                    raise HTTPException(
+                        status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Subscription cancellation unavailable",
+                    )
+                if not rustore.configured or not rustore.app_id:
+                    raise HTTPException(
+                        status.HTTP_503_SERVICE_UNAVAILABLE,
+                        detail="Subscription cancellation unavailable",
+                    )
+                try:
+                    await rustore.cancel_subscription(sub.rustore_purchase_id)
+                except Exception as exc:
+                    raise HTTPException(
+                        status.HTTP_502_BAD_GATEWAY,
+                        detail="Could not cancel subscription with RuStore",
+                    ) from exc
             sub.cancel_at_period_end = True
             await self.repo.save_subscription(sub)
         return await self.get_me(user)
@@ -930,11 +950,66 @@ class BillingService:
             },
         )
 
+    async def reconcile_rustore(self, sub: UserSubscription) -> bool:
+        """Sync renewals and cancellations for RuStore subscriptions created earlier."""
+        if not sub.rustore_purchase_id:
+            return False
+        rustore = self.providers.get("rustore")
+        if not isinstance(rustore, RuStoreProvider) or not rustore.configured:
+            return False
+        tariff = await self.repo.get_tariff(sub.tariff_id)
+        if not tariff or not tariff.rustore_product_id:
+            return False
+        try:
+            body = await rustore.get_subscription(
+                tariff.rustore_product_id, sub.rustore_purchase_id
+            )
+        except Exception:
+            return False
+
+        changed = False
+        renewed = False
+        if body.get("autoRenewing") is False and not sub.cancel_at_period_end:
+            sub.cancel_at_period_end = True
+            changed = True
+        expiry = parse_millis(body.get("expiryTimeMillis"))
+        if expiry and expiry > sub.current_period_end:
+            amount = amount_from_micros(body.get("priceAmountMicros"))
+            await self.repo.create_payment(
+                user_id=sub.user_id,
+                subscription_id=sub.id,
+                tariff_id=tariff.id,
+                amount_rub=amount if amount is not None else float(tariff.price_rub),
+                status="succeeded",
+                provider="rustore",
+                external_id=None,
+                idempotency_key=str(uuid4()),
+                raw_json=body,
+                commit=False,
+            )
+            sub.current_period_end = expiry
+            sub.status = "active"
+            changed = True
+            renewed = True
+        if changed:
+            await self.repo.save_subscription(sub)
+        if renewed:
+            await self._emit_subscription_granted(sub.user_id, tariff, sub, "renewal")
+        return changed
+
     async def renew_due(self) -> dict[str, int]:
         now = datetime.now(timezone.utc)
         activated = 0
         renewed = 0
         downgraded = 0
+        rustore_reconciled = 0
+
+        for sub in await self.repo.list_rustore_subscriptions():
+            try:
+                if await self.reconcile_rustore(sub):
+                    rustore_reconciled += 1
+            except Exception:
+                continue
 
         for change in await self.repo.list_due_scheduled_changes(now):
             ok = await self._charge_scheduled_change(change)
@@ -1008,6 +1083,7 @@ class BillingService:
             "activated_changes": activated,
             "renewed": renewed,
             "downgraded": downgraded,
+            "rustore_reconciled": rustore_reconciled,
         }
 
     async def _charge_scheduled_change(self, change: SubscriptionChange) -> bool:

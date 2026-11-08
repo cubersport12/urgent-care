@@ -2,7 +2,8 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy import delete as sa_delete, select, update as sa_update
+from sqlalchemy import delete as sa_delete
+from sqlalchemy import update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_current_user, get_db
@@ -15,7 +16,7 @@ from app.api.v1._content_access import (
 from app.api.v1._content_helpers import dump_create, dump_update, new_id, not_found
 from app.db.repositories.content import FolderRepository, published_content_statement
 from app.models.article import Article
-from app.models.learning_event import LearningEvent
+from app.models.folder import Folder
 from app.models.rescue import Rescue
 from app.models.test import Test
 from app.models.user import User
@@ -30,6 +31,7 @@ from app.schemas.content import (
     FolderUpdate,
 )
 from app.services.stats_from_events import list_events
+from app.utils.content_cache import cached_content_item, cached_content_list
 
 router = APIRouter(prefix="/folders", tags=["folders"])
 
@@ -45,10 +47,18 @@ async def list_folders(
 ) -> list[FolderOut]:
     repo = FolderRepository(db)
     show_drafts = include_drafts and user.role == "admin"
-    items = (
-        await repo.list_all(include_drafts=show_drafts)
+    items = await cached_content_list(
+        db,
+        "folders",
+        {
+            "all": all_items,
+            "parentId": None if all_items else parent_id,
+            "includeDrafts": show_drafts,
+        },
+        FolderOut,
+        lambda: repo.list_all(include_drafts=show_drafts)
         if all_items
-        else await repo.list_by_parent(parent_id, include_drafts=show_drafts)
+        else repo.list_by_parent(parent_id, include_drafts=show_drafts),
     )
     annotated = await annotate_content_list(db, user, items, enforce_for_admin=enforce_tariff)
     return [content_out(item, FolderOut, locked) for item, locked in annotated]
@@ -215,12 +225,14 @@ async def get_folder(
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
     include_drafts: bool = Query(False, alias="includeDrafts"),
 ):
-    item = await FolderRepository(db).get(item_id)
+    repo = FolderRepository(db)
+    item = await cached_content_item(db, "folders", item_id, FolderOut, lambda: repo.get(item_id))
     if not item:
         raise not_found("Folder")
     await assert_content_visible(
         db, user, item, enforce_for_admin=enforce_tariff,
         include_drafts=include_drafts and user.role == "admin",
+        content_model=Folder,
     )
     return item
 

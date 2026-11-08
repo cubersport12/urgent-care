@@ -1,5 +1,5 @@
 version = 1
-revision = 6
+revision = 5
 requires-python = ">=3.12"
 
 [[package]]
@@ -266,6 +266,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44", size = 27697, upload-time = "2022-10-25T02:36:22.414Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6", size = 25335, upload-time = "2022-10-25T02:36:20.889Z" },
+]
+
+[[package]]
+name = "croniter"
+version = "6.2.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/37/57/2e2a65aee2a70483cb28e2b7e15a072d00a523207593b44400d4717bb100/croniter-6.2.4.tar.gz", hash = "sha256:fc124f751b1b04805c2a04b061898b436b45ab2320b045e1e052ea895de65189", size = 166267, upload-time = "2026-07-10T09:52:59.955Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cd/ba/d678e5bd329646ca51d3c92addbc77804e86d21f4b6b6a027218e6abb010/croniter-6.2.4-py3-none-any.whl", hash = "sha256:8ef3d544107a5c05a150a2d78f8bf5a8eb9c5c4d93405a736b824109574e3f4d", size = 46677, upload-time = "2026-07-10T09:52:58.425Z" },
 ]
 
 [[package]]
@@ -1278,6 +1290,15 @@ wheels = [
 ]
 
 [[package]]
+name = "redis"
+version = "6.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0d/d6/e8b92798a5bd67d659d51a18170e91c16ac3b59738d91894651ee255ed49/redis-6.4.0.tar.gz", hash = "sha256:b01bc7282b8444e28ec36b261df5375183bb47a07eb9c603f284e89cbc5ef010", size = 4647399, upload-time = "2025-08-07T08:10:11.441Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e8/02/89e2ed7e85db6c93dfa9e8f691c5087df4e3551ab39081a4d7c6d1f90e05/redis-6.4.0-py3-none-any.whl", hash = "sha256:f0544fa9604264e9464cdf4814e7d4830f74b165d52f2a330a760a88dd248b7f", size = 279847, upload-time = "2025-08-07T08:10:09.84Z" },
+]
+
+[[package]]
 name = "rsa"
 version = "4.9.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1429,6 +1450,7 @@ dependencies = [
     { name = "asyncpg" },
     { name = "bcrypt" },
     { name = "boto3" },
+    { name = "croniter" },
     { name = "email-validator" },
     { name = "fastapi" },
     { name = "httpx" },
@@ -1441,6 +1463,7 @@ dependencies = [
     { name = "python-jose", extra = ["cryptography"] },
     { name = "python-multipart" },
     { name = "qrcode" },
+    { name = "redis" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "structlog" },
     { name = "uvicorn", extra = ["standard"] },
@@ -1460,6 +1483,7 @@ requires-dist = [
     { name = "asyncpg", specifier = "==0.30.0" },
     { name = "bcrypt", specifier = "==5.0.0" },
     { name = "boto3", specifier = "==1.35.84" },
+    { name = "croniter", specifier = "==6.2.4" },
     { name = "email-validator", specifier = "==2.2.0" },
     { name = "fastapi", specifier = "==0.115.6" },
     { name = "httpx", specifier = "==0.28.1" },
@@ -1475,6 +1499,7 @@ requires-dist = [
     { name = "python-jose", extras = ["cryptography"], specifier = "==3.3.0" },
     { name = "python-multipart", specifier = "==0.0.32" },
     { name = "qrcode", specifier = "==8.2" },
+    { name = "redis", specifier = "==6.4.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.8.3" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = "==2.0.36" },
     { name = "structlog", specifier = "==24.4.0" },

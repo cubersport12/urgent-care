@@ -17,6 +17,7 @@ from app.core.config import settings
 from app.core.errors import AppError
 from app.db.base import engine
 from app.utils.file_cache import close_file_cache, initialize_file_cache
+from app.utils.redis_cache import close_redis_cache, initialize_redis_cache
 
 
 def _generate_operation_id(route: APIRoute) -> str:
@@ -47,6 +48,7 @@ async def lifespan(app: FastAPI):
     configure_logging()
     log = structlog.get_logger()
     log.info("app_starting", environment=settings.environment)
+    initialize_redis_cache()
     initialize_file_cache()
     from app.db.base import AsyncSessionLocal
     from app.models.certificate import Certificate
@@ -89,6 +91,7 @@ async def lifespan(app: FastAPI):
         worker.cancel()
         await asyncio.gather(worker, return_exceptions=True)
         await close_file_cache()
+        await close_redis_cache()
         await engine.dispose()
         log.info("app_stopped")
 

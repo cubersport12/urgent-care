@@ -29,6 +29,8 @@ class Tariff(Base):
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Retained for reconciling existing RuStore subscriptions; checkout no longer uses it.
+    rustore_product_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -97,6 +99,8 @@ class UserSubscription(Base):
     current_period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     current_period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     yookassa_payment_method_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Existing RuStore subscriptions are still renewed/canceled through the provider API.
+    rustore_purchase_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

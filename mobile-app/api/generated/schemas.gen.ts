@@ -1715,6 +1715,11 @@ export const CertificateVerifyOutSchema = {
             type: 'integer',
             title: 'Number'
         },
+        valid: {
+            type: 'boolean',
+            title: 'Valid',
+            default: true
+        },
         fullName: {
             anyOf: [
                 {
@@ -1737,11 +1742,6 @@ export const CertificateVerifyOutSchema = {
                 }
             ],
             title: 'Issuedat'
-        },
-        valid: {
-            type: 'boolean',
-            title: 'Valid',
-            default: true
         }
     },
     type: 'object',

@@ -139,15 +139,29 @@ class S3Client:
 
     async def get_object(self, *, key: str) -> tuple[bytes, str]:
         observed_cache_value: bytes | None = None
+        cache_key: str | None = None
         if self._file_cache is not None:
             try:
-                cached, observed_cache_value = await self._file_cache.get(
+                cached, observed_cache_value, cache_key = await self._file_cache.get(
                     bucket=self.bucket,
                     object_key=key,
                 )
                 if cached is not None:
-                    log.info("file_cache_hit", bucket=self.bucket, key=key)
-                    return cached
+                    body, content_type, cached_etag = cached
+                    if key.lower().endswith(".pdf"):
+                        try:
+                            metadata = await asyncio.to_thread(
+                                self._client.head_object, Bucket=self.bucket, Key=key
+                            )
+                            current_type = metadata.get("ContentType") or "application/octet-stream"
+                            if metadata.get("ETag") == cached_etag and current_type == content_type:
+                                log.info("file_cache_hit", bucket=self.bucket, key=key)
+                                return body, content_type
+                        except Exception as exc:  # noqa: BLE001
+                            log.warning("file_cache_validation_failed", bucket=self.bucket, key=key, error=str(exc))
+                    else:
+                        log.info("file_cache_hit", bucket=self.bucket, key=key)
+                        return body, content_type
                 log.info("file_cache_miss", bucket=self.bucket, key=key)
             except RedisError as exc:
                 log.warning("file_cache_read_failed", bucket=self.bucket, key=key, error=str(exc))
@@ -161,13 +175,13 @@ class S3Client:
 
         log.info("minio_get_object_started", bucket=self.bucket, key=key)
 
-        def _get() -> tuple[bytes, str]:
+        def _get() -> tuple[bytes, str, str | None]:
             resp = self._client.get_object(Bucket=self.bucket, Key=key)
             body = resp["Body"].read()
             content_type = resp.get("ContentType") or "application/octet-stream"
-            return body, content_type
+            return body, content_type, resp.get("ETag")
 
-        body, content_type = await asyncio.to_thread(_get)
+        body, content_type, etag = await asyncio.to_thread(_get)
         log.info(
             "minio_get_object_completed",
             bucket=self.bucket,
@@ -175,14 +189,16 @@ class S3Client:
             size_bytes=len(body),
             content_type=content_type,
         )
-        if self._file_cache is not None and len(body) <= self._file_cache.max_bytes:
+        if self._file_cache is not None and cache_key is not None and len(body) <= self._file_cache.max_bytes:
             try:
                 await self._file_cache.set_if_unchanged(
                     bucket=self.bucket,
                     object_key=key,
                     body=body,
                     content_type=content_type,
+                    etag=etag,
                     observed_value=observed_cache_value,
+                    cache_key=cache_key,
                 )
                 log.info(
                     "file_cache_fill_attempt_completed",

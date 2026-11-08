@@ -3,11 +3,11 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 from types import SimpleNamespace
 
-from alembic.migration import MigrationContext
-from alembic.operations import Operations
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 
+from alembic.migration import MigrationContext
+from alembic.operations import Operations
 from app.api.deps import get_current_user, get_db
 from app.api.v1 import folders
 from app.main import create_app
@@ -40,6 +40,7 @@ def test_folder_random_open_round_trip(monkeypatch):
             pass
 
         async def create(self, id, **fields):
+            fields.setdefault("status", "draft")
             item = SimpleNamespace(id=id, **fields)
             items[id] = item
             return item
@@ -54,7 +55,7 @@ def test_folder_random_open_round_trip(monkeypatch):
         async def get(self, item_id):
             return items.get(item_id)
 
-        async def list_by_parent(self, parent_id):
+        async def list_by_parent(self, parent_id, *, include_drafts=True):
             return [item for item in items.values() if item.parent_id == parent_id]
 
     async def no_default_tariff(_db, fields):

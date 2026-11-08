@@ -8,7 +8,8 @@ from uuid import UUID
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.repositories.content import ArticleRepository, published_content_statement
+from app.db.repositories.content import published_content_statement
+from app.models.article import Article
 from app.models.user import User
 from app.schemas.content import ArticleOut, CamelModel, FolderOut, RescueOut
 from app.services.entitlements import (
@@ -86,9 +87,10 @@ async def hide_unpublished_article_links(
 ) -> None:
     if include_drafts:
         return
-    visible_ids = {
-        item.id for item in await ArticleRepository(db).list_all(include_drafts=False)
-    }
+    result = await db.execute(
+        published_content_statement(Article).with_only_columns(Article.id)
+    )
+    visible_ids = set(result.scalars().all())
     for item in items:
         if isinstance(item, ArticleOut):
             if item.next_run_article not in visible_ids:
@@ -114,11 +116,14 @@ async def assert_content_visible(
     *,
     enforce_for_admin: bool = False,
     include_drafts: bool = False,
+    content_model: type | None = None,
 ) -> None:
     if not (user.role == "admin" and include_drafts):
-        model = type(item)
+        model = content_model or type(item)
         result = await db.execute(
-            published_content_statement(model).where(model.id == item.id)
+            published_content_statement(model)
+            .with_only_columns(model.id)
+            .where(model.id == item.id)
         )
         if result.scalar_one_or_none() is None:
             raise HTTPException(status_code=404, detail="Item not found")

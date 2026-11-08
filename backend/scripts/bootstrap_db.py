@@ -8,9 +8,10 @@ import sys
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
+import app.models  # noqa: F401
 from app.core.config import settings
 from app.db.base import Base
-import app.models  # noqa: F401
+from app.db.content_cache_revision_schema_v1 import install_content_cache_revision
 
 
 async def _is_empty_schema(engine) -> bool:
@@ -32,6 +33,7 @@ async def bootstrap() -> None:
             print("bootstrap: empty schema — create_all")
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+                await conn.run_sync(install_content_cache_revision)
             print("bootstrap: alembic stamp head")
             subprocess.check_call([sys.executable, "-m", "alembic", "stamp", "head"])
         else:

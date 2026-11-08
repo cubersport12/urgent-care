@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from app.billing.base import PaymentProvider
+from app.billing.rustore import RuStoreProvider
 from app.billing.yookassa import YooKassaProvider
 
 PROVIDER_NAMES = ("yookassa",)
@@ -16,7 +17,8 @@ def provider_for_channel(channel: str | None) -> str:
 
 
 def get_providers() -> dict[str, PaymentProvider]:
-    """Свежие инстансы на вызов (клиенты без состояния, тесты мутируют атрибуты)."""
+    """Fresh provider instances, including RuStore only for legacy subscriptions."""
     return {
         "yookassa": YooKassaProvider(),
+        "rustore": RuStoreProvider(),
     }

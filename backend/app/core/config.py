@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     s3_bucket_media: str = "cubersport12"
     s3_region: str = "us-east-1"
     redis_url: str = ""
+    content_cache_enabled: bool = True
     fcm_service_account_json: str = ""
     file_cache_ttl_seconds: int = Field(default=300, ge=1, le=300)
     file_cache_max_bytes: int = Field(default=5 * 1024 * 1024, ge=1)
@@ -78,6 +79,13 @@ class Settings(BaseSettings):
     yookassa_return_url: str = "https://trouble-dent.ru/mobile-app/"
     billing_enforcement: bool = True
 
+    # Public API credentials for reconciling and canceling existing RuStore subscriptions.
+    rustore_api_key_id: str = ""
+    rustore_api_private_key: str = ""
+    rustore_app_id: str = ""
+    rustore_package_name: str = "ru.troubledent.app"
+    rustore_sandbox: bool = False
+
     # Embeddings (OpenAI-compatible — vsellm.ru / qwen3-embedding-8b), same as GymAI
     embedding_api_key: str = ""
     embedding_base_url: str = "https://api.vsellm.ru/v1"
@@ -94,6 +102,14 @@ class Settings(BaseSettings):
     @property
     def yookassa_configured(self) -> bool:
         return bool(self.yookassa_shop_id and self.yookassa_secret_key)
+
+    @property
+    def rustore_configured(self) -> bool:
+        return bool(
+            self.rustore_api_key_id
+            and self.rustore_api_private_key
+            and self.rustore_package_name
+        )
 
     @field_validator("cors_origins", mode="before")
     @classmethod

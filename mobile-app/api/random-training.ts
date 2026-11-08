@@ -22,7 +22,11 @@ export type TrainingEvent =
 export function openTrainingSocket(difficulty: TrainingDifficulty): WebSocket {
   const session = getSessionId();
   if (!session) throw new Error('Сессия истекла');
-  return new WebSocket(`${API_BASE_URL.replace(/^http/, 'ws')}/api/v1/training/random/ws?session_id=${encodeURIComponent(session)}&difficulty=${difficulty}`);
+  const socket = new WebSocket(`${API_BASE_URL.replace(/^http/, 'ws')}/api/v1/training/random/ws?difficulty=${difficulty}`);
+  socket.onopen = () => {
+    socket.send(JSON.stringify({ type: 'auth', sessionId: session }));
+  };
+  return socket;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

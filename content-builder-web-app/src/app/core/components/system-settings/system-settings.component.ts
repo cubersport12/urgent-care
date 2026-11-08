@@ -9,6 +9,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import {
   authSendResetLinkAdmin,
+  systemSettingsClearRedisCache,
   systemSettingsGetSystemSettings,
   systemSettingsUpdateSystemSettings
 } from '@/core/api/generated/sdk.gen';
@@ -105,6 +106,35 @@ export class AdminInviteDialogComponent {
       status: 'active'
     });
   }
+}
+
+@Component({
+  selector: 'app-confirm-redis-cache-clear-dialog',
+  imports: [MatIcon, AppDialogWrapperComponent],
+  template: `
+    <app-dialog-wrapper
+      title="Очистить кэш Redis?"
+      subtitle="Данные загрузятся заново при следующих запросах"
+      saveText="Очистить кэш"
+      saveIcon="trash"
+      saveVariant="danger"
+      (save)="_ref.close(true)"
+      (close)="_ref.close(false)"
+    >
+      <div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+        <mat-icon svgIcon="exclamation-circle" class="!mt-0.5 !h-5 !w-5 shrink-0" />
+        <p class="m-0 text-xs leading-relaxed">
+          Будут сброшены кэш учебного каталога и кэш файлов. Содержимое базы данных и хранилища файлов не изменится.
+        </p>
+      </div>
+    </app-dialog-wrapper>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class ConfirmRedisCacheClearDialogComponent {
+  protected readonly _ref = inject(
+    MatDialogRef<ConfirmRedisCacheClearDialogComponent, boolean>
+  );
 }
 
 @Component({
@@ -244,6 +274,23 @@ export class AdminInviteDialogComponent {
                 [min]="0"
               />
             </div>
+          </div>
+
+          <div class="md:col-span-2 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 dark:text-white">Кэш приложения</h2>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Сбросить кэш учебных материалов и файлов TroubleDent.
+              </p>
+            </div>
+            <app-button
+              variant="outline"
+              icon="trash"
+              [loading]="_clearingCache()"
+              (clicked)="_confirmCacheClear()"
+            >
+              Очистить кэш Redis
+            </app-button>
           </div>
         </div>
       }
@@ -437,6 +484,7 @@ export class SystemSettingsComponent {
   }
 
   protected readonly _savingSettings = signal(false);
+  protected readonly _clearingCache = signal(false);
 
   private async _loadSettings(): Promise<void> {
     try {
@@ -462,6 +510,28 @@ export class SystemSettingsComponent {
         this._savingSettings.set(false);
       }
     })();
+  }
+
+  protected _confirmCacheClear(): void {
+    this._dialogsService
+      .open(ConfirmRedisCacheClearDialogComponent, { width: '480px' })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (confirmed) void this._clearCache();
+      });
+  }
+
+  private async _clearCache(): Promise<void> {
+    this._clearingCache.set(true);
+    try {
+      await apiCall(() => systemSettingsClearRedisCache());
+      this._snack.open('Кэш Redis очищен', 'Закрыть', { duration: 3000 });
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.detail : 'Не удалось очистить кэш Redis';
+      this._snack.open(msg, 'Закрыть', { duration: 5000 });
+    } finally {
+      this._clearingCache.set(false);
+    }
   }
 
   protected _inviteAdmin(): void {

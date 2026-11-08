@@ -8,11 +8,12 @@ import structlog
 from redis.asyncio import Redis
 
 from app.core.config import settings
+from app.utils.redis_cache import get_cache_generation, get_redis_client
 
 log = structlog.get_logger()
 
-_CACHE_PREFIX = "urgent-care:file:v1:"
-_DATA_MARKER = b"\x01"
+_CACHE_PREFIX = "urgent-care:file:v2:"
+_DATA_MARKER = b"\x02"
 _INVALIDATION_MARKER = b"\x00"
 _SET_IF_UNCHANGED = """
 local current = redis.call('GET', KEYS[1])
@@ -33,28 +34,39 @@ class FileCache:
         self.max_bytes = max_bytes
 
     @staticmethod
-    def _key(bucket: str, object_key: str) -> str:
+    def _key(bucket: str, object_key: str, generation: bytes) -> str:
         digest = sha256(f"{bucket}\0{object_key}".encode()).hexdigest()
-        return f"{_CACHE_PREFIX}{digest}"
+        return f"{_CACHE_PREFIX}{generation.hex()}:{digest}"
 
     async def get(
         self, *, bucket: str, object_key: str
-    ) -> tuple[tuple[bytes, str] | None, bytes | None]:
-        raw = await self._redis.get(self._key(bucket, object_key))
+    ) -> tuple[tuple[bytes, str, str | None] | None, bytes | None, str]:
+        key = self._key(bucket, object_key, await get_cache_generation(self._redis))
+        raw = await self._redis.get(key)
         if raw is None:
-            return None, None
+            return None, None, key
         if not raw.startswith(_DATA_MARKER) or len(raw) < 3:
-            return None, raw
+            return None, raw, key
 
         content_type_length = int.from_bytes(raw[1:3], "big")
         content_type_end = 3 + content_type_length
         if content_type_end > len(raw):
-            return None, raw
+            return None, raw, key
         try:
             content_type = raw[3:content_type_end].decode("utf-8")
         except UnicodeDecodeError:
-            return None, raw
-        return (raw[content_type_end:], content_type), raw
+            return None, raw, key
+        if content_type_end + 2 > len(raw):
+            return None, raw, key
+        etag_length = int.from_bytes(raw[content_type_end:content_type_end + 2], "big")
+        etag_end = content_type_end + 2 + etag_length
+        if etag_end > len(raw):
+            return None, raw, key
+        try:
+            etag = raw[content_type_end + 2:etag_end].decode("utf-8") or None
+        except UnicodeDecodeError:
+            return None, raw, key
+        return (raw[etag_end:], content_type, etag), raw, key
 
     async def set_if_unchanged(
         self,
@@ -63,23 +75,28 @@ class FileCache:
         object_key: str,
         body: bytes,
         content_type: str,
+        etag: str | None,
         observed_value: bytes | None,
+        cache_key: str,
     ) -> None:
         if len(body) > self.max_bytes:
             return
         encoded_content_type = content_type.encode("utf-8")
-        if len(encoded_content_type) > 65535:
+        encoded_etag = (etag or "").encode("utf-8")
+        if len(encoded_content_type) > 65535 or len(encoded_etag) > 65535:
             return
         value = (
             _DATA_MARKER
             + len(encoded_content_type).to_bytes(2, "big")
             + encoded_content_type
+            + len(encoded_etag).to_bytes(2, "big")
+            + encoded_etag
             + body
         )
         await self._redis.eval(
             _SET_IF_UNCHANGED,
             1,
-            self._key(bucket, object_key),
+            cache_key,
             b"0" if observed_value is None else b"1",
             observed_value or b"",
             value,
@@ -88,31 +105,25 @@ class FileCache:
 
     async def invalidate(self, *, bucket: str, object_key: str) -> None:
         marker = _INVALIDATION_MARKER + uuid4().bytes
+        generation = await get_cache_generation(self._redis)
         await self._redis.set(
-            self._key(bucket, object_key),
+            self._key(bucket, object_key, generation),
             marker,
             ex=self.ttl_seconds * 2,
         )
 
 
-_redis_client: Redis | None = None
 _file_cache: FileCache | None = None
 
 
 def initialize_file_cache() -> None:
-    global _redis_client, _file_cache
-    if not settings.redis_url or _redis_client is not None:
+    global _file_cache
+    redis = get_redis_client()
+    if redis is None or _file_cache is not None:
         return
 
-    _redis_client = Redis.from_url(
-        settings.redis_url,
-        decode_responses=False,
-        socket_connect_timeout=0.1,
-        socket_timeout=0.1,
-        max_connections=10,
-    )
     _file_cache = FileCache(
-        _redis_client,
+        redis,
         ttl_seconds=settings.file_cache_ttl_seconds,
         max_bytes=settings.file_cache_max_bytes,
     )
@@ -124,8 +135,5 @@ def get_file_cache() -> FileCache | None:
 
 
 async def close_file_cache() -> None:
-    global _redis_client, _file_cache
-    if _redis_client is not None:
-        await _redis_client.aclose()
-    _redis_client = None
+    global _file_cache
     _file_cache = None

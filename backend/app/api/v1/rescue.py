@@ -1,5 +1,5 @@
 """Rescue content CRUD."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
@@ -14,9 +14,13 @@ from app.api.v1._content_access import (
     with_default_tariff,
 )
 from app.api.v1._content_helpers import dump_create, dump_update, new_id, not_found
+from app.core.errors import AppError
 from app.db.repositories.content import RescueRepository
+from app.models.rescue import Rescue
 from app.models.user import User
 from app.schemas.content import RescueCreate, RescueOut, RescueUpdate
+from app.services.rescue_graph import validate_rescue_graph
+from app.utils.content_cache import cached_content_item, cached_content_list
 
 router = APIRouter(prefix="/rescue", tags=["rescue"])
 
@@ -32,10 +36,18 @@ async def list_rescue(
 ) -> list[RescueOut]:
     repo = RescueRepository(db)
     show_drafts = include_drafts and user.role == "admin"
-    items = (
-        await repo.list_all(include_drafts=show_drafts)
+    items = await cached_content_list(
+        db,
+        "rescue",
+        {
+            "all": all_items,
+            "parentId": None if all_items else parent_id,
+            "includeDrafts": show_drafts,
+        },
+        RescueOut,
+        lambda: repo.list_all(include_drafts=show_drafts)
         if all_items
-        else await repo.list_by_parent(parent_id, include_drafts=show_drafts)
+        else repo.list_by_parent(parent_id, include_drafts=show_drafts),
     )
     annotated = await annotate_content_list(db, user, items, enforce_for_admin=enforce_tariff)
     result = [content_out(item, RescueOut, locked) for item, locked in annotated]
@@ -51,22 +63,20 @@ async def get_rescue(
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
     include_drafts: bool = Query(False, alias="includeDrafts"),
 ):
-    item = await RescueRepository(db).get(item_id)
+    repo = RescueRepository(db)
+    item = await cached_content_item(db, "rescue", item_id, RescueOut, lambda: repo.get(item_id))
     if not item:
         raise not_found("Rescue")
     await assert_content_visible(
         db, user, item, enforce_for_admin=enforce_tariff,
         include_drafts=include_drafts and user.role == "admin",
+        content_model=Rescue,
     )
     visible_item = RescueOut.model_validate(item)
     await hide_unpublished_article_links(
         db, [visible_item], include_drafts=include_drafts and user.role == "admin"
     )
     return visible_item
-
-
-from app.core.errors import AppError
-from app.services.rescue_graph import validate_rescue_graph
 
 
 @router.post("", response_model=RescueOut, status_code=status.HTTP_201_CREATED)
@@ -82,7 +92,7 @@ async def create_rescue(
             raise AppError(detail="; ".join(errs), status_code=400)
     fields = await with_default_tariff(db, dump_create(payload))
     if fields.get("created_at") is None:
-        fields["created_at"] = datetime.now(timezone.utc)
+        fields["created_at"] = datetime.now(UTC)
     if fields.get("data") is None:
         fields["data"] = {}
     return await RescueRepository(db).create(id=new_id(payload.id), **fields)

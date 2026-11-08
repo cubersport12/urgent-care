@@ -156,11 +156,14 @@ class BillingRepository:
             await self.db.flush()
         return sub
 
-    async def create_payment(self, **fields) -> Payment:
+    async def create_payment(self, *, commit: bool = True, **fields) -> Payment:
         payment = Payment(id=uuid4(), **fields)
         self.db.add(payment)
-        await self.db.commit()
-        await self.db.refresh(payment)
+        if commit:
+            await self.db.commit()
+            await self.db.refresh(payment)
+        else:
+            await self.db.flush()
         return payment
 
     async def get_payment(self, payment_id: UUID) -> Payment | None:
@@ -271,6 +274,15 @@ class BillingRepository:
                 UserSubscription.current_period_end <= now,
                 UserSubscription.cancel_at_period_end.is_(False),
                 UserSubscription.yookassa_payment_method_id.is_not(None),
+            )
+        )
+        return result.scalars().all()
+
+    async def list_rustore_subscriptions(self) -> Sequence[UserSubscription]:
+        result = await self.db.execute(
+            select(UserSubscription).where(
+                UserSubscription.rustore_purchase_id.is_not(None),
+                UserSubscription.status.in_(("active", "past_due")),
             )
         )
         return result.scalars().all()

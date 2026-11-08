@@ -14,9 +14,11 @@ from app.api.v1._content_access import (
 )
 from app.api.v1._content_helpers import dump_create, dump_update, new_id, not_found
 from app.db.repositories.content import ArticleRepository
+from app.models.article import Article
 from app.models.user import User
 from app.schemas.content import ArticleCreate, ArticleOut, ArticleUpdate
 from app.services.article_embeddings import refresh_article_embedding_safe
+from app.utils.content_cache import cached_content_item, cached_content_list
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 
@@ -32,10 +34,18 @@ async def list_articles(
 ) -> list[ArticleOut]:
     repo = ArticleRepository(db)
     show_drafts = include_drafts and user.role == "admin"
-    items = (
-        await repo.list_all(include_drafts=show_drafts)
+    items = await cached_content_list(
+        db,
+        "articles",
+        {
+            "all": all_items,
+            "parentId": None if all_items else parent_id,
+            "includeDrafts": show_drafts,
+        },
+        ArticleOut,
+        lambda: repo.list_all(include_drafts=show_drafts)
         if all_items
-        else await repo.list_by_parent(parent_id, include_drafts=show_drafts)
+        else repo.list_by_parent(parent_id, include_drafts=show_drafts),
     )
     annotated = await annotate_content_list(db, user, items, enforce_for_admin=enforce_tariff)
     result = [content_out(item, ArticleOut, locked) for item, locked in annotated]
@@ -51,12 +61,16 @@ async def get_article(
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
     include_drafts: bool = Query(False, alias="includeDrafts"),
 ):
-    item = await ArticleRepository(db).get(item_id)
+    repo = ArticleRepository(db)
+    item = await cached_content_item(
+        db, "articles", item_id, ArticleOut, lambda: repo.get(item_id)
+    )
     if not item:
         raise not_found("Article")
     await assert_content_visible(
         db, user, item, enforce_for_admin=enforce_tariff,
         include_drafts=include_drafts and user.role == "admin",
+        content_model=Article,
     )
     visible_item = ArticleOut.model_validate(item)
     await hide_unpublished_article_links(

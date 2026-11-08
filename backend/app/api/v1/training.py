@@ -1,6 +1,8 @@
 """Training: weak test topics + article recommendations."""
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import random
 from datetime import UTC, datetime, timedelta
@@ -58,14 +60,31 @@ class RandomCompletion(BaseModel):
 async def random_training_ws(
     websocket: WebSocket,
     db: Annotated[AsyncSession, Depends(get_db)],
-    session_id: str,
     difficulty: str,
 ) -> None:
-    user = await get_user_by_session(db, session_id)
+    await websocket.accept()
+    try:
+        auth_frame = await asyncio.wait_for(websocket.receive_text(), timeout=5)
+        if len(auth_frame) > 256:
+            await websocket.close(code=4401)
+            return
+        auth = json.loads(auth_frame)
+    except WebSocketDisconnect:
+        return
+    except (TimeoutError, json.JSONDecodeError):
+        await websocket.close(code=4401)
+        return
+    if (
+        not isinstance(auth, dict)
+        or auth.get("type") != "auth"
+        or not isinstance(auth.get("sessionId"), str)
+    ):
+        await websocket.close(code=4401)
+        return
+    user = await get_user_by_session(db, auth["sessionId"])
     if not user:
         await websocket.close(code=4401)
         return
-    await websocket.accept()
     if difficulty not in DIFFICULTIES and difficulty != "marathon":
         await websocket.send_json({"type": "error", "message": "Неизвестный уровень сложности"})
         await websocket.close()

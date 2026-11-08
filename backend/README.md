@@ -27,9 +27,32 @@ Production (VPS): see [`../deploy/README.md`](../deploy/README.md) and `docker c
 
 ## Redis file cache
 
-The API optionally caches MinIO object bytes and `Content-Type` in Redis. Cache keys use the `urgent-care:file:v1` namespace and a digest of the bucket and object key. Files larger than `FILE_CACHE_MAX_BYTES` bypass the cache; entries expire within `FILE_CACHE_TTL_SECONDS` (maximum 300 seconds). Successful writes and deletes through `S3Client` invalidate the cached object. Direct MinIO changes are picked up when the entry expires. If Redis is unavailable, reads continue from MinIO. Set `REDIS_URL` when running the API outside Compose; it is empty by default.
+The API optionally caches MinIO object bytes, `Content-Type`, and `ETag` in Redis. Cache keys use the `urgent-care:file:v2` namespace and a digest of the bucket and object key. Files larger than `FILE_CACHE_MAX_BYTES` bypass the cache; entries expire within `FILE_CACHE_TTL_SECONDS` (maximum 300 seconds). Successful writes and deletes through `S3Client` invalidate the cached object. If Redis is unavailable, reads continue from MinIO. Set `REDIS_URL` when running the API outside Compose; it is empty by default.
 
-Future PostgreSQL content caches for tests, rescue scenarios, and articles must use a separate `urgent-care:content:v1:{kind}:{id}` namespace, check user access on each request, and invalidate after database commits. Those content caches are not implemented here.
+## Redis learning-content cache
+
+Published and admin-preview lists and item reads for folders, articles, tests, and rescue scenarios use Redis cache-aside with a 300-second TTL and a 1 MiB per-entry limit. Cache entries contain shared source DTOs. Publication, tariff, reward, and user-progress checks still run through the API for each request. Redis failures fall back to PostgreSQL.
+
+The `content_cache_revision` setting changes in the same PostgreSQL transaction as writes to these four content tables, including bulk operations, publication changes, and trash recovery. A shared Redis cache generation lets an admin clear both the content and MinIO file caches without `FLUSHDB`. Old entries expire naturally. PDF cache hits check MinIO `ETag` and content type before returning bytes.
+
+Use `CONTENT_CACHE_ENABLED=false` to disable the learning-content cache while retaining file caching. The admin settings page calls `POST /api/v1/system-settings/cache/clear`, which requires the admin role. `REDIS_URL` stays optional outside Compose.
+
+### Run the cache tests
+
+From `backend/`, run `python -m pytest -q -ra` for the backend suite. Use the following variables to connect the cache integration tests to disposable services.
+
+| Variable | Test service |
+| --- | --- |
+| `CACHE_TEST_REDIS_URL` | Redis 7.4, for example `redis://127.0.0.1:6379/0` |
+| `CACHE_TEST_POSTGRES_URL` | PostgreSQL 16 with pgvector enabled, using a `postgresql+asyncpg://` URL and a user that can create schemas |
+| `CACHE_TEST_MINIO_ENDPOINT` | MinIO S3 API URL, for example `http://127.0.0.1:9002` |
+| `CACHE_TEST_MINIO_ACCESS_KEY`, `CACHE_TEST_MINIO_SECRET_KEY` | Credentials that can create and remove a temporary bucket |
+
+Enable pgvector once in the test database with `CREATE EXTENSION IF NOT EXISTS vector;`. The integration suite uses a separate PostgreSQL schema, Redis key prefix, and MinIO bucket for each applicable test. Without the service variables, pytest reports the integration cases as skipped.
+
+```sh
+python -m pytest -q -ra tests/test_content_cache.py tests/test_s3_file_cache.py tests/test_cache_integration.py tests/test_media_public.py
+```
 
 Daily DB backups on the VPS: `/var/backups/urgent-care/` (cron via `deploy/remote/install-backup-cron.sh`).
 

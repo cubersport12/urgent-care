@@ -13,8 +13,10 @@ from app.api.v1._content_access import (
 )
 from app.api.v1._content_helpers import dump_create, dump_update, new_id, not_found
 from app.db.repositories.content import TestRepository
+from app.models.test import Test as TestModel
 from app.models.user import User
 from app.schemas.content import TestCreate, TestOut, TestUpdate
+from app.utils.content_cache import cached_content_item, cached_content_list
 
 router = APIRouter(prefix="/tests", tags=["tests"])
 
@@ -30,10 +32,18 @@ async def list_tests(
 ) -> list[TestOut]:
     repo = TestRepository(db)
     show_drafts = include_drafts and user.role == "admin"
-    items = (
-        await repo.list_all(include_drafts=show_drafts)
+    items = await cached_content_list(
+        db,
+        "tests",
+        {
+            "all": all_items,
+            "parentId": None if all_items else parent_id,
+            "includeDrafts": show_drafts,
+        },
+        TestOut,
+        lambda: repo.list_all(include_drafts=show_drafts)
         if all_items
-        else await repo.list_by_parent(parent_id, include_drafts=show_drafts)
+        else repo.list_by_parent(parent_id, include_drafts=show_drafts),
     )
     annotated = await annotate_content_list(db, user, items, enforce_for_admin=enforce_tariff)
     return [content_out(item, TestOut, locked) for item, locked in annotated]
@@ -47,12 +57,14 @@ async def get_test(
     enforce_tariff: bool = Query(False, alias="enforceTariff"),
     include_drafts: bool = Query(False, alias="includeDrafts"),
 ):
-    item = await TestRepository(db).get(item_id)
+    repo = TestRepository(db)
+    item = await cached_content_item(db, "tests", item_id, TestOut, lambda: repo.get(item_id))
     if not item:
         raise not_found("Test")
     await assert_content_visible(
         db, user, item, enforce_for_admin=enforce_tariff,
         include_drafts=include_drafts and user.role == "admin",
+        content_model=TestModel,
     )
     return item
 

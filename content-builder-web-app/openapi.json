@@ -8499,6 +8499,49 @@
         }
       }
     },
+    "/api/v1/system-settings/cache/clear": {
+      "post": {
+        "tags": [
+          "system-settings"
+        ],
+        "summary": "Clear Redis Cache",
+        "operationId": "system-settings_clear_redis_cache",
+        "parameters": [
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "auto_error": false,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/analytics/summary": {
       "get": {
         "tags": [
@@ -8723,7 +8766,7 @@
           },
           "ruleThreshold": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 0.0,
             "title": "Rulethreshold",
             "default": 1
           },
@@ -9004,7 +9047,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 0
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -10365,6 +10408,11 @@
             "type": "integer",
             "title": "Number"
           },
+          "valid": {
+            "type": "boolean",
+            "title": "Valid",
+            "default": true
+          },
           "fullName": {
             "anyOf": [
               {
@@ -10387,11 +10435,6 @@
               }
             ],
             "title": "Issuedat"
-          },
-          "valid": {
-            "type": "boolean",
-            "title": "Valid",
-            "default": true
           }
         },
         "type": "object",
@@ -11084,8 +11127,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 100,
-                "minimum": 1
+                "maximum": 100.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -11144,7 +11187,7 @@
               }
             ],
             "title": "Score",
-            "default": 1
+            "default": 1.0
           }
         },
         "type": "object",
@@ -11801,8 +11844,8 @@
           },
           "discountPercent": {
             "type": "integer",
-            "maximum": 99,
-            "minimum": 1,
+            "maximum": 99.0,
+            "minimum": 1.0,
             "title": "Discountpercent",
             "default": 1
           },
@@ -11822,7 +11865,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 1
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -11987,8 +12030,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 99,
-                "minimum": 1
+                "maximum": 99.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -12012,7 +12055,7 @@
             "anyOf": [
               {
                 "type": "integer",
-                "minimum": 1
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -13018,12 +13061,12 @@
           "delta": {
             "type": "number",
             "title": "Delta",
-            "default": 0
+            "default": 0.0
           },
           "startValue": {
             "type": "number",
             "title": "Startvalue",
-            "default": 0
+            "default": 0.0
           },
           "type": {
             "type": "string",
@@ -13341,8 +13384,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3650,
-                "minimum": 1
+                "maximum": 3650.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -13655,8 +13698,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 3650,
-                "minimum": 1
+                "maximum": 3650.0,
+                "minimum": 1.0
               },
               {
                 "type": "null"
@@ -15902,8 +15945,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2100,
-                "minimum": 1900
+                "maximum": 2100.0,
+                "minimum": 1900.0
               },
               {
                 "type": "null"
@@ -15978,8 +16021,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2100,
-                "minimum": 1900
+                "maximum": 2100.0,
+                "minimum": 1900.0
               },
               {
                 "type": "null"
@@ -16250,8 +16293,8 @@
             "anyOf": [
               {
                 "type": "integer",
-                "maximum": 2026,
-                "minimum": 1900
+                "maximum": 2026.0,
+                "minimum": 1900.0
               },
               {
                 "type": "null"

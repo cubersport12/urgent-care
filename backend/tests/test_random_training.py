@@ -33,9 +33,11 @@ def test_selection_completion_and_history(monkeypatch):
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_current_user] = lambda: user
     with TestClient(app) as client:
-        with client.websocket_connect('/training/random/ws?session_id=x&difficulty=medium') as ws:
+        with client.websocket_connect('/training/random/ws?difficulty=medium') as ws:
+            ws.send_json({"type": "auth", "sessionId": "x"})
             assert ws.receive_json() == {"type": "insufficient", "available": 5}
-        with client.websocket_connect('/training/random/ws?session_id=x&difficulty=easy') as ws:
+        with client.websocket_connect('/training/random/ws?difficulty=easy') as ws:
+            ws.send_json({"type": "auth", "sessionId": "x"})
             progress = [ws.receive_json() for _ in range(5)]
             ready = ws.receive_json()
         assert all(event["testName"] == "Visible" for event in progress)
@@ -68,8 +70,9 @@ def test_selection_rejects_invalid_session(monkeypatch):
     from starlette.websockets import WebSocketDisconnect
 
     with TestClient(app) as client, pytest.raises(WebSocketDisconnect) as error:
-        with client.websocket_connect('/training/random/ws?session_id=x&difficulty=easy'):
-            pass
+        with client.websocket_connect('/training/random/ws?difficulty=easy') as ws:
+            ws.send_json({"type": "auth", "sessionId": "x"})
+            ws.receive_json()
     assert error.value.code == 4401
 
 
@@ -88,8 +91,13 @@ async def test_marathon_selection_and_completion(monkeypatch):
     events = []
     async def send(event):
         events.append(event)
-    ws = SimpleNamespace(accept=AsyncMock(), close=AsyncMock(), send_json=send)
-    await training.random_training_ws(ws, db, "x", "marathon")
+    ws = SimpleNamespace(
+        accept=AsyncMock(),
+        close=AsyncMock(),
+        send_json=send,
+        receive_text=AsyncMock(return_value='{"type":"auth","sessionId":"x"}'),
+    )
+    await training.random_training_ws(ws, db, "marathon")
     ready = events[-1]
     assert all(event['total'] == 25 for event in events[:-1])
     assert len({q['questionText'] for q in ready['questions']}) == 25
@@ -125,8 +133,9 @@ def test_selection_counts(monkeypatch, difficulty, count):
     app.include_router(training.router)
     app.dependency_overrides[get_db] = lambda: db
     with TestClient(app) as client, client.websocket_connect(
-        f'/training/random/ws?session_id=x&difficulty={difficulty}'
+        f'/training/random/ws?difficulty={difficulty}'
     ) as ws:
+        ws.send_json({"type": "auth", "sessionId": "x"})
         events = [ws.receive_json() for _ in range(count)]
         ready = ws.receive_json()
     assert [event["count"] for event in events] == list(range(1, count + 1))

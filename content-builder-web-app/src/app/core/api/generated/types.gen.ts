@@ -886,6 +886,10 @@ export type CertificateVerifyOut = {
      */
     number: number;
     /**
+     * Valid
+     */
+    valid?: boolean;
+    /**
      * Fullname
      */
     fullName?: string | null;
@@ -893,10 +897,6 @@ export type CertificateVerifyOut = {
      * Issuedat
      */
     issuedAt?: string | null;
-    /**
-     * Valid
-     */
-    valid?: boolean;
 };
 
 /**
@@ -8904,6 +8904,37 @@ export type SystemSettingsUpdateSystemSettingsResponses = {
 };
 
 export type SystemSettingsUpdateSystemSettingsResponse = SystemSettingsUpdateSystemSettingsResponses[keyof SystemSettingsUpdateSystemSettingsResponses];
+
+export type SystemSettingsClearRedisCacheData = {
+    body?: never;
+    headers?: {
+        /**
+         * X-Session-Id
+         */
+        'X-Session-Id'?: string | null;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/system-settings/cache/clear';
+};
+
+export type SystemSettingsClearRedisCacheErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SystemSettingsClearRedisCacheError = SystemSettingsClearRedisCacheErrors[keyof SystemSettingsClearRedisCacheErrors];
+
+export type SystemSettingsClearRedisCacheResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type SystemSettingsClearRedisCacheResponse = SystemSettingsClearRedisCacheResponses[keyof SystemSettingsClearRedisCacheResponses];
 
 export type AnalyticsAnalyticsSummaryData = {
     body?: never;
