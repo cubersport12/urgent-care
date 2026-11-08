@@ -32,6 +32,6 @@ class CertificateOut(CamelModel):
 
 class CertificateVerifyOut(CamelModel):
     number: int
-    full_name: str = Field(alias="fullName")
-    issued_at: datetime = Field(alias="issuedAt")
     valid: bool = True
+    full_name: str | None = Field(None, alias="fullName")
+    issued_at: datetime | None = Field(None, alias="issuedAt")

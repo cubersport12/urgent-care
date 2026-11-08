@@ -146,9 +146,14 @@ class BillingRepository:
         await self.db.refresh(sub)
         return sub
 
-    async def save_subscription(self, sub: UserSubscription) -> UserSubscription:
-        await self.db.commit()
-        await self.db.refresh(sub)
+    async def save_subscription(
+        self, sub: UserSubscription, *, commit: bool = True
+    ) -> UserSubscription:
+        if commit:
+            await self.db.commit()
+            await self.db.refresh(sub)
+        else:
+            await self.db.flush()
         return sub
 
     async def create_payment(self, **fields) -> Payment:
@@ -161,14 +166,24 @@ class BillingRepository:
     async def get_payment(self, payment_id: UUID) -> Payment | None:
         return await self.db.get(Payment, payment_id)
 
-    async def get_payment_by_external_id(
-        self, provider: str, external_id: str
-    ) -> Payment | None:
+    async def get_payment_for_update(self, payment_id: UUID) -> Payment | None:
         result = await self.db.execute(
-            select(Payment).where(
-                Payment.provider == provider, Payment.external_id == external_id
-            )
+            select(Payment)
+            .where(Payment.id == payment_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
         )
+        return result.scalar_one_or_none()
+
+    async def get_payment_by_external_id(
+        self, provider: str, external_id: str, *, for_update: bool = False
+    ) -> Payment | None:
+        stmt = select(Payment).where(
+            Payment.provider == provider, Payment.external_id == external_id
+        )
+        if for_update:
+            stmt = stmt.with_for_update().execution_options(populate_existing=True)
+        result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
     async def list_payments(self, user_id: UUID) -> Sequence[Payment]:
@@ -179,9 +194,12 @@ class BillingRepository:
         )
         return result.scalars().all()
 
-    async def save_payment(self, payment: Payment) -> Payment:
-        await self.db.commit()
-        await self.db.refresh(payment)
+    async def save_payment(self, payment: Payment, *, commit: bool = True) -> Payment:
+        if commit:
+            await self.db.commit()
+            await self.db.refresh(payment)
+        else:
+            await self.db.flush()
         return payment
 
     async def upsert_payment_method(
@@ -191,6 +209,7 @@ class BillingRepository:
         yookassa_payment_method_id: str,
         card_last4: str | None,
         type_: str | None,
+        commit: bool = True,
     ) -> PaymentMethod:
         result = await self.db.execute(
             select(PaymentMethod).where(
@@ -202,8 +221,11 @@ class BillingRepository:
             existing.card_last4 = card_last4
             existing.type = type_
             existing.is_default = True
-            await self.db.commit()
-            await self.db.refresh(existing)
+            if commit:
+                await self.db.commit()
+                await self.db.refresh(existing)
+            else:
+                await self.db.flush()
             return existing
         method = PaymentMethod(
             id=uuid4(),
@@ -214,8 +236,11 @@ class BillingRepository:
             is_default=True,
         )
         self.db.add(method)
-        await self.db.commit()
-        await self.db.refresh(method)
+        if commit:
+            await self.db.commit()
+            await self.db.refresh(method)
+        else:
+            await self.db.flush()
         return method
 
     async def get_scheduled_change(self, user_id: UUID) -> SubscriptionChange | None:
@@ -336,8 +361,13 @@ class BillingRepository:
             .values(status="replaced")
         )
 
-    async def save_promo_activation(self, activation: PromoActivation) -> PromoActivation:
+    async def save_promo_activation(
+        self, activation: PromoActivation, *, commit: bool = True
+    ) -> PromoActivation:
         self.db.add(activation)
-        await self.db.commit()
-        await self.db.refresh(activation)
+        if commit:
+            await self.db.commit()
+            await self.db.refresh(activation)
+        else:
+            await self.db.flush()
         return activation

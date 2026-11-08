@@ -4,11 +4,15 @@ from datetime import datetime, timezone
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_admin, get_current_user, get_db
+from app.core.security import (
+    certificate_verification_token,
+    verify_certificate_verification_token,
+)
 from app.models.certificate import Certificate
 from app.models.user import User
 from app.schemas.certificates import (
@@ -32,6 +36,7 @@ async def _email_certificate(
         from app.utils.s3 import get_s3_client
 
         label = f"TD-{year}-{number:06d}"
+        token = certificate_verification_token(number)
         data, _ct = await get_s3_client().get_object(key=file_key)
         send_email_safe(
             to=to,
@@ -40,7 +45,7 @@ async def _email_certificate(
                 f"{full_name}, поздравляем!\n\n"
                 f"Ваш сертификат {label} — во вложении.\n\n"
                 f"Проверить подлинность: "
-                f"{settings.api_public_base_url.rstrip('/')}/api/v1/certificates/{number}"
+                f"{settings.api_public_base_url.rstrip('/')}/api/v1/certificates/{number}?token={token}"
             ),
             attachment=(f"{label}.png", data, "image/png"),
         )
@@ -99,6 +104,7 @@ async def list_my_certificates(
 async def verify_certificate(
     number: int,
     db: Annotated[AsyncSession, Depends(get_db)],
+    token: Annotated[str | None, Query(max_length=128)] = None,
 ) -> CertificateVerifyOut:
     """Публичная проверка подлинности — цель QR-кода на сертификате."""
     row = (
@@ -106,4 +112,11 @@ async def verify_certificate(
     ).scalar_one_or_none()
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Certificate not found")
-    return CertificateVerifyOut.model_validate(row)
+    if token and verify_certificate_verification_token(number, token):
+        return CertificateVerifyOut(
+            number=row.number,
+            full_name=row.full_name,
+            issued_at=row.issued_at,
+        )
+    # Legacy QR codes still confirm validity, but cannot enumerate certificate PII.
+    return CertificateVerifyOut(number=row.number)

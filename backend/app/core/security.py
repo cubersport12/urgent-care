@@ -47,3 +47,15 @@ def read_email_token(token: str) -> tuple[UUID, str] | None:
         return UUID(user_id_raw), email
     except Exception:
         return None
+
+
+def certificate_verification_token(number: int) -> str:
+    """Signed proof embedded in certificate QR codes; reveals no user data by itself."""
+    payload = f"certificate:{number}".encode()
+    return hmac.new(settings.jwt_secret.encode(), payload, hashlib.sha256).hexdigest()
+
+
+def verify_certificate_verification_token(number: int, token: str) -> bool:
+    if len(token) != 64 or any(char not in "0123456789abcdef" for char in token):
+        return False
+    return hmac.compare_digest(certificate_verification_token(number), token)

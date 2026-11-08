@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import certificate_verification_token
 from app.models.certificate import Certificate
 from app.models.user import User
 from app.utils.s3 import get_s3_client
@@ -130,11 +131,17 @@ async def issue_certificate(
 
     if existing:
         # Имя изменилось — перерисовываем под прежним номером
-        verify_url = f"{settings.api_public_base_url.rstrip('/')}/api/v1/certificates/{existing.number}"
+        verify_token = certificate_verification_token(existing.number)
+        verify_url = (
+            f"{settings.api_public_base_url.rstrip('/')}/api/v1/certificates/"
+            f"{existing.number}?token={verify_token}"
+        )
         png = _render(printed_name, existing.number, existing.issued_at, verify_url)
         s3 = get_s3_client()
         await s3.ensure_bucket()
-        await s3.upload_bytes(data=png, key=existing.file_path, content_type="image/png")
+        await s3.upload_bytes(
+            data=png, key=existing.file_path, content_type="image/png", public=False
+        )
         existing.full_name = printed_name[:200]
         await db.flush()
         await db.refresh(existing)
@@ -145,12 +152,16 @@ async def issue_certificate(
         await db.execute(text("SELECT nextval('certificates_number_seq')"))
     ).scalar_one()
     key = f"public/certificates/{number:06d}.png"
-    verify_url = f"{settings.api_public_base_url.rstrip('/')}/api/v1/certificates/{number}"
+    verify_token = certificate_verification_token(number)
+    verify_url = (
+        f"{settings.api_public_base_url.rstrip('/')}/api/v1/certificates/"
+        f"{number}?token={verify_token}"
+    )
     png = _render(printed_name, number, issued, verify_url)
 
     s3 = get_s3_client()
     await s3.ensure_bucket()
-    await s3.upload_bytes(data=png, key=key, content_type="image/png")
+    await s3.upload_bytes(data=png, key=key, content_type="image/png", public=False)
 
     row = Certificate(
         number=number,

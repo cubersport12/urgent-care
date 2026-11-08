@@ -103,13 +103,14 @@ export async function connectNotificationsWs() {
     return;
   }
 
-  const url = `${wsBase()}/api/v1/notifications/ws?session_id=${encodeURIComponent(sessionId)}`;
+  const url = `${wsBase()}/api/v1/notifications/ws`;
   const ws = new WebSocket(url);
   socket = ws;
 
   ws.onopen = () => {
     if (socket !== ws || stopped) return;
     attempt = 0;
+    ws.send(JSON.stringify({ type: 'auth', sessionId }));
     heartbeat = setInterval(() => {
       if (ws.readyState === WebSocket.OPEN) ws.send('ping');
     }, 30_000);

@@ -169,15 +169,18 @@ export function PdfView({
       <PdfWebView
         source={webViewSource}
         style={styles.webview}
-        originWhitelist={['*']}
+        originWhitelist={['file://*', 'about:blank']}
         javaScriptEnabled
         domStorageEnabled
         allowFileAccess
-        allowFileAccessFromFileURLs
-        allowUniversalAccessFromFileURLs
+        allowFileAccessFromFileURLs={false}
+        allowUniversalAccessFromFileURLs={false}
+        onShouldStartLoadWithRequest={(request) =>
+          request.url.startsWith('file://') || request.url === 'about:blank'
+        }
         nestedScrollEnabled
         setSupportMultipleWindows={false}
-        mixedContentMode="always"
+        mixedContentMode="never"
         onLoadEnd={Platform.OS === 'ios' ? handleLoadEnd : undefined}
         onError={(syntheticEvent) => {
           console.error('WebView PDF error:', syntheticEvent.nativeEvent);

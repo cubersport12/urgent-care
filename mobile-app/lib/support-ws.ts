@@ -65,11 +65,12 @@ export async function connectSupportWs() {
   }
 
   try {
-    const ws = new WebSocket(`${wsBase()}/api/v1/support/ws?session_id=${encodeURIComponent(sessionId)}`);
+    const ws = new WebSocket(`${wsBase()}/api/v1/support/ws`);
     socket = ws;
     ws.onopen = () => {
       if (socket !== ws || stopped) return;
       attempt = 0;
+      ws.send(JSON.stringify({ type: 'auth', sessionId }));
       heartbeat = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) ws.send('ping');
       }, 30_000);

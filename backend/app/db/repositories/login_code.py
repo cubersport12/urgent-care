@@ -9,8 +9,10 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import select, update
 
+from app.core.config import settings
 from app.db.repositories.base import BaseRepository
 from app.models.login_code import LoginCode
+from app.models.user import User
 
 CODE_TTL = timedelta(minutes=10)
 MAX_ATTEMPTS = 5
@@ -21,13 +23,16 @@ def new_code() -> str:
 
 
 def hash_code(code: str) -> str:
-    return hashlib.sha256(code.encode("utf-8")).hexdigest()
+    return hmac.new(
+        settings.jwt_secret.encode("utf-8"), code.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
 
 
 class LoginCodeRepository(BaseRepository[LoginCode]):
     model = LoginCode
 
     async def issue(self, user_id: UUID) -> str:
+        await self.session.execute(select(User.id).where(User.id == user_id).with_for_update())
         # Один активный код на пользователя: прежние неиспользованные гасим
         await self.session.execute(
             update(LoginCode)
@@ -44,6 +49,7 @@ class LoginCodeRepository(BaseRepository[LoginCode]):
         return code
 
     async def consume(self, user_id: UUID, code: str) -> bool:
+        await self.session.execute(select(User.id).where(User.id == user_id).with_for_update())
         row = (
             await self.session.execute(
                 select(LoginCode)

@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from app.api.v1 import api_router
 from app.core.config import settings
@@ -48,17 +48,32 @@ async def lifespan(app: FastAPI):
     log = structlog.get_logger()
     log.info("app_starting", environment=settings.environment)
     initialize_file_cache()
-    if settings.is_dev:
-        from app.utils.s3 import get_s3_client
+    from app.db.base import AsyncSessionLocal
+    from app.models.certificate import Certificate
+    from app.utils.s3 import get_s3_client
 
-        try:
-            s3 = get_s3_client()
-            await s3.ensure_bucket()
-            await s3.ensure_public_read_policy()
-        except Exception as exc:
-            log.warning("minio_setup_skipped", error=str(exc))
     try:
-        from app.db.base import AsyncSessionLocal
+        s3 = get_s3_client()
+        if settings.is_dev:
+            await s3.ensure_bucket()
+        await s3.remove_legacy_public_read_policy()
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(select(Certificate.file_path))
+            keys_to_private = {key for (key,) in result.all()}
+        # Include orphaned certificate images left behind after account deletion;
+        # certificate rows cascade, but the corresponding S3 objects do not.
+        keys_to_private.update(await s3.list_keys(prefix="public/certificates/"))
+        keys_to_private.update(
+            key
+            for key in await s3.list_keys(prefix="public/")
+            if key.lower().endswith(".pdf")
+        )
+        for key in keys_to_private:
+            await s3.make_object_private(key=key)
+    except Exception:
+        log.exception("media_storage_security_migration_failed")
+        raise
+    try:
         from app.services.seed_cities import seed_cities_if_empty
 
         async with AsyncSessionLocal() as session:

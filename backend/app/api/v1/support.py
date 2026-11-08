@@ -1,4 +1,6 @@
 """Support chat API + WebSocket."""
+import asyncio
+import json
 import logging
 from typing import Annotated
 from uuid import UUID
@@ -8,14 +10,18 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     HTTPException,
-    Query,
     WebSocket,
     WebSocketDisconnect,
     status,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_admin, get_current_user, get_db, get_user_by_session
+from app.api.deps import (
+    get_current_admin,
+    get_current_user,
+    get_db,
+    get_websocket_session_user,
+)
 from app.core.config import settings
 from app.db.repositories.support import SupportRepository
 from app.db.repositories.user import UserRepository
@@ -33,6 +39,7 @@ from app.schemas.support import (
 from app.utils.email import send_email
 
 router = APIRouter(prefix="/support", tags=["support"])
+WS_SESSION_RECHECK_SECONDS = 10
 log = logging.getLogger(__name__)
 
 
@@ -241,22 +248,57 @@ async def post_admin_message(
 @router.websocket("/ws")
 async def support_ws(
     websocket: WebSocket,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    session_id: Annotated[str, Query()],
 ) -> None:
-    user = await get_user_by_session(db, session_id)
-    if not user:
+    await websocket.accept()
+    try:
+        auth_frame = await asyncio.wait_for(websocket.receive_text(), timeout=5)
+        if len(auth_frame) > 256:
+            await websocket.close(code=4401)
+            return
+        auth = json.loads(auth_frame)
+    except WebSocketDisconnect:
+        return
+    except (asyncio.TimeoutError, json.JSONDecodeError):
+        await websocket.close(code=4401)
+        return
+    if (
+        not isinstance(auth, dict)
+        or auth.get("type") != "auth"
+        or not isinstance(auth.get("sessionId"), str)
+    ):
+        await websocket.close(code=4401)
+        return
+    identity = await get_websocket_session_user(auth.get("sessionId"))
+    if not identity:
         await websocket.close(code=4401)
         return
 
-    is_admin = user.role == "admin"
+    user_id, role = identity
+    is_admin = role == "admin"
 
     hub = admin_support_hub if is_admin else support_hub
-    user_id = user.id
-    await hub.connect(user_id, websocket)
+    await hub.connect(user_id, websocket, accept=False)
+    last_check = asyncio.get_running_loop().time()
     try:
         while True:
-            if await websocket.receive_text() == "ping":
+            try:
+                frame = await asyncio.wait_for(
+                    websocket.receive_text(), timeout=WS_SESSION_RECHECK_SECONDS
+                )
+            except asyncio.TimeoutError:
+                frame = None
+            now = asyncio.get_running_loop().time()
+            if now - last_check >= WS_SESSION_RECHECK_SECONDS:
+                current = await get_websocket_session_user(auth.get("sessionId"))
+                if (
+                    not current
+                    or current[0] != user_id
+                    or (current[1] == "admin") != is_admin
+                ):
+                    await websocket.close(code=4401)
+                    return
+                last_check = now
+            if frame == "ping":
                 await websocket.send_text("pong")
     except WebSocketDisconnect:
         pass

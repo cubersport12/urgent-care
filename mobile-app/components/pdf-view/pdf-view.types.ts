@@ -78,13 +78,12 @@ export function normalizePdfDataUri(source: string): string {
 
 /** HTML с pdf.js для Android (WebView не рендерит PDF напрямую) */
 export function pdfJsHtmlFromFile(fileUri: string, theme: ThemeMode = 'light'): string {
-  const safeUri = fileUri.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const safeUri = JSON.stringify(fileUri);
   const c = Colors[theme];
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: ${c.page}; padding: 8px; }
@@ -97,11 +96,13 @@ export function pdfJsHtmlFromFile(fileUri: string, theme: ThemeMode = 'light'): 
   <div id="loading">Загрузка PDF…</div>
   <div id="pages"></div>
   <div id="error"></div>
-  <script>
+  <script type="module">
     ${PDF_POST_JS}
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-    const url = '${safeUri}';
-    pdfjsLib.getDocument(url).promise.then(async function(pdf) {
+    const url = ${safeUri};
+    import('https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs').then(function(pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.mjs';
+      return pdfjsLib.getDocument({ url, isEvalSupported: false }).promise;
+    }).then(async function(pdf) {
       document.getElementById('loading').style.display = 'none';
       const container = document.getElementById('pages');
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -134,13 +135,12 @@ export function pdfJsHtmlFromFile(fileUri: string, theme: ThemeMode = 'light'): 
 
 /** pdf.js с base64-данными (fallback, если file:// недоступен) */
 export function pdfJsHtmlFromBase64(base64: string, theme: ThemeMode = 'light'): string {
-  const safeB64 = base64.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\s/g, '');
+  const safeB64 = JSON.stringify(base64.replace(/\s/g, ''));
   const c = Colors[theme];
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: ${c.page}; padding: 8px; }
@@ -153,13 +153,15 @@ export function pdfJsHtmlFromBase64(base64: string, theme: ThemeMode = 'light'):
   <div id="loading">Загрузка PDF…</div>
   <div id="pages"></div>
   <div id="error"></div>
-  <script>
+  <script type="module">
     ${PDF_POST_JS}
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    const raw = atob('${safeB64}');
+    const raw = atob(${safeB64});
     const bytes = new Uint8Array(raw.length);
     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-    pdfjsLib.getDocument({ data: bytes }).promise.then(async function(pdf) {
+    import('https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.mjs').then(function(pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.mjs';
+      return pdfjsLib.getDocument({ data: bytes, isEvalSupported: false }).promise;
+    }).then(async function(pdf) {
       document.getElementById('loading').style.display = 'none';
       const container = document.getElementById('pages');
       for (let i = 1; i <= pdf.numPages; i++) {

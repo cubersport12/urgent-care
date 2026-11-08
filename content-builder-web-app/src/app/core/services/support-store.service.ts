@@ -74,12 +74,13 @@ export class SupportStoreService {
     const sessionId = getSessionId();
     if (!sessionId) return;
 
-    const url = `${API_BASE.replace(/^http/, 'ws')}/api/v1/support/ws?session_id=${encodeURIComponent(sessionId)}`;
+    const url = `${API_BASE.replace(/^http/, 'ws')}/api/v1/support/ws`;
     const ws = new WebSocket(url);
     this._ws = ws;
 
     ws.onopen = () => {
       this._attempt = 0;
+      ws.send(JSON.stringify({ type: 'auth', sessionId }));
     };
     ws.onmessage = (event) => {
       try {

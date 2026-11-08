@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import time
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -522,7 +523,7 @@ class BillingService:
             promo_activation.payment_id = payment.id
             await self.repo.save_promo_activation(promo_activation)
 
-        if not provider.configured and not settings.is_prod:
+        if not provider.configured and settings.is_dev:
             await self._activate_plan(user, sub, target, payment_method_id=None)
             payment.status = "succeeded"
             payment.raw_json = {"mock": True}
@@ -700,37 +701,78 @@ class BillingService:
             return {"status": "ignored"}
         obj = payload.get("object") or {}
         yk_id = obj.get("id")
-        payment: Payment | None = None
-        if yk_id:
-            payment = await self.repo.get_payment_by_external_id("yookassa", yk_id)
+        if not yk_id or not self.yk.configured:
+            return {"status": "ignored"}
+
+        try:
+            provider_id = str(UUID(str(yk_id)))
+        except (TypeError, ValueError):
+            return {"status": "ignored"}
+        payment = await self.repo.get_payment_by_external_id(
+            "yookassa", provider_id
+        )
+        allow_external_id_bind = False
         if not payment:
+            # The provider can notify us before checkout has stored its payment ID.
+            # Payload metadata is only a lookup hint; bind only against YooKassa's
+            # authenticated object after checking its metadata and amount.
             meta = obj.get("metadata") or {}
-            pid = meta.get("payment_id")
-            if pid:
-                try:
-                    payment = await self.repo.get_payment(UUID(str(pid)))
-                except ValueError:
-                    payment = None
-        if not payment:
+            payment_id = meta.get("payment_id")
+            try:
+                payment_uuid = UUID(str(payment_id))
+            except (TypeError, ValueError):
+                return {"status": "ok"}
+            payment = await self.repo.get_payment(payment_uuid)
+            if (
+                not payment
+                or payment.provider != "yookassa"
+                or payment.external_id not in (None, provider_id)
+            ):
+                return {"status": "ok"}
+            allow_external_id_bind = payment.external_id is None
+        if payment.status != "pending":
             return {"status": "ok"}
-        if payment.external_id and self.yk.configured:
-            yk_obj = await self.yk.get_payment(payment.external_id)
-        else:
-            yk_obj = obj
-        await self._apply_provider_object(payment, yk_obj)
+        yk_obj = await self.yk.get_payment(provider_id)
+        await self._apply_provider_object(
+            payment, yk_obj, allow_external_id_bind=allow_external_id_bind
+        )
         return {"status": "ok"}
 
-    async def _apply_provider_object(self, payment: Payment, yk_obj: dict[str, Any]) -> None:
+    async def _apply_provider_object(
+        self,
+        payment: Payment,
+        yk_obj: dict[str, Any],
+        *,
+        allow_external_id_bind: bool = False,
+    ) -> None:
         """Состояние шлюзового провайдера (YooKassa) → платёж, промо, подписка."""
+        payment = await self.repo.get_payment_for_update(payment.id)
+        if not payment or payment.status != "pending":
+            return
+        if not self._matches_payment(
+            payment, yk_obj, allow_external_id_bind=allow_external_id_bind
+        ):
+            return
+        if not payment.external_id:
+            payment.external_id = str(yk_obj["id"])
+
         payment.raw_json = yk_obj
         status_str = yk_obj.get("status")
         if status_str in ("canceled", "expired"):
             payment.status = status_str if status_str != "expired" else "expired"
-            await self._release_promo_for_payment(payment)
-            await self.repo.save_payment(payment)
+            await self._release_promo_for_payment(payment, commit=False)
+            await self.repo.save_payment(payment, commit=False)
+            await self.db.commit()
             return
         if status_str != "succeeded":
-            await self.repo.save_payment(payment)
+            await self.repo.save_payment(payment, commit=False)
+            await self.db.commit()
+            return
+
+        user = await self.db.get(User, payment.user_id)
+        sub = await self.repo.get_subscription(payment.user_id)
+        tariff = await self.repo.get_tariff(payment.tariff_id)
+        if not user or not sub or not tariff:
             return
 
         payment.status = "succeeded"
@@ -743,16 +785,46 @@ class BillingService:
                 yookassa_payment_method_id=pm_id,
                 card_last4=card.get("last4"),
                 type_=pm.get("type"),
+                commit=False,
             )
-        user = await self.db.get(User, payment.user_id)
-        sub = await self.repo.get_subscription(payment.user_id)
-        tariff = await self.repo.get_tariff(payment.tariff_id)
-        if user and sub and tariff:
-            meta = yk_obj.get("metadata") or {}
-            source = "renewal" if str(meta.get("renewal")) == "1" else "purchase"
-            await self._activate_plan(user, sub, tariff, payment_method_id=pm_id, source=source)
-        await self._consume_promo_for_payment(payment)
-        await self.repo.save_payment(payment)
+        meta = yk_obj.get("metadata") or {}
+        source = "renewal" if str(meta.get("renewal")) == "1" else "purchase"
+        await self._activate_plan(
+            user, sub, tariff, payment_method_id=pm_id, source=source,
+            commit=False, emit=False,
+        )
+        await self._consume_promo_for_payment(payment, commit=False)
+        await self.repo.save_payment(payment, commit=False)
+        await self.db.commit()
+        await self._emit_subscription_granted(user.id, tariff, sub, source)
+
+    @staticmethod
+    def _matches_payment(
+        payment: Payment,
+        yk_obj: dict[str, Any],
+        *,
+        allow_external_id_bind: bool = False,
+    ) -> bool:
+        amount = yk_obj.get("amount") or {}
+        try:
+            provider_amount = Decimal(str(amount.get("value")))
+            expected_amount = Decimal(str(payment.amount_rub)).quantize(Decimal("0.01"))
+        except (InvalidOperation, TypeError, ValueError):
+            return False
+        provider_id = yk_obj.get("id")
+        provider_metadata = yk_obj.get("metadata") or {}
+        id_matches = (
+            provider_id == payment.external_id
+            if payment.external_id
+            else bool(provider_id)
+            and allow_external_id_bind
+            and provider_metadata.get("payment_id") == str(payment.id)
+        )
+        return (
+            id_matches
+            and amount.get("currency") == "RUB"
+            and provider_amount == expected_amount
+        )
 
     async def _applicable_promo(
         self, user_id: UUID, tariff: Tariff
@@ -772,7 +844,7 @@ class BillingService:
             return None, None
         return activation, code
 
-    async def _consume_promo_for_payment(self, payment: Payment) -> None:
+    async def _consume_promo_for_payment(self, payment: Payment, *, commit: bool = True) -> None:
         row = await self.repo.get_user_active_promo(payment.user_id)
         if not row:
             return
@@ -784,13 +856,13 @@ class BillingService:
         activation.status = "used"
         activation.used_at = datetime.now(timezone.utc)
         activation.payment_id = payment.id
-        await self.repo.save_promo_activation(activation)
+        await self.repo.save_promo_activation(activation, commit=commit)
 
-    async def _release_promo_for_payment(self, payment: Payment) -> None:
+    async def _release_promo_for_payment(self, payment: Payment, *, commit: bool = True) -> None:
         row = await self.repo.get_user_active_promo(payment.user_id)
         if row and row[0].payment_id == payment.id:
             row[0].payment_id = None
-            await self.repo.save_promo_activation(row[0])
+            await self.repo.save_promo_activation(row[0], commit=commit)
 
     async def _activate_plan(
         self,
@@ -799,6 +871,8 @@ class BillingService:
         tariff: Tariff,
         payment_method_id: str | None,
         source: str = "purchase",
+        commit: bool = True,
+        emit: bool = True,
     ) -> None:
         now = datetime.now(timezone.utc)
         sub.tariff_id = tariff.id
@@ -808,8 +882,9 @@ class BillingService:
         sub.cancel_at_period_end = False
         if payment_method_id:
             sub.yookassa_payment_method_id = payment_method_id
-        await self.repo.save_subscription(sub)
-        await self._emit_subscription_granted(user.id, tariff, sub, source)
+        await self.repo.save_subscription(sub, commit=commit)
+        if emit:
+            await self._emit_subscription_granted(user.id, tariff, sub, source)
 
     async def grant_subscription(
         self,
@@ -944,7 +1019,7 @@ class BillingService:
             await self.repo.save_change(change)
             return False
         if not sub.yookassa_payment_method_id or not self.yk.configured:
-            if not self.yk.configured and not settings.is_prod:
+            if not self.yk.configured and settings.is_dev:
                 await self._activate_plan(user, sub, target, None)
                 change.status = "activated"
                 await self.repo.save_change(change)

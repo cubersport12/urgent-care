@@ -1,4 +1,6 @@
 """In-app notifications API + WebSocket."""
+import asyncio
+import json
 from typing import Annotated
 from uuid import UUID
 
@@ -6,7 +8,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSock
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_admin, get_current_user, get_db, get_user_by_session
+from app.api.deps import (
+    get_current_admin,
+    get_current_user,
+    get_db,
+    get_websocket_session_user,
+)
 from app.db.repositories.notifications import NotificationRepository
 from app.models.notification import Notification
 from app.models.user import User
@@ -21,6 +28,7 @@ from app.schemas.notifications import (
 from app.services.notification_campaigns import create_dispatch
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
+WS_SESSION_RECHECK_SECONDS = 10
 
 
 def _out(row: Notification) -> NotificationOut:
@@ -107,20 +115,50 @@ async def create_notification(
 @router.websocket("/ws")
 async def notifications_ws(
     websocket: WebSocket,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    session_id: Annotated[str, Query()],
 ) -> None:
-    """Auth via session id query param (custom headers are not available on WS handshake)."""
-    user = await get_user_by_session(db, session_id)
-    if not user:
+    await websocket.accept()
+    try:
+        auth_frame = await asyncio.wait_for(websocket.receive_text(), timeout=5)
+        if len(auth_frame) > 256:
+            await websocket.close(code=4401)
+            return
+        auth = json.loads(auth_frame)
+    except WebSocketDisconnect:
+        return
+    except (asyncio.TimeoutError, json.JSONDecodeError):
+        await websocket.close(code=4401)
+        return
+    if (
+        not isinstance(auth, dict)
+        or auth.get("type") != "auth"
+        or not isinstance(auth.get("sessionId"), str)
+    ):
+        await websocket.close(code=4401)
+        return
+    identity = await get_websocket_session_user(auth.get("sessionId"))
+    if not identity:
         await websocket.close(code=4401)
         return
 
-    user_id = user.id
-    await notification_hub.connect(user_id, websocket)
+    user_id, _ = identity
+    await notification_hub.connect(user_id, websocket, accept=False)
+    last_check = asyncio.get_running_loop().time()
     try:
         while True:
-            if await websocket.receive_text() == "ping":
+            try:
+                frame = await asyncio.wait_for(
+                    websocket.receive_text(), timeout=WS_SESSION_RECHECK_SECONDS
+                )
+            except asyncio.TimeoutError:
+                frame = None
+            now = asyncio.get_running_loop().time()
+            if now - last_check >= WS_SESSION_RECHECK_SECONDS:
+                current = await get_websocket_session_user(auth.get("sessionId"))
+                if not current or current[0] != user_id:
+                    await websocket.close(code=4401)
+                    return
+                last_check = now
+            if frame == "ping":
                 await websocket.send_text("pong")
     except WebSocketDisconnect:
         pass

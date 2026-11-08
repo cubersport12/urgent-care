@@ -50,27 +50,71 @@ class S3Client:
             else:
                 raise
 
-    async def ensure_public_read_policy(self) -> None:
-        policy = {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Principal": {"AWS": ["*"]},
-                    "Action": ["s3:GetObject"],
-                    "Resource": [f"arn:aws:s3:::{self.bucket}/*"],
-                }
-            ],
-        }
+    async def remove_legacy_public_read_policy(self) -> None:
+        """Remove only the app's former public-read statement, preserving other rules."""
+        def _remove() -> None:
+            try:
+                response = self._client.get_bucket_policy(Bucket=self.bucket)
+            except ClientError as exc:
+                if exc.response["Error"].get("Code") == "NoSuchBucketPolicy":
+                    return
+                raise
 
-        def _apply() -> None:
-            self._client.put_bucket_policy(
-                Bucket=self.bucket,
-                Policy=json.dumps(policy),
-            )
+            policy = json.loads(response["Policy"])
+            statements = policy.get("Statement", [])
+            if isinstance(statements, dict):
+                statements = [statements]
 
-        await asyncio.to_thread(_apply)
-        log.info("bucket_public_read_policy_applied", bucket=self.bucket)
+            public_resource = f"arn:aws:s3:::{self.bucket}/*"
+
+            legacy_statement = {
+                "Effect": "Allow",
+                "Principal": {"AWS": ["*"]},
+                "Action": ["s3:GetObject"],
+                "Resource": [public_resource],
+            }
+
+            def is_legacy_public_read(statement: Any) -> bool:
+                # Match only the exact rule emitted by the old application.
+                # Broader statements may grant more access and need a separate review.
+                return isinstance(statement, dict) and statement == legacy_statement
+
+            remaining = [s for s in statements if not is_legacy_public_read(s)]
+            if len(remaining) == len(statements):
+                return
+            if remaining:
+                policy["Statement"] = remaining
+                self._client.put_bucket_policy(
+                    Bucket=self.bucket,
+                    Policy=json.dumps(policy),
+                )
+            else:
+                self._client.delete_bucket_policy(Bucket=self.bucket)
+            log.warning("legacy_public_bucket_policy_removed", bucket=self.bucket)
+
+        await asyncio.to_thread(_remove)
+
+    async def make_object_private(self, *, key: str) -> None:
+        """Remove a legacy public ACL; ACL-disabled buckets are already private by ACL."""
+        def _private() -> None:
+            try:
+                self._client.put_object_acl(
+                    Bucket=self.bucket,
+                    Key=key,
+                    ACL="private",
+                )
+            except ClientError as exc:
+                if exc.response["Error"].get("Code") in (
+                    "AccessControlListNotSupported",
+                    "NotImplemented",
+                    "NoSuchKey",
+                    "NoSuchObject",
+                    "404",
+                ):
+                    return
+                raise
+
+        await asyncio.to_thread(_private)
 
     async def object_exists(self, *, key: str) -> bool:
         def _head() -> bool:
@@ -171,7 +215,7 @@ class S3Client:
         data: bytes,
         key: str,
         content_type: str = "application/octet-stream",
-        public: bool = True,
+        public: bool = False,
     ) -> str:
         put_kwargs: dict[str, Any] = {
             "Bucket": self.bucket,

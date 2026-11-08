@@ -6,6 +6,7 @@ from typing import Annotated
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Response, UploadFile, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -230,12 +231,13 @@ async def request_login_code(
 async def verify_login_code(
     payload: LoginCodeVerify,
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> SessionCreated:
+) -> SessionCreated | JSONResponse:
     user = await UserRepository(db).get_by_email(payload.email.lower())
     if not user or not user.is_active:
         raise HTTPException(status_code=400, detail="Invalid or expired code")
     if not await LoginCodeRepository(db).consume(user.id, payload.code):
-        raise HTTPException(status_code=400, detail="Invalid or expired code")
+        # Return a response so get_db commits the failed-attempt counter.
+        return JSONResponse(status_code=400, content={"detail": "Invalid or expired code"})
     # Ввод кода из письма доказывает владение почтой
     if not user.email_verified:
         user.email_verified = True
@@ -325,7 +327,7 @@ async def upload_avatar(
     key = f"public/avatars/{user.id}/{uuid4().hex}{ext}"
     s3 = get_s3_client()
     await s3.ensure_bucket()
-    await s3.upload_bytes(data=data, key=key, content_type=content_type)
+    await s3.upload_bytes(data=data, key=key, content_type=content_type, public=True)
     previous = user.avatar_key
     user.avatar_key = key
     await db.flush()

@@ -1716,12 +1716,26 @@ export const CertificateVerifyOutSchema = {
             title: 'Number'
         },
         fullName: {
-            type: 'string',
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Fullname'
         },
         issuedAt: {
-            type: 'string',
-            format: 'date-time',
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
             title: 'Issuedat'
         },
         valid: {
@@ -1732,9 +1746,7 @@ export const CertificateVerifyOutSchema = {
     },
     type: 'object',
     required: [
-        'number',
-        'fullName',
-        'issuedAt'
+        'number'
     ],
     title: 'CertificateVerifyOut'
 } as const;

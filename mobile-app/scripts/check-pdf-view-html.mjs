@@ -13,7 +13,12 @@ const assert = (cond, msg) => {
 };
 
 const html = pdfJsHtmlFromBase64('aGVsbG8=');
-assert(html.includes("atob('aGVsbG8=')"), 'base64 встроен в HTML');
+assert(html.includes('atob("aGVsbG8=")'), 'base64 встроен в HTML');
+assert(
+  html.includes('pdfjs-dist@6.5.438/build/pdf.mjs'),
+  'используется поддерживаемая версия pdf.js',
+);
+assert(html.includes('isEvalSupported: false'), 'отключена небезопасная компиляция PDF-функций');
 assert(html.includes('__pdfPost'), 'шим __pdfPost присутствует');
 assert(
   html.includes('window.ReactNativeWebView') && html.includes('window.parent.postMessage'),
@@ -26,7 +31,7 @@ assert(
 );
 
 const urlHtml = pdfJsHtmlFromFile('https://example.com/doc.pdf');
-assert(urlHtml.includes("const url = 'https://example.com/doc.pdf'"), 'URL попадает в getDocument');
+assert(urlHtml.includes('const url = "https://example.com/doc.pdf"'), 'URL безопасно сериализуется в HTML');
 assert(urlHtml.includes('function __pdfPost'), 'шим есть и в URL-варианте');
 
 console.log('check-pdf-view-html: OK');

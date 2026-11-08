@@ -29,6 +29,7 @@ export function PdfView({
 
   // Колбэки — через ref, чтобы слушатель message не переустанавливать на каждый рендер
   const callbacksRef = useRef({ onLoad, onError, onScrollToEnd, onScrollProgress, onScrollDirection });
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   callbacksRef.current = { onLoad, onError, onScrollToEnd, onScrollProgress, onScrollDirection };
 
   const hasCalledOnLoadRef = useRef(false);
@@ -40,6 +41,7 @@ export function PdfView({
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
       const data = event.data;
       if (typeof data !== 'string') {
         return;
@@ -76,7 +78,13 @@ export function PdfView({
 
   return (
     <View style={[styles.container, style]}>
-      <iframe title="PDF Viewer" srcDoc={html} style={iframeCss} />
+      <iframe
+        title="PDF Viewer"
+        ref={iframeRef}
+        sandbox="allow-scripts"
+        srcDoc={html}
+        style={iframeCss}
+      />
     </View>
   );
 }

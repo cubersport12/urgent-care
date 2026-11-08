@@ -24,9 +24,14 @@ async def get_db() -> AsyncSession:
 
 
 async def get_user_by_session(
-    db: AsyncSession, session_id_raw: str | None
+    db: AsyncSession,
+    session_id_raw: str | None,
+    *,
+    touch_activity: bool = True,
 ) -> User | None:
     """Валидация session id: возвращает юзера или None. Общая для HTTP и WebSocket."""
+    if not isinstance(session_id_raw, str) or len(session_id_raw) > 64:
+        return None
     try:
         session_id = UUID(session_id_raw)
     except (TypeError, ValueError):
@@ -39,10 +44,23 @@ async def get_user_by_session(
     if not user or not user.is_active:
         return None
     # ponytail: активность и скользящее продление пишем не чаще раза в минуту
-    if now - session.last_active_at > timedelta(minutes=1):
+    if touch_activity and now - session.last_active_at > timedelta(minutes=1):
         session.last_active_at = now
         session.expires_at = now + timedelta(days=settings.session_ttl_days)
     return user
+
+
+async def get_websocket_session_user(
+    session_id_raw: str | None,
+) -> tuple[UUID, str] | None:
+    """Validate a WebSocket session with a short-lived database session."""
+    async with AsyncSessionLocal() as db:
+        user = await get_user_by_session(
+            db, session_id_raw, touch_activity=False
+        )
+        if not user:
+            return None
+        return user.id, user.role
 
 
 async def get_current_user(

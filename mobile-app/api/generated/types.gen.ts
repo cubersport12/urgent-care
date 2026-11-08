@@ -888,11 +888,11 @@ export type CertificateVerifyOut = {
     /**
      * Fullname
      */
-    fullName: string;
+    fullName?: string | null;
     /**
      * Issuedat
      */
-    issuedAt: string;
+    issuedAt?: string | null;
     /**
      * Valid
      */
@@ -8754,7 +8754,12 @@ export type CertificatesVerifyCertificateData = {
          */
         number: number;
     };
-    query?: never;
+    query?: {
+        /**
+         * Token
+         */
+        token?: string | null;
+    };
     url: '/api/v1/certificates/{number}';
 };
 

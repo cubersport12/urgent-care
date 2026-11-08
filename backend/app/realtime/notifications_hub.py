@@ -17,8 +17,11 @@ class NotificationHub:
         self._by_user: dict[UUID, set[WebSocket]] = defaultdict(set)
         self._lock = asyncio.Lock()
 
-    async def connect(self, user_id: UUID, ws: WebSocket) -> None:
-        await ws.accept()
+    async def connect(
+        self, user_id: UUID, ws: WebSocket, *, accept: bool = True
+    ) -> None:
+        if accept:
+            await ws.accept()
         async with self._lock:
             self._by_user[user_id].add(ws)
 

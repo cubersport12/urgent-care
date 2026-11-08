@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import type { UserOut } from '@/api/generated/types.gen';
 
 // Храним только идентификатор сессии + кэш юзера; access-токенов больше нет —
@@ -23,12 +25,31 @@ function notifyAuth() {
 
 export async function loadStoredAuth(): Promise<UserOut | null> {
   try {
-    const [s, u] = await Promise.all([AsyncStorage.getItem(SESSION_KEY), AsyncStorage.getItem(USER_KEY)]);
+    const [userSession, u] = await Promise.all([
+      Platform.OS === 'web'
+        ? AsyncStorage.getItem(SESSION_KEY)
+        : SecureStore.getItemAsync(SESSION_KEY),
+      AsyncStorage.getItem(USER_KEY),
+    ]);
+    let s = userSession;
+    if (Platform.OS !== 'web') {
+      const legacySession = await AsyncStorage.getItem(SESSION_KEY);
+      if (!s && legacySession) {
+        // Migrate existing sessions once; remove the plaintext copy only after the secure write succeeds.
+        await SecureStore.setItemAsync(SESSION_KEY, legacySession);
+        s = legacySession;
+      }
+      if (s && legacySession) {
+        await AsyncStorage.removeItem(SESSION_KEY);
+      }
+    }
     sessionId = s;
     cachedUser = u ? (JSON.parse(u) as UserOut) : null;
     if (cachedUser) cachedUser = { ...cachedUser, id: String(cachedUser.id) };
     return cachedUser;
   } catch {
+    sessionId = null;
+    cachedUser = null;
     return null;
   }
 }
@@ -39,10 +60,13 @@ export async function persistAuth(tokens: {
 }): Promise<void> {
   sessionId = tokens.session_id;
   cachedUser = { ...tokens.user, id: String(tokens.user.id) };
-  await Promise.all([
-    AsyncStorage.setItem(SESSION_KEY, sessionId),
-    AsyncStorage.setItem(USER_KEY, JSON.stringify(cachedUser)),
-  ]);
+  if (Platform.OS === 'web') {
+    await AsyncStorage.setItem(SESSION_KEY, sessionId);
+  } else {
+    await SecureStore.setItemAsync(SESSION_KEY, sessionId);
+    await AsyncStorage.removeItem(SESSION_KEY);
+  }
+  await AsyncStorage.setItem(USER_KEY, JSON.stringify(cachedUser));
   notifyAuth();
 }
 
@@ -55,8 +79,15 @@ export async function persistUser(user: UserOut): Promise<void> {
 export async function clearAuth(): Promise<void> {
   sessionId = null;
   cachedUser = null;
-  await Promise.all([AsyncStorage.removeItem(SESSION_KEY), AsyncStorage.removeItem(USER_KEY)]);
-  notifyAuth();
+  try {
+    await Promise.all([
+      Platform.OS === 'web' ? Promise.resolve() : SecureStore.deleteItemAsync(SESSION_KEY),
+      AsyncStorage.removeItem(SESSION_KEY),
+      AsyncStorage.removeItem(USER_KEY),
+    ]);
+  } finally {
+    notifyAuth();
+  }
 }
 
 export function getSessionId(): string | null {

@@ -8,12 +8,14 @@ import structlog
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import Response as StarletteResponse
 
 from app.api.deps import get_current_admin, get_current_user, get_db
 from app.api.v1._content_access import assert_content_visible
 from app.db.repositories.content import ArticleRepository
+from app.models.certificate import Certificate
 from app.models.user import User
 from app.utils.s3 import get_s3_client
 
@@ -53,6 +55,9 @@ async def download_public_image(
     # ВАЖНО: объявлен выше /{file_path:path} — иначе catch-all перехватит этот путь.
     key = _normalize_key(file_path)
     name = key.removeprefix(ALLOWED_PREFIX)
+    if name.startswith("certificates/") and name.lower().endswith(".png"):
+        user = await get_current_user(db, x_session_id)
+        return await download_media(key, db, user, enforce_tariff, include_drafts)
     root_image = "/" not in name and name.lower().endswith(IMAGE_EXTENSIONS)
     if not (root_image or (key.startswith(PUBLIC_IMAGE_PREFIXES) and key.lower().endswith(IMAGE_EXTENSIONS))):
         if key.lower().endswith(".pdf") and file_path.startswith("public/"):
@@ -104,7 +109,7 @@ async def download_media(
     log.info("media_download_received", key=key, enforce_tariff=enforce_tariff)
     # Article PDFs are stored as public/{articleId}.pdf
     name = key.removeprefix(ALLOWED_PREFIX)
-    if name.endswith(".pdf"):
+    if name.lower().endswith(".pdf") and not name.lower().startswith("legal/"):
         article_id = name[:-4]
         log.info("media_article_access_check_started", article_id=article_id)
         article = await ArticleRepository(db).get(article_id)
@@ -113,11 +118,16 @@ async def download_media(
             article_id=article_id,
             article_found=article is not None,
         )
-        if article:
-            await assert_content_visible(
-                db, user, article, enforce_for_admin=enforce_tariff,
-                include_drafts=include_drafts and user.role == "admin",
-            )
+        if not article:
+            raise HTTPException(status_code=404, detail="File not found")
+        await assert_content_visible(
+            db, user, article, enforce_for_admin=enforce_tariff,
+            include_drafts=include_drafts and user.role == "admin",
+        )
+    if name.startswith("certificates/") and name.lower().endswith(".png"):
+        certificate = await db.scalar(select(Certificate).where(Certificate.file_path == key))
+        if not certificate or (certificate.user_id != user.id and user.role != "admin"):
+            raise HTTPException(status_code=404, detail="File not found")
     s3 = get_s3_client()
     try:
         body, content_type = await s3.get_object(key=key)
@@ -136,7 +146,7 @@ async def download_media(
     )
     # private: браузерный кэш ускоряет повторные авторизованные fetch (блобы),
     # но разделяемые прокси это не кэшируют
-    return Response(content=body, media_type=content_type, headers={"Cache-Control": "private, max-age=86400"})
+    return Response(content=body, media_type=content_type, headers={"Cache-Control": "private, no-store"})
 
 
 @router.post("", response_model=MediaUploadOut, status_code=status.HTTP_201_CREATED)
@@ -155,7 +165,9 @@ async def upload_media(
     s3 = get_s3_client()
     try:
         await s3.ensure_bucket()
-        await s3.upload_bytes(data=data, key=key, content_type=content_type)
+        await s3.upload_bytes(
+            data=data, key=key, content_type=content_type, public=False
+        )
     except Exception as exc:
         # Недоступность/креды MinIO — конфигурация окружения; клиенту нужна понятная ошибка, а не сырой 500
         raise HTTPException(status_code=503, detail="Хранилище файлов недоступно") from exc

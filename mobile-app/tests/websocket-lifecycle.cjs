@@ -32,8 +32,11 @@ async function check(file, connectName, disconnectName) {
   await exports[connectName]();
   assert.equal(sockets.length, 1, 'connecting twice must reuse the active socket');
   const first = sockets[0];
+  const endpoint = file.startsWith('notifications') ? 'notifications' : 'support';
+  assert.equal(first.url, `wss://example.test/api/v1/${endpoint}/ws`);
   first.readyState = FakeSocket.OPEN;
   first.onopen();
+  assert.equal(first.sent, JSON.stringify({ type: 'auth', sessionId: 'session' }));
   [...timers.values()][0]();
   assert.equal(first.sent, 'ping');
   exports[disconnectName]();
